@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RADAR · Inteligencia Político-Digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Estilos enlazados de forma externa -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-wordmark">Radar</div>
+    <div class="logo-sep"></div>
+    <div class="logo-sub">Inteligencia<br>Político·Digital</div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>Sistema Activo</div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+</header>
+
+<!-- SEARCH -->
+<section class="search-hero" id="searchSection">
+  <div class="search-eyebrow">Análisis Ejecutivo</div>
+  <h1 class="search-heading">Perfil Político<br><em>en tiempo real</em></h1>
+  <p class="search-desc">Ingresa el nombre de cualquier político para generar su perfil RADAR completo con datos actuales, análisis de narrativas y recomendaciones estratégicas.</p>
+
+  <div class="search-form" style="grid-template-columns: 1fr 140px 100px 140px;">
+    <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
+    
+    <!-- Selector Manual de Meses -->
+    <select id="mesSelect">
+      <option value="enero">Enero</option>
+      <option value="febrero">Febrero</option>
+      <option value="marzo">Marzo</option>
+      <option value="abril">Abril</option>
+      <option value="mayo">Mayo</option>
+      <option value="junio" selected>Junio</option>
+      <option value="julio">Julio</option>
+      <option value="agosto">Agosto</option>
+      <option value="septiembre">Septiembre</option>
+      <option value="octubre">Octubre</option>
+      <option value="noviembre">Noviembre</option>
+      <option value="diciembre">Diciembre</option>
+    </select>
+
+    <!-- Selector Manual de Años -->
+    <select id="anioSelect" style="border-left: 1px solid var(--border);">
+      <option value="2026" selected>2026</option>
+      <option value="2025">2025</option>
+      <option value="2024">2024</option>
+      <option value="2023">2023</option>
+      <option value="2022">2022</option>
+      <option value="2021">2021</option>
+      <option value="2020">2020</option>
+    </select>
+
+    <button class="btn-search" id="btnAnalizar" onclick="analizar()">Análisis</button>
+  </div>
+
+  <div class="suggestion-row">
+    <span class="suggestion-label">Sugerencias:</span>
+    <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
+    <button class="chip" onclick="setChip('AMLO')">AMLO</button>
+    <button class="chip" onclick="setChip('Xóchitl Gálvez')">Xóchitl Gálvez</button>
+    <button class="chip" onclick="setChip('Ricardo Monreal')">Ricardo Monreal</button>
+    <button class="chip" onclick="setChip('Mario Delgado')">Mario Delgado</button>
+    <button class="chip" onclick="setChip('Delfina Gómez')">Delfina Gómez</button>
+  </div>
+</section>
+
+<!-- LOADING -->
+<div class="loading-wrap" id="loadingWrap">
+  <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
+  <div class="loader-label" id="loaderLabel">Procesando análisis</div>
+  <div class="loader-sub" id="loaderSub">Consultando fuentes en tiempo real...</div>
+</div>
+
+<!-- ERROR -->
+<div class="error-wrap" id="errorWrap">
+  <div class="error-card">
+    <div class="error-label">Error en el análisis</div>
+    <div class="error-text" id="errorText">Ocurrió un error inesperado.</div>
+    <button class="btn-retry" onclick="resetUI()">← Intentar de nuevo</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <!-- Profile Band -->
+  <div class="profile-band">
+    <div class="profile-inner">
+      <div>
+        <div class="profile-tags" id="profileTags"></div>
+        <div class="profile-name" id="profileName"></div>
+        <div class="profile-cargo" id="profileCargo"></div>
+        <div class="profile-fecha" id="profileFecha"></div>
+        <div class="profile-fecha" id="cacheIndicator" style="opacity:.6; cursor:pointer;" onclick="analizar(true)"></div>
+      </div>
+      <div class="clima-pill" id="climaPill"></div>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-row-inner" id="kpiRow"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-area">
+    <nav class="tabs-nav">
+      <button class="tab-btn active" onclick="showTab('vision', this)">Visión General</button>
+      <button class="tab-btn" onclick="showTab('narrativas', this)">Narrativas</button>
+      <button class="tab-btn" onclick="showTab('cronologia', this)">Cronología</button>
+      <button class="tab-btn" onclick="showTab('riesgos', this)">Riesgos & Oportunidades</button>
+      <button class="tab-btn" onclick="showTab('recomendaciones', this)">Recomendaciones</button>
+      <button class="tab-btn" onclick="showTab('conclusion', this)">Conclusión</button>
+    </nav>
+
+    <!-- Visión General -->
+    <div class="tab-panel active" id="tab-vision">
+      <div class="sec-label">Análisis de Sentimiento & Temas</div>
+      <div class="two-col">
+        <div>
+          <div class="chart-label">Distribución de sentimiento</div>
+          <div id="chartSentimiento"></div>
+        </div>
+        <div>
+          <div class="chart-label">Temas principales</div>
+          <div id="chartTemas"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Narrativas -->
+    <div class="tab-panel" id="tab-narrativas">
+      <div class="sec-label">Mapa de Narrativas</div>
+      <div class="nar-grid">
+        <div>
+          <div class="nar-col-head fav">Narrativas Favorables</div>
+          <div id="narFav"></div>
+        </div>
+        <div>
+          <div class="nar-col-head cri">Narrativas Críticas</div>
+          <div id="narCri"></div>
+        </div>
+        <div>
+          <div class="nar-col-head neu">Narrativas en Disputa</div>
+          <div id="narNeu"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cronología -->
+    <div class="tab-panel" id="tab-cronologia">
+      <div class="sec-label">Cronología de Eventos</div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <!-- Riesgos -->
+    <div class="tab-panel" id="tab-riesgos">
+      <div class="sec-label">Matriz de Riesgos & Oportunidades</div>
+      <div class="two-col">
+        <div>
+          <div class="chart-label">Riesgos identificados</div>
+          <div id="riesgos"></div>
+        </div>
+        <div>
+          <div class="chart-label">Oportunidades estratégicas</div>
+          <div id="oportunidades"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="tab-panel" id="tab-recomendaciones">
+      <div class="sec-label">Plan de Acción Estratégico</div>
+      <div class="two-col">
+        <div>
+          <div class="chart-label">Corto plazo · 0–3 meses</div>
+          <div id="recsCorto"></div>
+        </div>
+        <div>
+          <div class="chart-label">Mediano plazo · 3–12 meses</div>
+          <div id="recsMediano"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conclusión -->
+    <div class="tab-panel" id="tab-conclusion">
+      <div class="sec-label">Dictamen Ejecutivo</div>
+      <div class="dictamen-block">
+        <div class="dictamen-eyebrow">Análisis Global</div>
+        <p class="dictamen-text" id="dictamenText"></p>
+      </div>
+      <div class="sec-label">Veredictos del Análisis</div>
+      <div class="veredictos-grid" id="veredictos"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-brand">Radar</div>
+  <div class="footer-meta">Inteligencia Político-Digital · México · 2026</div>
+</footer>
+
+<script>
+// Date
+const now = new Date();
+document.getElementById('headerDate').textContent =
+  now.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+
+// Tabs
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Chip
+function setChip(nombre) {
+  document.getElementById('nombreInput').value = nombre;
+  analizar();
+}
+
+// Reset
+function resetUI() {
+  document.getElementById('loadingWrap').classList.remove('show');
+  document.getElementById('errorWrap').classList.remove('show');
+  document.getElementById('dashboard').classList.remove('show');
+  document.getElementById('searchSection').style.display = '';
+  document.getElementById('btnAnalizar').disabled = false;
+}
+
+// Loading messages
+const msgs = [
+  ['Buscando en tiempo real', 'Consultando fuentes sobre el político...'],
+  ['Analizando narrativas', 'Procesando el ecosistema mediático...'],
+  ['Calculando sentimiento', 'Modelando la conversación digital...'],
+  ['Construyendo perfil RADAR', 'Generando análisis estratégico...'],
+];
+let loadInt;
+
+function startLoad() {
+  let i = 0;
+  const lbl = document.getElementById('loaderLabel');
+  const sub = document.getElementById('loaderSub');
+  lbl.textContent = msgs[0][0]; sub.textContent = msgs[0][1];
+  loadInt = setInterval(() => {
+    i = (i + 1) % msgs.length;
+    lbl.textContent = msgs[i][0];
+    sub.textContent = msgs[i][1];
+  }, 3500);
+}
+function stopLoad() { clearInterval(loadInt); }
+
+// Analyze
+async function analizar(forceRefresh = false) {
+  // CORRECCIÓN CLAVE: Emparejamos los IDs con los elementos reales creados arriba
+  const nombreInput = document.getElementById('nombreInput');
+  const mesSelect = document.getElementById('mesSelect');
+  const anioSelect = document.getElementById('anioSelect');
+
+  if (!nombreInput || !mesSelect || !anioSelect) {
+    console.error("Error: No se encontraron los inputs en el HTML.");
+    return;
+  }
+
+  const nombre = nombreInput.value.trim();
+  // Concatenamos el mes y año seleccionado para estructurar el valor de búsqueda
+  const fecha  = `${mesSelect.value} ${anioSelect.value}`;
+  
+  if (!nombre) { nombreInput.focus(); return; }
+
+  // Control de la interfaz de carga
+  document.getElementById('searchSection').style.display = 'none';
+  document.getElementById('dashboard').classList.remove('show');
+  document.getElementById('errorWrap').classList.remove('show');
+  document.getElementById('loadingWrap').classList.add('show');
+  document.getElementById('btnAnalizar').disabled = true;
+  startLoad();
+
+  try {
+    // Usamos ruta relativa estándar para el servidor dev o producción
+    const res  = await fetch('/api/analizar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, fecha, forceRefresh })
+    });
+    
+    const data = await res.json();
+    stopLoad();
+
+    if (!res.ok || data.error) {
+      document.getElementById('loadingWrap').classList.remove('show');
+      document.getElementById('errorWrap').classList.add('show');
+      document.getElementById('errorText').textContent = data.error || 'Error desconocido';
+      document.getElementById('btnAnalizar').disabled = false;
+      return;
+    }
+
+    renderDashboard(data);
+  } catch (err) {
+    stopLoad();
+    document.getElementById('loadingWrap').classList.remove('show');
+    document.getElementById('errorWrap').classList.add('show');
+    document.getElementById('errorText').textContent = err.message;
+    document.getElementById('btnAnalizar').disabled = false;
+  }
+}
+
+// Render
+function renderDashboard(d) {
+  document.getElementById('profileName').textContent  = d.nombre  || '';
+  document.getElementById('profileCargo').textContent = d.cargo   || '';
+  document.getElementById('profileFecha').textContent = 'Análisis correspondiente a: ' + (d.fecha_analisis || '').toUpperCase();
+
+  const cacheEl = document.getElementById('cacheIndicator');
+  if (cacheEl) {
+    cacheEl.textContent = d._cache === 'HIT'
+      ? '⟳ Datos en caché — click para forzar actualización'
+      : '✓ Datos recién obtenidos — click para forzar actualización';
+  }
+
+  document.getElementById('profileTags').innerHTML = (d.tags || [])
+    .map(t => `<span class="ptag">${t}</span>`).join('');
+
+  const clima = (d.clima || 'NEUTRO').trim().replace(/\s+/g,'-').toUpperCase();
+  const cp = document.getElementById('climaPill');
+  cp.className = 'clima-pill clima-' + clima;
+  cp.textContent = d.clima || '';
+
+  document.getElementById('kpiRow').innerHTML = (d.kpis || []).map(k => `
+    <div class="kpi-cell ${k.tipo || 'acc'}">
+      <div class="kpi-lbl">${k.label}</div>
+      <div class="kpi-val">${k.valor}</div>
+      <div class="kpi-nota">${k.nota}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('chartSentimiento').innerHTML = (d.sentimiento || []).map(s => {
+    const cls = s.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split('/')[0].trim();
+    return `<div class="bar-row">
+      <div class="bar-name">${s.label}</div>
+      <div class="bar-track"><div class="bar-fill ${cls}" data-pct="${s.pct}"></div></div>
+      <div class="bar-pct">${s.pct}%</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('chartTemas').innerHTML = (d.temas || []).map(t => `
+    <div class="bar-row">
+      <div class="bar-name">${t.tema}</div>
+      <div class="bar-track"><div class="bar-fill ${t.color}" data-pct="${t.pct}"></div></div>
+      <div class="bar-pct">${t.pct}%</div>
+    </div>
+  `).join('');
+
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill').forEach(b => {
+      b.style.width = b.dataset.pct + '%';
+    });
+  }, 80);
+
+  const renderNar = (items, id) => {
+    document.getElementById(id).innerHTML = (items || []).map(n => `
+      <div class="nar-card" onclick="this.classList.toggle('open')">
+        <div class="nar-title">
+          <span class="nar-title-arrow">▶</span>
+          <span>${n.titulo}</span>
+        </div>
+        <div class="nar-desc">${n.descripcion}</div>
+      </div>
+    `).join('');
+  };
+  renderNar(d.narrativas_favorables, 'narFav');
+  renderNar(d.narrativas_criticas,   'narCri');
+  renderNar(d.narrativas_neutras,    'narNeu');
+
+  document.getElementById('timeline').innerHTML = (d.cronologia || []).map(e => `
+    <div class="tl-item ${e.tipo}">
+      <div class="tl-dot"></div>
+      <div class="tl-fecha">${e.fecha}</div>
+      <div class="tl-badge">${e.badge}</div>
+      <div class="tl-evento">${e.evento}</div>
+      <div class="tl-lectura">${e.lectura}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('riesgos').innerHTML = (d.riesgos || []).map(r => `
+    <div class="ro-item ${r.nivel}">
+      <div class="ro-nivel">${r.nivel}</div>
+      <div class="ro-titulo">${r.titulo}</div>
+      <div class="ro-desc">${r.descripcion}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('oportunidades').innerHTML = (d.oportunidades || []).map(o => `
+    <div class="ro-item ${o.nivel}">
+      <div class="ro-nivel">${o.nivel}</div>
+      <div class="ro-titulo">${o.titulo}</div>
+      <div class="ro-desc">${o.descripcion}</div>
+    </div>
+  `).join('');
+
+  const renderRec = (items, id) => {
+    document.getElementById(id).innerHTML = (items || []).map(r => `
+      <div class="rec-item ${r.tipo}">
+        <div class="rec-badge">${r.badge}</div>
+        <div class="rec-titulo">${r.titulo}</div>
+        <div class="rec-desc">${r.descripcion}</div>
+      </div>
+    `).join('');
+  };
+  renderRec(d.recomendaciones_corto,   'recsCorto');
+  renderRec(d.recomendaciones_mediano, 'recsMediano');
+
+  document.getElementById('dictamenText').textContent = d.dictamen || '';
+  document.getElementById('veredictos').innerHTML = (d.veredictos || []).map(v => `
+    <div class="verd-card ${v.tipo}">
+      <div class="verd-tipo">${v.tipo}</div>
+      <div class="verd-titulo">${v.titulo}</div>
+      <div class="verd-cuerpo">${v.cuerpo}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('loadingWrap').classList.remove('show');
+  document.getElementById('dashboard').classList.add('show');
+
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-vision').classList.add('active');
+  document.querySelectorAll('.tab-btn')[0].classList.add('active');
+
+  document.getElementById('btnAnalizar').disabled = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('nombreInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analizar();
+});
+</script>
+</body>
+</html>
