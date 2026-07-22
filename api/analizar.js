@@ -60,30 +60,30 @@ export default async function handler(req, res) {
   try {
     const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
-    // 1. Twitter / X Scraper
+    // 1. Twitter / X Scraper (Búsqueda compuesta)
     const tweetsPromise = fetch(
       `https://api.apify.com/v2/acts/apidojo~twitter-scraper-lite/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          searchTerms: [`${nombre}`],
+          searchTerms: [`${nombre}`, `${nombre} oposicion`, `${nombre} gobierno`],
           sort: 'Latest',
-          maxItems: 15,
+          maxItems: 25,
           tweetLanguage: 'es'
         })
       }
     ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    // 2. Google Search & Prensa Scraper
+    // 2. Google Search & Prensa Scraper (Noticias nacionales y locales)
     const noticiasPromise = fetch(
       `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          queries: `${nombre} político México noticias ${fechaCtx}`,
-          resultsPerPage: 10,
+          queries: `${nombre} columna opinion NOTICIAS ${fechaCtx}\n${nombre} oposicion denuncias edomex mexico`,
+          resultsPerPage: 15,
           maxPagesPerQuery: 1,
           languageCode: 'es',
           countryCode: 'mx'
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           searchTerm: nombre,
-          maxPosts: 10
+          maxPosts: 15
         })
       }
     ).then(r => r.ok ? r.json() : []).catch(() => []);
@@ -110,17 +110,17 @@ export default async function handler(req, res) {
       facebookPromise
     ]);
 
-    // Procesamiento de datos recibidos
-    const tweetsTexto = (tweetsData || []).slice(0, 15).map(t =>
+    // Procesamiento profundo de datos recibidos
+    const tweetsTexto = (tweetsData || []).slice(0, 20).map(t =>
       `TWEET de @${t.author?.userName || 'usuario'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
     ).join('\n\n');
 
     const organicResults = (noticiasData || []).flatMap(item => item.organicResults || []);
-    const noticiasTexto = organicResults.slice(0, 10).map(r =>
+    const noticiasTexto = organicResults.slice(0, 15).map(r =>
       `TITULAR: ${r.title}\nURL: ${r.url}\nRESUMEN: ${r.description || ''}`
     ).join('\n\n---\n\n');
 
-    const fbTexto = (facebookData || []).slice(0, 10).map(f =>
+    const fbTexto = (facebookData || []).slice(0, 15).map(f =>
       `POST FB (${f.user?.name || 'Página/Usuario'}): ${f.text || f.caption || ''}\nReacciones: ${f.likes || 0} | Compartidos: ${f.shares || 0}`
     ).join('\n\n');
 
@@ -134,23 +134,24 @@ export default async function handler(req, res) {
     contextoReal = 'No se pudo conectar a Apify. Genera análisis contextual basado en conocimiento público.';
   }
 
-  const prompt = `Eres un analista político-digital experto en México. La fecha de consulta es: ${fechaCtx}.
+  const prompt = `Eres un analista político-digital experto en inteligencia estratégica en México. La fecha de consulta es: ${fechaCtx}.
 
 INFORMACION REAL EXTRAIDA DE FUENTES PARA "${nombre}":
 ${contextoReal}
 
-Genera un perfil RADAR explícito, exhaustivo y estructurado para el actor político: "${nombre}".
-Debes evaluar e incluir la presencia y distribución en las siguientes plataformas principales:
-1. Facebook
-2. X/Twitter
-3. Noticias/Medios Digitales
-4. Google Search (Intención de Búsqueda)
-5. Instagram / TikTok (Estimación basada en ecosistema visual)
+Genera un perfil RADAR explícito, profundo, analítico y exhaustivo para el actor político: "${nombre}".
+Evalúa e incluye la presencia en: Facebook, X/Twitter, Prensa Digital, Google Search, e Instagram/TikTok.
 
 REGLAS DE GENERACION:
-1. Extrae y categoriza datos reales extraídos.
-2. Presenta la información sin disclaimers de IA ni advertencias.
-3. NO incluyas recomendaciones ni conclusiones/dictámenes.
+1. Extrae y categoriza exhaustivamente los datos reales recibidos.
+2. Muestra análisis bivariados reales (cruzando Plataforma x Actor, Tono x Temática).
+3. Clasifica la actuación de los siguientes Actores Políticos y Mediáticos:
+   - Prensa Nacional y Columnistas.
+   - Prensa Local / Portales Regionales.
+   - Oposición Organizada y Voceros.
+   - Ecosistema Ciudadano / Algorítmico.
+4. Presenta la información sin disclaimers de IA ni advertencias.
+5. NO incluyas recomendaciones ni conclusiones/dictámenes.
 
 Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
 
@@ -188,6 +189,44 @@ Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
     {"nombre": "Google Search", "pct": 10, "tono_positivo": 40, "tono_negativo": 35},
     {"nombre": "Instagram", "pct": 6, "tono_positivo": 50, "tono_negativo": 20}
   ],
+  "analisis_actores": [
+    {
+      "categoria": "Prensa Nacional & Columnistas",
+      "impacto": "Alto",
+      "narrativa_dominante": "Análisis explícito de posturas de columnistas e impacto nacional.",
+      "tendencia_actitud": "Desfavorable (60%) / Neutro (40%)"
+    },
+    {
+      "categoria": "Prensa Local & Portales Regionales",
+      "impacto": "Medio",
+      "narrativa_dominante": "Cobertura de agenda institucional y boletines territoriales.",
+      "tendencia_actitud": "Favorable (70%)"
+    },
+    {
+      "categoria": "Oposición & Voceros Críticos",
+      "impacto": "Crítico",
+      "narrativa_dominante": "Impulso de tendencias adversas y denuncias en plataformas digitales.",
+      "tendencia_actitud": "Adverso (90%)"
+    },
+    {
+      "categoria": "Ecosistema Ciudadano & Digital",
+      "impacto": "Alto",
+      "narrativa_dominante": "Comentarios en reels/posts de Facebook y TikTok sin encuadre oficial.",
+      "tendencia_actitud": "Dividido / Polarizado"
+    }
+  ],
+  "cruces_bivariados": [
+    {
+      "eje_x": "Plataforma (X vs Facebook)",
+      "eje_y": "Tono de Conversación",
+      "hallazgo": "Explicación bivariada detallada sobre la divergencia del tono entre redes sociales y buscadores."
+    },
+    {
+      "eje_x": "Sentimiento",
+      "eje_y": "Ejes Temáticos Clave",
+      "hallazgo": "Explicación bivariada detallada sobre cómo el sentimiento varía drásticamente según el tema tratado."
+    }
+  ],
   "segmentacion": {
     "por_genero": [
       {"segmento": "Hombres", "positivo": 35, "neutro": 30, "negativo": 35},
@@ -201,18 +240,18 @@ Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
     ]
   },
   "narrativas_favorables": [
-    {"titulo": "Narrativa positiva 1", "descripcion": "Detalle explícito."},
-    {"titulo": "Narrativa positiva 2", "descripcion": "Detalle explícito."},
-    {"titulo": "Narrativa positiva 3", "descripcion": "Detalle explícito."}
+    {"titulo": "Narrativa positiva 1", "descripcion": "Detalle explícito extenso."},
+    {"titulo": "Narrativa positiva 2", "descripcion": "Detalle explícito extenso."},
+    {"titulo": "Narrativa positiva 3", "descripcion": "Detalle explícito extenso."}
   ],
   "narrativas_criticas": [
-    {"titulo": "Narrativa crítica 1", "descripcion": "Detalle explícito."},
-    {"titulo": "Narrativa crítica 2", "descripcion": "Detalle explícito."},
-    {"titulo": "Narrativa crítica 3", "descripcion": "Detalle explícito."}
+    {"titulo": "Narrativa crítica 1", "descripcion": "Detalle explícito extenso."},
+    {"titulo": "Narrativa crítica 2", "descripcion": "Detalle explícito extenso."},
+    {"titulo": "Narrativa crítica 3", "descripcion": "Detalle explícito extenso."}
   ],
   "narrativas_neutras": [
-    {"titulo": "Narrativa neutral 1", "descripcion": "Detalle explícito."},
-    {"titulo": "Narrativa neutral 2", "descripcion": "Detalle explícito."}
+    {"titulo": "Narrativa neutral 1", "descripcion": "Detalle explícito extenso."},
+    {"titulo": "Narrativa neutral 2", "descripcion": "Detalle explícito extenso."}
   ],
   "cronologia": [
     {"fecha": "Mes/Año", "badge": "EVENTO DESTACADO", "evento": "Título del hecho", "lectura": "Detalle del evento."},
@@ -221,9 +260,9 @@ Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
     {"fecha": "Mes/Año", "badge": "EVENTO CRITICO", "evento": "Título", "lectura": "Detalle."}
   ],
   "riesgos": [
-    {"nivel": "CRÍTICO", "titulo": "Factor de riesgo 1", "descripcion": "Exposición del caso."},
-    {"nivel": "ALTO", "titulo": "Factor de riesgo 2", "descripcion": "Exposición del caso."},
-    {"nivel": "MEDIO", "titulo": "Factor de riesgo 3", "descripcion": "Exposición del caso."}
+    {"nivel": "CRÍTICO", "titulo": "Factor de riesgo 1", "descripcion": "Exposición amplia."},
+    {"nivel": "ALTO", "titulo": "Factor de riesgo 2", "descripcion": "Exposición amplia."},
+    {"nivel": "MEDIO", "titulo": "Factor de riesgo 3", "descripcion": "Exposición amplia."}
   ],
   "oportunidades": [
     {"nivel": "ALTO", "titulo": "Oportunidad 1", "descripcion": "Elemento favorable."},
@@ -241,7 +280,7 @@ Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
         'X-Title': 'RADAR Politico'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'openai/gpt-4o',
         max_tokens: 7000,
         messages: [{ role: 'user', content: prompt }]
       })
