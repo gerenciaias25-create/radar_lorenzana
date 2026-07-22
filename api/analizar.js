@@ -60,7 +60,7 @@ export default async function handler(req, res) {
   try {
     const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
-    // Extracción enriquecida: Twitter Lite + Google Search + Google News
+    // 1. Twitter / X Scraper
     const tweetsPromise = fetch(
       `https://api.apify.com/v2/acts/apidojo~twitter-scraper-lite/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
@@ -69,12 +69,13 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           searchTerms: [`${nombre}`],
           sort: 'Latest',
-          maxItems: 20,
+          maxItems: 15,
           tweetLanguage: 'es'
         })
       }
     ).then(r => r.ok ? r.json() : []).catch(() => []);
 
+    // 2. Google Search & Prensa Scraper
     const noticiasPromise = fetch(
       `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
@@ -90,9 +91,27 @@ export default async function handler(req, res) {
       }
     ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    const [tweetsData, noticiasData] = await Promise.all([tweetsPromise, noticiasPromise]);
+    // 3. Facebook Posts Scraper (Público)
+    const facebookPromise = fetch(
+      `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          searchTerm: nombre,
+          maxPosts: 10
+        })
+      }
+    ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    const tweetsTexto = (tweetsData || []).slice(0, 20).map(t =>
+    const [tweetsData, noticiasData, facebookData] = await Promise.all([
+      tweetsPromise, 
+      noticiasPromise, 
+      facebookPromise
+    ]);
+
+    // Procesamiento de datos recibidos
+    const tweetsTexto = (tweetsData || []).slice(0, 15).map(t =>
       `TWEET de @${t.author?.userName || 'usuario'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
     ).join('\n\n');
 
@@ -101,9 +120,14 @@ export default async function handler(req, res) {
       `TITULAR: ${r.title}\nURL: ${r.url}\nRESUMEN: ${r.description || ''}`
     ).join('\n\n---\n\n');
 
-    contextoReal = `DATOS EXTRAIDOS EN TIEMPO REAL:\n\n` +
-      `=== MENCIONES EN X/TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos de menciones.'}\n\n` +
-      `=== NOTICIAS Y PRENSA EN LINEA (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin resultados de noticias.'}`;
+    const fbTexto = (facebookData || []).slice(0, 10).map(f =>
+      `POST FB (${f.user?.name || 'Página/Usuario'}): ${f.text || f.caption || ''}\nReacciones: ${f.likes || 0} | Compartidos: ${f.shares || 0}`
+    ).join('\n\n');
+
+    contextoReal = `DATOS EXTRAIDOS EN TIEMPO REAL MULTI-PLATAFORMA:\n\n` +
+      `=== MENCIONES EN X/TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos directos de Twitter.'}\n\n` +
+      `=== GOOGLE SEARCH Y NOTICIAS DIGITALES (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin resultados de prensa.'}\n\n` +
+      `=== PUBLICACIONES Y CONVERSACIÓN EN FACEBOOK (${facebookData?.length || 0} publicaciones) ===\n${fbTexto || 'Sin datos directos de Facebook.'}`;
 
   } catch (e) {
     console.error('Apify exception:', e.message);
@@ -116,6 +140,12 @@ INFORMACION REAL EXTRAIDA DE FUENTES PARA "${nombre}":
 ${contextoReal}
 
 Genera un perfil RADAR explícito, exhaustivo y estructurado para el actor político: "${nombre}".
+Debes evaluar e incluir la presencia y distribución en las siguientes plataformas principales:
+1. Facebook
+2. X/Twitter
+3. Noticias/Medios Digitales
+4. Google Search (Intención de Búsqueda)
+5. Instagram / TikTok (Estimación basada en ecosistema visual)
 
 REGLAS DE GENERACION:
 1. Extrae y categoriza datos reales extraídos.
@@ -138,24 +168,25 @@ Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
     {"label": "TENDENCIA", "valor": "Estable", "nota": "Evolución de conversación", "tipo": "acc"}
   ],
   "sentimiento": [
-    {"label": "Positivo", "pct": 40},
-    {"label": "Neutro/Informativo", "pct": 28},
+    {"label": "Positivo", "pct": 38},
+    {"label": "Neutro/Informativo", "pct": 30},
     {"label": "Negativo", "pct": 22},
     {"label": "Polarizado", "pct": 10}
   ],
   "temas": [
-    {"tema": "Tema principal", "pct": 38},
-    {"tema": "Tema 2", "pct": 20},
-    {"tema": "Tema 3", "pct": 14},
+    {"tema": "Tema principal", "pct": 35},
+    {"tema": "Tema 2", "pct": 22},
+    {"tema": "Tema 3", "pct": 15},
     {"tema": "Tema 4", "pct": 12},
     {"tema": "Tema 5", "pct": 9},
     {"tema": "Tema 6", "pct": 7}
   ],
   "plataformas": [
-    {"nombre": "X/Twitter", "pct": 45, "tono_positivo": 30, "tono_negativo": 55},
-    {"nombre": "Noticias/Medios", "pct": 35, "tono_positivo": 25, "tono_negativo": 50},
-    {"nombre": "Facebook", "pct": 12, "tono_positivo": 40, "tono_negativo": 35},
-    {"nombre": "Otros", "pct": 8, "tono_positivo": 35, "tono_negativo": 40}
+    {"nombre": "Facebook", "pct": 38, "tono_positivo": 45, "tono_negativo": 30},
+    {"nombre": "X/Twitter", "pct": 28, "tono_positivo": 25, "tono_negativo": 60},
+    {"nombre": "Noticias/Medios", "pct": 18, "tono_positivo": 30, "tono_negativo": 45},
+    {"nombre": "Google Search", "pct": 10, "tono_positivo": 40, "tono_negativo": 35},
+    {"nombre": "Instagram", "pct": 6, "tono_positivo": 50, "tono_negativo": 20}
   ],
   "segmentacion": {
     "por_genero": [
