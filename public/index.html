@@ -9,6 +9,7 @@
   
   <!-- Estilos enlazados de forma externa -->
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -103,6 +104,7 @@
         <div class="profile-fecha" id="cacheIndicator" style="opacity:.6; cursor:pointer;" onclick="analizar(true)"></div>
       </div>
       <div class="clima-pill" id="climaPill"></div>
+      <button id="btnDescargar" onclick="descargarDashboard()" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;padding:8px 16px;border:1px solid var(--border,#333);background:transparent;color:inherit;cursor:pointer;border-radius:3px;">⬇ Descargar Dashboard</button>
     </div>
   </div>
 
@@ -115,6 +117,7 @@
   <div class="tabs-area">
     <nav class="tabs-nav">
       <button class="tab-btn active" onclick="showTab('vision', this)">Visión General</button>
+      <button class="tab-btn" onclick="showTab('segmentacion', this)">Segmentación (Est.)</button>
       <button class="tab-btn" onclick="showTab('narrativas', this)">Narrativas</button>
       <button class="tab-btn" onclick="showTab('cronologia', this)">Cronología</button>
       <button class="tab-btn" onclick="showTab('riesgos', this)">Riesgos & Oportunidades</button>
@@ -128,11 +131,39 @@
       <div class="two-col">
         <div>
           <div class="chart-label">Distribución de sentimiento</div>
-          <div id="chartSentimiento"></div>
+          <canvas id="chartSentimiento" height="220"></canvas>
         </div>
         <div>
           <div class="chart-label">Temas principales</div>
-          <div id="chartTemas"></div>
+          <canvas id="chartTemas" height="220"></canvas>
+        </div>
+      </div>
+      <div class="sec-label" style="margin-top:24px;">Presencia por Plataforma</div>
+      <div class="two-col">
+        <div>
+          <div class="chart-label">Distribución de menciones</div>
+          <canvas id="chartPlataformas" height="220"></canvas>
+        </div>
+        <div>
+          <div class="chart-label">Tono por plataforma</div>
+          <canvas id="chartTonoPlataforma" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Segmentación estimada -->
+    <div class="tab-panel" id="tab-segmentacion">
+      <div class="sec-label">Segmentación Estimada</div>
+      <div style="background:rgba(230,57,70,.08); border:1px solid rgba(230,57,70,.3); border-radius:4px; padding:12px 16px; margin-bottom:20px; font-size:12px; line-height:1.5;" id="segAdvertencia">
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="chart-label">Sentimiento por género (estimado)</div>
+          <canvas id="chartSegGenero" height="220"></canvas>
+        </div>
+        <div>
+          <div class="chart-label">Sentimiento por edad (estimado)</div>
+          <canvas id="chartSegEdad" height="220"></canvas>
         </div>
       </div>
     </div>
@@ -345,28 +376,7 @@ function renderDashboard(d) {
     </div>
   `).join('');
 
-  document.getElementById('chartSentimiento').innerHTML = (d.sentimiento || []).map(s => {
-    const cls = s.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split('/')[0].trim();
-    return `<div class="bar-row">
-      <div class="bar-name">${s.label}</div>
-      <div class="bar-track"><div class="bar-fill ${cls}" data-pct="${s.pct}"></div></div>
-      <div class="bar-pct">${s.pct}%</div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('chartTemas').innerHTML = (d.temas || []).map(t => `
-    <div class="bar-row">
-      <div class="bar-name">${t.tema}</div>
-      <div class="bar-track"><div class="bar-fill ${t.color}" data-pct="${t.pct}"></div></div>
-      <div class="bar-pct">${t.pct}%</div>
-    </div>
-  `).join('');
-
-  setTimeout(() => {
-    document.querySelectorAll('.bar-fill').forEach(b => {
-      b.style.width = b.dataset.pct + '%';
-    });
-  }, 80);
+  renderCharts(d);
 
   const renderNar = (items, id) => {
     document.getElementById(id).innerHTML = (items || []).map(n => `
@@ -445,6 +455,141 @@ function renderDashboard(d) {
 document.getElementById('nombreInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') analizar();
 });
+
+// ---- Charts (Chart.js) ----
+const PALETTE = { success:'#2EC4B6', danger:'#E63946', accent:'#00C2D4', gold:'#F4C430', neutral:'#8FA3B1' };
+const CH = {};
+function mkChart(id, cfg) {
+  if (CH[id]) CH[id].destroy();
+  const c = document.getElementById(id);
+  if (!c) return;
+  CH[id] = new Chart(c, cfg);
+}
+
+let ultimoData = null; // guarda el último JSON renderizado para poder descargarlo
+
+function renderCharts(d) {
+  ultimoData = d;
+
+  // Sentimiento (dona)
+  const sent = d.sentimiento || [];
+  mkChart('chartSentimiento', {
+    type: 'doughnut',
+    data: {
+      labels: sent.map(s => s.label),
+      datasets: [{
+        data: sent.map(s => s.pct),
+        backgroundColor: sent.map((s,i) => [PALETTE.success, PALETTE.neutral, PALETTE.danger, PALETTE.gold][i % 4]),
+        borderWidth: 0
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, cutout: '55%' }
+  });
+
+  // Temas (barras horizontales)
+  const temas = d.temas || [];
+  mkChart('chartTemas', {
+    type: 'bar',
+    data: {
+      labels: temas.map(t => t.tema),
+      datasets: [{ data: temas.map(t => t.pct), backgroundColor: temas.map(t => PALETTE[t.color] || PALETTE.accent), borderRadius: 3 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { callback: v => v + '%' } } }
+    }
+  });
+
+  // Plataformas (dona)
+  const plats = d.plataformas || [];
+  mkChart('chartPlataformas', {
+    type: 'doughnut',
+    data: {
+      labels: plats.map(p => p.nombre),
+      datasets: [{ data: plats.map(p => p.pct), backgroundColor: [PALETTE.accent, PALETTE.neutral, PALETTE.gold, PALETTE.success], borderWidth: 0 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, cutout: '55%' }
+  });
+
+  // Tono por plataforma (barras agrupadas)
+  mkChart('chartTonoPlataforma', {
+    type: 'bar',
+    data: {
+      labels: plats.map(p => p.nombre),
+      datasets: [
+        { label: '% Positivo', data: plats.map(p => p.tono_positivo), backgroundColor: PALETTE.success, borderRadius: 3 },
+        { label: '% Negativo', data: plats.map(p => p.tono_negativo), backgroundColor: PALETTE.danger, borderRadius: 3 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+  });
+
+  // Segmentación estimada
+  const seg = d.segmentacion_estimada || {};
+  const advEl = document.getElementById('segAdvertencia');
+  if (advEl) advEl.textContent = '⚠ ' + (seg._advertencia || 'Estos datos son una estimación generada por IA, no una encuesta real. Deben validarse con información de campo.');
+
+  const genero = seg.por_genero || [];
+  mkChart('chartSegGenero', {
+    type: 'bar',
+    data: {
+      labels: genero.map(g => g.segmento),
+      datasets: [
+        { label: 'Positivo', data: genero.map(g => g.positivo), backgroundColor: PALETTE.success, borderRadius: 3 },
+        { label: 'Neutro', data: genero.map(g => g.neutro), backgroundColor: PALETTE.neutral, borderRadius: 3 },
+        { label: 'Negativo', data: genero.map(g => g.negativo), backgroundColor: PALETTE.danger, borderRadius: 3 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+  });
+
+  const edad = seg.por_edad || [];
+  mkChart('chartSegEdad', {
+    type: 'bar',
+    data: {
+      labels: edad.map(e => e.segmento),
+      datasets: [
+        { label: 'Positivo', data: edad.map(e => e.positivo), backgroundColor: PALETTE.success, borderRadius: 3 },
+        { label: 'Neutro', data: edad.map(e => e.neutro), backgroundColor: PALETTE.neutral, borderRadius: 3 },
+        { label: 'Negativo', data: edad.map(e => e.negativo), backgroundColor: PALETTE.danger, borderRadius: 3 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+  });
+}
+
+// ---- Descarga del dashboard como HTML autocontenido ----
+function descargarDashboard() {
+  if (!ultimoData) { alert('Primero genera un análisis.'); return; }
+
+  // Clona el documento actual completo (con el dashboard ya renderizado)
+  const clone = document.documentElement.cloneNode(true);
+
+  // Oculta la sección de búsqueda y el botón de descarga en la copia exportada
+  const searchEl = clone.querySelector('#searchSection');
+  if (searchEl) searchEl.style.display = 'none';
+  const btnDesc = clone.querySelector('#btnDescargar');
+  if (btnDesc) btnDesc.remove();
+
+  // Inyecta los datos ya generados como variable global, para que los charts
+  // se puedan re-renderizar al abrir el archivo (sin depender de la API)
+  const dataScript = clone.ownerDocument.createElement('script');
+  dataScript.textContent = `window.__RADAR_DATA__ = ${JSON.stringify(ultimoData)};
+window.addEventListener('load', () => { if (window.renderCharts) renderCharts(window.__RADAR_DATA__); });`;
+  clone.querySelector('body').appendChild(dataScript);
+
+  const htmlFinal = '<!DOCTYPE html>\n' + clone.outerHTML;
+  const blob = new Blob([htmlFinal], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const nombreArchivo = (ultimoData.nombre || 'radar').trim().toLowerCase().replace(/\s+/g, '_');
+  a.href = url;
+  a.download = `RADAR_${nombreArchivo}_${Date.now()}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
