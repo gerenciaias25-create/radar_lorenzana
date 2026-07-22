@@ -143,6 +143,7 @@ IMPORTANTE:
 - El cargo debe ser el correcto a ${fechaCtx} segun las fuentes
 - Los eventos de la cronologia deben ser reales segun las fuentes
 - Se especifico con datos verificables
+- El campo "segmentacion_estimada" es una ESTIMACION basada en patrones del lenguaje de las fuentes (quien tiende a hablar mas positivo/negativo segun el tono general), NO es un dato demografico verificado. Genera valores razonables y consistentes con el sentimiento general, pero no los presentes como encuesta real.
 
 Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin texto adicional). Todos los valores numericos en "pct" deben ser numeros enteros sin signo + ni -:
 
@@ -174,6 +175,25 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
     {"tema": "Tema 5", "pct": 9, "color": "gold"},
     {"tema": "Tema 6", "pct": 7, "color": "accent"}
   ],
+  "plataformas": [
+    {"nombre": "X/Twitter", "pct": 45, "tono_positivo": 30, "tono_negativo": 55},
+    {"nombre": "Noticias/Medios", "pct": 35, "tono_positivo": 25, "tono_negativo": 50},
+    {"nombre": "Facebook", "pct": 12, "tono_positivo": 40, "tono_negativo": 35},
+    {"nombre": "Otros", "pct": 8, "tono_positivo": 35, "tono_negativo": 40}
+  ],
+  "segmentacion_estimada": {
+    "_advertencia": "ESTOS DATOS SON UNA ESTIMACION GENERADA POR IA A PARTIR DE PATRONES DEL LENGUAJE, NO DE UNA ENCUESTA REAL NI DE PADRON ELECTORAL. Deben ser validados o reemplazados por el equipo de investigacion con datos de campo antes de usarse en decisiones estrategicas.",
+    "por_genero": [
+      {"segmento": "Hombres", "positivo": 35, "neutro": 30, "negativo": 35},
+      {"segmento": "Mujeres", "positivo": 30, "neutro": 28, "negativo": 42}
+    ],
+    "por_edad": [
+      {"segmento": "18-29", "positivo": 25, "neutro": 25, "negativo": 50},
+      {"segmento": "30-44", "positivo": 35, "neutro": 30, "negativo": 35},
+      {"segmento": "45-59", "positivo": 45, "neutro": 30, "negativo": 25},
+      {"segmento": "60+", "positivo": 50, "neutro": 28, "negativo": 22}
+    ]
+  },
   "narrativas_favorables": [
     {"titulo": "Narrativa positiva 1", "descripcion": "Descripcion detallada basada en fuentes reales."},
     {"titulo": "Narrativa positiva 2", "descripcion": "Descripcion detallada."},
@@ -241,7 +261,7 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
       },
       body: JSON.stringify({
         model: 'openai/gpt-4o-mini',
-        max_tokens: 8000,
+        max_tokens: 7000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
