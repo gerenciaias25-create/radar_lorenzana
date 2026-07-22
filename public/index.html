@@ -4,10 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RADAR · Inteligencia Político-Digital</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
-  <!-- Estilos enlazados de forma externa -->
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -15,53 +11,45 @@
 
 <header>
   <div class="logo">
-    <div class="logo-wordmark">Radar</div>
+    <div class="logo-wordmark">RADAR <span>POLÍTICO</span></div>
     <div class="logo-sep"></div>
     <div class="logo-sub">Inteligencia<br>Político·Digital</div>
   </div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div>Sistema Activo</div>
     <div class="header-date" id="headerDate"></div>
+    <button class="btn-descargar-top" id="btnDescargar" onclick="descargarDashboard()">⬇ Descargar Dashboard</button>
   </div>
 </header>
 
 <!-- SEARCH -->
 <section class="search-hero" id="searchSection">
-  <div class="search-eyebrow">Análisis Ejecutivo</div>
-  <h1 class="search-heading">Perfil Político<br><em>en tiempo real</em></h1>
-  <p class="search-desc">Ingresa el nombre de cualquier político para generar su perfil RADAR completo con datos actuales, análisis de narrativas y recomendaciones estratégicas.</p>
+  <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
+  <h1 class="search-heading">Perfil Político <span>en Tiempo Real</span></h1>
+  <p class="search-desc">Ingresa el nombre del actor político para consultar la extracción explícita de datos, mapa de sentimiento y narrativas.</p>
 
-  <div class="search-form" style="grid-template-columns: 1fr 140px 100px 140px;">
+  <div class="search-form">
     <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
-    
-    <!-- Selector Manual de Meses -->
     <select id="mesSelect">
       <option value="enero">Enero</option>
       <option value="febrero">Febrero</option>
       <option value="marzo">Marzo</option>
       <option value="abril">Abril</option>
       <option value="mayo">Mayo</option>
-      <option value="junio" selected>Junio</option>
-      <option value="julio">Julio</option>
+      <option value="junio">Junio</option>
+      <option value="julio" selected>Julio</option>
       <option value="agosto">Agosto</option>
       <option value="septiembre">Septiembre</option>
       <option value="octubre">Octubre</option>
       <option value="noviembre">Noviembre</option>
       <option value="diciembre">Diciembre</option>
     </select>
-
-    <!-- Selector Manual de Años -->
-    <select id="anioSelect" style="border-left: 1px solid var(--border);">
+    <select id="anioSelect">
       <option value="2026" selected>2026</option>
       <option value="2025">2025</option>
       <option value="2024">2024</option>
-      <option value="2023">2023</option>
-      <option value="2022">2022</option>
-      <option value="2021">2021</option>
-      <option value="2020">2020</option>
     </select>
-
-    <button class="btn-search" id="btnAnalizar" onclick="analizar()">Análisis</button>
+    <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
   </div>
 
   <div class="suggestion-row">
@@ -69,185 +57,148 @@
     <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
     <button class="chip" onclick="setChip('AMLO')">AMLO</button>
     <button class="chip" onclick="setChip('Xóchitl Gálvez')">Xóchitl Gálvez</button>
-    <button class="chip" onclick="setChip('Ricardo Monreal')">Ricardo Monreal</button>
-    <button class="chip" onclick="setChip('Mario Delgado')">Mario Delgado</button>
-    <button class="chip" onclick="setChip('Delfina Gómez')">Delfina Gómez</button>
+    <button class="chip" onclick="setChip('Daniel Serrano')">Daniel Serrano</button>
+    <button class="chip" onclick="setChip('Clara Brugada')">Clara Brugada</button>
   </div>
 </section>
 
 <!-- LOADING -->
 <div class="loading-wrap" id="loadingWrap">
   <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
-  <div class="loader-label" id="loaderLabel">Procesando análisis</div>
+  <div class="loader-label" id="loaderLabel">Procesando Análisis</div>
   <div class="loader-sub" id="loaderSub">Consultando fuentes en tiempo real...</div>
 </div>
 
 <!-- ERROR -->
 <div class="error-wrap" id="errorWrap">
   <div class="error-card">
-    <div class="error-label">Error en el análisis</div>
-    <div class="error-text" id="errorText">Ocurrió un error inesperado.</div>
+    <div class="error-label">Error en la Consulta</div>
+    <div class="error-text" id="errorText">Ocurrió un problema consultando las fuentes.</div>
     <button class="btn-retry" onclick="resetUI()">← Intentar de nuevo</button>
   </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- DASHBOARD MAIN CONTAINER -->
 <div id="dashboard">
-  <!-- Profile Band -->
-  <div class="profile-band">
-    <div class="profile-inner">
+  <!-- Profile Hero -->
+  <div class="hero-profile">
+    <div class="hero-l">PERFIL DIGITAL DE ACTOR POLITICO</div>
+    <h1 class="hero-n" id="profileName"></h1>
+    <div class="hero-s" id="profileCargo"></div>
+    <div class="profile-tags" id="profileTags"></div>
+    <div id="cacheIndicator" style="font-family:monospace; font-size:10px; color:var(--bl); margin-top:8px; cursor:pointer;" onclick="analizar(true)"></div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpiRow"></div>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav">
+    <button class="tab-btn active" onclick="showTab('vision', this)">VISIÓN GENERAL</button>
+    <button class="tab-btn" onclick="showTab('segmentacion', this)">SEGMENTACIÓN DEMOGRÁFICA</button>
+    <button class="tab-btn" onclick="showTab('narrativas', this)">MAPA DE NARRATIVAS</button>
+    <button class="tab-btn" onclick="showTab('cronologia', this)">CRONOLOGÍA DE EVENTOS</button>
+    <button class="tab-btn" onclick="showTab('riesgos', this)">RIESGOS Y OPORTUNIDADES</button>
+  </nav>
+
+  <!-- TAB: VISIÓN GENERAL -->
+  <div class="tab-panel active" id="tab-vision">
+    <div class="sec-title">Distribución de Sentimiento y Temática</div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Sentimiento General</div>
+        <div class="chart-sub">Desglose porcentual en red</div>
+        <canvas id="chartSentimiento" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top de Temas</div>
+        <div class="chart-sub">Volumen temático detectado</div>
+        <canvas id="chartTemas" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="sec-title">Presencia por Plataforma</div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Distribución por Canal</div>
+        <div class="chart-sub">Proporción de conversaciones</div>
+        <canvas id="chartPlataformas" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Tono por Canal</div>
+        <div class="chart-sub">Favorable vs Adverso por plataforma</div>
+        <canvas id="chartTonoPlataforma" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SEGMENTACIÓN -->
+  <div class="tab-panel" id="tab-segmentacion">
+    <div class="sec-title">Desglose Demográfico</div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Sentimiento por Género</div>
+        <div class="chart-sub">Distribución observada</div>
+        <canvas id="chartSegGenero" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Sentimiento por Rango de Edad</div>
+        <div class="chart-sub">Distribución observada</div>
+        <canvas id="chartSegEdad" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: NARRATIVAS -->
+  <div class="tab-panel" id="tab-narrativas">
+    <div class="sec-title">Desglose de Narrativas Detectadas</div>
+    <div class="nar-grid">
+      <div class="nar-col">
+        <div class="nar-head fav">▲ NARRATIVAS FAVORABLES</div>
+        <div id="narFav"></div>
+      </div>
+      <div class="nar-col">
+        <div class="nar-head cri">▼ NARRATIVAS CRÍTICAS</div>
+        <div id="narCri"></div>
+      </div>
+      <div class="nar-col">
+        <div class="nar-head neu">◆ NARRATIVAS NEUTRAS / EN DISPUTA</div>
+        <div id="narNeu"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: CRONOLOGÍA -->
+  <div class="tab-panel" id="tab-cronologia">
+    <div class="sec-title">Línea del Tiempo de Eventos y Menciones</div>
+    <div class="tl-wrap" id="timeline"></div>
+  </div>
+
+  <!-- TAB: RIESGOS & OPORTUNIDADES -->
+  <div class="tab-panel" id="tab-riesgos">
+    <div class="sec-title">Factores Relevantes de Conversación</div>
+    <div class="two-col">
       <div>
-        <div class="profile-tags" id="profileTags"></div>
-        <div class="profile-name" id="profileName"></div>
-        <div class="profile-cargo" id="profileCargo"></div>
-        <div class="profile-fecha" id="profileFecha"></div>
-        <div class="profile-fecha" id="cacheIndicator" style="opacity:.6; cursor:pointer;" onclick="analizar(true)"></div>
+        <div style="font-family:monospace; font-size:10px; font-weight:700; color:var(--da); margin-bottom:10px;">Riesgos Identificados</div>
+        <div id="riesgos"></div>
       </div>
-      <div class="clima-pill" id="climaPill"></div>
-      <button id="btnDescargar" onclick="descargarDashboard()" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;padding:8px 16px;border:1px solid var(--border,#333);background:transparent;color:inherit;cursor:pointer;border-radius:3px;">⬇ Descargar Dashboard</button>
-    </div>
-  </div>
-
-  <!-- KPI Row -->
-  <div class="kpi-row">
-    <div class="kpi-row-inner" id="kpiRow"></div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tabs-area">
-    <nav class="tabs-nav">
-      <button class="tab-btn active" onclick="showTab('vision', this)">Visión General</button>
-      <button class="tab-btn" onclick="showTab('segmentacion', this)">Segmentación (Est.)</button>
-      <button class="tab-btn" onclick="showTab('narrativas', this)">Narrativas</button>
-      <button class="tab-btn" onclick="showTab('cronologia', this)">Cronología</button>
-      <button class="tab-btn" onclick="showTab('riesgos', this)">Riesgos & Oportunidades</button>
-      <button class="tab-btn" onclick="showTab('recomendaciones', this)">Recomendaciones</button>
-      <button class="tab-btn" onclick="showTab('conclusion', this)">Conclusión</button>
-    </nav>
-
-    <!-- Visión General -->
-    <div class="tab-panel active" id="tab-vision">
-      <div class="sec-label">Análisis de Sentimiento & Temas</div>
-      <div class="two-col">
-        <div>
-          <div class="chart-label">Distribución de sentimiento</div>
-          <canvas id="chartSentimiento" height="220"></canvas>
-        </div>
-        <div>
-          <div class="chart-label">Temas principales</div>
-          <canvas id="chartTemas" height="220"></canvas>
-        </div>
+      <div>
+        <div style="font-family:monospace; font-size:10px; font-weight:700; color:#008080; margin-bottom:10px;">Oportunidades de Conversación</div>
+        <div id="oportunidades"></div>
       </div>
-      <div class="sec-label" style="margin-top:24px;">Presencia por Plataforma</div>
-      <div class="two-col">
-        <div>
-          <div class="chart-label">Distribución de menciones</div>
-          <canvas id="chartPlataformas" height="220"></canvas>
-        </div>
-        <div>
-          <div class="chart-label">Tono por plataforma</div>
-          <canvas id="chartTonoPlataforma" height="220"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Segmentación estimada -->
-    <div class="tab-panel" id="tab-segmentacion">
-      <div class="sec-label">Segmentación Estimada</div>
-      <div style="background:rgba(230,57,70,.08); border:1px solid rgba(230,57,70,.3); border-radius:4px; padding:12px 16px; margin-bottom:20px; font-size:12px; line-height:1.5;" id="segAdvertencia">
-      </div>
-      <div class="two-col">
-        <div>
-          <div class="chart-label">Sentimiento por género (estimado)</div>
-          <canvas id="chartSegGenero" height="220"></canvas>
-        </div>
-        <div>
-          <div class="chart-label">Sentimiento por edad (estimado)</div>
-          <canvas id="chartSegEdad" height="220"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Narrativas -->
-    <div class="tab-panel" id="tab-narrativas">
-      <div class="sec-label">Mapa de Narrativas</div>
-      <div class="nar-grid">
-        <div>
-          <div class="nar-col-head fav">Narrativas Favorables</div>
-          <div id="narFav"></div>
-        </div>
-        <div>
-          <div class="nar-col-head cri">Narrativas Críticas</div>
-          <div id="narCri"></div>
-        </div>
-        <div>
-          <div class="nar-col-head neu">Narrativas en Disputa</div>
-          <div id="narNeu"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cronología -->
-    <div class="tab-panel" id="tab-cronologia">
-      <div class="sec-label">Cronología de Eventos</div>
-      <div class="timeline" id="timeline"></div>
-    </div>
-
-    <!-- Riesgos -->
-    <div class="tab-panel" id="tab-riesgos">
-      <div class="sec-label">Matriz de Riesgos & Oportunidades</div>
-      <div class="two-col">
-        <div>
-          <div class="chart-label">Riesgos identificados</div>
-          <div id="riesgos"></div>
-        </div>
-        <div>
-          <div class="chart-label">Oportunidades estratégicas</div>
-          <div id="oportunidades"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recomendaciones -->
-    <div class="tab-panel" id="tab-recomendaciones">
-      <div class="sec-label">Plan de Acción Estratégico</div>
-      <div class="two-col">
-        <div>
-          <div class="chart-label">Corto plazo · 0–3 meses</div>
-          <div id="recsCorto"></div>
-        </div>
-        <div>
-          <div class="chart-label">Mediano plazo · 3–12 meses</div>
-          <div id="recsMediano"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Conclusión -->
-    <div class="tab-panel" id="tab-conclusion">
-      <div class="sec-label">Dictamen Ejecutivo</div>
-      <div class="dictamen-block">
-        <div class="dictamen-eyebrow">Análisis Global</div>
-        <p class="dictamen-text" id="dictamenText"></p>
-      </div>
-      <div class="sec-label">Veredictos del Análisis</div>
-      <div class="veredictos-grid" id="veredictos"></div>
     </div>
   </div>
 </div>
 
 <footer>
-  <div class="footer-brand">Radar</div>
-  <div class="footer-meta">Inteligencia Político-Digital · México · 2026</div>
+  <div>RADAR POLÍTICO · SISTEMA DE INTELIGENCIA</div>
+  <div id="footerDate">MÉXICO · 2026</div>
 </footer>
 
 <script>
-// Date
 const now = new Date();
-document.getElementById('headerDate').textContent =
-  now.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+document.getElementById('headerDate').textContent = now.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
 
-// Tabs
 function showTab(id, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -255,13 +206,11 @@ function showTab(id, btn) {
   btn.classList.add('active');
 }
 
-// Chip
 function setChip(nombre) {
   document.getElementById('nombreInput').value = nombre;
   analizar();
 }
 
-// Reset
 function resetUI() {
   document.getElementById('loadingWrap').classList.remove('show');
   document.getElementById('errorWrap').classList.remove('show');
@@ -270,47 +219,31 @@ function resetUI() {
   document.getElementById('btnAnalizar').disabled = false;
 }
 
-// Loading messages
-const msgs = [
-  ['Buscando en tiempo real', 'Consultando fuentes sobre el político...'],
-  ['Analizando narrativas', 'Procesando el ecosistema mediático...'],
-  ['Calculando sentimiento', 'Modelando la conversación digital...'],
-  ['Construyendo perfil RADAR', 'Generando análisis estratégico...'],
-];
 let loadInt;
-
 function startLoad() {
-  let i = 0;
   const lbl = document.getElementById('loaderLabel');
-  const sub = document.getElementById('loaderSub');
-  lbl.textContent = msgs[0][0]; sub.textContent = msgs[0][1];
+  const msgs = ['Consultando Apify', 'Procesando Menciones', 'Extrayendo Narrativas'];
+  let i = 0;
+  lbl.textContent = msgs[0];
   loadInt = setInterval(() => {
     i = (i + 1) % msgs.length;
-    lbl.textContent = msgs[i][0];
-    sub.textContent = msgs[i][1];
-  }, 3500);
+    lbl.textContent = msgs[i];
+  }, 2500);
 }
 function stopLoad() { clearInterval(loadInt); }
 
-// Analyze
+let ultimoData = null;
+
 async function analizar(forceRefresh = false) {
-  // CORRECCIÓN CLAVE: Emparejamos los IDs con los elementos reales creados arriba
   const nombreInput = document.getElementById('nombreInput');
   const mesSelect = document.getElementById('mesSelect');
   const anioSelect = document.getElementById('anioSelect');
 
-  if (!nombreInput || !mesSelect || !anioSelect) {
-    console.error("Error: No se encontraron los inputs en el HTML.");
-    return;
-  }
-
   const nombre = nombreInput.value.trim();
-  // Concatenamos el mes y año seleccionado para estructurar el valor de búsqueda
-  const fecha  = `${mesSelect.value} ${anioSelect.value}`;
-  
+  const fecha = `${mesSelect.value} ${anioSelect.value}`;
+
   if (!nombre) { nombreInput.focus(); return; }
 
-  // Control de la interfaz de carga
   document.getElementById('searchSection').style.display = 'none';
   document.getElementById('dashboard').classList.remove('show');
   document.getElementById('errorWrap').classList.remove('show');
@@ -319,20 +252,19 @@ async function analizar(forceRefresh = false) {
   startLoad();
 
   try {
-    // Usamos ruta relativa estándar para el servidor dev o producción
-    const res  = await fetch('/api/analizar', {
+    const res = await fetch('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre, fecha, forceRefresh })
     });
-    
+
     const data = await res.json();
     stopLoad();
 
     if (!res.ok || data.error) {
       document.getElementById('loadingWrap').classList.remove('show');
       document.getElementById('errorWrap').classList.add('show');
-      document.getElementById('errorText').textContent = data.error || 'Error desconocido';
+      document.getElementById('errorText').textContent = data.error || 'Error procesando consulta';
       document.getElementById('btnAnalizar').disabled = false;
       return;
     }
@@ -347,29 +279,22 @@ async function analizar(forceRefresh = false) {
   }
 }
 
-// Render
 function renderDashboard(d) {
-  document.getElementById('profileName').textContent  = d.nombre  || '';
-  document.getElementById('profileCargo').textContent = d.cargo   || '';
-  document.getElementById('profileFecha').textContent = 'Análisis correspondiente a: ' + (d.fecha_analisis || '').toUpperCase();
+  ultimoData = d;
+  document.getElementById('profileName').textContent = d.nombre || '';
+  document.getElementById('profileCargo').textContent = d.cargo || '';
 
   const cacheEl = document.getElementById('cacheIndicator');
   if (cacheEl) {
     cacheEl.textContent = d._cache === 'HIT'
-      ? '⟳ Datos en caché — click para forzar actualización'
-      : '✓ Datos recién obtenidos — click para forzar actualización';
+      ? '⟳ Datos de almacenamiento — Clic para recargar datos de fuentes'
+      : '✓ Consulta ejecutada directamente en fuentes';
   }
 
-  document.getElementById('profileTags').innerHTML = (d.tags || [])
-    .map(t => `<span class="ptag">${t}</span>`).join('');
-
-  const clima = (d.clima || 'NEUTRO').trim().replace(/\s+/g,'-').toUpperCase();
-  const cp = document.getElementById('climaPill');
-  cp.className = 'clima-pill clima-' + clima;
-  cp.textContent = d.clima || '';
+  document.getElementById('profileTags').innerHTML = (d.tags || []).map(t => `<span class="ptag">${t}</span>`).join('');
 
   document.getElementById('kpiRow').innerHTML = (d.kpis || []).map(k => `
-    <div class="kpi-cell ${k.tipo || 'acc'}">
+    <div class="kpi-card ${k.tipo || 'acc'}">
       <div class="kpi-lbl">${k.label}</div>
       <div class="kpi-val">${k.valor}</div>
       <div class="kpi-nota">${k.nota}</div>
@@ -380,63 +305,37 @@ function renderDashboard(d) {
 
   const renderNar = (items, id) => {
     document.getElementById(id).innerHTML = (items || []).map(n => `
-      <div class="nar-card" onclick="this.classList.toggle('open')">
-        <div class="nar-title">
-          <span class="nar-title-arrow">▶</span>
-          <span>${n.titulo}</span>
-        </div>
-        <div class="nar-desc">${n.descripcion}</div>
+      <div class="nar-item">
+        <div class="nar-item-t">${n.titulo}</div>
+        <div class="nar-item-d">${n.descripcion}</div>
       </div>
     `).join('');
   };
   renderNar(d.narrativas_favorables, 'narFav');
-  renderNar(d.narrativas_criticas,   'narCri');
-  renderNar(d.narrativas_neutras,    'narNeu');
+  renderNar(d.narrativas_criticas, 'narCri');
+  renderNar(d.narrativas_neutras, 'narNeu');
 
   document.getElementById('timeline').innerHTML = (d.cronologia || []).map(e => `
-    <div class="tl-item ${e.tipo}">
-      <div class="tl-dot"></div>
-      <div class="tl-fecha">${e.fecha}</div>
-      <div class="tl-badge">${e.badge}</div>
-      <div class="tl-evento">${e.evento}</div>
-      <div class="tl-lectura">${e.lectura}</div>
+    <div class="tl-item">
+      <div class="tl-date">${e.fecha} · ${e.badge}</div>
+      <div class="tl-title">${e.evento}</div>
+      <div class="tl-desc">${e.lectura}</div>
     </div>
   `).join('');
 
   document.getElementById('riesgos').innerHTML = (d.riesgos || []).map(r => `
-    <div class="ro-item ${r.nivel}">
-      <div class="ro-nivel">${r.nivel}</div>
-      <div class="ro-titulo">${r.titulo}</div>
-      <div class="ro-desc">${r.descripcion}</div>
+    <div class="ro-card">
+      <span class="ro-lvl ${r.nivel}">${r.nivel}</span>
+      <div class="ro-t">${r.titulo}</div>
+      <div class="ro-d">${r.descripcion}</div>
     </div>
   `).join('');
 
   document.getElementById('oportunidades').innerHTML = (d.oportunidades || []).map(o => `
-    <div class="ro-item ${o.nivel}">
-      <div class="ro-nivel">${o.nivel}</div>
-      <div class="ro-titulo">${o.titulo}</div>
-      <div class="ro-desc">${o.descripcion}</div>
-    </div>
-  `).join('');
-
-  const renderRec = (items, id) => {
-    document.getElementById(id).innerHTML = (items || []).map(r => `
-      <div class="rec-item ${r.tipo}">
-        <div class="rec-badge">${r.badge}</div>
-        <div class="rec-titulo">${r.titulo}</div>
-        <div class="rec-desc">${r.descripcion}</div>
-      </div>
-    `).join('');
-  };
-  renderRec(d.recomendaciones_corto,   'recsCorto');
-  renderRec(d.recomendaciones_mediano, 'recsMediano');
-
-  document.getElementById('dictamenText').textContent = d.dictamen || '';
-  document.getElementById('veredictos').innerHTML = (d.veredictos || []).map(v => `
-    <div class="verd-card ${v.tipo}">
-      <div class="verd-tipo">${v.tipo}</div>
-      <div class="verd-titulo">${v.titulo}</div>
-      <div class="verd-cuerpo">${v.cuerpo}</div>
+    <div class="ro-card">
+      <span class="ro-lvl ALTO">${o.nivel}</span>
+      <div class="ro-t">${o.titulo}</div>
+      <div class="ro-d">${o.descripcion}</div>
     </div>
   `).join('');
 
@@ -456,8 +355,8 @@ document.getElementById('nombreInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') analizar();
 });
 
-// ---- Charts (Chart.js) ----
-const PALETTE = { success:'#2EC4B6', danger:'#E63946', accent:'#00C2D4', gold:'#F4C430', neutral:'#8FA3B1' };
+// Charts Paleta Daniel Serrano
+const PALETTE = { success: '#2EC4B6', danger: '#E63946', accent: '#00C2D4', gold: '#F4C430', neutral: '#1B4F8A' };
 const CH = {};
 function mkChart(id, cfg) {
   if (CH[id]) CH[id].destroy();
@@ -466,12 +365,7 @@ function mkChart(id, cfg) {
   CH[id] = new Chart(c, cfg);
 }
 
-let ultimoData = null; // guarda el último JSON renderizado para poder descargarlo
-
 function renderCharts(d) {
-  ultimoData = d;
-
-  // Sentimiento (dona)
   const sent = d.sentimiento || [];
   mkChart('chartSentimiento', {
     type: 'doughnut',
@@ -479,28 +373,23 @@ function renderCharts(d) {
       labels: sent.map(s => s.label),
       datasets: [{
         data: sent.map(s => s.pct),
-        backgroundColor: sent.map((s,i) => [PALETTE.success, PALETTE.neutral, PALETTE.danger, PALETTE.gold][i % 4]),
+        backgroundColor: [PALETTE.success, PALETTE.neutral, PALETTE.danger, PALETTE.gold],
         borderWidth: 0
       }]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, cutout: '55%' }
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
   });
 
-  // Temas (barras horizontales)
   const temas = d.temas || [];
   mkChart('chartTemas', {
     type: 'bar',
     data: {
       labels: temas.map(t => t.tema),
-      datasets: [{ data: temas.map(t => t.pct), backgroundColor: temas.map(t => PALETTE[t.color] || PALETTE.accent), borderRadius: 3 }]
+      datasets: [{ data: temas.map(t => t.pct), backgroundColor: PALETTE.accent, borderRadius: 2 }]
     },
-    options: {
-      indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
-      scales: { x: { ticks: { callback: v => v + '%' } } }
-    }
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
   });
 
-  // Plataformas (dona)
   const plats = d.plataformas || [];
   mkChart('chartPlataformas', {
     type: 'doughnut',
@@ -508,39 +397,34 @@ function renderCharts(d) {
       labels: plats.map(p => p.nombre),
       datasets: [{ data: plats.map(p => p.pct), backgroundColor: [PALETTE.accent, PALETTE.neutral, PALETTE.gold, PALETTE.success], borderWidth: 0 }]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, cutout: '55%' }
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
   });
 
-  // Tono por plataforma (barras agrupadas)
   mkChart('chartTonoPlataforma', {
     type: 'bar',
     data: {
       labels: plats.map(p => p.nombre),
       datasets: [
-        { label: '% Positivo', data: plats.map(p => p.tono_positivo), backgroundColor: PALETTE.success, borderRadius: 3 },
-        { label: '% Negativo', data: plats.map(p => p.tono_negativo), backgroundColor: PALETTE.danger, borderRadius: 3 }
+        { label: '% Favorable', data: plats.map(p => p.tono_positivo), backgroundColor: PALETTE.success },
+        { label: '% Adverso', data: plats.map(p => p.tono_negativo), backgroundColor: PALETTE.danger }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
-  // Segmentación estimada
-  const seg = d.segmentacion_estimada || {};
-  const advEl = document.getElementById('segAdvertencia');
-  if (advEl) advEl.textContent = '⚠ ' + (seg._advertencia || 'Estos datos son una estimación generada por IA, no una encuesta real. Deben validarse con información de campo.');
-
+  const seg = d.segmentacion || d.segmentacion_estimada || {};
   const genero = seg.por_genero || [];
   mkChart('chartSegGenero', {
     type: 'bar',
     data: {
       labels: genero.map(g => g.segmento),
       datasets: [
-        { label: 'Positivo', data: genero.map(g => g.positivo), backgroundColor: PALETTE.success, borderRadius: 3 },
-        { label: 'Neutro', data: genero.map(g => g.neutro), backgroundColor: PALETTE.neutral, borderRadius: 3 },
-        { label: 'Negativo', data: genero.map(g => g.negativo), backgroundColor: PALETTE.danger, borderRadius: 3 }
+        { label: 'Favorable', data: genero.map(g => g.positivo), backgroundColor: PALETTE.success },
+        { label: 'Neutro', data: genero.map(g => g.neutro), backgroundColor: PALETTE.neutral },
+        { label: 'Adverso', data: genero.map(g => g.negativo), backgroundColor: PALETTE.danger }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
   const edad = seg.por_edad || [];
@@ -549,42 +433,46 @@ function renderCharts(d) {
     data: {
       labels: edad.map(e => e.segmento),
       datasets: [
-        { label: 'Positivo', data: edad.map(e => e.positivo), backgroundColor: PALETTE.success, borderRadius: 3 },
-        { label: 'Neutro', data: edad.map(e => e.neutro), backgroundColor: PALETTE.neutral, borderRadius: 3 },
-        { label: 'Negativo', data: edad.map(e => e.negativo), backgroundColor: PALETTE.danger, borderRadius: 3 }
+        { label: 'Favorable', data: edad.map(e => e.positivo), backgroundColor: PALETTE.success },
+        { label: 'Neutro', data: edad.map(e => e.neutro), backgroundColor: PALETTE.neutral },
+        { label: 'Adverso', data: edad.map(e => e.negativo), backgroundColor: PALETTE.danger }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8FA3B1' } } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 }
 
-// ---- Descarga del dashboard como HTML autocontenido ----
+/* DESCARGA INTERACTIVA CON FORMATO COMPLETO */
 function descargarDashboard() {
-  if (!ultimoData) { alert('Primero genera un análisis.'); return; }
+  if (!ultimoData) { alert('Primero realiza una consulta para generar el dashboard.'); return; }
 
-  // Clona el documento actual completo (con el dashboard ya renderizado)
   const clone = document.documentElement.cloneNode(true);
 
-  // Oculta la sección de búsqueda y el botón de descarga en la copia exportada
+  // Ocultar la sección de búsqueda en el exportable
   const searchEl = clone.querySelector('#searchSection');
   if (searchEl) searchEl.style.display = 'none';
+
+  // Ocultar botón de descarga en el exportable
   const btnDesc = clone.querySelector('#btnDescargar');
-  if (btnDesc) btnDesc.remove();
+  if (btnDesc) btnDesc.style.display = 'none';
 
-  // Inyecta los datos ya generados como variable global, para que los charts
-  // se puedan re-renderizar al abrir el archivo (sin depender de la API)
-  const dataScript = clone.ownerDocument.createElement('script');
-  dataScript.textContent = `window.__RADAR_DATA__ = ${JSON.stringify(ultimoData)};
-window.addEventListener('load', () => { if (window.renderCharts) renderCharts(window.__RADAR_DATA__); });`;
-  clone.querySelector('body').appendChild(dataScript);
+  // Inyectar datos e instructivo de renderizado automático para conservar interactividad y gráficos
+  const scriptInjected = clone.ownerDocument.createElement('script');
+  scriptInjected.textContent = `
+    window.ultimoData = ${JSON.stringify(ultimoData)};
+    window.addEventListener('load', () => {
+      if (window.renderDashboard) renderDashboard(window.ultimoData);
+    });
+  `;
+  clone.querySelector('body').appendChild(scriptInjected);
 
-  const htmlFinal = '<!DOCTYPE html>\n' + clone.outerHTML;
-  const blob = new Blob([htmlFinal], { type: 'text/html' });
+  const htmlContent = '<!DOCTYPE html>\n' + clone.outerHTML;
+  const blob = new Blob([htmlContent], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const nombreArchivo = (ultimoData.nombre || 'radar').trim().toLowerCase().replace(/\s+/g, '_');
+  const filename = (ultimoData.nombre || 'radar').trim().toLowerCase().replace(/\s+/g, '_');
   a.href = url;
-  a.download = `RADAR_${nombreArchivo}_${Date.now()}.html`;
+  a.download = `RADAR_${filename}_2026.html`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
