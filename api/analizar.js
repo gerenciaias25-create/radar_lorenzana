@@ -51,16 +51,13 @@ export default async function handler(req, res) {
 
   if (!forceRefresh) {
     const cached = await cacheGet(cacheKey);
-    if (cached) {
-      return res.status(200).json({ ...cached, _cache: 'HIT' });
-    }
+    if (cached) return res.status(200).json({ ...cached, _cache: 'HIT' });
   }
 
   let contextoReal = '';
   try {
     const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
-    // 1. Twitter / X Scraper (Búsqueda compuesta)
     const tweetsPromise = fetch(
       `https://api.apify.com/v2/acts/apidojo~twitter-scraper-lite/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
@@ -69,13 +66,12 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           searchTerms: [`${nombre}`, `${nombre} oposicion`, `${nombre} gobierno`],
           sort: 'Latest',
-          maxItems: 25,
+          maxItems: 30,
           tweetLanguage: 'es'
         })
       }
     ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    // 2. Google Search & Prensa Scraper (Noticias nacionales y locales)
     const noticiasPromise = fetch(
       `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
@@ -83,7 +79,7 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           queries: `${nombre} columna opinion NOTICIAS ${fechaCtx}\n${nombre} oposicion denuncias edomex mexico`,
-          resultsPerPage: 15,
+          resultsPerPage: 20,
           maxPagesPerQuery: 1,
           languageCode: 'es',
           countryCode: 'mx'
@@ -91,183 +87,181 @@ export default async function handler(req, res) {
       }
     ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    // 3. Facebook Posts Scraper (Público)
     const facebookPromise = fetch(
       `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          searchTerm: nombre,
-          maxPosts: 15
-        })
+        body: JSON.stringify({ searchTerm: nombre, maxPosts: 20 })
       }
     ).then(r => r.ok ? r.json() : []).catch(() => []);
 
     const [tweetsData, noticiasData, facebookData] = await Promise.all([
-      tweetsPromise, 
-      noticiasPromise, 
-      facebookPromise
+      tweetsPromise, noticiasPromise, facebookPromise
     ]);
 
-    // Procesamiento profundo de datos recibidos
-    const tweetsTexto = (tweetsData || []).slice(0, 20).map(t =>
+    const tweetsTexto = (tweetsData || []).slice(0, 25).map(t =>
       `TWEET de @${t.author?.userName || 'usuario'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
     ).join('\n\n');
 
     const organicResults = (noticiasData || []).flatMap(item => item.organicResults || []);
-    const noticiasTexto = organicResults.slice(0, 15).map(r =>
+    const noticiasTexto = organicResults.slice(0, 20).map(r =>
       `TITULAR: ${r.title}\nURL: ${r.url}\nRESUMEN: ${r.description || ''}`
     ).join('\n\n---\n\n');
 
-    const fbTexto = (facebookData || []).slice(0, 15).map(f =>
+    const fbTexto = (facebookData || []).slice(0, 20).map(f =>
       `POST FB (${f.user?.name || 'Página/Usuario'}): ${f.text || f.caption || ''}\nReacciones: ${f.likes || 0} | Compartidos: ${f.shares || 0}`
     ).join('\n\n');
 
-    contextoReal = `DATOS EXTRAIDOS EN TIEMPO REAL MULTI-PLATAFORMA:\n\n` +
-      `=== MENCIONES EN X/TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos directos de Twitter.'}\n\n` +
-      `=== GOOGLE SEARCH Y NOTICIAS DIGITALES (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin resultados de prensa.'}\n\n` +
-      `=== PUBLICACIONES Y CONVERSACIÓN EN FACEBOOK (${facebookData?.length || 0} publicaciones) ===\n${fbTexto || 'Sin datos directos de Facebook.'}`;
+    contextoReal = `DATOS MULTI-PLATAFORMA EXTRAÍDOS:\n\n` +
+      `=== X / TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos directos.'}\n\n` +
+      `=== MEDIOS DIGITALES Y PRENSA (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin datos directos.'}\n\n` +
+      `=== FACEBOOK (${facebookData?.length || 0} publicaciones) ===\n${fbTexto || 'Sin datos directos.'}`;
 
   } catch (e) {
     console.error('Apify exception:', e.message);
-    contextoReal = 'No se pudo conectar a Apify. Genera análisis contextual basado en conocimiento público.';
+    contextoReal = 'Conexión parcial a fuentes. Generando análisis deductivo amplio.';
   }
 
-  const prompt = `Eres un analista político-digital experto en inteligencia estratégica en México. La fecha de consulta es: ${fechaCtx}.
+  const prompt = `Eres un Director General de Inteligencia Político-Digital. La fecha actual del reporte es: ${fechaCtx}.
 
-INFORMACION REAL EXTRAIDA DE FUENTES PARA "${nombre}":
+INFORMACIÓN EXTRAÍDA DE FUENTES PARA "${nombre}":
 ${contextoReal}
 
-Genera un perfil RADAR explícito, profundo, analítico y exhaustivo para el actor político: "${nombre}".
-Evalúa e incluye la presencia en: Facebook, X/Twitter, Prensa Digital, Google Search, e Instagram/TikTok.
+INSTRUCCIÓN CRÍTICA DE EXTENSIÓN Y PROFUNDIDAD:
+Tu cliente exige un INFORME EJECUTIVO DENSEMENTE DETALLADO. No omitas explicaciones ni resumas de forma escueta. En cada sección del JSON debes proveer análisis cualitativos extensos, contexto estratégico, desgloses exhaustivos y métricas comparativas.
 
-REGLAS DE GENERACION:
-1. Extrae y categoriza exhaustivamente los datos reales recibidos.
-2. Muestra análisis bivariados reales (cruzando Plataforma x Actor, Tono x Temática).
-3. Clasifica la actuación de los siguientes Actores Políticos y Mediáticos:
-   - Prensa Nacional y Columnistas.
-   - Prensa Local / Portales Regionales.
-   - Oposición Organizada y Voceros.
-   - Ecosistema Ciudadano / Algorítmico.
-4. Presenta la información sin disclaimers de IA ni advertencias.
-5. NO incluyas recomendaciones ni conclusiones/dictámenes.
-
-Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
+Debes estructurar obligatoriamente el JSON con esta estructura exacta:
 
 {
-  "nombre": "Nombre completo oficial",
-  "cargo": "Cargo exacto a ${fechaCtx} · Partido · Periodo",
+  "nombre": "Nombre oficial completo",
+  "cargo": "Cargo exacto a ${fechaCtx} · Partido Político / Entidad",
   "fecha_analisis": "${fechaCtx}",
-  "tags": ["Tag1", "Tag2", "Tag3"],
+  "tags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"],
   "kpis": [
-    {"label": "SEGUIDORES TOTALES", "valor": "X.XM", "nota": "Alcance estimado", "tipo": "acc"},
-    {"label": "APROBACIÓN", "valor": "XX%", "nota": "Proporción favorable", "tipo": "suc"},
-    {"label": "PANTALLAS DE CRISIS", "valor": "X", "nota": "Temas de alta tensión", "tipo": "dan"},
+    {"label": "SEGUIDORES TOTALES", "valor": "X.XM", "nota": "Alcance bruto consolidado", "tipo": "acc"},
+    {"label": "APROBACIÓN DIGITAL", "valor": "XX%", "nota": "Proporción favorable neta", "tipo": "suc"},
+    {"label": "PANTALLAS DE CRISIS", "valor": "X", "nota": "Eventos de alta volatilidad", "tipo": "dan"},
     {"label": "MECANISMO NARRATIVO", "valor": "XX/XX", "nota": "Propia vs Impuesta", "tipo": "gld"},
     {"label": "SENTIMIENTO POSITIVO", "valor": "XX%", "nota": "Conversación a favor", "tipo": "suc"},
-    {"label": "TENDENCIA", "valor": "Estable", "nota": "Evolución de conversación", "tipo": "acc"}
+    {"label": "TENDENCIA DE VOLUMEN", "valor": "Alta / Estable", "nota": "Variación vs periodo previo", "tipo": "acc"}
   ],
-  "sentimiento": [
-    {"label": "Positivo", "pct": 38},
-    {"label": "Neutro/Informativo", "pct": 30},
-    {"label": "Negativo", "pct": 22},
-    {"label": "Polarizado", "pct": 10}
-  ],
-  "temas": [
-    {"tema": "Tema principal", "pct": 35},
-    {"tema": "Tema 2", "pct": 22},
-    {"tema": "Tema 3", "pct": 15},
-    {"tema": "Tema 4", "pct": 12},
-    {"tema": "Tema 5", "pct": 9},
-    {"tema": "Tema 6", "pct": 7}
-  ],
-  "plataformas": [
-    {"nombre": "Facebook", "pct": 38, "tono_positivo": 45, "tono_negativo": 30},
-    {"nombre": "X/Twitter", "pct": 28, "tono_positivo": 25, "tono_negativo": 60},
-    {"nombre": "Noticias/Medios", "pct": 18, "tono_positivo": 30, "tono_negativo": 45},
-    {"nombre": "Google Search", "pct": 10, "tono_positivo": 40, "tono_negativo": 35},
-    {"nombre": "Instagram", "pct": 6, "tono_positivo": 50, "tono_negativo": 20}
-  ],
-  "analisis_actores": [
-    {
-      "categoria": "Prensa Nacional & Columnistas",
-      "impacto": "Alto",
-      "narrativa_dominante": "Análisis explícito de posturas de columnistas e impacto nacional.",
-      "tendencia_actitud": "Desfavorable (60%) / Neutro (40%)"
-    },
-    {
-      "categoria": "Prensa Local & Portales Regionales",
-      "impacto": "Medio",
-      "narrativa_dominante": "Cobertura de agenda institucional y boletines territoriales.",
-      "tendencia_actitud": "Favorable (70%)"
-    },
-    {
-      "categoria": "Oposición & Voceros Críticos",
-      "impacto": "Crítico",
-      "narrativa_dominante": "Impulso de tendencias adversas y denuncias en plataformas digitales.",
-      "tendencia_actitud": "Adverso (90%)"
-    },
-    {
-      "categoria": "Ecosistema Ciudadano & Digital",
-      "impacto": "Alto",
-      "narrativa_dominante": "Comentarios en reels/posts de Facebook y TikTok sin encuadre oficial.",
-      "tendencia_actitud": "Dividido / Polarizado"
-    }
-  ],
-  "cruces_bivariados": [
-    {
-      "eje_x": "Plataforma (X vs Facebook)",
-      "eje_y": "Tono de Conversación",
-      "hallazgo": "Explicación bivariada detallada sobre la divergencia del tono entre redes sociales y buscadores."
-    },
-    {
-      "eje_x": "Sentimiento",
-      "eje_y": "Ejes Temáticos Clave",
-      "hallazgo": "Explicación bivariada detallada sobre cómo el sentimiento varía drásticamente según el tema tratado."
-    }
-  ],
-  "segmentacion": {
+  "vision_general": {
+    "resumen_ejecutivo": "Escribe un análisis de 2 a 3 párrafos completos explicando a fondo la situación digital global del actor político, la dinámica de su ecosistema, los ataques o apoyos principales y el balance general de su imagen a la fecha de ${fechaCtx}.",
+    "sentimiento": [
+      {"label": "Positivo", "pct": 38},
+      {"label": "Neutro/Informativo", "pct": 30},
+      {"label": "Negativo", "pct": 22},
+      {"label": "Polarizado", "pct": 10}
+    ],
+    "temas": [
+      {"tema": "Tema principal 1", "pct": 35},
+      {"tema": "Tema principal 2", "pct": 22},
+      {"tema": "Tema principal 3", "pct": 15},
+      {"tema": "Tema principal 4", "pct": 12},
+      {"tema": "Tema principal 5", "pct": 9},
+      {"tema": "Tema principal 6", "pct": 7}
+    ],
+    "plataformas": [
+      {"nombre": "Facebook", "pct": 38, "tono_positivo": 45, "tono_negativo": 30},
+      {"nombre": "X/Twitter", "pct": 28, "tono_positivo": 25, "tono_negativo": 60},
+      {"nombre": "Noticias/Medios", "pct": 18, "tono_positivo": 30, "tono_negativo": 45},
+      {"nombre": "Google Search", "pct": 10, "tono_positivo": 40, "tono_negativo": 35},
+      {"nombre": "Instagram", "pct": 6, "tono_positivo": 50, "tono_negativo": 20}
+    ]
+  },
+  "actores_politicos": {
+    "explicacion_ecosistema": "Escribe un análisis exhaustivo sobre la relación del actor político con los principales poderes de mediación (prensa nacional, oposiciones territoriales, líderes de opinión y movilización en redes).",
+    "analisis_actores": [
+      {
+        "categoria": "Prensa Nacional & Columnistas",
+        "impacto": "Alto",
+        "narrativa_dominante": "Explicación extensa del tratamiento mediático por parte de grandes editoriales y plumas nacionales.",
+        "tendencia_actitud": "Desfavorable (60%) / Neutro (40%)"
+      },
+      {
+        "categoria": "Prensa Local & Portales Regionales",
+        "impacto": "Medio",
+        "narrativa_dominante": "Explicación extensa sobre la cobertura institucional y local en regiones de influencia.",
+        "tendencia_actitud": "Favorable (70%)"
+      },
+      {
+        "categoria": "Oposición & Voceros Críticos",
+        "impacto": "Crítico",
+        "narrativa_dominante": "Explicación detallada de las estrategias de ataque, voceros de oposición y líneas de denuncia.",
+        "tendencia_actitud": "Adverso (90%)"
+      },
+      {
+        "categoria": "Ecosistema Ciudadano & Algorítmico",
+        "impacto": "Alto",
+        "narrativa_dominante": "Análisis del sentimiento orgánico sin mediación, comentarios en plataformas masivas como TikTok y FB.",
+        "tendencia_actitud": "Dividido / Polarizado"
+      }
+    ],
+    "cruces_bivariados": [
+      {
+        "eje_x": "Plataforma (X vs Facebook)",
+        "eje_y": "Inclinación del Tono",
+        "hallazgo": "Explicación detallada de por qué el tono varía drásticamente según el algoritmo y tipo de usuario de cada plataforma."
+      },
+      {
+        "eje_x": "Sentimiento",
+        "eje_y": "Ejes Temáticos Clave",
+        "hallazgo": "Análisis explícito sobre qué temas específicos generan rechazo y cuáles generan respaldo popular."
+      }
+    ]
+  },
+  "segmentacion_demografica": {
+    "analisis_demografico": "Escribe un análisis detallado sobre el perfil sociodemográfico de la audiencia que apoya o ataca al personaje político, diferenciando por género, rango etario y nivel socioeconómico.",
     "por_genero": [
       {"segmento": "Hombres", "positivo": 35, "neutro": 30, "negativo": 35},
       {"segmento": "Mujeres", "positivo": 30, "neutro": 28, "negativo": 42}
     ],
     "por_edad": [
-      {"segmento": "18-29", "positivo": 25, "neutro": 25, "negativo": 50},
-      {"segmento": "30-44", "positivo": 35, "neutro": 30, "negativo": 35},
-      {"segmento": "45-59", "positivo": 45, "neutro": 30, "negativo": 25},
-      {"segmento": "60+", "positivo": 50, "neutro": 28, "negativo": 22}
+      {"segmento": "18-29 años", "positivo": 25, "neutro": 25, "negativo": 50},
+      {"segmento": "30-44 años", "positivo": 35, "neutro": 30, "negativo": 35},
+      {"segmento": "45-59 años", "positivo": 45, "neutro": 30, "negativo": 25},
+      {"segmento": "60+ años", "positivo": 50, "neutro": 28, "negativo": 22}
     ]
   },
-  "narrativas_favorables": [
-    {"titulo": "Narrativa positiva 1", "descripcion": "Detalle explícito extenso."},
-    {"titulo": "Narrativa positiva 2", "descripcion": "Detalle explícito extenso."},
-    {"titulo": "Narrativa positiva 3", "descripcion": "Detalle explícito extenso."}
-  ],
-  "narrativas_criticas": [
-    {"titulo": "Narrativa crítica 1", "descripcion": "Detalle explícito extenso."},
-    {"titulo": "Narrativa crítica 2", "descripcion": "Detalle explícito extenso."},
-    {"titulo": "Narrativa crítica 3", "descripcion": "Detalle explícito extenso."}
-  ],
-  "narrativas_neutras": [
-    {"titulo": "Narrativa neutral 1", "descripcion": "Detalle explícito extenso."},
-    {"titulo": "Narrativa neutral 2", "descripcion": "Detalle explícito extenso."}
-  ],
-  "cronologia": [
-    {"fecha": "Mes/Año", "badge": "EVENTO DESTACADO", "evento": "Título del hecho", "lectura": "Detalle del evento."},
-    {"fecha": "Mes/Año", "badge": "EVENTO CRITICO", "evento": "Título del hecho", "lectura": "Detalle del impacto."},
-    {"fecha": "Mes/Año", "badge": "EVENTO DESTACADO", "evento": "Título", "lectura": "Detalle."},
-    {"fecha": "Mes/Año", "badge": "EVENTO CRITICO", "evento": "Título", "lectura": "Detalle."}
-  ],
-  "riesgos": [
-    {"nivel": "CRÍTICO", "titulo": "Factor de riesgo 1", "descripcion": "Exposición amplia."},
-    {"nivel": "ALTO", "titulo": "Factor de riesgo 2", "descripcion": "Exposición amplia."},
-    {"nivel": "MEDIO", "titulo": "Factor de riesgo 3", "descripcion": "Exposición amplia."}
-  ],
-  "oportunidades": [
-    {"nivel": "ALTO", "titulo": "Oportunidad 1", "descripcion": "Elemento favorable."},
-    {"nivel": "MEDIO", "titulo": "Oportunidad 2", "descripcion": "Elemento favorable."}
-  ]
+  "mapa_narrativas": {
+    "explicacion_narrativas": "Análisis exhaustivo del combate ideológico y narrativo. Explica la efectividad del discurso oficial vs las contra-narrativas de la oposición.",
+    "favorables": [
+      {"titulo": "Narrativa A favor 1", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de este argumento positivo."},
+      {"titulo": "Narrativa A favor 2", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de este argumento positivo."},
+      {"titulo": "Narrativa A favor 3", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de este argumento positivo."}
+    ],
+    "criticas": [
+      {"titulo": "Narrativa En contra 1", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de esta línea crítica."},
+      {"titulo": "Narrativa En contra 2", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de esta línea crítica."},
+      {"titulo": "Narrativa En contra 3", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de esta línea crítica."}
+    ],
+    "neutras": [
+      {"titulo": "Narrativa Neutra 1", "descripcion": "Texto extenso sobre coyunturas informativas o debates sin inclinación clara."},
+      {"titulo": "Narrativa Neutra 2", "descripcion": "Texto extenso sobre coyunturas informativas o debates sin inclinación clara."}
+    ]
+  },
+  "cronologia_eventos": {
+    "analisis_coyuntural": "Explicación extensa sobre cómo los eventos recientes han moldeado la curva de reputación del personaje a lo largo del tiempo.",
+    "eventos": [
+      {"fecha": "Fecha/Periodo", "badge": "EVENTO DESTACADO", "evento": "Título del hito", "lectura": "Explicación estratégica profunda de los efectos de este evento en la conversación pública."},
+      {"fecha": "Fecha/Periodo", "badge": "PANTALLA DE CRISIS", "evento": "Título del evento adverso", "lectura": "Explicación estratégica profunda de la contención o daños causados por esta crisis."},
+      {"fecha": "Fecha/Periodo", "badge": "EVENTO DESTACADO", "evento": "Título del hito", "lectura": "Explicación estratégica profunda."},
+      {"fecha": "Fecha/Periodo", "badge": "PANTALLA DE CRISIS", "evento": "Título del hecho", "lectura": "Explicación estratégica profunda."}
+    ]
+  },
+  "riesgos_oportunidades": {
+    "dictamen_estrategico": "Evaluación final de vulnerabilidades de reputación y vetas de crecimiento para la comunicación institucional.",
+    "riesgos": [
+      {"nivel": "CRÍTICO", "titulo": "Riesgo Principal 1", "descripcion": "Análisis extenso de la amenaza, alcance de daño reputacional y probabilidad de escalamiento."},
+      {"nivel": "ALTO", "titulo": "Riesgo Principal 2", "descripcion": "Análisis extenso de la amenaza, alcance de daño reputacional y probabilidad de escalamiento."},
+      {"nivel": "MEDIO", "titulo": "Riesgo Principal 3", "descripcion": "Análisis extenso de la amenaza, alcance de daño reputacional y probabilidad de escalamiento."}
+    ],
+    "oportunidades": [
+      {"nivel": "ALTO", "titulo": "Oportunidad Clave 1", "descripcion": "Análisis de la veta aprovechable, temas de vinculación social y rentabilidad de agenda."},
+      {"nivel": "MEDIO", "titulo": "Oportunidad Clave 2", "descripcion": "Análisis de la veta aprovechable, temas de vinculación social y rentabilidad de agenda."}
+    ]
+  }
 }`;
 
   try {
@@ -281,7 +275,7 @@ Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
       },
       body: JSON.stringify({
         model: 'openai/gpt-4o',
-        max_tokens: 7000,
+        max_tokens: 7500,
         messages: [{ role: 'user', content: prompt }]
       })
     });
