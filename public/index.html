@@ -109,29 +109,28 @@
 
     <!-- TAB: VISIÓN GENERAL -->
     <div class="tab-panel active" id="tab-vision">
-      <div class="sec-title">Distribución de Sentimiento y Temática</div>
-      <p class="sec-intro">Métricas principales sobre el clima general de conversación y los ejes temáticos con mayor alcance detectados en plataformas digitales.</p>
+      <div class="sec-title">Resumen Ejecutivo General</div>
+      <div class="text-box-analysis" id="txtVisionResumen"></div>
 
+      <div class="sec-title" style="margin-top:20px;">Distribución de Sentimiento y Temática</div>
       <div class="two-col">
         <div class="chart-card">
           <div class="chart-title">Sentimiento General</div>
-          <div class="chart-sub">Desglose porcentual en red</div>
+          <div class="chart-sub">Desglose porcentual consolidado</div>
           <div class="chart-container"><canvas id="chartSentimiento"></canvas></div>
         </div>
         <div class="chart-card">
-          <div class="chart-title">Top de Temas</div>
+          <div class="chart-title">Top de Temas de Conversación</div>
           <div class="chart-sub">Volumen temático detectado</div>
           <div class="chart-container"><canvas id="chartTemas"></canvas></div>
         </div>
       </div>
 
-      <div class="sec-title">Ecosistema de Plataformas &amp; Canales</div>
-      <p class="sec-intro">Comparativa del volumen de menciones e inclinación del tono del discurso a través de Facebook, X/Twitter, Medios Digitales, Google Search e Instagram.</p>
-
+      <div class="sec-title" style="margin-top:20px;">Ecosistema de Plataformas &amp; Canales</div>
       <div class="two-col">
         <div class="chart-card">
           <div class="chart-title">Distribución por Canal</div>
-          <div class="chart-sub">Proporción de conversaciones por fuente</div>
+          <div class="chart-sub">Proporción por fuente</div>
           <div class="chart-container"><canvas id="chartPlataformas"></canvas></div>
         </div>
         <div class="chart-card">
@@ -144,30 +143,31 @@
 
     <!-- TAB: ANÁLISIS DE ACTORES -->
     <div class="tab-panel" id="tab-actores">
-      <div class="sec-title">Mapeo Táctico de Actores Políticos &amp; Mediáticos</div>
-      <p class="sec-intro">Desglose de la postura, nivel de impacto y encuadre narrativo impulsado por columnistas, prensa local, oposición y la conversación ciudadana.</p>
+      <div class="sec-title">Análisis del Ecosistema Político y Mediático</div>
+      <div class="text-box-analysis" id="txtActoresExplicacion"></div>
 
+      <div class="sec-title" style="margin-top:20px;">Mapeo Táctico de Actores Clave</div>
       <div class="actor-grid" id="actorGrid"></div>
 
-      <div class="sec-title" style="margin-top:24px;">Análisis Bivariado Cruzado</div>
-      <p class="sec-intro">Cruces analíticos entre variables temáticas, plataformas y actores clave para identificar patrones de ataque o respaldo.</p>
+      <div class="sec-title" style="margin-top:24px;">Cruces Bivariados Estratégicos</div>
       <div class="bivariado-grid" id="bivariadoGrid"></div>
     </div>
 
     <!-- TAB: SEGMENTACIÓN -->
     <div class="tab-panel" id="tab-segmentacion">
-      <div class="sec-title">Desglose Demográfico</div>
-      <p class="sec-intro">Consolidado de la inclinación del discurso segmentado por género y grupos etarios participantes en la conversación pública.</p>
+      <div class="sec-title">Evaluación Demográfica de Audiencias</div>
+      <div class="text-box-analysis" id="txtSegAnalisis"></div>
 
+      <div class="sec-title" style="margin-top:20px;">Desglose Demográfico de Sentimiento</div>
       <div class="two-col">
         <div class="chart-card">
           <div class="chart-title">Sentimiento por Género</div>
-          <div class="chart-sub">Distribución observada</div>
+          <div class="chart-sub">Inclinación por grupo poblacional</div>
           <div class="chart-container"><canvas id="chartSegGenero"></canvas></div>
         </div>
         <div class="chart-card">
           <div class="chart-title">Sentimiento por Rango de Edad</div>
-          <div class="chart-sub">Distribución observada</div>
+          <div class="chart-sub">Inclinación por cohortes generacionales</div>
           <div class="chart-container"><canvas id="chartSegEdad"></canvas></div>
         </div>
       </div>
@@ -175,9 +175,10 @@
 
     <!-- TAB: NARRATIVAS -->
     <div class="tab-panel" id="tab-narrativas">
-      <div class="sec-title">Desglose de Narrativas Detectadas</div>
-      <p class="sec-intro">Resumen estructurado de los principales argumentos y discursos que impulsan o detraen la percepción del actor político en medios y redes.</p>
+      <div class="sec-title">Batalla Narrativa y Encuadre Discursivo</div>
+      <div class="text-box-analysis" id="txtNarExplicacion"></div>
 
+      <div class="sec-title" style="margin-top:20px;">Mapa Detallado de Ejes Discursivos</div>
       <div class="nar-grid">
         <div class="nar-col">
           <div class="nar-head fav">▲ NARRATIVAS FAVORABLES</div>
@@ -196,24 +197,26 @@
 
     <!-- TAB: CRONOLOGÍA -->
     <div class="tab-panel" id="tab-cronologia">
-      <div class="sec-title">Línea del Tiempo de Eventos y Menciones</div>
-      <p class="sec-intro">Secuencia de hitos, acontecimientos mediáticos y coyunturas clave registradas durante el periodo evaluado.</p>
+      <div class="sec-title">Análisis Coyuntural e Hitos de Reputación</div>
+      <div class="text-box-analysis" id="txtCronoAnalisis"></div>
 
+      <div class="sec-title" style="margin-top:20px;">Línea de Tiempo Registrada</div>
       <div class="tl-wrap" id="timeline"></div>
     </div>
 
     <!-- TAB: RIESGOS & OPORTUNIDADES -->
     <div class="tab-panel" id="tab-riesgos">
-      <div class="sec-title">Factores Relevantes de Conversación</div>
-      <p class="sec-intro">Identificación de puntos críticos de exposición adversa y vetas de conversación con potencial favorable.</p>
+      <div class="sec-title">Dictamen Estratégico de Reputación</div>
+      <div class="text-box-analysis" id="txtRiesgosDictamen"></div>
 
+      <div class="sec-title" style="margin-top:20px;">Matriz de Exposición y Vetas Favorable</div>
       <div class="two-col">
         <div>
-          <div style="font-family:monospace; font-size:10px; font-weight:700; color:var(--da); margin-bottom:10px; letter-spacing:1px;">RIESGOS IDENTIFICADOS</div>
+          <div style="font-family:monospace; font-size:11px; font-weight:700; color:var(--da); margin-bottom:10px; letter-spacing:1px;">RIESGOS IDENTIFICADOS</div>
           <div id="riesgos"></div>
         </div>
         <div>
-          <div style="font-family:monospace; font-size:10px; font-weight:700; color:#008080; margin-bottom:10px; letter-spacing:1px;">OPORTUNIDADES DE CONVERSACIÓN</div>
+          <div style="font-family:monospace; font-size:11px; font-weight:700; color:#008080; margin-bottom:10px; letter-spacing:1px;">OPORTUNIDADES DE CONVERSACIÓN</div>
           <div id="oportunidades"></div>
         </div>
       </div>
@@ -319,8 +322,8 @@ function renderDashboard(d) {
   const cacheEl = document.getElementById('cacheIndicator');
   if (cacheEl) {
     cacheEl.textContent = d._cache === 'HIT'
-      ? '⟳ Datos de almacenamiento — Clic para recargar datos de fuentes'
-      : '✓ Consulta ejecutada directamente en fuentes';
+      ? '⟳ Datos en caché — Haz clic aquí para forzar actualización'
+      : '✓ Datos recién extraídos de fuentes públicas';
   }
 
   document.getElementById('profileTags').innerHTML = (d.tags || []).map(t => `<span class="ptag">${t}</span>`).join('');
@@ -333,8 +336,14 @@ function renderDashboard(d) {
     </div>
   `).join('');
 
-  // Render Actores
-  document.getElementById('actorGrid').innerHTML = (d.analisis_actores || []).map(a => `
+  // RENDER TEXTOS DE EXPLICACIÓN DETALLADA EN CADA TAB
+  const vg = d.vision_general || {};
+  document.getElementById('txtVisionResumen').textContent = vg.resumen_ejecutivo || d.resumen_ejecutivo || 'Sin análisis registrado.';
+
+  const act = d.actores_politicos || {};
+  document.getElementById('txtActoresExplicacion').textContent = act.explicacion_ecosistema || 'Sin análisis de actores.';
+
+  document.getElementById('actorGrid').innerHTML = (act.analisis_actores || d.analisis_actores || []).map(a => `
     <div class="actor-card">
       <div class="actor-head">
         <span class="actor-cat">${a.categoria}</span>
@@ -342,22 +351,25 @@ function renderDashboard(d) {
       </div>
       <div class="actor-body">
         <div class="actor-nar">${a.narrativa_dominante}</div>
-        <div class="actor-stat"><strong>Inclinación:</strong> ${a.tendencia_actitud}</div>
+        <div class="actor-stat"><strong>Tendencia / Actitud:</strong> ${a.tendencia_actitud}</div>
       </div>
     </div>
   `).join('');
 
-  // Render Cruces Bivariados
-  document.getElementById('bivariadoGrid').innerHTML = (d.cruces_bivariados || []).map(c => `
+  document.getElementById('bivariadoGrid').innerHTML = (act.cruces_bivariados || d.cruces_bivariados || []).map(c => `
     <div class="bivariado-card">
-      <div class="bivariado-axes">Ejes: ${c.eje_x} ✕ ${c.eje_y}</div>
+      <div class="bivariado-axes">Cruce: ${c.eje_x} ✕ ${c.eje_y}</div>
       <div class="bivariado-desc">${c.hallazgo}</div>
     </div>
   `).join('');
 
-  renderCharts(d);
+  const seg = d.segmentacion_demografica || d.segmentacion || {};
+  document.getElementById('txtSegAnalisis').textContent = seg.analisis_demografico || 'Sin datos demográficos.';
 
-  const renderNar = (items, id) => {
+  const nar = d.mapa_narrativas || {};
+  document.getElementById('txtNarExplicacion').textContent = nar.explicacion_narrativas || 'Sin mapa discursivo.';
+
+  const renderNarList = (items, id) => {
     document.getElementById(id).innerHTML = (items || []).map(n => `
       <div class="nar-item">
         <div class="nar-item-t">${n.titulo}</div>
@@ -365,11 +377,13 @@ function renderDashboard(d) {
       </div>
     `).join('');
   };
-  renderNar(d.narrativas_favorables, 'narFav');
-  renderNar(d.narrativas_criticas, 'narCri');
-  renderNar(d.narrativas_neutras, 'narNeu');
+  renderNarList(nar.favorables || d.narrativas_favorables, 'narFav');
+  renderNarList(nar.criticas || d.narrativas_criticas, 'narCri');
+  renderNarList(nar.neutras || d.narrativas_neutras, 'narNeu');
 
-  document.getElementById('timeline').innerHTML = (d.cronologia || []).map(e => `
+  const cro = d.cronologia_eventos || {};
+  document.getElementById('txtCronoAnalisis').textContent = cro.analisis_coyuntural || 'Sin análisis coyuntural.';
+  document.getElementById('timeline').innerHTML = (cro.eventos || d.cronologia || []).map(e => `
     <div class="tl-item">
       <div class="tl-date">${e.fecha} · ${e.badge}</div>
       <div class="tl-title">${e.evento}</div>
@@ -377,7 +391,10 @@ function renderDashboard(d) {
     </div>
   `).join('');
 
-  document.getElementById('riesgos').innerHTML = (d.riesgos || []).map(r => `
+  const ro = d.riesgos_oportunidades || {};
+  document.getElementById('txtRiesgosDictamen').textContent = ro.dictamen_estrategico || 'Sin dictamen disponible.';
+
+  document.getElementById('riesgos').innerHTML = (ro.riesgos || d.riesgos || []).map(r => `
     <div class="ro-card">
       <span class="ro-lvl ${r.nivel}">${r.nivel}</span>
       <div class="ro-t">${r.titulo}</div>
@@ -385,13 +402,15 @@ function renderDashboard(d) {
     </div>
   `).join('');
 
-  document.getElementById('oportunidades').innerHTML = (d.oportunidades || []).map(o => `
+  document.getElementById('oportunidades').innerHTML = (ro.oportunidades || d.oportunidades || []).map(o => `
     <div class="ro-card">
       <span class="ro-lvl ALTO">${o.nivel}</span>
       <div class="ro-t">${o.titulo}</div>
       <div class="ro-d">${o.descripcion}</div>
     </div>
   `).join('');
+
+  renderCharts(d);
 
   document.getElementById('loadingWrap').classList.remove('show');
   document.getElementById('dashboard').classList.add('show');
@@ -409,18 +428,10 @@ document.getElementById('nombreInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') analizar();
 });
 
-// Charts Paleta RADAR
 const PALETTE = { success: '#2EC4B6', danger: '#E63946', accent: '#00C2D4', gold: '#F4C430', neutral: '#1B4F8A' };
-
 const PLATFORM_COLORS = {
-  'Facebook': '#1877F2',
-  'X/Twitter': '#1D9BF0',
-  'Twitter/X': '#1D9BF0',
-  'Noticias/Medios': '#C0392B',
-  'Google Search': '#4285F4',
-  'Instagram': '#E1306C',
-  'TikTok': '#000000',
-  'Otros': '#7F8C8D'
+  'Facebook': '#1877F2', 'X/Twitter': '#1D9BF0', 'Twitter/X': '#1D9BF0',
+  'Noticias/Medios': '#C0392B', 'Google Search': '#4285F4', 'Instagram': '#E1306C'
 };
 
 const CH = {};
@@ -434,7 +445,8 @@ function mkChart(id, cfg) {
 function renderCharts(d) {
   const commonOpts = { responsive: true, maintainAspectRatio: false };
 
-  const sent = d.sentimiento || [];
+  const vg = d.vision_general || {};
+  const sent = vg.sentimiento || d.sentimiento || [];
   mkChart('chartSentimiento', {
     type: 'doughnut',
     data: {
@@ -448,7 +460,7 @@ function renderCharts(d) {
     options: { ...commonOpts, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
   });
 
-  const temas = d.temas || [];
+  const temas = vg.temas || d.temas || [];
   mkChart('chartTemas', {
     type: 'bar',
     data: {
@@ -458,7 +470,7 @@ function renderCharts(d) {
     options: { ...commonOpts, indexAxis: 'y', plugins: { legend: { display: false } } }
   });
 
-  const plats = d.plataformas || [];
+  const plats = vg.plataformas || d.plataformas || [];
   const platColors = plats.map(p => PLATFORM_COLORS[p.nombre] || PALETTE.accent);
 
   mkChart('chartPlataformas', {
@@ -482,7 +494,7 @@ function renderCharts(d) {
     options: { ...commonOpts, plugins: { legend: { position: 'bottom' } } }
   });
 
-  const seg = d.segmentacion || d.segmentacion_estimada || {};
+  const seg = d.segmentacion_demografica || d.segmentacion || {};
   const genero = seg.por_genero || [];
   mkChart('chartSegGenero', {
     type: 'bar',
