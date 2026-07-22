@@ -59,9 +59,8 @@ export default async function handler(req, res) {
   let contextoReal = '';
   try {
     const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
-    const MAX_TWEETS = 15;
-    const MAX_NOTICIAS = 8;
 
+    // Extracción enriquecida: Twitter Lite + Google Search + Google News
     const tweetsPromise = fetch(
       `https://api.apify.com/v2/acts/apidojo~twitter-scraper-lite/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
       {
@@ -70,7 +69,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           searchTerms: [`${nombre}`],
           sort: 'Latest',
-          maxItems: MAX_TWEETS,
+          maxItems: 20,
           tweetLanguage: 'es'
         })
       }
@@ -83,7 +82,7 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           queries: `${nombre} político México noticias ${fechaCtx}`,
-          resultsPerPage: MAX_NOTICIAS,
+          resultsPerPage: 10,
           maxPagesPerQuery: 1,
           languageCode: 'es',
           countryCode: 'mx'
@@ -93,38 +92,37 @@ export default async function handler(req, res) {
 
     const [tweetsData, noticiasData] = await Promise.all([tweetsPromise, noticiasPromise]);
 
-    const tweetsTexto = (tweetsData || []).slice(0, MAX_TWEETS).map(t =>
-      `TWEET de @${t.author?.userName || 'desconocido'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
+    const tweetsTexto = (tweetsData || []).slice(0, 20).map(t =>
+      `TWEET de @${t.author?.userName || 'usuario'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
     ).join('\n\n');
 
     const organicResults = (noticiasData || []).flatMap(item => item.organicResults || []);
-    const noticiasTexto = organicResults.slice(0, MAX_NOTICIAS).map(r =>
-      `FUENTE: ${r.title}\nURL: ${r.url}\nCONTENIDO: ${r.description || ''}`
+    const noticiasTexto = organicResults.slice(0, 10).map(r =>
+      `TITULAR: ${r.title}\nURL: ${r.url}\nRESUMEN: ${r.description || ''}`
     ).join('\n\n---\n\n');
 
-    contextoReal = `INFORMACION REAL EXTRAIDA DE INTERNET PARA ANALISIS EXPLICITO:\n\n` +
-      `=== MENCIONES EN X/TWITTER (${tweetsData?.length || 0} resultados) ===\n${tweetsTexto || 'Sin resultados.'}\n\n` +
-      `=== NOTICIAS Y FUENTES (${organicResults.length} resultados) ===\n${noticiasTexto || 'Sin resultados.'}`;
+    contextoReal = `DATOS EXTRAIDOS EN TIEMPO REAL:\n\n` +
+      `=== MENCIONES EN X/TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos de menciones.'}\n\n` +
+      `=== NOTICIAS Y PRENSA EN LINEA (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin resultados de noticias.'}`;
 
   } catch (e) {
     console.error('Apify exception:', e.message);
-    contextoReal = 'No se pudo obtener información en tiempo real. Utiliza conocimiento base de fuentes públicas.';
+    contextoReal = 'No se pudo conectar a Apify. Genera análisis contextual basado en conocimiento público.';
   }
 
   const prompt = `Eres un analista político-digital experto en México. La fecha de consulta es: ${fechaCtx}.
 
-INFORMACION REAL Y ACTUAL SOBRE "${nombre}" EXTRAIDA DE APIFY/FUENTES:
+INFORMACION REAL EXTRAIDA DE FUENTES PARA "${nombre}":
 ${contextoReal}
 
-Genera un perfil RADAR de análisis explícito y estructurado para el actor político: "${nombre}".
+Genera un perfil RADAR explícito, exhaustivo y estructurado para el actor político: "${nombre}".
 
 REGLAS DE GENERACION:
-1. Extrae los datos reales de la información proporcionada.
-2. Presenta la información de forma directa e informativa en cada apartado.
-3. NO incluyas letreros de advertencia sobre la IA ni disclaimers. Presenta los valores de segmentación directamente como datos consolidados del análisis.
-4. NO incluyas recomendaciones ni conclusiones/dictámenes.
+1. Extrae y categoriza datos reales extraídos.
+2. Presenta la información sin disclaimers de IA ni advertencias.
+3. NO incluyas recomendaciones ni conclusiones/dictámenes.
 
-Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin texto adicional).
+Responde UNICAMENTE con un JSON valido (sin bloques markdown \`\`\`):
 
 {
   "nombre": "Nombre completo oficial",
@@ -146,12 +144,12 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
     {"label": "Polarizado", "pct": 10}
   ],
   "temas": [
-    {"tema": "Tema principal", "pct": 38, "color": "success"},
-    {"tema": "Tema 2", "pct": 20, "color": "danger"},
-    {"tema": "Tema 3", "pct": 14, "color": "accent"},
-    {"tema": "Tema 4", "pct": 12, "color": "danger"},
-    {"tema": "Tema 5", "pct": 9, "color": "gold"},
-    {"tema": "Tema 6", "pct": 7, "color": "accent"}
+    {"tema": "Tema principal", "pct": 38},
+    {"tema": "Tema 2", "pct": 20},
+    {"tema": "Tema 3", "pct": 14},
+    {"tema": "Tema 4", "pct": 12},
+    {"tema": "Tema 5", "pct": 9},
+    {"tema": "Tema 6", "pct": 7}
   ],
   "plataformas": [
     {"nombre": "X/Twitter", "pct": 45, "tono_positivo": 30, "tono_negativo": 55},
@@ -172,7 +170,7 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
     ]
   },
   "narrativas_favorables": [
-    {"titulo": "Narrativa positiva 1", "descripcion": "Detalle explícito del hallazgo en redes/noticias."},
+    {"titulo": "Narrativa positiva 1", "descripcion": "Detalle explícito."},
     {"titulo": "Narrativa positiva 2", "descripcion": "Detalle explícito."},
     {"titulo": "Narrativa positiva 3", "descripcion": "Detalle explícito."}
   ],
@@ -186,19 +184,19 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
     {"titulo": "Narrativa neutral 2", "descripcion": "Detalle explícito."}
   ],
   "cronologia": [
-    {"fecha": "Mes/Año", "tipo": "pos", "badge": "EVENTO DESTACADO", "evento": "Título del hecho real", "lectura": "Detalle del evento y alcance."},
-    {"fecha": "Mes/Año", "tipo": "neg", "badge": "EVENTO CRITICO", "evento": "Título del hecho real", "lectura": "Detalle del impacto."},
-    {"fecha": "Mes/Año", "tipo": "pos", "badge": "EVENTO DESTACADO", "evento": "Título", "lectura": "Detalle."},
-    {"fecha": "Mes/Año", "tipo": "neg", "badge": "EVENTO CRITICO", "evento": "Título", "lectura": "Detalle."}
+    {"fecha": "Mes/Año", "badge": "EVENTO DESTACADO", "evento": "Título del hecho", "lectura": "Detalle del evento."},
+    {"fecha": "Mes/Año", "badge": "EVENTO CRITICO", "evento": "Título del hecho", "lectura": "Detalle del impacto."},
+    {"fecha": "Mes/Año", "badge": "EVENTO DESTACADO", "evento": "Título", "lectura": "Detalle."},
+    {"fecha": "Mes/Año", "badge": "EVENTO CRITICO", "evento": "Título", "lectura": "Detalle."}
   ],
   "riesgos": [
-    {"nivel": "CRÍTICO", "titulo": "Factor de riesgo 1", "descripcion": "Exposición del caso y volumen en fuentes."},
+    {"nivel": "CRÍTICO", "titulo": "Factor de riesgo 1", "descripcion": "Exposición del caso."},
     {"nivel": "ALTO", "titulo": "Factor de riesgo 2", "descripcion": "Exposición del caso."},
     {"nivel": "MEDIO", "titulo": "Factor de riesgo 3", "descripcion": "Exposición del caso."}
   ],
   "oportunidades": [
-    {"nivel": "ALTO", "titulo": "Oportunidad de conversación 1", "descripcion": "Elemento favorable extraído."},
-    {"nivel": "MEDIO", "titulo": "Oportunidad de conversación 2", "descripcion": "Elemento favorable extraído."}
+    {"nivel": "ALTO", "titulo": "Oportunidad 1", "descripcion": "Elemento favorable."},
+    {"nivel": "MEDIO", "titulo": "Oportunidad 2", "descripcion": "Elemento favorable."}
   ]
 }`;
 
