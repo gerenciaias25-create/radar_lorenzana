@@ -22,173 +22,191 @@
   </div>
 </header>
 
-<!-- SEARCH -->
-<section class="search-hero" id="searchSection">
-  <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
-  <h1 class="search-heading">Perfil Político <span>en Tiempo Real</span></h1>
-  <p class="search-desc">Ingresa el nombre del actor político para consultar la extracción explícita de datos, mapa de sentimiento y narrativas.</p>
+<main class="main-content">
+  <!-- SEARCH HERO -->
+  <section class="search-hero" id="searchSection">
+    <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
+    <h1 class="search-heading">Perfil Político <span>en Tiempo Real</span></h1>
+    <p class="search-desc">Ingresa el nombre del actor político para consultar la extracción explícita de datos, mapa de sentimiento y narrativas.</p>
 
-  <div class="search-form">
-    <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
-    <select id="mesSelect">
-      <option value="enero">Enero</option>
-      <option value="febrero">Febrero</option>
-      <option value="marzo">Marzo</option>
-      <option value="abril">Abril</option>
-      <option value="mayo">Mayo</option>
-      <option value="junio">Junio</option>
-      <option value="julio" selected>Julio</option>
-      <option value="agosto">Agosto</option>
-      <option value="septiembre">Septiembre</option>
-      <option value="octubre">Octubre</option>
-      <option value="noviembre">Noviembre</option>
-      <option value="diciembre">Diciembre</option>
-    </select>
-    <select id="anioSelect">
-      <option value="2026" selected>2026</option>
-      <option value="2025">2025</option>
-      <option value="2024">2024</option>
-    </select>
-    <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
-  </div>
-
-  <div class="suggestion-row">
-    <span class="suggestion-label">Sugerencias:</span>
-    <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
-    <button class="chip" onclick="setChip('AMLO')">AMLO</button>
-    <button class="chip" onclick="setChip('Xóchitl Gálvez')">Xóchitl Gálvez</button>
-    <button class="chip" onclick="setChip('Daniel Serrano')">Daniel Serrano</button>
-    <button class="chip" onclick="setChip('Clara Brugada')">Clara Brugada</button>
-  </div>
-</section>
-
-<!-- LOADING -->
-<div class="loading-wrap" id="loadingWrap">
-  <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
-  <div class="loader-label" id="loaderLabel">Procesando Análisis</div>
-  <div class="loader-sub" id="loaderSub">Consultando fuentes en tiempo real...</div>
-</div>
-
-<!-- ERROR -->
-<div class="error-wrap" id="errorWrap">
-  <div class="error-card">
-    <div class="error-label">Error en la Consulta</div>
-    <div class="error-text" id="errorText">Ocurrió un problema consultando las fuentes.</div>
-    <button class="btn-retry" onclick="resetUI()">← Intentar de nuevo</button>
-  </div>
-</div>
-
-<!-- DASHBOARD MAIN CONTAINER -->
-<div id="dashboard">
-  <!-- Profile Hero -->
-  <div class="hero-profile">
-    <div class="hero-l">PERFIL DIGITAL DE ACTOR POLITICO</div>
-    <h1 class="hero-n" id="profileName"></h1>
-    <div class="hero-s" id="profileCargo"></div>
-    <div class="profile-tags" id="profileTags"></div>
-    <div id="cacheIndicator" style="font-family:monospace; font-size:10px; color:var(--bl); margin-top:8px; cursor:pointer;" onclick="analizar(true)"></div>
-  </div>
-
-  <!-- KPIs -->
-  <div class="kpi-grid" id="kpiRow"></div>
-
-  <!-- Navigation Tabs -->
-  <nav class="tabs-nav">
-    <button class="tab-btn active" onclick="showTab('vision', this)">VISIÓN GENERAL</button>
-    <button class="tab-btn" onclick="showTab('segmentacion', this)">SEGMENTACIÓN DEMOGRÁFICA</button>
-    <button class="tab-btn" onclick="showTab('narrativas', this)">MAPA DE NARRATIVAS</button>
-    <button class="tab-btn" onclick="showTab('cronologia', this)">CRONOLOGÍA DE EVENTOS</button>
-    <button class="tab-btn" onclick="showTab('riesgos', this)">RIESGOS Y OPORTUNIDADES</button>
-  </nav>
-
-  <!-- TAB: VISIÓN GENERAL -->
-  <div class="tab-panel active" id="tab-vision">
-    <div class="sec-title">Distribución de Sentimiento y Temática</div>
-    <div class="two-col">
-      <div class="chart-card">
-        <div class="chart-title">Sentimiento General</div>
-        <div class="chart-sub">Desglose porcentual en red</div>
-        <canvas id="chartSentimiento" height="200"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Top de Temas</div>
-        <div class="chart-sub">Volumen temático detectado</div>
-        <canvas id="chartTemas" height="200"></canvas>
-      </div>
+    <div class="search-form">
+      <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
+      <select id="mesSelect">
+        <option value="enero">Enero</option>
+        <option value="febrero">Febrero</option>
+        <option value="marzo">Marzo</option>
+        <option value="abril">Abril</option>
+        <option value="mayo">Mayo</option>
+        <option value="junio">Junio</option>
+        <option value="julio" selected>Julio</option>
+        <option value="agosto">Agosto</option>
+        <option value="septiembre">Septiembre</option>
+        <option value="octubre">Octubre</option>
+        <option value="noviembre">Noviembre</option>
+        <option value="diciembre">Diciembre</option>
+      </select>
+      <select id="anioSelect">
+        <option value="2026" selected>2026</option>
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+      </select>
+      <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
     </div>
 
-    <div class="sec-title">Presencia por Plataforma</div>
-    <div class="two-col">
-      <div class="chart-card">
-        <div class="chart-title">Distribución por Canal</div>
-        <div class="chart-sub">Proporción de conversaciones</div>
-        <canvas id="chartPlataformas" height="200"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Tono por Canal</div>
-        <div class="chart-sub">Favorable vs Adverso por plataforma</div>
-        <canvas id="chartTonoPlataforma" height="200"></canvas>
-      </div>
+    <div class="suggestion-row">
+      <span class="suggestion-label">Sugerencias:</span>
+      <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
+      <button class="chip" onclick="setChip('AMLO')">AMLO</button>
+      <button class="chip" onclick="setChip('Xóchitl Gálvez')">Xóchitl Gálvez</button>
+      <button class="chip" onclick="setChip('Daniel Serrano')">Daniel Serrano</button>
+      <button class="chip" onclick="setChip('Clara Brugada')">Clara Brugada</button>
+    </div>
+  </section>
+
+  <!-- LOADING -->
+  <div class="loading-wrap" id="loadingWrap">
+    <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
+    <div class="loader-label" id="loaderLabel">Procesando Análisis</div>
+    <div class="loader-sub" id="loaderSub">Consultando fuentes en tiempo real...</div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-wrap" id="errorWrap">
+    <div class="error-card">
+      <div class="error-label">Error en la Consulta</div>
+      <div class="error-text" id="errorText">Ocurrió un problema consultando las fuentes.</div>
+      <button class="btn-retry" onclick="resetUI()">← Intentar de nuevo</button>
     </div>
   </div>
 
-  <!-- TAB: SEGMENTACIÓN -->
-  <div class="tab-panel" id="tab-segmentacion">
-    <div class="sec-title">Desglose Demográfico</div>
-    <div class="two-col">
-      <div class="chart-card">
-        <div class="chart-title">Sentimiento por Género</div>
-        <div class="chart-sub">Distribución observada</div>
-        <canvas id="chartSegGenero" height="220"></canvas>
+  <!-- DASHBOARD MAIN CONTAINER -->
+  <div id="dashboard">
+    <div class="dashboard-actions">
+      <button class="btn-new-search" onclick="resetUI()">← NUEVA BÚSQUEDA</button>
+    </div>
+
+    <!-- Profile Hero -->
+    <div class="hero-profile">
+      <div class="hero-l">PERFIL DIGITAL DE ACTOR POLITICO</div>
+      <h1 class="hero-n" id="profileName"></h1>
+      <div class="hero-s" id="profileCargo"></div>
+      <div class="profile-tags" id="profileTags"></div>
+      <div id="cacheIndicator" style="font-family:monospace; font-size:10px; color:var(--bl); margin-top:8px; cursor:pointer;" onclick="analizar(true)"></div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiRow"></div>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" onclick="showTab('vision', this)">VISIÓN GENERAL</button>
+      <button class="tab-btn" onclick="showTab('segmentacion', this)">SEGMENTACIÓN DEMOGRÁFICA</button>
+      <button class="tab-btn" onclick="showTab('narrativas', this)">MAPA DE NARRATIVAS</button>
+      <button class="tab-btn" onclick="showTab('cronologia', this)">CRONOLOGÍA DE EVENTOS</button>
+      <button class="tab-btn" onclick="showTab('riesgos', this)">RIESGOS Y OPORTUNIDADES</button>
+    </nav>
+
+    <!-- TAB: VISIÓN GENERAL -->
+    <div class="tab-panel active" id="tab-vision">
+      <div class="sec-title">Distribución de Sentimiento y Temática</div>
+      <p class="sec-intro">Métricas principales sobre el clima general de conversación y los ejes temáticos con mayor alcance detectados en plataformas digitales.</p>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="chart-title">Sentimiento General</div>
+          <div class="chart-sub">Desglose porcentual en red</div>
+          <div class="chart-container"><canvas id="chartSentimiento"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Top de Temas</div>
+          <div class="chart-sub">Volumen temático detectado</div>
+          <div class="chart-container"><canvas id="chartTemas"></canvas></div>
+        </div>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">Sentimiento por Rango de Edad</div>
-        <div class="chart-sub">Distribución observada</div>
-        <canvas id="chartSegEdad" height="220"></canvas>
+
+      <div class="sec-title">Presencia por Plataforma</div>
+      <p class="sec-intro">Comparativa del volumen de menciones e inclinación del tono del discurso a través de los diferentes canales evaluados.</p>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="chart-title">Distribución por Canal</div>
+          <div class="chart-sub">Proporción de conversaciones</div>
+          <div class="chart-container"><canvas id="chartPlataformas"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Tono por Canal</div>
+          <div class="chart-sub">Favorable vs Adverso por plataforma</div>
+          <div class="chart-container"><canvas id="chartTonoPlataforma"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: SEGMENTACIÓN -->
+    <div class="tab-panel" id="tab-segmentacion">
+      <div class="sec-title">Desglose Demográfico</div>
+      <p class="sec-intro">Consolidado de la inclinación del discurso segmentado por género y grupos etarios participantes en la conversación pública.</p>
+
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="chart-title">Sentimiento por Género</div>
+          <div class="chart-sub">Distribución observada</div>
+          <div class="chart-container"><canvas id="chartSegGenero"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Sentimiento por Rango de Edad</div>
+          <div class="chart-sub">Distribución observada</div>
+          <div class="chart-container"><canvas id="chartSegEdad"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: NARRATIVAS -->
+    <div class="tab-panel" id="tab-narrativas">
+      <div class="sec-title">Desglose de Narrativas Detectadas</div>
+      <p class="sec-intro">Resumen estructurado de los principales argumentos y discursos que impulsan o detraen la percepción del actor político en medios y redes.</p>
+
+      <div class="nar-grid">
+        <div class="nar-col">
+          <div class="nar-head fav">▲ NARRATIVAS FAVORABLES</div>
+          <div id="narFav"></div>
+        </div>
+        <div class="nar-col">
+          <div class="nar-head cri">▼ NARRATIVAS CRÍTICAS</div>
+          <div id="narCri"></div>
+        </div>
+        <div class="nar-col">
+          <div class="nar-head neu">◆ NARRATIVAS NEUTRAS / EN DISPUTA</div>
+          <div id="narNeu"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CRONOLOGÍA -->
+    <div class="tab-panel" id="tab-cronologia">
+      <div class="sec-title">Línea del Tiempo de Eventos y Menciones</div>
+      <p class="sec-intro">Secuencia de hitos, acontecimientos mediáticos y coyunturas clave registradas durante el periodo evaluado.</p>
+
+      <div class="tl-wrap" id="timeline"></div>
+    </div>
+
+    <!-- TAB: RIESGOS & OPORTUNIDADES -->
+    <div class="tab-panel" id="tab-riesgos">
+      <div class="sec-title">Factores Relevantes de Conversación</div>
+      <p class="sec-intro">Identificación de puntos críticos de exposición adversa y vetas de conversación con potencial favorable.</p>
+
+      <div class="two-col">
+        <div>
+          <div style="font-family:monospace; font-size:10px; font-weight:700; color:var(--da); margin-bottom:10px; letter-spacing:1px;">RIESGOS IDENTIFICADOS</div>
+          <div id="riesgos"></div>
+        </div>
+        <div>
+          <div style="font-family:monospace; font-size:10px; font-weight:700; color:#008080; margin-bottom:10px; letter-spacing:1px;">OPORTUNIDADES DE CONVERSACIÓN</div>
+          <div id="oportunidades"></div>
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- TAB: NARRATIVAS -->
-  <div class="tab-panel" id="tab-narrativas">
-    <div class="sec-title">Desglose de Narrativas Detectadas</div>
-    <div class="nar-grid">
-      <div class="nar-col">
-        <div class="nar-head fav">▲ NARRATIVAS FAVORABLES</div>
-        <div id="narFav"></div>
-      </div>
-      <div class="nar-col">
-        <div class="nar-head cri">▼ NARRATIVAS CRÍTICAS</div>
-        <div id="narCri"></div>
-      </div>
-      <div class="nar-col">
-        <div class="nar-head neu">◆ NARRATIVAS NEUTRAS / EN DISPUTA</div>
-        <div id="narNeu"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: CRONOLOGÍA -->
-  <div class="tab-panel" id="tab-cronologia">
-    <div class="sec-title">Línea del Tiempo de Eventos y Menciones</div>
-    <div class="tl-wrap" id="timeline"></div>
-  </div>
-
-  <!-- TAB: RIESGOS & OPORTUNIDADES -->
-  <div class="tab-panel" id="tab-riesgos">
-    <div class="sec-title">Factores Relevantes de Conversación</div>
-    <div class="two-col">
-      <div>
-        <div style="font-family:monospace; font-size:10px; font-weight:700; color:var(--da); margin-bottom:10px;">Riesgos Identificados</div>
-        <div id="riesgos"></div>
-      </div>
-      <div>
-        <div style="font-family:monospace; font-size:10px; font-weight:700; color:#008080; margin-bottom:10px;">Oportunidades de Conversación</div>
-        <div id="oportunidades"></div>
-      </div>
-    </div>
-  </div>
-</div>
+</main>
 
 <footer>
   <div>RADAR POLÍTICO · SISTEMA DE INTELIGENCIA</div>
@@ -217,6 +235,7 @@ function resetUI() {
   document.getElementById('dashboard').classList.remove('show');
   document.getElementById('searchSection').style.display = '';
   document.getElementById('btnAnalizar').disabled = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 let loadInt;
@@ -355,7 +374,7 @@ document.getElementById('nombreInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') analizar();
 });
 
-// Charts Paleta Daniel Serrano
+// Charts Paleta RADAR
 const PALETTE = { success: '#2EC4B6', danger: '#E63946', accent: '#00C2D4', gold: '#F4C430', neutral: '#1B4F8A' };
 const CH = {};
 function mkChart(id, cfg) {
@@ -366,6 +385,8 @@ function mkChart(id, cfg) {
 }
 
 function renderCharts(d) {
+  const commonOpts = { responsive: true, maintainAspectRatio: false };
+
   const sent = d.sentimiento || [];
   mkChart('chartSentimiento', {
     type: 'doughnut',
@@ -377,7 +398,7 @@ function renderCharts(d) {
         borderWidth: 0
       }]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
+    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
   });
 
   const temas = d.temas || [];
@@ -387,7 +408,7 @@ function renderCharts(d) {
       labels: temas.map(t => t.tema),
       datasets: [{ data: temas.map(t => t.pct), backgroundColor: PALETTE.accent, borderRadius: 2 }]
     },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+    options: { ...commonOpts, indexAxis: 'y', plugins: { legend: { display: false } } }
   });
 
   const plats = d.plataformas || [];
@@ -397,7 +418,7 @@ function renderCharts(d) {
       labels: plats.map(p => p.nombre),
       datasets: [{ data: plats.map(p => p.pct), backgroundColor: [PALETTE.accent, PALETTE.neutral, PALETTE.gold, PALETTE.success], borderWidth: 0 }]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
+    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
   });
 
   mkChart('chartTonoPlataforma', {
@@ -409,7 +430,7 @@ function renderCharts(d) {
         { label: '% Adverso', data: plats.map(p => p.tono_negativo), backgroundColor: PALETTE.danger }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } } }
   });
 
   const seg = d.segmentacion || d.segmentacion_estimada || {};
@@ -424,7 +445,7 @@ function renderCharts(d) {
         { label: 'Adverso', data: genero.map(g => g.negativo), backgroundColor: PALETTE.danger }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } } }
   });
 
   const edad = seg.por_edad || [];
@@ -438,25 +459,20 @@ function renderCharts(d) {
         { label: 'Adverso', data: edad.map(e => e.negativo), backgroundColor: PALETTE.danger }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } } }
   });
 }
 
-/* DESCARGA INTERACTIVA CON FORMATO COMPLETO */
 function descargarDashboard() {
   if (!ultimoData) { alert('Primero realiza una consulta para generar el dashboard.'); return; }
 
   const clone = document.documentElement.cloneNode(true);
-
-  // Ocultar la sección de búsqueda en el exportable
   const searchEl = clone.querySelector('#searchSection');
   if (searchEl) searchEl.style.display = 'none';
 
-  // Ocultar botón de descarga en el exportable
   const btnDesc = clone.querySelector('#btnDescargar');
   if (btnDesc) btnDesc.style.display = 'none';
 
-  // Inyectar datos e instructivo de renderizado automático para conservar interactividad y gráficos
   const scriptInjected = clone.ownerDocument.createElement('script');
   scriptInjected.textContent = `
     window.ultimoData = ${JSON.stringify(ultimoData)};
