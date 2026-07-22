@@ -100,6 +100,7 @@
     <!-- Navigation Tabs -->
     <nav class="tabs-nav">
       <button class="tab-btn active" onclick="showTab('vision', this)">VISIÓN GENERAL</button>
+      <button class="tab-btn" onclick="showTab('actores', this)">ANÁLISIS DE ACTORES</button>
       <button class="tab-btn" onclick="showTab('segmentacion', this)">SEGMENTACIÓN DEMOGRÁFICA</button>
       <button class="tab-btn" onclick="showTab('narrativas', this)">MAPA DE NARRATIVAS</button>
       <button class="tab-btn" onclick="showTab('cronologia', this)">CRONOLOGÍA DE EVENTOS</button>
@@ -139,6 +140,18 @@
           <div class="chart-container"><canvas id="chartTonoPlataforma"></canvas></div>
         </div>
       </div>
+    </div>
+
+    <!-- TAB: ANÁLISIS DE ACTORES -->
+    <div class="tab-panel" id="tab-actores">
+      <div class="sec-title">Mapeo Táctico de Actores Políticos &amp; Mediáticos</div>
+      <p class="sec-intro">Desglose de la postura, nivel de impacto y encuadre narrativo impulsado por columnistas, prensa local, oposición y la conversación ciudadana.</p>
+
+      <div class="actor-grid" id="actorGrid"></div>
+
+      <div class="sec-title" style="margin-top:24px;">Análisis Bivariado Cruzado</div>
+      <p class="sec-intro">Cruces analíticos entre variables temáticas, plataformas y actores clave para identificar patrones de ataque o respaldo.</p>
+      <div class="bivariado-grid" id="bivariadoGrid"></div>
     </div>
 
     <!-- TAB: SEGMENTACIÓN -->
@@ -241,7 +254,7 @@ function resetUI() {
 let loadInt;
 function startLoad() {
   const lbl = document.getElementById('loaderLabel');
-  const msgs = ['Consultando Apify Multi-Fuente', 'Extrayendo Facebook y Twitter', 'Analizando Noticiosos y Google Search', 'Sintetizando Narrativas e Impacto'];
+  const msgs = ['Consultando Apify Multi-Fuente', 'Extrayendo Facebook y Twitter', 'Analizando Noticiosos y Google Search', 'Sintetizando Actores y Narrativas'];
   let i = 0;
   lbl.textContent = msgs[0];
   loadInt = setInterval(() => {
@@ -320,6 +333,28 @@ function renderDashboard(d) {
     </div>
   `).join('');
 
+  // Render Actores
+  document.getElementById('actorGrid').innerHTML = (d.analisis_actores || []).map(a => `
+    <div class="actor-card">
+      <div class="actor-head">
+        <span class="actor-cat">${a.categoria}</span>
+        <span class="actor-badge">${a.impacto}</span>
+      </div>
+      <div class="actor-body">
+        <div class="actor-nar">${a.narrativa_dominante}</div>
+        <div class="actor-stat"><strong>Inclinación:</strong> ${a.tendencia_actitud}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Render Cruces Bivariados
+  document.getElementById('bivariadoGrid').innerHTML = (d.cruces_bivariados || []).map(c => `
+    <div class="bivariado-card">
+      <div class="bivariado-axes">Ejes: ${c.eje_x} ✕ ${c.eje_y}</div>
+      <div class="bivariado-desc">${c.hallazgo}</div>
+    </div>
+  `).join('');
+
   renderCharts(d);
 
   const renderNar = (items, id) => {
@@ -377,7 +412,6 @@ document.getElementById('nombreInput').addEventListener('keydown', e => {
 // Charts Paleta RADAR
 const PALETTE = { success: '#2EC4B6', danger: '#E63946', accent: '#00C2D4', gold: '#F4C430', neutral: '#1B4F8A' };
 
-// Paleta específica por Plataforma
 const PLATFORM_COLORS = {
   'Facebook': '#1877F2',
   'X/Twitter': '#1D9BF0',
