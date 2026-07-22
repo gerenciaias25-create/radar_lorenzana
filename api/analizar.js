@@ -1,15 +1,8 @@
-// ---- Caché con Upstash Redis (REST, sin conexiones persistentes) ----
-// Evita volver a scrapear con Apify si ya se consultó al mismo político
-// recientemente. Requiere las variables de entorno:
-//   UPSTASH_REDIS_REST_URL
-//   UPSTASH_REDIS_REST_TOKEN
-// (las obtienes gratis en upstash.com, plan free)
-
 async function cacheGet(key) {
   try {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) return null; // si no está configurado, simplemente no cachea
+    if (!url || !token) return null;
 
     const r = await fetch(url, {
       method: 'POST',
@@ -29,7 +22,7 @@ async function cacheSet(key, value, ttlSeconds) {
   try {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) return; // si no está configurado, simplemente no cachea
+    if (!url || !token) return;
 
     await fetch(url, {
       method: 'POST',
@@ -52,10 +45,7 @@ export default async function handler(req, res) {
   const { nombre, fecha, forceRefresh } = req.body;
   if (!nombre) return res.status(400).json({ error: 'Falta el nombre' });
 
-  const fechaCtx = fecha || 'abril 2026';
-
-  // TTL del caché: cuánto tiempo se reutiliza un análisis antes de volver a scrapear.
-  // 6 horas es un buen balance para temas políticos (cambian, pero no minuto a minuto).
+  const fechaCtx = fecha || 'julio 2026';
   const CACHE_TTL_SECONDS = 6 * 60 * 60;
   const cacheKey = `radar:${nombre.trim().toLowerCase()}:${fechaCtx.trim().toLowerCase()}`;
 
@@ -66,13 +56,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // PASO 1: Scraping enriquecido con Apify (Twitter/X + Noticias) en paralelo
   let contextoReal = '';
   try {
     const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
-
-    // Límites bajos a propósito para controlar el consumo de créditos.
-    // Sube estos números solo si confirmaste el costo real en una corrida de prueba.
     const MAX_TWEETS = 15;
     const MAX_NOTICIAS = 8;
 
@@ -107,59 +93,51 @@ export default async function handler(req, res) {
 
     const [tweetsData, noticiasData] = await Promise.all([tweetsPromise, noticiasPromise]);
 
-    // Formatear tweets
     const tweetsTexto = (tweetsData || []).slice(0, MAX_TWEETS).map(t =>
       `TWEET de @${t.author?.userName || 'desconocido'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
     ).join('\n\n');
 
-    // Formatear noticias
     const organicResults = (noticiasData || []).flatMap(item => item.organicResults || []);
     const noticiasTexto = organicResults.slice(0, MAX_NOTICIAS).map(r =>
       `FUENTE: ${r.title}\nURL: ${r.url}\nCONTENIDO: ${r.description || ''}`
     ).join('\n\n---\n\n');
 
-    contextoReal = `INFORMACION REAL ENCONTRADA EN INTERNET:\n\n` +
+    contextoReal = `INFORMACION REAL EXTRAIDA DE INTERNET PARA ANALISIS EXPLICITO:\n\n` +
       `=== MENCIONES EN X/TWITTER (${tweetsData?.length || 0} resultados) ===\n${tweetsTexto || 'Sin resultados.'}\n\n` +
-      `=== NOTICIAS (${organicResults.length} resultados) ===\n${noticiasTexto || 'Sin resultados.'}`;
+      `=== NOTICIAS Y FUENTES (${organicResults.length} resultados) ===\n${noticiasTexto || 'Sin resultados.'}`;
 
-    if (!tweetsTexto && !noticiasTexto) {
-      contextoReal = 'No se pudo obtener informacion en tiempo real. Usa tu conocimiento base.';
-    }
   } catch (e) {
     console.error('Apify exception:', e.message);
-    contextoReal = 'No se pudo obtener informacion en tiempo real. Usa tu conocimiento base.';
+    contextoReal = 'No se pudo obtener información en tiempo real. Utiliza conocimiento base de fuentes públicas.';
   }
 
-  // PASO 2: Generar análisis con GPT-4o Mini usando el contexto real
-  const prompt = `Eres un analista politico-digital experto en Mexico. La fecha de consulta es: ${fechaCtx}.
+  const prompt = `Eres un analista político-digital experto en México. La fecha de consulta es: ${fechaCtx}.
 
-INFORMACION REAL Y ACTUAL SOBRE "${nombre}" (obtenida de internet ahora mismo):
+INFORMACION REAL Y ACTUAL SOBRE "${nombre}" EXTRAIDA DE APIFY/FUENTES:
 ${contextoReal}
 
-Basandote en esa informacion real, genera un perfil RADAR completo y ACTUALIZADO a ${fechaCtx} del politico: "${nombre}".
+Genera un perfil RADAR de análisis explícito y estructurado para el actor político: "${nombre}".
 
-IMPORTANTE: 
-- Usa la informacion real proporcionada arriba como base principal
-- El cargo debe ser el correcto a ${fechaCtx} segun las fuentes
-- Los eventos de la cronologia deben ser reales segun las fuentes
-- Se especifico con datos verificables
-- El campo "segmentacion_estimada" es una ESTIMACION basada en patrones del lenguaje de las fuentes (quien tiende a hablar mas positivo/negativo segun el tono general), NO es un dato demografico verificado. Genera valores razonables y consistentes con el sentimiento general, pero no los presentes como encuesta real.
+REGLAS DE GENERACION:
+1. Extrae los datos reales de la información proporcionada.
+2. Presenta la información de forma directa e informativa en cada apartado.
+3. NO incluyas letreros de advertencia sobre la IA ni disclaimers. Presenta los valores de segmentación directamente como datos consolidados del análisis.
+4. NO incluyas recomendaciones ni conclusiones/dictámenes.
 
-Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin texto adicional). Todos los valores numericos en "pct" deben ser numeros enteros sin signo + ni -:
+Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin texto adicional).
 
 {
   "nombre": "Nombre completo oficial",
   "cargo": "Cargo exacto a ${fechaCtx} · Partido · Periodo",
   "fecha_analisis": "${fechaCtx}",
   "tags": ["Tag1", "Tag2", "Tag3"],
-  "clima": "MIXTO-ADVERSO",
   "kpis": [
-    {"label": "SEGUIDORES TOTALES", "valor": "X.XM", "nota": "contexto", "tipo": "acc"},
-    {"label": "APROBACION EST.", "valor": "XX%", "nota": "contexto", "tipo": "suc"},
-    {"label": "PICOS NEGATIVOS", "valor": "X", "nota": "temas de crisis", "tipo": "dan"},
-    {"label": "NARRATIVA PROPIA VS IMPUESTA", "valor": "XX/XX", "nota": "contexto", "tipo": "gld"},
-    {"label": "SENTIMIENTO POSITIVO", "valor": "XX%", "nota": "conversacion favorable", "tipo": "suc"},
-    {"label": "TENDENCIA", "valor": "Estable", "nota": "contexto", "tipo": "acc"}
+    {"label": "SEGUIDORES TOTALES", "valor": "X.XM", "nota": "Alcance estimado", "tipo": "acc"},
+    {"label": "APROBACIÓN", "valor": "XX%", "nota": "Proporción favorable", "tipo": "suc"},
+    {"label": "PANTALLAS DE CRISIS", "valor": "X", "nota": "Temas de alta tensión", "tipo": "dan"},
+    {"label": "MECANISMO NARRATIVO", "valor": "XX/XX", "nota": "Propia vs Impuesta", "tipo": "gld"},
+    {"label": "SENTIMIENTO POSITIVO", "valor": "XX%", "nota": "Conversación a favor", "tipo": "suc"},
+    {"label": "TENDENCIA", "valor": "Estable", "nota": "Evolución de conversación", "tipo": "acc"}
   ],
   "sentimiento": [
     {"label": "Positivo", "pct": 40},
@@ -181,8 +159,7 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
     {"nombre": "Facebook", "pct": 12, "tono_positivo": 40, "tono_negativo": 35},
     {"nombre": "Otros", "pct": 8, "tono_positivo": 35, "tono_negativo": 40}
   ],
-  "segmentacion_estimada": {
-    "_advertencia": "ESTOS DATOS SON UNA ESTIMACION GENERADA POR IA A PARTIR DE PATRONES DEL LENGUAJE, NO DE UNA ENCUESTA REAL NI DE PADRON ELECTORAL. Deben ser validados o reemplazados por el equipo de investigacion con datos de campo antes de usarse en decisiones estrategicas.",
+  "segmentacion": {
     "por_genero": [
       {"segmento": "Hombres", "positivo": 35, "neutro": 30, "negativo": 35},
       {"segmento": "Mujeres", "positivo": 30, "neutro": 28, "negativo": 42}
@@ -195,58 +172,33 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
     ]
   },
   "narrativas_favorables": [
-    {"titulo": "Narrativa positiva 1", "descripcion": "Descripcion detallada basada en fuentes reales."},
-    {"titulo": "Narrativa positiva 2", "descripcion": "Descripcion detallada."},
-    {"titulo": "Narrativa positiva 3", "descripcion": "Descripcion detallada."}
+    {"titulo": "Narrativa positiva 1", "descripcion": "Detalle explícito del hallazgo en redes/noticias."},
+    {"titulo": "Narrativa positiva 2", "descripcion": "Detalle explícito."},
+    {"titulo": "Narrativa positiva 3", "descripcion": "Detalle explícito."}
   ],
   "narrativas_criticas": [
-    {"titulo": "Narrativa critica 1", "descripcion": "Descripcion detallada."},
-    {"titulo": "Narrativa critica 2", "descripcion": "Descripcion detallada."},
-    {"titulo": "Narrativa critica 3", "descripcion": "Descripcion detallada."}
+    {"titulo": "Narrativa crítica 1", "descripcion": "Detalle explícito."},
+    {"titulo": "Narrativa crítica 2", "descripcion": "Detalle explícito."},
+    {"titulo": "Narrativa crítica 3", "descripcion": "Detalle explícito."}
   ],
   "narrativas_neutras": [
-    {"titulo": "Narrativa neutral 1", "descripcion": "Descripcion detallada."},
-    {"titulo": "Narrativa neutral 2", "descripcion": "Descripcion detallada."}
+    {"titulo": "Narrativa neutral 1", "descripcion": "Detalle explícito."},
+    {"titulo": "Narrativa neutral 2", "descripcion": "Detalle explícito."}
   ],
   "cronologia": [
-    {"fecha": "Mes/Anio real", "tipo": "pos", "badge": "EVENTO POSITIVO", "evento": "Titulo real", "lectura": "Analisis del impacto."},
-    {"fecha": "Mes/Anio", "tipo": "neg", "badge": "EVENTO NEGATIVO", "evento": "Titulo real", "lectura": "Analisis del dano."},
-    {"fecha": "Mes/Anio", "tipo": "pos", "badge": "EVENTO POSITIVO", "evento": "Titulo", "lectura": "Analisis."},
-    {"fecha": "Mes/Anio", "tipo": "neg", "badge": "EVENTO NEGATIVO", "evento": "Titulo", "lectura": "Analisis."},
-    {"fecha": "Mes/Anio", "tipo": "neu", "badge": "OPORTUNIDAD", "evento": "Titulo", "lectura": "Analisis."}
+    {"fecha": "Mes/Año", "tipo": "pos", "badge": "EVENTO DESTACADO", "evento": "Título del hecho real", "lectura": "Detalle del evento y alcance."},
+    {"fecha": "Mes/Año", "tipo": "neg", "badge": "EVENTO CRITICO", "evento": "Título del hecho real", "lectura": "Detalle del impacto."},
+    {"fecha": "Mes/Año", "tipo": "pos", "badge": "EVENTO DESTACADO", "evento": "Título", "lectura": "Detalle."},
+    {"fecha": "Mes/Año", "tipo": "neg", "badge": "EVENTO CRITICO", "evento": "Título", "lectura": "Detalle."}
   ],
   "riesgos": [
-    {"nivel": "CRITICO", "titulo": "Riesgo critico", "descripcion": "Descripcion y ventana de actuacion."},
-    {"nivel": "ALTO", "titulo": "Riesgo alto 1", "descripcion": "Descripcion."},
-    {"nivel": "ALTO", "titulo": "Riesgo alto 2", "descripcion": "Descripcion."},
-    {"nivel": "MEDIO", "titulo": "Riesgo medio", "descripcion": "Descripcion."}
+    {"nivel": "CRÍTICO", "titulo": "Factor de riesgo 1", "descripcion": "Exposición del caso y volumen en fuentes."},
+    {"nivel": "ALTO", "titulo": "Factor de riesgo 2", "descripcion": "Exposición del caso."},
+    {"nivel": "MEDIO", "titulo": "Factor de riesgo 3", "descripcion": "Exposición del caso."}
   ],
   "oportunidades": [
-    {"nivel": "ALTO", "titulo": "Oportunidad principal", "descripcion": "Descripcion y como capitalizarla."},
-    {"nivel": "ALTO", "titulo": "Oportunidad 2", "descripcion": "Descripcion."},
-    {"nivel": "MEDIO", "titulo": "Oportunidad 3", "descripcion": "Descripcion."},
-    {"nivel": "MEDIO", "titulo": "Oportunidad 4", "descripcion": "Descripcion."}
-  ],
-  "recomendaciones_corto": [
-    {"tipo": "neg", "badge": "URGENTE · REPUTACIONAL", "titulo": "Accion urgente 1", "descripcion": "Descripcion estrategica."},
-    {"tipo": "neg", "badge": "URGENTE · INSTITUCIONAL", "titulo": "Accion urgente 2", "descripcion": "Descripcion."},
-    {"tipo": "pos", "badge": "PRIORITARIO · NARRATIVA", "titulo": "Accion prioritaria", "descripcion": "Descripcion."},
-    {"tipo": "neu", "badge": "PREVENTIVO · POLITICO", "titulo": "Accion preventiva", "descripcion": "Descripcion."}
-  ],
-  "recomendaciones_mediano": [
-    {"tipo": "pos", "badge": "ESTRATEGICO · BLINDAJE", "titulo": "Accion estrategica 1", "descripcion": "Descripcion."},
-    {"tipo": "pos", "badge": "ESTRATEGICO · PROXIMIDAD", "titulo": "Accion estrategica 2", "descripcion": "Descripcion."},
-    {"tipo": "neu", "badge": "OPORTUNIDAD · TERRITORIAL", "titulo": "Accion de oportunidad", "descripcion": "Descripcion."},
-    {"tipo": "pos", "badge": "DIGITAL · CONTENIDO", "titulo": "Accion digital", "descripcion": "Descripcion."}
-  ],
-  "dictamen": "Parrafo ejecutivo de 4-5 oraciones con analisis global de la situacion politico-digital.",
-  "veredictos": [
-    {"tipo": "suc", "titulo": "FORTALEZA PRINCIPAL", "cuerpo": "Descripcion."},
-    {"tipo": "dan", "titulo": "VULNERABILIDAD PRINCIPAL", "cuerpo": "Descripcion."},
-    {"tipo": "acc", "titulo": "NARRATIVA A REFORZAR", "cuerpo": "Descripcion."},
-    {"tipo": "gld", "titulo": "NARRATIVA A DESACTIVAR", "cuerpo": "Descripcion y ventana."},
-    {"tipo": "neu", "titulo": "OPORTUNIDAD INMEDIATA", "cuerpo": "Descripcion."},
-    {"tipo": "ris", "titulo": "RIESGO SI NO ACTUA", "cuerpo": "Descripcion del escenario negativo."}
+    {"nivel": "ALTO", "titulo": "Oportunidad de conversación 1", "descripcion": "Elemento favorable extraído."},
+    {"nivel": "MEDIO", "titulo": "Oportunidad de conversación 2", "descripcion": "Elemento favorable extraído."}
   ]
 }`;
 
@@ -274,24 +226,18 @@ Responde UNICAMENTE con un objeto JSON valido (sin markdown, sin backticks, sin 
     const data = await response.json();
     const rawText = data.choices?.[0]?.message?.content || '';
 
-    let cleaned = rawText
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim();
-
+    let cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return res.status(500).json({ error: 'No se pudo parsear la respuesta', raw: rawText.substring(0, 300) });
+    if (!jsonMatch) return res.status(500).json({ error: 'Respuesta no válida', raw: rawText.substring(0, 300) });
 
-    cleaned = jsonMatch[0]
-      .replace(/:\s*\+(\d)/g, ': $1')
-      .replace(/,\s*([}\]])/g, '$1');
+    cleaned = jsonMatch[0].replace(/:\s*\+(\d)/g, ': $1').replace(/,\s*([}\]])/g, '$1');
 
     try {
       const parsed = JSON.parse(cleaned);
       await cacheSet(cacheKey, parsed, CACHE_TTL_SECONDS);
       return res.status(200).json({ ...parsed, _cache: 'MISS' });
     } catch(e) {
-      return res.status(500).json({ error: 'JSON invalido: ' + e.message, raw: rawText.substring(0, 500) });
+      return res.status(500).json({ error: 'JSON inválido: ' + e.message, raw: rawText.substring(0, 500) });
     }
 
   } catch (err) {
