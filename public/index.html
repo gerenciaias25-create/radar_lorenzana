@@ -27,7 +27,7 @@
   <section class="search-hero" id="searchSection">
     <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
     <h1 class="search-heading">Perfil Político <span>en Tiempo Real</span></h1>
-    <p class="search-desc">Ingresa el nombre del actor político para consultar la extracción explícita de datos, mapa de sentimiento y narrativas.</p>
+    <p class="search-desc">Ingresa el nombre del actor político para consultar la extracción explícita de datos, mapa de sentimiento, plataformas y narrativas.</p>
 
     <div class="search-form">
       <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
@@ -55,9 +55,9 @@
 
     <div class="suggestion-row">
       <span class="suggestion-label">Sugerencias:</span>
+      <button class="chip" onclick="setChip('Horacio Duarte Olivares')">Horacio Duarte</button>
       <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
       <button class="chip" onclick="setChip('AMLO')">AMLO</button>
-      <button class="chip" onclick="setChip('Xóchitl Gálvez')">Xóchitl Gálvez</button>
       <button class="chip" onclick="setChip('Daniel Serrano')">Daniel Serrano</button>
       <button class="chip" onclick="setChip('Clara Brugada')">Clara Brugada</button>
     </div>
@@ -67,7 +67,7 @@
   <div class="loading-wrap" id="loadingWrap">
     <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
     <div class="loader-label" id="loaderLabel">Procesando Análisis</div>
-    <div class="loader-sub" id="loaderSub">Consultando fuentes en tiempo real...</div>
+    <div class="loader-sub" id="loaderSub">Consultando redes, noticias y buscadores en tiempo real...</div>
   </div>
 
   <!-- ERROR -->
@@ -124,13 +124,13 @@
         </div>
       </div>
 
-      <div class="sec-title">Presencia por Plataforma</div>
-      <p class="sec-intro">Comparativa del volumen de menciones e inclinación del tono del discurso a través de los diferentes canales evaluados.</p>
+      <div class="sec-title">Ecosistema de Plataformas &amp; Canales</div>
+      <p class="sec-intro">Comparativa del volumen de menciones e inclinación del tono del discurso a través de Facebook, X/Twitter, Medios Digitales, Google Search e Instagram.</p>
 
       <div class="two-col">
         <div class="chart-card">
           <div class="chart-title">Distribución por Canal</div>
-          <div class="chart-sub">Proporción de conversaciones</div>
+          <div class="chart-sub">Proporción de conversaciones por fuente</div>
           <div class="chart-container"><canvas id="chartPlataformas"></canvas></div>
         </div>
         <div class="chart-card">
@@ -209,7 +209,7 @@
 </main>
 
 <footer>
-  <div>RADAR POLÍTICO · SISTEMA DE INTELIGENCIA</div>
+  <div>RADAR POLÍTICO · SISTEMA DE INTELIGENCIA MULTI-PLATAFORMA</div>
   <div id="footerDate">MÉXICO · 2026</div>
 </footer>
 
@@ -241,13 +241,13 @@ function resetUI() {
 let loadInt;
 function startLoad() {
   const lbl = document.getElementById('loaderLabel');
-  const msgs = ['Consultando Apify', 'Procesando Menciones', 'Extrayendo Narrativas'];
+  const msgs = ['Consultando Apify Multi-Fuente', 'Extrayendo Facebook y Twitter', 'Analizando Noticiosos y Google Search', 'Sintetizando Narrativas e Impacto'];
   let i = 0;
   lbl.textContent = msgs[0];
   loadInt = setInterval(() => {
     i = (i + 1) % msgs.length;
     lbl.textContent = msgs[i];
-  }, 2500);
+  }, 2200);
 }
 function stopLoad() { clearInterval(loadInt); }
 
@@ -376,6 +376,19 @@ document.getElementById('nombreInput').addEventListener('keydown', e => {
 
 // Charts Paleta RADAR
 const PALETTE = { success: '#2EC4B6', danger: '#E63946', accent: '#00C2D4', gold: '#F4C430', neutral: '#1B4F8A' };
+
+// Paleta específica por Plataforma
+const PLATFORM_COLORS = {
+  'Facebook': '#1877F2',
+  'X/Twitter': '#1D9BF0',
+  'Twitter/X': '#1D9BF0',
+  'Noticias/Medios': '#C0392B',
+  'Google Search': '#4285F4',
+  'Instagram': '#E1306C',
+  'TikTok': '#000000',
+  'Otros': '#7F8C8D'
+};
+
 const CH = {};
 function mkChart(id, cfg) {
   if (CH[id]) CH[id].destroy();
@@ -412,11 +425,13 @@ function renderCharts(d) {
   });
 
   const plats = d.plataformas || [];
+  const platColors = plats.map(p => PLATFORM_COLORS[p.nombre] || PALETTE.accent);
+
   mkChart('chartPlataformas', {
     type: 'doughnut',
     data: {
       labels: plats.map(p => p.nombre),
-      datasets: [{ data: plats.map(p => p.pct), backgroundColor: [PALETTE.accent, PALETTE.neutral, PALETTE.gold, PALETTE.success], borderWidth: 0 }]
+      datasets: [{ data: plats.map(p => p.pct), backgroundColor: platColors, borderWidth: 0 }]
     },
     options: { ...commonOpts, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
   });
