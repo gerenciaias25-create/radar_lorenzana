@@ -26,14 +26,33 @@
 
     <div class="search-form">
       <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
+      
+      <!-- Selector de Meses Completo -->
       <select id="mesSelect">
+        <option value="enero">Enero</option>
+        <option value="febrero">Febrero</option>
+        <option value="marzo">Marzo</option>
+        <option value="abril">Abril</option>
+        <option value="mayo">Mayo</option>
+        <option value="junio">Junio</option>
         <option value="julio" selected>Julio</option>
         <option value="agosto">Agosto</option>
         <option value="septiembre">Septiembre</option>
+        <option value="octubre">Octubre</option>
+        <option value="noviembre">Noviembre</option>
+        <option value="diciembre">Diciembre</option>
       </select>
+
+      <!-- Selector de Años 2021 a 2026 -->
       <select id="anioSelect">
+        <option value="2021">2021</option>
+        <option value="2022">2022</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
         <option value="2026" selected>2026</option>
       </select>
+
       <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
     </div>
   </section>
