@@ -3,557 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RADAR · Inteligencia Político-Digital</title>
+  <title>RADAR v2.0 · Inteligencia Político-Digital</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-wordmark">RADAR <span>POLÍTICO</span></div>
-    <div class="logo-sep"></div>
-    <div class="logo-sub">Inteligencia<br>Político·Digital</div>
-  </div>
-  <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>Sistema Activo</div>
-    <div class="header-date" id="headerDate"></div>
-    <button class="btn-descargar-top" id="btnDescargar" onclick="descargarDashboard()">⬇ Descargar Dashboard</button>
+<header class="hdr">
+  <div class="logo">RADAR <span class="logo-v">v2.0</span></div>
+  <div class="meta">
+    <span class="pulse"></span> SISTEMA ACTIVO · INTELIGENCIA BIVARIADA<br>
+    <span id="headerDate"></span>
   </div>
 </header>
 
-<main class="main-content">
-  <!-- SEARCH HERO -->
+<main class="con">
+  <!-- SECCIÓN DE BÚSQUEDA -->
   <section class="search-hero" id="searchSection">
-    <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
+    <div class="search-eyebrow">// ANÁLISIS BIVARIADO EJECUTIVO</div>
     <h1 class="search-heading">Perfil Político <span>en Tiempo Real</span></h1>
-    <p class="search-desc">Ingresa el nombre del actor político para consultar la extracción explícita de datos, mapa de sentimiento, plataformas y narrativas.</p>
+    <p class="search-desc">Ingresa el personaje político para desplegar la estructura bivariada de sentimiento, plataformas, narrativas y riesgos.</p>
 
     <div class="search-form">
       <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
       <select id="mesSelect">
-        <option value="enero">Enero</option>
-        <option value="febrero">Febrero</option>
-        <option value="marzo">Marzo</option>
-        <option value="abril">Abril</option>
-        <option value="mayo">Mayo</option>
-        <option value="junio">Junio</option>
         <option value="julio" selected>Julio</option>
         <option value="agosto">Agosto</option>
         <option value="septiembre">Septiembre</option>
-        <option value="octubre">Octubre</option>
-        <option value="noviembre">Noviembre</option>
-        <option value="diciembre">Diciembre</option>
       </select>
       <select id="anioSelect">
         <option value="2026" selected>2026</option>
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
       </select>
       <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
     </div>
-
-    <div class="suggestion-row">
-      <span class="suggestion-label">Sugerencias:</span>
-      <button class="chip" onclick="setChip('Horacio Duarte Olivares')">Horacio Duarte</button>
-      <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
-      <button class="chip" onclick="setChip('AMLO')">AMLO</button>
-      <button class="chip" onclick="setChip('Daniel Serrano')">Daniel Serrano</button>
-      <button class="chip" onclick="setChip('Clara Brugada')">Clara Brugada</button>
-    </div>
   </section>
 
-  <!-- LOADING -->
-  <div class="loading-wrap" id="loadingWrap">
+  <!-- CARGA Y ERROR -->
+  <div class="loading-wrap" id="loadingWrap" style="display:none;">
     <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
     <div class="loader-label" id="loaderLabel">Procesando Análisis</div>
-    <div class="loader-sub" id="loaderSub">Consultando redes, noticias y buscadores en tiempo real...</div>
   </div>
 
-  <!-- ERROR -->
-  <div class="error-wrap" id="errorWrap">
-    <div class="error-card">
-      <div class="error-label">Error en la Consulta</div>
-      <div class="error-text" id="errorText">Ocurrió un problema consultando las fuentes.</div>
-      <button class="btn-retry" onclick="resetUI()">← Intentar de nuevo</button>
-    </div>
-  </div>
-
-  <!-- DASHBOARD MAIN CONTAINER -->
-  <div id="dashboard">
-    <div class="dashboard-actions">
-      <button class="btn-new-search" onclick="resetUI()">← NUEVA BÚSQUEDA</button>
-    </div>
-
-    <!-- Profile Hero -->
-    <div class="hero-profile">
-      <div class="hero-l">PERFIL DIGITAL DE ACTOR POLITICO</div>
-      <h1 class="hero-n" id="profileName"></h1>
-      <div class="hero-s" id="profileCargo"></div>
-      <div class="profile-tags" id="profileTags"></div>
-      <div id="cacheIndicator" style="font-family:monospace; font-size:10px; color:var(--bl); margin-top:8px; cursor:pointer;" onclick="analizar(true)"></div>
-    </div>
-
-    <!-- KPIs -->
-    <div class="kpi-grid" id="kpiRow"></div>
-
-    <!-- Navigation Tabs -->
-    <nav class="tabs-nav">
-      <button class="tab-btn active" onclick="showTab('vision', this)">VISIÓN GENERAL</button>
-      <button class="tab-btn" onclick="showTab('actores', this)">ANÁLISIS DE ACTORES</button>
-      <button class="tab-btn" onclick="showTab('segmentacion', this)">SEGMENTACIÓN DEMOGRÁFICA</button>
-      <button class="tab-btn" onclick="showTab('narrativas', this)">MAPA DE NARRATIVAS</button>
-      <button class="tab-btn" onclick="showTab('cronologia', this)">CRONOLOGÍA DE EVENTOS</button>
-      <button class="tab-btn" onclick="showTab('riesgos', this)">RIESGOS Y OPORTUNIDADES</button>
-    </nav>
-
-    <!-- TAB: VISIÓN GENERAL -->
-    <div class="tab-panel active" id="tab-vision">
-      <div class="sec-title">Resumen Ejecutivo General</div>
-      <div class="text-box-analysis" id="txtVisionResumen"></div>
-
-      <div class="sec-title" style="margin-top:20px;">Distribución de Sentimiento y Temática</div>
-      <div class="two-col">
-        <div class="chart-card">
-          <div class="chart-title">Sentimiento General</div>
-          <div class="chart-sub">Desglose porcentual consolidado</div>
-          <div class="chart-container"><canvas id="chartSentimiento"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Top de Temas de Conversación</div>
-          <div class="chart-sub">Volumen temático detectado</div>
-          <div class="chart-container"><canvas id="chartTemas"></canvas></div>
-        </div>
+  <!-- CONTENEDOR DEL DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+    <section class="hero">
+      <div class="hero-l">// ANÁLISIS BIVARIADO · ESTUDIO EJECUTIVO</div>
+      <h1 class="hero-n" id="profileName">--</h1>
+      <p class="hero-s" id="profileCargo">--</p>
+      <div class="tags" id="profileTags"></div>
+      
+      <!-- BOTÓN PARA OCULTAR/MOSTRAR KPIS A PETICIÓN DE DIRECCIÓN -->
+      <div style="margin-top: 15px;">
+        <button class="btn-toggle-kpis" onclick="toggleKPIs()">👁 Mostrar / Ocultar KPIs Principales</button>
       </div>
+    </section>
 
-      <div class="sec-title" style="margin-top:20px;">Ecosistema de Plataformas &amp; Canales</div>
-      <div class="two-col">
-        <div class="chart-card">
-          <div class="chart-title">Distribución por Canal</div>
-          <div class="chart-sub">Proporción por fuente</div>
-          <div class="chart-container"><canvas id="chartPlataformas"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Tono por Canal</div>
-          <div class="chart-sub">Favorable vs Adverso por plataforma</div>
-          <div class="chart-container"><canvas id="chartTonoPlataforma"></canvas></div>
-        </div>
+    <!-- BLOQUE DE KPIS OCULTO POR DEFECTO -->
+    <div class="kpi-panel-hidden" id="kpiMainWrapper" style="display: none; margin-bottom: 20px;">
+      <div class="stitle">INDICADORES DE CABECERA (RESERVADOS)</div>
+      <div class="kg" id="kpiRowMain"></div>
+    </div>
+
+    <!-- NAVEGACIÓN POR PESTAÑAS (ESTRUCTURA EXACTA SOLICITADA) -->
+    <div class="tabs">
+      <button class="tb act" onclick="tab(this,'kpis')">KPIs AMPLIADOS</button>
+      <button class="tb" onclick="tab(this,'sent')">SENTIMIENTO</button>
+      <button class="tb" onclick="tab(this,'tom')">TOP OF MIND</button>
+      <button class="tb" onclick="tab(this,'plat')">PLATAFORMAS</button>
+      <button class="tb" onclick="tab(this,'nar')">NARRATIVAS</button>
+      <button class="tb" onclick="tab(this,'risk')">RIESGOS &amp; OPORT.</button>
+      <button class="tb" onclick="tab(this,'ter')">MAPA TERRITORIAL</button>
+    </div>
+
+    <!-- TAB 1: KPIs AMPLIADOS -->
+    <div class="tsec show" id="tab-kpis">
+      <div class="stitle">INDICADORES CLAVE AMPLIADOS</div>
+      <div class="kg" id="kpiAmpliadosGrid"></div>
+      <div class="stitle">KPIs BIVARIADOS</div>
+      <div class="cg">
+        <div class="card"><div class="ct">Aprobación por Identidad Partidista</div><canvas id="c-npspar"></canvas></div>
+        <div class="card"><div class="ct">Aprobación por Género y Edad</div><canvas id="c-npsdemo"></canvas></div>
       </div>
     </div>
 
-    <!-- TAB: ANÁLISIS DE ACTORES -->
-    <div class="tab-panel" id="tab-actores">
-      <div class="sec-title">Análisis del Ecosistema Político y Mediático</div>
-      <div class="text-box-analysis" id="txtActoresExplicacion"></div>
-
-      <div class="sec-title" style="margin-top:20px;">Mapeo Táctico de Actores Clave</div>
-      <div class="actor-grid" id="actorGrid"></div>
-
-      <div class="sec-title" style="margin-top:24px;">Cruces Bivariados Estratégicos</div>
-      <div class="bivariado-grid" id="bivariadoGrid"></div>
+    <!-- TAB 2: SENTIMIENTO -->
+    <div class="tsec" id="tab-sent">
+      <div class="stitle">SENTIMIENTO DIGITAL — ANÁLISIS BIVARIADO</div>
+      <div class="bbar">
+        <span class="blbl">CRUZAR POR →</span>
+        <button class="bb act" onclick="updSent('general')">GENERAL</button>
+        <button class="bb" onclick="updSent('genero')">GÉNERO</button>
+        <button class="bb" onclick="updSent('edad')">EDAD</button>
+        <button class="bb" onclick="updSent('partido')">PARTIDO</button>
+      </div>
+      <div class="cg">
+        <div class="card"><div class="ct" id="sent-t">Sentimiento General</div><canvas id="c-sent"></canvas></div>
+        <div class="card"><div class="ct">Clima Digital por Segmento</div><canvas id="c-clima"></canvas></div>
+      </div>
+      <div class="stitle">HALLAZGOS BIVARIADOS</div>
+      <div class="ig" id="sentHallazgosGrid"></div>
     </div>
 
-    <!-- TAB: SEGMENTACIÓN -->
-    <div class="tab-panel" id="tab-segmentacion">
-      <div class="sec-title">Evaluación Demográfica de Audiencias</div>
-      <div class="text-box-analysis" id="txtSegAnalisis"></div>
+    <!-- TAB 3: TOP OF MIND -->
+    <div class="tsec" id="tab-tom">
+      <div class="stitle">TOP OF MIND — ANÁLISIS BIVARIADO</div>
+      <div class="card" style="margin-bottom:18px"><div class="ct">Top de Temas</div><canvas id="c-tom" style="max-height:230px"></canvas></div>
+      <div class="stitle">CRUCES TEMÁTICOS</div>
+      <div class="ig" id="tomHallazgosGrid"></div>
+    </div>
 
-      <div class="sec-title" style="margin-top:20px;">Desglose Demográfico de Sentimiento</div>
-      <div class="two-col">
-        <div class="chart-card">
-          <div class="chart-title">Sentimiento por Género</div>
-          <div class="chart-sub">Inclinación por grupo poblacional</div>
-          <div class="chart-container"><canvas id="chartSegGenero"></canvas></div>
+    <!-- TAB 4: PLATAFORMAS -->
+    <div class="tsec" id="tab-plat">
+      <div class="stitle">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
+      <div class="cg">
+        <div class="card"><div class="ct">Alcance por Plataforma</div><canvas id="c-plalc"></canvas></div>
+        <div class="card"><div class="ct">Tono por Plataforma</div><canvas id="c-pltono"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TAB 5: NARRATIVAS -->
+    <div class="tsec" id="tab-nar">
+      <div class="stitle">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
+      <div class="ng">
+        <div class="nc">
+          <div class="nh fav">▲ NARRATIVAS FAVORABLES</div>
+          <div id="narFavContainer"></div>
         </div>
-        <div class="chart-card">
-          <div class="chart-title">Sentimiento por Rango de Edad</div>
-          <div class="chart-sub">Inclinación por cohortes generacionales</div>
-          <div class="chart-container"><canvas id="chartSegEdad"></canvas></div>
+        <div class="nc">
+          <div class="nh crit">▼ NARRATIVAS CRÍTICAS</div>
+          <div id="narCritContainer"></div>
+        </div>
+        <div class="nc">
+          <div class="nh neu">◆ NARRATIVAS NEUTRAS</div>
+          <div id="narNeuContainer"></div>
         </div>
       </div>
     </div>
 
-    <!-- TAB: NARRATIVAS -->
-    <div class="tab-panel" id="tab-narrativas">
-      <div class="sec-title">Batalla Narrativa y Encuadre Discursivo</div>
-      <div class="text-box-analysis" id="txtNarExplicacion"></div>
-
-      <div class="sec-title" style="margin-top:20px;">Mapa Detallado de Ejes Discursivos</div>
-      <div class="nar-grid">
-        <div class="nar-col">
-          <div class="nar-head fav">▲ NARRATIVAS FAVORABLES</div>
-          <div id="narFav"></div>
-        </div>
-        <div class="nar-col">
-          <div class="nar-head cri">▼ NARRATIVAS CRÍTICAS</div>
-          <div id="narCri"></div>
-        </div>
-        <div class="nar-col">
-          <div class="nar-head neu">◆ NARRATIVAS NEUTRAS / EN DISPUTA</div>
-          <div id="narNeu"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: CRONOLOGÍA -->
-    <div class="tab-panel" id="tab-cronologia">
-      <div class="sec-title">Análisis Coyuntural e Hitos de Reputación</div>
-      <div class="text-box-analysis" id="txtCronoAnalisis"></div>
-
-      <div class="sec-title" style="margin-top:20px;">Línea de Tiempo Registrada</div>
-      <div class="tl-wrap" id="timeline"></div>
-    </div>
-
-    <!-- TAB: RIESGOS & OPORTUNIDADES -->
-    <div class="tab-panel" id="tab-riesgos">
-      <div class="sec-title">Dictamen Estratégico de Reputación</div>
-      <div class="text-box-analysis" id="txtRiesgosDictamen"></div>
-
-      <div class="sec-title" style="margin-top:20px;">Matriz de Exposición y Vetas Favorable</div>
-      <div class="two-col">
+    <!-- TAB 6: RIESGOS & OPORTUNIDADES -->
+    <div class="tsec" id="tab-risk">
+      <div class="stitle">MATRIZ BIVARIADA DE RIESGOS Y OPORTUNIDADES</div>
+      <div class="mg">
         <div>
-          <div style="font-family:monospace; font-size:11px; font-weight:700; color:var(--da); margin-bottom:10px; letter-spacing:1px;">RIESGOS IDENTIFICADOS</div>
-          <div id="riesgos"></div>
+          <div class="mh risk">⚠ RIESGOS — IMPACTO POR SEGMENTO</div>
+          <div class="mb" id="riesgosContainer"></div>
         </div>
         <div>
-          <div style="font-family:monospace; font-size:11px; font-weight:700; color:#008080; margin-bottom:10px; letter-spacing:1px;">OPORTUNIDADES DE CONVERSACIÓN</div>
-          <div id="oportunidades"></div>
+          <div class="mh opp">✦ OPORTUNIDADES — POTENCIAL POR SEGMENTO</div>
+          <div class="mb" id="oportunidadesContainer"></div>
         </div>
       </div>
     </div>
+
+    <!-- TAB 7: MAPA TERRITORIAL -->
+    <div class="tsec" id="tab-ter">
+      <div class="stitle">MAPA DE CALOR TERRITORIAL — APROBACIÓN POR ZONA</div>
+      <div class="hm" id="territorialHeatmap"></div>
+    </div>
+
   </div>
 </main>
 
-<footer>
-  <div>RADAR POLÍTICO · SISTEMA DE INTELIGENCIA MULTI-PLATAFORMA</div>
-  <div id="footerDate">MÉXICO · 2026</div>
-</footer>
-
 <script>
-const now = new Date();
-document.getElementById('headerDate').textContent = now.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
-
-function showTab(id, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  btn.classList.add('active');
+function toggleKPIs() {
+  const el = document.getElementById('kpiMainWrapper');
+  el.style.display = (el.style.display === 'none') ? 'block' : 'none';
 }
 
-function setChip(nombre) {
-  document.getElementById('nombreInput').value = nombre;
-  analizar();
-}
-
-function resetUI() {
-  document.getElementById('loadingWrap').classList.remove('show');
-  document.getElementById('errorWrap').classList.remove('show');
-  document.getElementById('dashboard').classList.remove('show');
-  document.getElementById('searchSection').style.display = '';
-  document.getElementById('btnAnalizar').disabled = false;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-let loadInt;
-function startLoad() {
-  const lbl = document.getElementById('loaderLabel');
-  const msgs = ['Consultando Apify Multi-Fuente', 'Extrayendo Facebook y Twitter', 'Analizando Noticiosos y Google Search', 'Sintetizando Actores y Narrativas'];
-  let i = 0;
-  lbl.textContent = msgs[0];
-  loadInt = setInterval(() => {
-    i = (i + 1) % msgs.length;
-    lbl.textContent = msgs[i];
-  }, 2200);
-}
-function stopLoad() { clearInterval(loadInt); }
-
-let ultimoData = null;
-
-async function analizar(forceRefresh = false) {
-  const nombreInput = document.getElementById('nombreInput');
-  const mesSelect = document.getElementById('mesSelect');
-  const anioSelect = document.getElementById('anioSelect');
-
-  const nombre = nombreInput.value.trim();
-  const fecha = `${mesSelect.value} ${anioSelect.value}`;
-
-  if (!nombre) { nombreInput.focus(); return; }
-
-  document.getElementById('searchSection').style.display = 'none';
-  document.getElementById('dashboard').classList.remove('show');
-  document.getElementById('errorWrap').classList.remove('show');
-  document.getElementById('loadingWrap').classList.add('show');
-  document.getElementById('btnAnalizar').disabled = true;
-  startLoad();
-
-  try {
-    const res = await fetch('/api/analizar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, fecha, forceRefresh })
-    });
-
-    const data = await res.json();
-    stopLoad();
-
-    if (!res.ok || data.error) {
-      document.getElementById('loadingWrap').classList.remove('show');
-      document.getElementById('errorWrap').classList.add('show');
-      document.getElementById('errorText').textContent = data.error || 'Error procesando consulta';
-      document.getElementById('btnAnalizar').disabled = false;
-      return;
-    }
-
-    renderDashboard(data);
-  } catch (err) {
-    stopLoad();
-    document.getElementById('loadingWrap').classList.remove('show');
-    document.getElementById('errorWrap').classList.add('show');
-    document.getElementById('errorText').textContent = err.message;
-    document.getElementById('btnAnalizar').disabled = false;
-  }
-}
-
-function renderDashboard(d) {
-  ultimoData = d;
-  document.getElementById('profileName').textContent = d.nombre || '';
-  document.getElementById('profileCargo').textContent = d.cargo || '';
-
-  const cacheEl = document.getElementById('cacheIndicator');
-  if (cacheEl) {
-    cacheEl.textContent = d._cache === 'HIT'
-      ? '⟳ Datos en caché — Haz clic aquí para forzar actualización'
-      : '✓ Datos recién extraídos de fuentes públicas';
-  }
-
-  document.getElementById('profileTags').innerHTML = (d.tags || []).map(t => `<span class="ptag">${t}</span>`).join('');
-
-  document.getElementById('kpiRow').innerHTML = (d.kpis || []).map(k => `
-    <div class="kpi-card ${k.tipo || 'acc'}">
-      <div class="kpi-lbl">${k.label}</div>
-      <div class="kpi-val">${k.valor}</div>
-      <div class="kpi-nota">${k.nota}</div>
-    </div>
-  `).join('');
-
-  // RENDER TEXTOS DE EXPLICACIÓN DETALLADA EN CADA TAB
-  const vg = d.vision_general || {};
-  document.getElementById('txtVisionResumen').textContent = vg.resumen_ejecutivo || d.resumen_ejecutivo || 'Sin análisis registrado.';
-
-  const act = d.actores_politicos || {};
-  document.getElementById('txtActoresExplicacion').textContent = act.explicacion_ecosistema || 'Sin análisis de actores.';
-
-  document.getElementById('actorGrid').innerHTML = (act.analisis_actores || d.analisis_actores || []).map(a => `
-    <div class="actor-card">
-      <div class="actor-head">
-        <span class="actor-cat">${a.categoria}</span>
-        <span class="actor-badge">${a.impacto}</span>
-      </div>
-      <div class="actor-body">
-        <div class="actor-nar">${a.narrativa_dominante}</div>
-        <div class="actor-stat"><strong>Tendencia / Actitud:</strong> ${a.tendencia_actitud}</div>
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('bivariadoGrid').innerHTML = (act.cruces_bivariados || d.cruces_bivariados || []).map(c => `
-    <div class="bivariado-card">
-      <div class="bivariado-axes">Cruce: ${c.eje_x} ✕ ${c.eje_y}</div>
-      <div class="bivariado-desc">${c.hallazgo}</div>
-    </div>
-  `).join('');
-
-  const seg = d.segmentacion_demografica || d.segmentacion || {};
-  document.getElementById('txtSegAnalisis').textContent = seg.analisis_demografico || 'Sin datos demográficos.';
-
-  const nar = d.mapa_narrativas || {};
-  document.getElementById('txtNarExplicacion').textContent = nar.explicacion_narrativas || 'Sin mapa discursivo.';
-
-  const renderNarList = (items, id) => {
-    document.getElementById(id).innerHTML = (items || []).map(n => `
-      <div class="nar-item">
-        <div class="nar-item-t">${n.titulo}</div>
-        <div class="nar-item-d">${n.descripcion}</div>
-      </div>
-    `).join('');
-  };
-  renderNarList(nar.favorables || d.narrativas_favorables, 'narFav');
-  renderNarList(nar.criticas || d.narrativas_criticas, 'narCri');
-  renderNarList(nar.neutras || d.narrativas_neutras, 'narNeu');
-
-  const cro = d.cronologia_eventos || {};
-  document.getElementById('txtCronoAnalisis').textContent = cro.analisis_coyuntural || 'Sin análisis coyuntural.';
-  document.getElementById('timeline').innerHTML = (cro.eventos || d.cronologia || []).map(e => `
-    <div class="tl-item">
-      <div class="tl-date">${e.fecha} · ${e.badge}</div>
-      <div class="tl-title">${e.evento}</div>
-      <div class="tl-desc">${e.lectura}</div>
-    </div>
-  `).join('');
-
-  const ro = d.riesgos_oportunidades || {};
-  document.getElementById('txtRiesgosDictamen').textContent = ro.dictamen_estrategico || 'Sin dictamen disponible.';
-
-  document.getElementById('riesgos').innerHTML = (ro.riesgos || d.riesgos || []).map(r => `
-    <div class="ro-card">
-      <span class="ro-lvl ${r.nivel}">${r.nivel}</span>
-      <div class="ro-t">${r.titulo}</div>
-      <div class="ro-d">${r.descripcion}</div>
-    </div>
-  `).join('');
-
-  document.getElementById('oportunidades').innerHTML = (ro.oportunidades || d.oportunidades || []).map(o => `
-    <div class="ro-card">
-      <span class="ro-lvl ALTO">${o.nivel}</span>
-      <div class="ro-t">${o.titulo}</div>
-      <div class="ro-d">${o.descripcion}</div>
-    </div>
-  `).join('');
-
-  renderCharts(d);
-
-  document.getElementById('loadingWrap').classList.remove('show');
-  document.getElementById('dashboard').classList.add('show');
-
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-vision').classList.add('active');
-  document.querySelectorAll('.tab-btn')[0].classList.add('active');
-
-  document.getElementById('btnAnalizar').disabled = false;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-document.getElementById('nombreInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') analizar();
-});
-
-const PALETTE = { success: '#2EC4B6', danger: '#E63946', accent: '#00C2D4', gold: '#F4C430', neutral: '#1B4F8A' };
-const PLATFORM_COLORS = {
-  'Facebook': '#1877F2', 'X/Twitter': '#1D9BF0', 'Twitter/X': '#1D9BF0',
-  'Noticias/Medios': '#C0392B', 'Google Search': '#4285F4', 'Instagram': '#E1306C'
-};
-
-const CH = {};
-function mkChart(id, cfg) {
-  if (CH[id]) CH[id].destroy();
-  const c = document.getElementById(id);
-  if (!c) return;
-  CH[id] = new Chart(c, cfg);
-}
-
-function renderCharts(d) {
-  const commonOpts = { responsive: true, maintainAspectRatio: false };
-
-  const vg = d.vision_general || {};
-  const sent = vg.sentimiento || d.sentimiento || [];
-  mkChart('chartSentimiento', {
-    type: 'doughnut',
-    data: {
-      labels: sent.map(s => s.label),
-      datasets: [{
-        data: sent.map(s => s.pct),
-        backgroundColor: [PALETTE.success, PALETTE.neutral, PALETTE.danger, PALETTE.gold],
-        borderWidth: 0
-      }]
-    },
-    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
-  });
-
-  const temas = vg.temas || d.temas || [];
-  mkChart('chartTemas', {
-    type: 'bar',
-    data: {
-      labels: temas.map(t => t.tema),
-      datasets: [{ data: temas.map(t => t.pct), backgroundColor: PALETTE.accent, borderRadius: 2 }]
-    },
-    options: { ...commonOpts, indexAxis: 'y', plugins: { legend: { display: false } } }
-  });
-
-  const plats = vg.plataformas || d.plataformas || [];
-  const platColors = plats.map(p => PLATFORM_COLORS[p.nombre] || PALETTE.accent);
-
-  mkChart('chartPlataformas', {
-    type: 'doughnut',
-    data: {
-      labels: plats.map(p => p.nombre),
-      datasets: [{ data: plats.map(p => p.pct), backgroundColor: platColors, borderWidth: 0 }]
-    },
-    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
-  });
-
-  mkChart('chartTonoPlataforma', {
-    type: 'bar',
-    data: {
-      labels: plats.map(p => p.nombre),
-      datasets: [
-        { label: '% Favorable', data: plats.map(p => p.tono_positivo), backgroundColor: PALETTE.success },
-        { label: '% Adverso', data: plats.map(p => p.tono_negativo), backgroundColor: PALETTE.danger }
-      ]
-    },
-    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  const seg = d.segmentacion_demografica || d.segmentacion || {};
-  const genero = seg.por_genero || [];
-  mkChart('chartSegGenero', {
-    type: 'bar',
-    data: {
-      labels: genero.map(g => g.segmento),
-      datasets: [
-        { label: 'Favorable', data: genero.map(g => g.positivo), backgroundColor: PALETTE.success },
-        { label: 'Neutro', data: genero.map(g => g.neutro), backgroundColor: PALETTE.neutral },
-        { label: 'Adverso', data: genero.map(g => g.negativo), backgroundColor: PALETTE.danger }
-      ]
-    },
-    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  const edad = seg.por_edad || [];
-  mkChart('chartSegEdad', {
-    type: 'bar',
-    data: {
-      labels: edad.map(e => e.segmento),
-      datasets: [
-        { label: 'Favorable', data: edad.map(e => e.positivo), backgroundColor: PALETTE.success },
-        { label: 'Neutro', data: edad.map(e => e.neutro), backgroundColor: PALETTE.neutral },
-        { label: 'Adverso', data: edad.map(e => e.negativo), backgroundColor: PALETTE.danger }
-      ]
-    },
-    options: { ...commonOpts, plugins: { legend: { position: 'bottom' } } }
-  });
-}
-
-function descargarDashboard() {
-  if (!ultimoData) { alert('Primero realiza una consulta para generar el dashboard.'); return; }
-
-  const clone = document.documentElement.cloneNode(true);
-  const searchEl = clone.querySelector('#searchSection');
-  if (searchEl) searchEl.style.display = 'none';
-
-  const btnDesc = clone.querySelector('#btnDescargar');
-  if (btnDesc) btnDesc.style.display = 'none';
-
-  const scriptInjected = clone.ownerDocument.createElement('script');
-  scriptInjected.textContent = `
-    window.ultimoData = ${JSON.stringify(ultimoData)};
-    window.addEventListener('load', () => {
-      if (window.renderDashboard) renderDashboard(window.ultimoData);
-    });
-  `;
-  clone.querySelector('body').appendChild(scriptInjected);
-
-  const htmlContent = '<!DOCTYPE html>\n' + clone.outerHTML;
-  const blob = new Blob([htmlContent], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const filename = (ultimoData.nombre || 'radar').trim().toLowerCase().replace(/\s+/g, '_');
-  a.href = url;
-  a.download = `RADAR_${filename}_2026.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+function tab(btn, id) {
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('act'));
+  document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
+  btn.classList.add('act');
+  document.getElementById('tab-' + id).classList.add('show');
 }
 </script>
 </body>
