@@ -60,7 +60,7 @@
   <!-- CARGA Y ERROR -->
   <div class="loading-wrap" id="loadingWrap" style="display:none;">
     <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
-    <div class="loader-label" id="loaderLabel">Procesando Análisis</div>
+    <div class="loader-label" id="loaderLabel">Procesando Análisis e Extrayendo Datos...</div>
   </div>
 
   <!-- CONTENEDOR DEL DASHBOARD -->
@@ -83,7 +83,7 @@
       <div class="kg" id="kpiRowMain"></div>
     </div>
 
-    <!-- NAVEGACIÓN POR PESTAÑAS (ESTRUCTURA EXACTA SOLICITADA) -->
+    <!-- NAVEGACIÓN POR PESTAÑAS -->
     <div class="tabs">
       <button class="tb act" onclick="tab(this,'kpis')">KPIs AMPLIADOS</button>
       <button class="tb" onclick="tab(this,'sent')">SENTIMIENTO</button>
@@ -184,6 +184,9 @@
 </main>
 
 <script>
+// Fecha actual en encabezado
+document.getElementById('headerDate').innerText = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+
 function toggleKPIs() {
   const el = document.getElementById('kpiMainWrapper');
   el.style.display = (el.style.display === 'none') ? 'block' : 'none';
@@ -194,6 +197,125 @@ function tab(btn, id) {
   document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
   btn.classList.add('act');
   document.getElementById('tab-' + id).classList.add('show');
+}
+
+// LÓGICA CONEXIÓN API (Apify + OpenRouter en Server/Backend)
+async function analizar() {
+  const nombre = document.getElementById('nombreInput').value.trim();
+  const mes = document.getElementById('mesSelect').value;
+  const anio = document.getElementById('anioSelect').value;
+
+  if (!nombre) {
+    alert("Por favor ingresa el nombre de un político.");
+    return;
+  }
+
+  // Activar UI de Carga
+  document.getElementById('loadingWrap').style.display = 'block';
+  document.getElementById('dashboard').style.display = 'none';
+
+  try {
+    // Petición al endpoint backend que integra Apify + OpenRouter
+    const res = await fetch('/api/analizar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, mes, anio })
+    });
+
+    if (!res.ok) throw new Error("Error en la extracción y procesamiento de datos.");
+
+    const data = await res.json();
+
+    // Inyectar datos en la interfaz
+    renderDashboard(data);
+
+    document.getElementById('loadingWrap').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+
+  } catch (err) {
+    console.error(err);
+    alert("Ocurrió un error al procesar el análisis: " + err.message);
+    document.getElementById('loadingWrap').style.display = 'none';
+  }
+}
+
+function renderDashboard(data) {
+  document.getElementById('profileName').innerText = data.nombre || "--";
+  document.getElementById('profileCargo').innerText = data.cargo || "--";
+  
+  // Renderizar Tags
+  const tagsCont = document.getElementById('profileTags');
+  tagsCont.innerHTML = (data.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+
+  // KPIs Principales (Ocultos por defecto)
+  const kpiRowMain = document.getElementById('kpiRowMain');
+  kpiRowMain.innerHTML = (data.kpis_principales || []).map(k => `
+    <div class="kc ${k.tipo || ''}">
+      <div class="kl">${k.label}</div>
+      <div class="kv">${k.valor}</div>
+      <div class="ks">${k.nota}</div>
+    </div>
+  `).join('');
+
+  // KPIs Ampliados
+  const kpiAmpliadosGrid = document.getElementById('kpiAmpliadosGrid');
+  kpiAmpliadosGrid.innerHTML = (data.kpis_ampliados || []).map(k => `
+    <div class="kc ${k.tipo || ''}">
+      <div class="kl">${k.label}</div>
+      <div class="kv">${k.valor}</div>
+      <div class="ks">${k.nota}</div>
+    </div>
+  `).join('');
+
+  // Narrativas
+  const renderNarrativas = (list) => (list || []).map(n => `
+    <div class="ni">
+      <div class="nt">${n.titulo}</div>
+      <div class="nd">${n.desc}</div>
+      <div class="btags">
+        ${(n.tags || []).map(t => `<span class="btag ${t.clase}">${t.texto}</span>`).join('')}
+      </div>
+      ${n.bivariado_hallazgo ? `<div class="bi"><strong>Crucial:</strong> ${n.bivariado_hallazgo}</div>` : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('narFavContainer').innerHTML = renderNarrativas(data.narrativas?.favorables);
+  document.getElementById('narCritContainer').innerHTML = renderNarrativas(data.narrativas?.criticas);
+  document.getElementById('narNeuContainer').innerHTML = renderNarrativas(data.narrativas?.neutras);
+
+  // Riesgos y Oportunidades
+  document.getElementById('riesgosContainer').innerHTML = (data.riesgos || []).map(r => `
+    <div class="mc">
+      <span class="msev red">${r.nivel}</span>
+      <div class="mct">${r.titulo}</div>
+      <div class="mcd">${r.desc}</div>
+      <div class="bi"><strong>Impacto Segmentado:</strong> ${r.bivariado}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('oportunidadesContainer').innerHTML = (data.oportunidades || []).map(o => `
+    <div class="mc">
+      <span class="msev green">${o.nivel}</span>
+      <div class="mct">${o.titulo}</div>
+      <div class="mcd">${o.desc}</div>
+      <div class="bi"><strong>Potencial:</strong> ${o.bivariado}</div>
+    </div>
+  `).join('');
+
+  // Mapa Territorial
+  document.getElementById('territorialHeatmap').innerHTML = (data.mapa_territorial || []).map(z => `
+    <div class="hmi">
+      <div class="hmn">${z.zona}</div>
+      <div class="hmv">${z.nps}</div>
+      <div class="hms">${z.clima}</div>
+      <div class="bi">${z.nota}</div>
+    </div>
+  `).join('');
+}
+
+function updSent(tipo) {
+  // Función para conmutar las pestañas secundarias de sentimiento
+  console.log("Cambiando vista de sentimiento a:", tipo);
 }
 </script>
 </body>
