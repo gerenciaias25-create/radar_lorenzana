@@ -1,335 +1,284 @@
-/**
- * Estructura de Datos Simulada (JSON procedente del Backend)
- */
-const radarData = {
-  kpis: {
-    seguidores: "245,800",
-    aprobacion: "62.4%",
-    crisis: "1",
-    menciones: "18,450"
-  },
-  kpis_ampliados: {
-    matriz: [
-      { metrica: "Alcance Bruto Estimado", valor: "1.2M impresiones", comparativa: "+12%" },
-      { metrica: "Menciones Positivas", valor: "11,512", comparativa: "+8%" },
-      { metrica: "Menciones Negativas", valor: "3,120", comparativa: "-3%" },
-      { metrica: "Índice de Viralidad", valor: "4.2", comparativa: "+0.5" }
-    ]
-  },
-  sentimiento: {
-    distribucion: [55, 25, 15, 5], // Positivo, Neutro, Negativo, Polarizado
-    resumen: "El sentimiento predominante hacia Daniel Serrano se mantiene mayoritariamente favorable (55%), impulsado por iniciativas locales. Las menciones negativas (15%) se concentran en críticas de la oposición sobre la gestión de servicios."
-  },
-  top_of_mind: {
-    temas: ["Infraestructura Urbana", "Programas Sociales", "Transparencia", "Seguridad Pública", "Política Regional"],
-    volumenes: [35, 25, 18, 14, 8]
-  },
-  plataformas: {
-    canales: ["Facebook", "X (Twitter)", "Prensa Web", "Instagram"],
-    participacion: [40, 30, 20, 10],
-    tono_favorable: [60, 40, 50, 75],
-    tono_adiverso: [20, 45, 30, 10]
-  },
-  narrativas: {
-    favorables: [
-      { titulo: "Impulso a la Obra Pública", desc: "Destacan la pronta entrega de reencarpetado vial y mejoras de alumbrado." },
-      { titulo: "Cercanía Ciudadana", desc: "Buena recepción de los recorridos territoriales y atención directa." }
-    ],
-    criticas: [
-      { titulo: "Cuestionamiento Presupuestal", desc: "Actores de oposición señalan demoras en la ejecución de partidas específicas." }
-    ],
-    neutras: [
-      { titulo: "Cobertura de Eventos Oficiales", desc: "Notas informativas de medios locales sin toma de postura explícita." }
-    ],
-    cronologia: [
-      { fecha: "22 Julio, 2026", titulo: "Inauguración de Centro Comunitario", desc: "Pico de conversación positiva en Facebook." },
-      { fecha: "18 Julio, 2026", titulo: "Señalamiento por Tráfico Vial", desc: "Alerta media por embotellamiento derivado de obras." }
-    ]
-  },
-  riesgos_oportunidades: {
-    dictamen: "La marca personal de Daniel Serrano mantiene solidez. La principal vulnerabilidad radica en la amplificación de quejas de movilidad urbana en X (Twitter). Existe una oportunidad clara de capitalizar la narrativa de transparencia.",
-    riesgos: [
-      { nivel: "CRÍTICO", titulo: "Narrativa sobre Movilidad", desc: "Potencial articulación de grupos vecinales en protesta por cierres de calles." },
-      { nivel: "MEDIO", titulo: "Ataques de Cuentas Automatizadas", desc: "Incremento leve de bots atacando la gestión." }
-    ],
-    oportunidades: [
-      { nivel: "ALTO", titulo: "Posicionamiento en Transparencia", desc: "Publicar reportes semanales de avances de obras para desactivar críticas." }
-    ]
-  },
-  mapa_territorial: {
-    genero: [48, 52], // Hombres, Mujeres
-    edades_labels: ["18-24", "25-34", "35-44", "45-54", "55+"],
-    edades_aprobacion: [58, 64, 61, 55, 60],
-    geografia_texto: "Se detecta un núcleo fuerte de aprobación en la Zona Centro y Norte, mientras que en la Zona Poniente se requiere reforzar la comunicación de avances de servicios públicos."
+async function cacheGet(key) {
+  try {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return null;
+
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['GET', key])
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data?.result ? JSON.parse(data.result) : null;
+  } catch (e) {
+    console.error('Cache GET error:', e.message);
+    return null;
   }
-};
-
-/**
- * Inicialización al cargar el DOM
- */
-document.addEventListener("DOMContentLoaded", () => {
-  // 1. Ocultar e inyectar valores en los KPIs (extraídos dinámicamente)
-  extraerYProcesarKPIs();
-
-  // 2. Cargar componentes visuales por defecto
-  renderizarKPIsAmpliados();
-  renderizarSentimiento();
-  renderizarTopOfMind();
-  renderizarPlataformas();
-  renderizarNarrativas();
-  renderizarRiesgosOportunidades();
-  renderizarMapaTerritorial();
-});
-
-/**
- * Asigna los valores al DOM (aunque la fila permanezca oculta por CSS)
- */
-function extraerYProcesarKPIs() {
-  document.getElementById("kpi-seguidores").innerText = radarData.kpis.seguidores;
-  document.getElementById("kpi-aprobacion").innerText = radarData.kpis.aprobacion;
-  document.getElementById("kpi-crisis").innerText = radarData.kpis.crisis;
-  document.getElementById("kpi-menciones").innerText = radarData.kpis.menciones;
 }
 
-/**
- * Lógica de Conmutación de Pestañas Principales
- */
-function switchMainTab(tabId, element) {
-  document.querySelectorAll(".tabs-nav .tab-btn").forEach(btn => btn.classList.remove("active"));
-  document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+async function cacheSet(key, value, ttlSeconds) {
+  try {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return;
 
-  element.classList.add("active");
-  document.getElementById(`tab-${tabId}`).classList.add("active");
+    await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['SET', key, JSON.stringify(value), 'EX', String(ttlSeconds)])
+    });
+  } catch (e) {
+    console.error('Cache SET error:', e.message);
+  }
 }
 
-/**
- * Lógica de Conmutación de Subpestañas
- */
-function switchSubTab(parentTab, subTabId, element) {
-  const parentContainer = document.getElementById(`tab-${parentTab}`);
-  parentContainer.querySelectorAll(".subtab-btn").forEach(btn => btn.classList.remove("active"));
-  parentContainer.querySelectorAll(".subtab-content").forEach(content => content.classList.remove("active"));
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  element.classList.add("active");
-  document.getElementById(`subtab-${parentTab}-${subTabId}`).classList.add("active");
-}
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-/* ==========================================
-   RENDERIZADO DE COMPONENTES Y GRÁFICOS
-========================================== */
+  const { nombre, fecha, forceRefresh } = req.body;
+  if (!nombre) return res.status(400).json({ error: 'Falta el nombre' });
 
-function renderizarKPIsAmpliados() {
-  const container = document.getElementById("matriz-metricas-container");
-  let html = `<table style="width:100%; border-collapse:collapse; color:var(--text-primary);">
-    <thead>
-      <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
-        <th style="padding:10px;">Métrica</th>
-        <th style="padding:10px;">Valor Actual</th>
-        <th style="padding:10px;">Var. vs Periodo Previo</th>
-      </tr>
-    </thead>
-    <tbody>`;
-  
-  radarData.kpis_ampliados.matriz.forEach(row => {
-    html += `<tr style="border-bottom:1px solid var(--border-color);">
-      <td style="padding:10px;">${row.metrica}</td>
-      <td style="padding:10px; font-weight:bold;">${row.valor}</td>
-      <td style="padding:10px; color:${row.comparativa.includes('+') ? 'var(--color-positive)' : 'var(--color-negative)'};">${row.comparativa}</td>
-    </tr>`;
-  });
-  
-  html += `</tbody></table>`;
-  container.innerHTML = html;
+  const fechaCtx = fecha || 'julio 2026';
+  const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 horas
+  const cacheKey = `radar:${nombre.trim().toLowerCase()}:${fechaCtx.trim().toLowerCase()}`;
 
-  // Gráfico Evolución
-  const ctx = document.getElementById('chartEvolucion').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
-      datasets: [{
-        label: 'Menciones Totales',
-        data: [12000, 14500, 13000, 18450],
-        borderColor: '#38bdf8',
-        tension: 0.3
-      }]
+  if (!forceRefresh) {
+    const cached = await cacheGet(cacheKey);
+    if (cached) return res.status(200).json({ ...cached, _cache: 'HIT' });
+  }
+
+  let contextoReal = '';
+  try {
+    const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+
+    const tweetsPromise = fetch(
+      `https://api.apify.com/v2/acts/apidojo~twitter-scraper-lite/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          searchTerms: [`${nombre}`, `${nombre} oposicion`, `${nombre} gobierno`],
+          sort: 'Latest',
+          maxItems: 30,
+          tweetLanguage: 'es'
+        })
+      }
+    ).then(r => r.ok ? r.json() : []).catch(() => []);
+
+    const noticiasPromise = fetch(
+      `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          queries: `${nombre} columna opinion NOTICIAS ${fechaCtx}\n${nombre} oposicion denuncias edomex mexico`,
+          resultsPerPage: 20,
+          maxPagesPerQuery: 1,
+          languageCode: 'es',
+          countryCode: 'mx'
+        })
+      }
+    ).then(r => r.ok ? r.json() : []).catch(() => []);
+
+    const facebookPromise = fetch(
+      `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ searchTerm: nombre, maxPosts: 20 })
+      }
+    ).then(r => r.ok ? r.json() : []).catch(() => []);
+
+    const [tweetsData, noticiasData, facebookData] = await Promise.all([
+      tweetsPromise, noticiasPromise, facebookPromise
+    ]);
+
+    const tweetsTexto = (tweetsData || []).slice(0, 25).map(t =>
+      `TWEET de @${t.author?.userName || 'usuario'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
+    ).join('\n\n');
+
+    const organicResults = (noticiasData || []).flatMap(item => item.organicResults || []);
+    const noticiasTexto = organicResults.slice(0, 20).map(r =>
+      `TITULAR: ${r.title}\nURL: ${r.url}\nRESUMEN: ${r.description || ''}`
+    ).join('\n\n---\n\n');
+
+    const fbTexto = (facebookData || []).slice(0, 20).map(f =>
+      `POST FB (${f.user?.name || 'Página/Usuario'}): ${f.text || f.caption || ''}\nReacciones: ${f.likes || 0} | Compartidos: ${f.shares || 0}`
+    ).join('\n\n');
+
+    contextoReal = `DATOS MULTI-PLATAFORMA EXTRAÍDOS:\n\n` +
+      `=== X / TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos directos.'}\n\n` +
+      `=== MEDIOS DIGITALES Y PRENSA (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin datos directos.'}\n\n` +
+      `=== FACEBOOK (${facebookData?.length || 0} publicaciones) ===\n${fbTexto || 'Sin datos directos.'}`;
+
+  } catch (e) {
+    console.error('Apify exception:', e.message);
+    contextoReal = 'Conexión parcial a fuentes. Generando análisis deductivo amplio.';
+  }
+
+  const prompt = `Eres un Director General de Inteligencia Político-Digital. La fecha actual del reporte es: ${fechaCtx}.
+
+INFORMACIÓN EXTRAÍDA DE FUENTES PARA "${nombre}":
+${contextoReal}
+
+INSTRUCCIÓN CRÍTICA: Debes responder OBLIGATORIAMENTE un JSON válido sin marcas de markdown alrededor (o en bloque \`\`\`json). Provee datos realistas, profesionales y matemáticamente coherentes para alimentar todos los gráficos interactivos y vistas del Dashboard RADAR.
+
+ESTRUCTURA DEL JSON EXIGIDA:
+{
+  "nombre": "Nombre oficial completo",
+  "cargo": "Cargo exacto a ${fechaCtx} · Partido Político / Entidad",
+  "tags": ["Tag1", "Tag2", "Tag3", "Tag4"],
+  "kpis_ampliados": [
+    {"label": "NPS GENERAL", "valor": "+18", "nota": "Net Promoter Score digital", "tipo": "su"},
+    {"label": "TRA", "valor": "72/100", "nota": "Temperatura Reputacional", "tipo": "ac"},
+    {"label": "SHARE OF VOICE", "valor": "34%", "nota": "Cuota de conversación", "tipo": "bl"},
+    {"label": "ALCANCE BRUTO", "valor": "4.2M", "nota": "Impactos estimados", "tipo": "ac"},
+    {"label": "RATIO ATAQUE/DEF", "valor": "1:2.4", "nota": "Menciones adversas vs apoyo", "tipo": "da"},
+    {"label": "VEL. VIRALIZACIÓN", "valor": "2.1 hrs", "nota": "Tiempo promedio a 1k menciones", "tipo": "go"}
+  ],
+  "sentimiento": {
+    "general": {
+      "labels": ["Positivo", "Neutro", "Negativo", "Polarizado"],
+      "data": [38, 25, 27, 10]
     },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } } }
-  });
-}
-
-function renderizarSentimiento() {
-  document.getElementById("sentimiento-resumen-texto").innerText = radarData.sentimiento.resumen;
-
-  // Gráfico Dona Sentimiento
-  const ctx = document.getElementById('chartSentimientoDona').getContext('2d');
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Positivo', 'Neutro', 'Negativo', 'Polarizado'],
-      datasets: [{
-        data: radarData.sentimiento.distribucion,
-        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-      }]
+    "genero": {
+      "labels": ["Hombres Pos.", "Hombres Neg.", "Mujeres Pos.", "Mujeres Neg."],
+      "data": [42, -28, 32, -35]
     },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } } }
-  });
-
-  // Cruces Bivariados
-  const container = document.getElementById("cruces-bivariados-list");
-  container.innerHTML = `
-    <div class="item-box">
-      <h4>Eje Infraestructura vs. Tono Favorable</h4>
-      <p>El 70% de la conversación vinculada a obras públicas presenta un tono marcadamente positivo.</p>
-    </div>
-    <div class="item-box">
-      <h4>X (Twitter) vs. Tono Adverso</h4>
-      <p>El 45% de los comentarios de tinte crítico se concentran exclusivamente en la plataforma X.</p>
-    </div>
-  `;
-}
-
-function renderizarTopOfMind() {
-  const ctx = document.getElementById('chartTopMindBar').getContext('2d');
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: radarData.top_of_mind.temas,
-      datasets: [{
-        label: 'Volumen de Conversación (%)',
-        data: radarData.top_of_mind.volumenes,
-        backgroundColor: '#38bdf8'
-      }]
+    "edad": {
+      "labels": ["18-24", "25-34", "35-49", "50-64", "65+"],
+      "data": [-15, 8, 22, 35, 40]
     },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } } }
-  });
-
-  const grid = document.getElementById("actores-clave-grid");
-  grid.innerHTML = `
-    <div class="item-box">
-      <h4>Prensa Local</h4>
-      <p>Impacto: **Alto** | Tendencia: Neutral-Favorable</p>
-    </div>
-    <div class="item-box">
-      <h4>Oposición Política</h4>
-      <p>Impacto: **Medio** | Tendencia: Crítica enfocado en movilidad</p>
-    </div>
-  `;
-}
-
-function renderizarPlataformas() {
-  const ctxCanal = document.getElementById('chartPlataformasCanal').getContext('2d');
-  new Chart(ctxCanal, {
-    type: 'pie',
-    data: {
-      labels: radarData.plataformas.canales,
-      datasets: [{
-        data: radarData.plataformas.participacion,
-        backgroundColor: ['#1877f2', '#1da1f2', '#64748b', '#e1306c']
-      }]
-    }
-  });
-
-  const ctxTono = document.getElementById('chartTonoPlataforma').getContext('2d');
-  new Chart(ctxTono, {
-    type: 'bar',
-    data: {
-      labels: radarData.plataformas.canales,
-      datasets: [
-        { label: '% Favorable', data: radarData.plataformas.tono_favorable, backgroundColor: '#10b981' },
-        { label: '% Adverso', data: radarData.plataformas.tono_adiverso, backgroundColor: '#ef4444' }
+    "partido": {
+      "labels": ["Base Propia", "Oposición A", "Oposición B", "Independientes"],
+      "data": [68, -55, -42, 12]
+    },
+    "clima_general": { "labels": ["Favorable", "Inercial", "Crítico", "Indefinido"], "data": [40, 30, 20, 10] },
+    "clima_genero": { "labels": ["Hombres Fav", "Hombres Crít", "Mujeres Fav", "Mujeres Crít"], "data": [35, 25, 25, 15] },
+    "clima_edad": { "labels": ["Jóvenes", "Adultos", "Mayores", "Otros"], "data": [15, 45, 30, 10] },
+    "clima_partido": { "labels": ["Propio", "Oposición", "Neutros", "Otros"], "data": [50, 30, 15, 5] }
+  },
+  "hallazgos_sentimiento": [
+    {"tipo": "ac", "titulo": "Brecha Generacional Flagrante", "cuerpo": "El rechazo se concentra de forma aguda en el segmento de 18 a 24 años.", "insight": "Falta narrativa adaptada a formatos dinámicos y jóvenes."},
+    {"tipo": "da", "titulo": "Ataque Coordinado en Redes", "cuerpo": "Fuerte volumen de críticas en X/Twitter provenientes de la oposición.", "insight": "Activar protocolos de contención de narrativa."}
+  ],
+  "kpis_bivariados": {
+    "nps_partido": { "labels": ["Base Propia", "Oposición A", "Oposición B", "Independientes"], "data": [68, -55, -42, 12] },
+    "nps_demografia": { "labels": ["H-Jóvenes", "H-Adultos", "M-Jóvenes", "M-Adultas"], "data": [-18, 24, -22, 18] },
+    "ratio_ataque_plataforma": { "labels": ["X / Twitter", "Noticias", "Facebook", "TikTok", "Instagram"], "data": [68, 45, 28, 22, 12] },
+    "tra_evolucion": { "labels": ["Sem 1", "Sem 2", "Sem 3", "Sem 4"], "data": [55, 62, 58, 72] }
+  },
+  "top_of_mind": {
+    "general": { "labels": ["Gestión Pública", "Estrategia Electoral", "Declaraciones", "Seguridad", "Infraestructura"], "data": [35, 25, 18, 12, 10] },
+    "genero": { "labels": ["Gestión", "Electoral", "Seguridad"], "hombres": [30, 28, 15], "mujeres": [22, 18, 25] },
+    "edad": {
+      "grupos": ["18-29", "30-49", "50+"],
+      "temas": [
+        {"tema": "Propuestas Jóvenes", "valores": [40, 15, 5]},
+        {"tema": "Economía / Empleo", "valores": [30, 45, 35]}
       ]
     },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } } }
-  });
+    "partido": { "labels": ["Gestión", "Corrupción", "Propuestas"], "base": [50, 5, 35], "op1": [10, 65, 10], "op2": [15, 50, 15] }
+  },
+  "cruces_tematicos": [
+    {"tipo": "su", "titulo": "Aprobación en Obras e Infraestructura", "cuerpo": "El tema de obras genera menciones favorables en sectores adultos.", "insight": "Capitalizar inauguraciones y avances territoriales."}
+  ],
+  "plataformas": {
+    "alcance": { "labels": ["Facebook", "X / Twitter", "Noticias", "Instagram", "TikTok", "YouTube"], "data": [38, 26, 16, 10, 6, 4] },
+    "tono": { "labels": ["Facebook", "X", "Noticias", "Instagram", "TikTok"], "positivo": [48, 22, 35, 58, 42], "negativo": [28, 64, 42, 18, 32] },
+    "edad": {
+      "labels": ["Facebook", "X", "Instagram", "TikTok"],
+      "grupos": [
+        {"grupo": "18-29", "data": [15, 30, 60, 75]},
+        {"grupo": "30-49", "data": [45, 45, 30, 20]},
+        {"grupo": "50+", "data": [40, 25, 10, 5]}
+      ]
+    },
+    "viralizacion": { "labels": ["Facebook", "X", "TikTok", "Instagram"], "critica_horas": [3.2, 0.8, 1.5, 4.0], "propia_horas": [6.0, 3.5, 5.0, 8.0] }
+  },
+  "lectura_estrategica_plataformas": [
+    {"plataforma": "X / TWITTER", "dato": "Campos de batalla adverso", "texto": "Plataforma dominada por la crítica. Requiere rapidez de respuesta y vocería contundente."},
+    {"plataforma": "FACEBOOK", "dato": "Fortaleza orgánica", "texto": "Espacio idóneo para la transmisión de logros de gobierno y cercanía comunitaria."}
+  ],
+  "narrativas": {
+    "favorables": [
+      {"titulo": "Liderazgo y Capacidad de Gestión", "descripcion": "Resalta el cumplimiento de metas y presencia constante.", "tags": ["Gestión", "Resultados"], "bivariado": "Mayor eco en Facebook y adultos 40+"}
+    ],
+    "criticas": [
+      {"titulo": "Cuestionamiento de Prioridades", "descripcion": "Críticas de la oposición sobre el destino de recursos.", "tags": ["Oposición", "Gasto"], "bivariado": "Dominante en X/Twitter y jóvenes", "riesgo": true}
+    ],
+    "neutras": [
+      {"titulo": "Cobertura Institucional", "descripcion": "Notas informativas de asistencia a eventos públicos sin sesgo.", "tags": ["Prensa"], "bivariado": "Uniforme en prensa digital"}
+    ]
+  },
+  "riesgos_oportunidades": {
+    "riesgos": [
+      {"nivel": "CRÍTICO", "titulo": "Escalamiento de Narrativa Crítica en Redes", "descripcion": "Riesgo de que los ataques en X penetren en prensa nacional."}
+    ],
+    "oportunidades": [
+      {"nivel": "ALTO", "titulo": "Posicionamiento en Juventudes", "descripcion": "Veta disponible para estructurar agenda digital en TikTok/Instagram."}
+    ]
+  },
+  "territorial": {
+    "zonas": [
+      {"nombre": "Zona Centro / Capital", "nps": 22, "clasificacion": "favorable", "nota": "Baluarte histórico de apoyo"},
+      {"nombre": "Zona Norte", "nps": -12, "clasificacion": "adversa", "nota": "Fuerte penetración de oposición"},
+      {"nombre": "Zona Oriente", "nps": 5, "clasificacion": "inercial", "nota": "Terreno de competencia activa"}
+    ],
+    "volumen": [
+      {"nombre": "Zona Centro", "pct": 45},
+      {"nombre": "Zona Norte", "pct": 30},
+      {"nombre": "Zona Oriente", "pct": 25}
+    ]
+  }
+}`;
 
-  document.getElementById("monitoreo-directo-container").innerHTML = `
-    <p style="font-size:0.9rem; color:var(--text-secondary);">Listado de publicaciones capturadas en las últimas 24 horas...</p>
-  `;
-}
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://radar-politico.vercel.app',
+        'X-Title': 'RADAR Politico'
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4o',
+        max_tokens: 7500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
 
-function renderizarNarrativas() {
-  const favContainer = document.getElementById("narrativas-favorables");
-  radarData.narrativas.favorables.forEach(item => {
-    favContainer.innerHTML += `<div class="item-box"><h4>${item.titulo}</h4><p>${item.desc}</p></div>`;
-  });
-
-  const critContainer = document.getElementById("narrativas-criticas");
-  radarData.narrativas.criticas.forEach(item => {
-    critContainer.innerHTML += `<div class="item-box"><h4>${item.titulo}</h4><p>${item.desc}</p></div>`;
-  });
-
-  const neuContainer = document.getElementById("narrativas-neutras");
-  radarData.narrativas.neutras.forEach(item => {
-    neuContainer.innerHTML += `<div class="item-box"><h4>${item.titulo}</h4><p>${item.desc}</p></div>`;
-  });
-
-  const timeContainer = document.getElementById("timeline-container");
-  radarData.narrativas.cronologia.forEach(item => {
-    timeContainer.innerHTML += `
-      <div class="timeline-item">
-        <div class="timeline-date">${item.fecha}</div>
-        <h4>${item.titulo}</h4>
-        <p style="font-size:0.85rem; color:var(--text-secondary);">${item.desc}</p>
-      </div>
-    `;
-  });
-}
-
-function renderizarRiesgosOportunidades() {
-  document.getElementById("dictamen-estrategico-texto").innerHTML = `<p>${radarData.riesgos_oportunidades.dictamen}</p>`;
-
-  const riesgosContainer = document.getElementById("lista-riesgos");
-  radarData.riesgos_oportunidades.riesgos.forEach(item => {
-    const claseBadge = item.nivel.toLowerCase();
-    riesgosContainer.innerHTML += `
-      <div class="item-box">
-        <span class="badge-risk ${claseBadge}">${item.nivel}</span>
-        <h4>${item.titulo}</h4>
-        <p>${item.desc}</p>
-      </div>
-    `;
-  });
-
-  const oportContainer = document.getElementById("lista-oportunidades");
-  radarData.riesgos_oportunidades.oportunidades.forEach(item => {
-    oportContainer.innerHTML += `
-      <div class="item-box">
-        <span class="badge-risk medio">OPORTUNIDAD</span>
-        <h4>${item.titulo}</h4>
-        <p>${item.desc}</p>
-      </div>
-    `;
-  });
-}
-
-function renderizarMapaTerritorial() {
-  const ctxGenero = document.getElementById('chartDemografiaGenero').getContext('2d');
-  new Chart(ctxGenero, {
-    type: 'doughnut',
-    data: {
-      labels: ['Hombres', 'Mujeres'],
-      datasets: [{
-        data: radarData.mapa_territorial.genero,
-        backgroundColor: ['#0284c7', '#ec4899']
-      }]
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(500).json({ error: 'Error de API: ' + err });
     }
-  });
 
-  const ctxEdad = document.getElementById('chartDemografiaEdad').getContext('2d');
-  new Chart(ctxEdad, {
-    type: 'bar',
-    data: {
-      labels: radarData.mapa_territorial.edades_labels,
-      datasets: [{
-        label: '% Aprobación',
-        data: radarData.mapa_territorial.edades_aprobacion,
-        backgroundColor: '#38bdf8'
-      }]
+    const data = await response.json();
+    const rawText = data.choices?.[0]?.message?.content || '';
+
+    let cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return res.status(500).json({ error: 'Respuesta no válida del modelo', raw: rawText.substring(0, 300) });
+
+    cleaned = jsonMatch[0].replace(/:\s*\+(\d)/g, ': $1').replace(/,\s*([}\]])/g, '$1');
+
+    try {
+      const parsed = JSON.parse(cleaned);
+      await cacheSet(cacheKey, parsed, CACHE_TTL_SECONDS);
+      return res.status(200).json({ ...parsed, _cache: 'MISS' });
+    } catch (e) {
+      return res.status(500).json({ error: 'JSON inválido: ' + e.message, raw: rawText.substring(0, 500) });
     }
-  });
 
-  document.getElementById("analisis-geografico-texto").innerHTML = `
-    <p style="line-height:1.6; font-size:0.95rem;">${radarData.mapa_territorial.geografia_texto}</p>
-  `;
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 }
