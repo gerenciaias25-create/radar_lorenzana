@@ -123,147 +123,86 @@ export default async function handler(req, res) {
     contextoReal = 'Conexión parcial a fuentes. Generando análisis deductivo amplio.';
   }
 
-  const prompt = `Eres un Director General de Inteligencia Político-Digital. La fecha actual del reporte es: ${fechaCtx}.
+  // Fragmento ajustado del Prompt enviado al modelo en /api/analizar.js
+
+const prompt = `Eres un Director General de Inteligencia Político-Digital. La fecha actual del reporte es: ${fechaCtx}.
 
 INFORMACIÓN EXTRAÍDA DE FUENTES PARA "${nombre}":
 ${contextoReal}
 
-INSTRUCCIÓN CRÍTICA DE EXTENSIÓN Y PROFUNDIDAD:
-Tu cliente exige un INFORME EJECUTIVO DENSEMENTE DETALLADO. No omitas explicaciones ni resumas de forma escueta. En cada sección del JSON debes proveer análisis cualitativos extensos, contexto estratégico, desgloses exhaustivos y métricas comparativas.
+INSTRUCCIÓN CRÍTICA DE FORMATO Y ESTRUCTURA BIVARIADA:
+No generes bloques de texto plano continuo. Extrae los datos y agrúpalos en tarjetas bivariadas con etiquetas demográficas, territoriales y de partidos políticos, replicando la estructura técnica exacta de RADAR v2.0.
 
-Debes estructurar obligatoriamente el JSON con esta estructura exacta:
+Debes devolver estrictamente este formato JSON:
 
 {
-  "nombre": "Nombre oficial completo",
-  "cargo": "Cargo exacto a ${fechaCtx} · Partido Político / Entidad",
-  "fecha_analisis": "${fechaCtx}",
-  "tags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"],
-  "kpis": [
-    {"label": "SEGUIDORES TOTALES", "valor": "X.XM", "nota": "Alcance bruto consolidado", "tipo": "acc"},
-    {"label": "APROBACIÓN DIGITAL", "valor": "XX%", "nota": "Proporción favorable neta", "tipo": "suc"},
-    {"label": "PANTALLAS DE CRISIS", "valor": "X", "nota": "Eventos de alta volatilidad", "tipo": "dan"},
-    {"label": "MECANISMO NARRATIVO", "valor": "XX/XX", "nota": "Propia vs Impuesta", "tipo": "gld"},
-    {"label": "SENTIMIENTO POSITIVO", "valor": "XX%", "nota": "Conversación a favor", "tipo": "suc"},
-    {"label": "TENDENCIA DE VOLUMEN", "valor": "Alta / Estable", "nota": "Variación vs periodo previo", "tipo": "acc"}
+  "nombre": "${nombre}",
+  "cargo": "Cargo y Partido",
+  "tags": ["ANÁLISIS BIVARIADO", "CLIMA: MIXTO", "NPS-P: +12"],
+  "kpis_principales": [
+    {"label": "NPS POLÍTICO", "valor": "+12", "nota": "Zona mixta", "tipo": "ac"},
+    {"label": "SHARE OF VOICE", "valor": "58%", "nota": "vs adversarios", "tipo": "su"},
+    {"label": "RATIO ATAQUE/DEF", "valor": "2.1x", "nota": "Sin defensa orgánica", "tipo": "da"}
   ],
-  "vision_general": {
-    "resumen_ejecutivo": "Escribe un análisis de 2 a 3 párrafos completos explicando a fondo la situación digital global del actor político, la dinámica de su ecosistema, los ataques o apoyos principales y el balance general de su imagen a la fecha de ${fechaCtx}.",
-    "sentimiento": [
-      {"label": "Positivo", "pct": 38},
-      {"label": "Neutro/Informativo", "pct": 30},
-      {"label": "Negativo", "pct": 22},
-      {"label": "Polarizado", "pct": 10}
-    ],
-    "temas": [
-      {"tema": "Tema principal 1", "pct": 35},
-      {"tema": "Tema principal 2", "pct": 22},
-      {"tema": "Tema principal 3", "pct": 15},
-      {"tema": "Tema principal 4", "pct": 12},
-      {"tema": "Tema principal 5", "pct": 9},
-      {"tema": "Tema principal 6", "pct": 7}
-    ],
-    "plataformas": [
-      {"nombre": "Facebook", "pct": 38, "tono_positivo": 45, "tono_negativo": 30},
-      {"nombre": "X/Twitter", "pct": 28, "tono_positivo": 25, "tono_negativo": 60},
-      {"nombre": "Noticias/Medios", "pct": 18, "tono_positivo": 30, "tono_negativo": 45},
-      {"nombre": "Google Search", "pct": 10, "tono_positivo": 40, "tono_negativo": 35},
-      {"nombre": "Instagram", "pct": 6, "tono_positivo": 50, "tono_negativo": 20}
-    ]
-  },
-  "actores_politicos": {
-    "explicacion_ecosistema": "Escribe un análisis exhaustivo sobre la relación del actor político con los principales poderes de mediación (prensa nacional, oposiciones territoriales, líderes de opinión y movilización en redes).",
-    "analisis_actores": [
-      {
-        "categoria": "Prensa Nacional & Columnistas",
-        "impacto": "Alto",
-        "narrativa_dominante": "Explicación extensa del tratamiento mediático por parte de grandes editoriales y plumas nacionales.",
-        "tendencia_actitud": "Desfavorable (60%) / Neutro (40%)"
-      },
-      {
-        "categoria": "Prensa Local & Portales Regionales",
-        "impacto": "Medio",
-        "narrativa_dominante": "Explicación extensa sobre la cobertura institucional y local en regiones de influencia.",
-        "tendencia_actitud": "Favorable (70%)"
-      },
-      {
-        "categoria": "Oposición & Voceros Críticos",
-        "impacto": "Crítico",
-        "narrativa_dominante": "Explicación detallada de las estrategias de ataque, voceros de oposición y líneas de denuncia.",
-        "tendencia_actitud": "Adverso (90%)"
-      },
-      {
-        "categoria": "Ecosistema Ciudadano & Algorítmico",
-        "impacto": "Alto",
-        "narrativa_dominante": "Análisis del sentimiento orgánico sin mediación, comentarios en plataformas masivas como TikTok y FB.",
-        "tendencia_actitud": "Dividido / Polarizado"
-      }
-    ],
-    "cruces_bivariados": [
-      {
-        "eje_x": "Plataforma (X vs Facebook)",
-        "eje_y": "Inclinación del Tono",
-        "hallazgo": "Explicación detallada de por qué el tono varía drásticamente según el algoritmo y tipo de usuario de cada plataforma."
-      },
-      {
-        "eje_x": "Sentimiento",
-        "eje_y": "Ejes Temáticos Clave",
-        "hallazgo": "Análisis explícito sobre qué temas específicos generan rechazo y cuáles generan respaldo popular."
-      }
-    ]
-  },
-  "segmentacion_demografica": {
-    "analisis_demografico": "Escribe un análisis detallado sobre el perfil sociodemográfico de la audiencia que apoya o ataca al personaje político, diferenciando por género, rango etario y nivel socioeconómico.",
-    "por_genero": [
-      {"segmento": "Hombres", "positivo": 35, "neutro": 30, "negativo": 35},
-      {"segmento": "Mujeres", "positivo": 30, "neutro": 28, "negativo": 42}
-    ],
-    "por_edad": [
-      {"segmento": "18-29 años", "positivo": 25, "neutro": 25, "negativo": 50},
-      {"segmento": "30-44 años", "positivo": 35, "neutro": 30, "negativo": 35},
-      {"segmento": "45-59 años", "positivo": 45, "neutro": 30, "negativo": 25},
-      {"segmento": "60+ años", "positivo": 50, "neutro": 28, "negativo": 22}
-    ]
-  },
-  "mapa_narrativas": {
-    "explicacion_narrativas": "Análisis exhaustivo del combate ideológico y narrativo. Explica la efectividad del discurso oficial vs las contra-narrativas de la oposición.",
+  "kpis_ampliados": [
+    {"label": "TRA ACUMULADA", "valor": "+4.8", "nota": "Tendencia Q3", "tipo": "go"},
+    {"label": "IRR RESILIENCIA", "valor": "5.4d", "nota": "Persistente", "tipo": "bl"},
+    {"label": "ICN CONVERSIÓN", "valor": "35%", "nota": "Crítico <40%", "tipo": "da"}
+  ],
+  "hallazgos_sentimiento": [
+    {
+      "eje": "GÉNERO × SENTIMIENTO",
+      "clase": "ac",
+      "texto": "Las mujeres muestran un sentimiento adverso 15pp sobre la media.",
+      "accion": "→ Priorizar vocería femenina."
+    }
+  ],
+  "narrativas": {
     "favorables": [
-      {"titulo": "Narrativa A favor 1", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de este argumento positivo."},
-      {"titulo": "Narrativa A favor 2", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de este argumento positivo."},
-      {"titulo": "Narrativa A favor 3", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de este argumento positivo."}
+      {
+        "titulo": "Gestión de Obras",
+        "desc": "Inversión histórica en infraestructura.",
+        "tags": [
+          {"texto": "♂ H 45-59", "clase": "bgen"},
+          {"texto": "Base Afín", "clase": "bpar"}
+        ],
+        "bivariado_hallazgo": "Hombres de 45-59 años amplifican esta narrativa 2x más que la media."
+      }
     ],
     "criticas": [
-      {"titulo": "Narrativa En contra 1", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de esta línea crítica."},
-      {"titulo": "Narrativa En contra 2", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de esta línea crítica."},
-      {"titulo": "Narrativa En contra 3", "descripcion": "Texto extenso explicando el impacto, fuentes e impulsores de esta línea crítica."}
+      {
+        "titulo": "Inseguridad percepción",
+        "desc": "Incremento de quejas en redes por falta de patrullaje.",
+        "tags": [
+          {"texto": "♀ Mujeres", "clase": "bgen"},
+          {"texto": "Zona Centro", "clase": "bloc"}
+        ],
+        "bivariado_hallazgo": "Percepción crítica concentrada en mujeres y comercio local."
+      }
     ],
-    "neutras": [
-      {"titulo": "Narrativa Neutra 1", "descripcion": "Texto extenso sobre coyunturas informativas o debates sin inclinación clara."},
-      {"titulo": "Narrativa Neutra 2", "descripcion": "Texto extenso sobre coyunturas informativas o debates sin inclinación clara."}
-    ]
+    "neutras": []
   },
-  "cronologia_eventos": {
-    "analisis_coyuntural": "Explicación extensa sobre cómo los eventos recientes han moldeado la curva de reputación del personaje a lo largo del tiempo.",
-    "eventos": [
-      {"fecha": "Fecha/Periodo", "badge": "EVENTO DESTACADO", "evento": "Título del hito", "lectura": "Explicación estratégica profunda de los efectos de este evento en la conversación pública."},
-      {"fecha": "Fecha/Periodo", "badge": "PANTALLA DE CRISIS", "evento": "Título del evento adverso", "lectura": "Explicación estratégica profunda de la contención o daños causados por esta crisis."},
-      {"fecha": "Fecha/Periodo", "badge": "EVENTO DESTACADO", "evento": "Título del hito", "lectura": "Explicación estratégica profunda."},
-      {"fecha": "Fecha/Periodo", "badge": "PANTALLA DE CRISIS", "evento": "Título del hecho", "lectura": "Explicación estratégica profunda."}
-    ]
-  },
-  "riesgos_oportunidades": {
-    "dictamen_estrategico": "Evaluación final de vulnerabilidades de reputación y vetas de crecimiento para la comunicación institucional.",
-    "riesgos": [
-      {"nivel": "CRÍTICO", "titulo": "Riesgo Principal 1", "descripcion": "Análisis extenso de la amenaza, alcance de daño reputacional y probabilidad de escalamiento."},
-      {"nivel": "ALTO", "titulo": "Riesgo Principal 2", "descripcion": "Análisis extenso de la amenaza, alcance de daño reputacional y probabilidad de escalamiento."},
-      {"nivel": "MEDIO", "titulo": "Riesgo Principal 3", "descripcion": "Análisis extenso de la amenaza, alcance de daño reputacional y probabilidad de escalamiento."}
-    ],
-    "oportunidades": [
-      {"nivel": "ALTO", "titulo": "Oportunidad Clave 1", "descripcion": "Análisis de la veta aprovechable, temas de vinculación social y rentabilidad de agenda."},
-      {"nivel": "MEDIO", "titulo": "Oportunidad Clave 2", "descripcion": "Análisis de la veta aprovechable, temas de vinculación social y rentabilidad de agenda."}
-    ]
-  }
+  "riesgos": [
+    {
+      "nivel": "CRÍTICO",
+      "titulo": "Desgaste por servicios públicos",
+      "desc": "Fallas recurrentes de suministro.",
+      "bivariado": "Afecta principalmente a independientes (-18pp en aprobación)."
+    }
+  ],
+  "oportunidades": [
+    {
+      "nivel": "ALTO",
+      "titulo": "Defensa del presupuesto regional",
+      "desc": "Convocatoria a causa común municipal.",
+      "bivariado": "Potencial de conversión transpartidista (30% de independientes)."
+    }
+  ],
+  "mapa_territorial": [
+    {"zona": "Zona Centro", "nps": "-12", "clima": "🔴 ADVERSA", "nota": "Comercio informal"},
+    {"zona": "Zona Norte", "nps": "+22", "clima": "🟢 FAVORABLE", "nota": "Obras entregadas"}
+  ]
 }`;
-
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
