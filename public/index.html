@@ -3,215 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Análisis de Perfiles</title>
+  <title>RADAR_ DANIEL SERRANO</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Chart.js para Renderizado de Gráficos -->
+  <!-- Chart.js para renderizado de gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-  <!-- FASE 1: BÚSQUEDA (HERO) -->
-  <section id="searchSection" class="search-hero">
-    <h1>Analizador de Ecosistema & Perfiles</h1>
-    <p>Ingresa un nombre y periodo para generar el reporte de inteligencia.</p>
-    
-    <div class="search-box">
-      <input type="text" id="nombreInput" placeholder="Ej. Carlos Mendoza" />
-      
-      <select id="mesSelect">
-        <option value="Enero">Enero</option>
-        <option value="Febrero">Febrero</option>
-        <option value="Marzo">Marzo</option>
-        <option value="Abril">Abril</option>
-        <option value="Mayo">Mayo</option>
-        <option value="Junio">Junio</option>
-        <option value="Julio" selected>Julio</option>
-        <option value="Agosto">Agosto</option>
-        <option value="Septiembre">Septiembre</option>
-        <option value="Octubre">Octubre</option>
-        <option value="Noviembre">Noviembre</option>
-        <option value="Diciembre">Diciembre</option>
-      </select>
-
-      <select id="anioSelect">
-        <option value="2024">2024</option>
-        <option value="2025">2025</option>
-        <option value="2026" selected>2026</option>
-      </select>
-
-      <button id="btnAnalizar" onclick="analizar()">Analizar</button>
+  <!-- Encabezado Principal -->
+  <header class="main-header">
+    <div class="header-content">
+      <h1>RADAR_ <span>DANIEL SERRANO</span></h1>
+      <span class="status-badge">MONITOREO EN TIEMPO REAL</span>
     </div>
-  </section>
+  </header>
 
-  <!-- FASE 2: PANTALLA DE CARGA Y ERRORES -->
-  <section id="loadingWrap" class="loading-wrap">
-    <div class="spinner"></div>
-    <h2 id="loadingText">Procesando y analizando datos...</h2>
-    <p>Extrayendo métricas del ecosistema digital.</p>
-  </section>
+  <main class="dashboard-container">
 
-  <section id="errorWrap" class="error-wrap">
-    <h3>Ha ocurrido un problema</h3>
-    <p id="errorText">No se pudieron recuperar los datos.</p>
-    <button onclick="resetUI()" style="margin-top: 15px; padding: 8px 16px; cursor:pointer;">Volver a intentar</button>
-  </section>
-
-  <!-- FASE 3: DASHBOARD DE RESULTADOS COMPLETO -->
-  <main id="dashboard">
-    <!-- Header del Perfil -->
-    <header class="profile-header">
-      <div class="profile-title">
-        <h1 id="profileName">--</h1>
-        <p id="profileCargo">--</p>
+    <!-- FILA DE KPIS (Oculta visualmente mediante CSS, pero presente en el DOM para procesamiento) -->
+    <div id="kpiRow" class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-title">SEGUIDORES TOTALES</span>
+        <span class="kpi-value" id="kpi-seguidores">0</span>
       </div>
-      <button onclick="resetUI()" style="padding: 8px 16px; cursor:pointer;">Nueva Búsqueda</button>
-    </header>
+      <div class="kpi-card">
+        <span class="kpi-title">APROBACIÓN DIGITAL</span>
+        <span class="kpi-value" id="kpi-aprobacion">0%</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">PANTALLAS DE CRISIS</span>
+        <span class="kpi-value" id="kpi-crisis">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">VOLUMEN DE MENCIONES</span>
+        <span class="kpi-value" id="kpi-menciones">0</span>
+      </div>
+    </div>
 
-    <!-- Navegación por Pestañas -->
+    <!-- Navegación de Pestañas Principales -->
     <nav class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('tab-vision', this)">Visión General</button>
-      <button class="tab-btn" onclick="switchTab('tab-ecosistema', this)">Ecosistema</button>
+      <button class="tab-btn active" onclick="switchMainTab('kpis-ampliados', this)">KPIs AMPLIADOS</button>
+      <button class="tab-btn" onclick="switchMainTab('sentimiento', this)">SENTIMIENTO</button>
+      <button class="tab-btn" onclick="switchMainTab('top-mind', this)">TOP OF MIND</button>
+      <button class="tab-btn" onclick="switchMainTab('plataformas', this)">PLATAFORMAS</button>
+      <button class="tab-btn" onclick="switchMainTab('narrativas', this)">NARRATIVAS</button>
+      <button class="tab-btn" onclick="switchMainTab('riesgos-oport', this)">RIESGOS & OPORT.</button>
+      <button class="tab-btn" onclick="switchMainTab('mapa-territorial', this)">MAPA TERRITORIAL</button>
     </nav>
 
-    <!-- Pestaña 1: Visión General -->
-    <div id="tab-vision" class="tab-panel active">
-      <div class="text-box-analysis">
-        <h3>Resumen Ejecutivo</h3>
-        <p id="resumenEjecutivoText">Cargando...</p>
+    <!-- CONTENIDOS DE PESTAÑAS -->
+    
+    <!-- 1. KPIs AMPLIADOS -->
+    <section id="tab-kpis-ampliados" class="tab-content active">
+      <div class="subtabs-nav">
+        <button class="subtab-btn active" onclick="switchSubTab('kpis-ampliados', 'matriz', this)">Matriz Métricas Consolidadas</button>
+        <button class="subtab-btn" onclick="switchSubTab('kpis-ampliados', 'evolucion', this)">Evolución & Tendencias</button>
       </div>
-
-      <div class="two-col">
+      <div id="subtab-kpis-ampliados-matriz" class="subtab-content active">
         <div class="card">
-          <h3>Métricas Clave</h3>
-          <div class="chart-container">
-            <canvas id="chartMetrics"></canvas>
-          </div>
-        </div>
-        <div class="card">
-          <h3>Distribución de Sentimiento</h3>
-          <div class="chart-container">
-            <canvas id="chartSentiment"></canvas>
+          <h3>Métricas Consolidadas de Alcance y Conversación</h3>
+          <div id="matriz-metricas-container" class="table-responsive">
+            <!-- Renderizado dinámico -->
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Pestaña 2: Ecosistema -->
-    <div id="tab-ecosistema" class="tab-panel">
-      <div class="text-box-analysis">
-        <h3>Análisis del Ecosistema</h3>
-        <p id="ecosistemaText">Cargando...</p>
+      <div id="subtab-kpis-ampliados-evolucion" class="subtab-content">
+        <div class="card">
+          <h3>Evolución Histórica vs. Periodo Previo</h3>
+          <canvas id="chartEvolucion"></canvas>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <!-- 2. SENTIMIENTO -->
+    <section id="tab-sentimiento" class="tab-content">
+      <div class="subtabs-nav">
+        <button class="subtab-btn active" onclick="switchSubTab('sentimiento', 'distribucion', this)">Distribución Consolidada</button>
+        <button class="subtab-btn" onclick="switchSubTab('sentimiento', 'cruces', this)">Cruces Bivariados de Tono</button>
+      </div>
+      <div id="subtab-sentimiento-distribucion" class="subtab-content active">
+        <div class="grid-2-cols">
+          <div class="card">
+            <h3>Desglose de Sentimiento Digital</h3>
+            <canvas id="chartSentimientoDona"></canvas>
+          </div>
+          <div class="card">
+            <h3>Resumen Ejecutivo del Tono</h3>
+            <p id="sentimiento-resumen-texto">Cargando análisis de sentimiento...</p>
+          </div>
+        </div>
+      </div>
+      <div id="subtab-sentimiento-cruces" class="subtab-content">
+        <div class="card">
+          <h3>Cruce Tono vs. Eje Temático y Plataformas</h3>
+          <div id="cruces-bivariados-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. TOP OF MIND -->
+    <section id="tab-top-mind" class="tab-content">
+      <div class="subtabs-nav">
+        <button class="subtab-btn active" onclick="switchSubTab('top-mind', 'volumen', this)">Volumen Temático</button>
+        <button class="subtab-btn" onclick="switchSubTab('top-mind', 'actores', this)">Análisis de Actores Clave</button>
+      </div>
+      <div id="subtab-top-mind-volumen" class="subtab-content active">
+        <div class="card">
+          <h3>Ejes de Conversación Dominantes</h3>
+          <canvas id="chartTopMindBar"></canvas>
+        </div>
+      </div>
+      <div id="subtab-top-mind-actores" class="subtab-content">
+        <div class="card">
+          <h3>Mapeo de Actores e Impacto de Agenda</h3>
+          <div id="actores-clave-grid" class="grid-cards"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. PLATAFORMAS -->
+    <section id="tab-plataformas" class="tab-content">
+      <div class="subtabs-nav">
+        <button class="subtab-btn active" onclick="switchSubTab('plataformas', 'distribucion', this)">Distribución por Canal</button>
+        <button class="subtab-btn" onclick="switchSubTab('plataformas', 'tono-canal', this)">Tono por Plataforma</button>
+        <button class="subtab-btn" onclick="switchSubTab('plataformas', 'monitoreo', this)">Monitoreo Directo</button>
+      </div>
+      <div id="subtab-plataformas-distribucion" class="subtab-content active">
+        <div class="card">
+          <h3>Participación por Red Social</h3>
+          <canvas id="chartPlataformasCanal"></canvas>
+        </div>
+      </div>
+      <div id="subtab-plataformas-tono-canal" class="subtab-content">
+        <div class="card">
+          <h3>Comparativa Favorable vs. Adverso por Plataforma</h3>
+          <canvas id="chartTonoPlataforma"></canvas>
+        </div>
+      </div>
+      <div id="subtab-plataformas-monitoreo" class="subtab-content">
+        <div class="card">
+          <h3>Extracción Directa de Medios y Redes</h3>
+          <div id="monitoreo-directo-container"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. NARRATIVAS -->
+    <section id="tab-narrativas" class="tab-content">
+      <div class="subtabs-nav">
+        <button class="subtab-btn active" onclick="switchSubTab('narrativas', 'matriz', this)">Matriz Discursiva</button>
+        <button class="subtab-btn" onclick="switchSubTab('narrativas', 'cronologia', this)">Cronología e Hitos</button>
+      </div>
+      <div id="subtab-narrativas-matriz" class="subtab-content active">
+        <div class="grid-3-cols">
+          <div class="card border-positive">
+            <h3>▲ Favorables</h3>
+            <div id="narrativas-favorables"></div>
+          </div>
+          <div class="card border-negative">
+            <h3>▼ Críticas</h3>
+            <div id="narrativas-criticas"></div>
+          </div>
+          <div class="card border-neutral">
+            <h3>◆ Neutras / En Disputa</h3>
+            <div id="narrativas-neutras"></div>
+          </div>
+        </div>
+      </div>
+      <div id="subtab-narrativas-cronologia" class="subtab-content">
+        <div class="card">
+          <h3>Línea de Tiempo y Eventos de Crisis</h3>
+          <div id="timeline-container" class="timeline"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. RIESGOS & OPORTUNIDADES -->
+    <section id="tab-riesgos-oport" class="tab-content">
+      <div class="subtabs-nav">
+        <button class="subtab-btn active" onclick="switchSubTab('riesgos-oport', 'dictamen', this)">Dictamen Estratégico</button>
+        <button class="subtab-btn" onclick="switchSubTab('riesgos-oport', 'matriz-exposicion', this)">Matriz de Exposición</button>
+      </div>
+      <div id="subtab-riesgos-oport-dictamen" class="subtab-content active">
+        <div class="card">
+          <h3>Dictamen Estratégico de Reputación</h3>
+          <div id="dictamen-estrategico-texto" class="narrative-box"></div>
+        </div>
+      </div>
+      <div id="subtab-riesgos-oport-matriz-exposicion" class="subtab-content">
+        <div class="grid-2-cols">
+          <div class="card">
+            <h3>Riesgos Identificados</h3>
+            <div id="lista-riesgos"></div>
+          </div>
+          <div class="card">
+            <h3>Oportunidades de Conversación</h3>
+            <div id="lista-oportunidades"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. MAPA TERRITORIAL -->
+    <section id="tab-mapa-territorial" class="tab-content">
+      <div class="subtabs-nav">
+        <button class="subtab-btn active" onclick="switchSubTab('mapa-territorial', 'demografia', this)">Segmentación Demográfica</button>
+        <button class="subtab-btn" onclick="switchSubTab('mapa-territorial', 'geografica', this)">Inclinación Geográfica</button>
+      </div>
+      <div id="subtab-mapa-territorial-demografia" class="subtab-content active">
+        <div class="grid-2-cols">
+          <div class="card">
+            <h3>Distribución por Género</h3>
+            <canvas id="chartDemografiaGenero"></canvas>
+          </div>
+          <div class="card">
+            <h3>Aprobación por Rango Etario</h3>
+            <canvas id="chartDemografiaEdad"></canvas>
+          </div>
+        </div>
+      </div>
+      <div id="subtab-mapa-territorial-geografica" class="subtab-content">
+        <div class="card">
+          <h3>Focos de Conversación Regional</h3>
+          <div id="analisis-geografico-texto"></div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <script>
-    let chartMetricsInstance = null;
-    let chartSentimentInstance = null;
-
-    function resetUI() {
-      // Mostrar Fase 1, ocultar Fases 2 y 3
-      document.getElementById('searchSection').style.display = 'block';
-      document.getElementById('loadingWrap').classList.remove('show');
-      document.getElementById('errorWrap').classList.remove('show');
-      document.getElementById('dashboard').classList.remove('show');
-      document.getElementById('btnAnalizar').disabled = false;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function switchTab(tabId, element) {
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      
-      document.getElementById(tabId).classList.add('active');
-      element.classList.add('active');
-    }
-
-    async function analizar(forceRefresh = false) {
-      const nombre = document.getElementById('nombreInput').value.trim();
-      const mes = document.getElementById('mesSelect').value;
-      const anio = document.getElementById('anioSelect').value;
-      const fecha = `${mes} ${anio}`;
-
-      if (!nombre) {
-        document.getElementById('nombreInput').focus();
-        return;
-      }
-
-      // Pasar a FASE 2
-      document.getElementById('searchSection').style.display = 'none';
-      document.getElementById('dashboard').classList.remove('show');
-      document.getElementById('errorWrap').classList.remove('show');
-      document.getElementById('loadingWrap').classList.add('show');
-      document.getElementById('btnAnalizar').disabled = true;
-
-      try {
-        const res = await fetch('/api/analizar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, fecha, forceRefresh })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || data.error) {
-          throw new Error(data.error || 'Error procesando la solicitud.');
-        }
-
-        // Pasar a FASE 3
-        renderDashboard(data);
-      } catch (err) {
-        document.getElementById('loadingWrap').classList.remove('show');
-        document.getElementById('errorWrap').classList.add('show');
-        document.getElementById('errorText').textContent = err.message;
-        document.getElementById('btnAnalizar').disabled = false;
-      }
-    }
-
-    function renderDashboard(d) {
-      // Inyección de textos
-      document.getElementById('profileName').textContent = d.nombre || 'Perfil Sin Nombre';
-      document.getElementById('profileCargo').textContent = d.cargo || 'Cargo no especificado';
-      document.getElementById('resumenEjecutivoText').textContent = d.resumen_ejecutivo || 'Sin información.';
-      document.getElementById('ecosistemaText').textContent = d.explicacion_ecosistema || 'Sin información de ecosistema.';
-
-      // Destruir instancias anteriores de gráficos para evitar superposición
-      if (chartMetricsInstance) chartMetricsInstance.destroy();
-      if (chartSentimentInstance) chartSentimentInstance.destroy();
-
-      // Renderizar Gráficos
-      const ctxMetrics = document.getElementById('chartMetrics').getContext('2d');
-      chartMetricsInstance = new Chart(ctxMetrics, {
-        type: 'bar',
-        data: {
-          labels: ['Menciones', 'Alcance (k)', 'Interacciones'],
-          datasets: [{
-            label: 'Métricas',
-            data: [d.menciones || 120, d.alcance || 45, d.interacciones || 89],
-            backgroundColor: ['#2563eb', '#3b82f6', '#60a5fa']
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-
-      const ctxSentiment = document.getElementById('chartSentiment').getContext('2d');
-      chartSentimentInstance = new Chart(ctxSentiment, {
-        type: 'doughnut',
-        data: {
-          labels: ['Positivo', 'Neutro', 'Negativo'],
-          datasets: [{
-            data: [d.sentimiento?.positivo || 60, d.sentimiento?.neutro || 30, d.sentimiento?.negativo || 10],
-            backgroundColor: ['#22c55e', '#94a3b8', '#ef4444']
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-
-      // Mostrar vista Dashboard
-      document.getElementById('loadingWrap').classList.remove('show');
-      document.getElementById('dashboard').classList.add('show');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
