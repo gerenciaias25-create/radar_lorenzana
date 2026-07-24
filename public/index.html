@@ -4,8 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RADAR v2.0 · Inteligencia Político-Digital</title>
+  
+  <!-- Carga del archivo CSS externo -->
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- ESTILOS DE SEGURIDAD INTERNOS PARA EVITAR DESFORMATEO -->
+  <style>
+    /* Ocultar el dashboard por defecto antes de la búsqueda */
+    #dashboard { display: none; }
+    
+    /* Ocultar las secciones inactivas de las pestañas */
+    .tsec { display: none; }
+    .tsec.show { display: block; }
+
+    /* Formato base de respaldo para contenedores y pestañas */
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; }
+    .tb { padding: 8px 16px; background: #1a2332; color: #fff; border: 1px solid #00c2d4; cursor: pointer; border-radius: 4px; }
+    .tb.act { background: #00c2d4; color: #0b111e; font-weight: bold; }
+    .kg { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+    .kc { background: #111827; padding: 15px; border-radius: 6px; border: 1px solid #1f2937; }
+    .btn-toggle-kpis { background: rgba(0, 194, 212, 0.1); color: #00c2d4; border: 1px solid #00c2d4; padding: 6px 12px; cursor: pointer; border-radius: 4px; }
+  </style>
 </head>
 <body>
 
@@ -27,15 +47,15 @@
     <div class="search-form">
       <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
       
-      <!-- Selector de Meses Completo -->
+      <!-- Selector de Meses -->
       <select id="mesSelect">
         <option value="enero">Enero</option>
         <option value="febrero">Febrero</option>
         <option value="marzo">Marzo</option>
-        <option value="abril">Abril</option>
+        <option value="abril" selected>Abril</option>
         <option value="mayo">Mayo</option>
         <option value="junio">Junio</option>
-        <option value="julio" selected>Julio</option>
+        <option value="julio">Julio</option>
         <option value="agosto">Agosto</option>
         <option value="septiembre">Septiembre</option>
         <option value="octubre">Octubre</option>
@@ -57,13 +77,13 @@
     </div>
   </section>
 
-  <!-- CARGA Y ERROR -->
-  <div class="loading-wrap" id="loadingWrap" style="display:none;">
-    <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
-    <div class="loader-label" id="loaderLabel">Procesando Análisis e Extrayendo Datos...</div>
+  <!-- PANTALLA DE CARGA -->
+  <div class="loading-wrap" id="loadingWrap" style="display:none; text-align:center; padding: 40px;">
+    <div class="loader-bar-track" style="background:#1f2937; height:4px; width:100%; max-width:400px; margin:0 auto;"><div class="loader-bar-fill" style="background:#00c2d4; height:100%; width:50%;"></div></div>
+    <div class="loader-label" id="loaderLabel" style="margin-top:15px; color:#00c2d4;">Procesando e Integrando Inteligencia...</div>
   </div>
 
-  <!-- CONTENEDOR DEL DASHBOARD -->
+  <!-- CONTENEDOR DEL DASHBOARD (OCULTO POR DEFECTO) -->
   <div id="dashboard" style="display:none;">
     <section class="hero">
       <div class="hero-l">// ANÁLISIS BIVARIADO · ESTUDIO EJECUTIVO</div>
@@ -71,13 +91,13 @@
       <p class="hero-s" id="profileCargo">--</p>
       <div class="tags" id="profileTags"></div>
       
-      <!-- BOTÓN PARA OCULTAR/MOSTRAR KPIS A PETICIÓN DE DIRECCIÓN -->
+      <!-- BOTÓN PARA MOSTRAR/OCULTAR KPIS -->
       <div style="margin-top: 15px;">
         <button class="btn-toggle-kpis" onclick="toggleKPIs()">👁 Mostrar / Ocultar KPIs Principales</button>
       </div>
     </section>
 
-    <!-- BLOQUE DE KPIS OCULTO POR DEFECTO -->
+    <!-- BLOQUE DE KPIS OCULTO -->
     <div class="kpi-panel-hidden" id="kpiMainWrapper" style="display: none; margin-bottom: 20px;">
       <div class="stitle">INDICADORES DE CABECERA (RESERVADOS)</div>
       <div class="kg" id="kpiRowMain"></div>
@@ -99,9 +119,9 @@
       <div class="stitle">INDICADORES CLAVE AMPLIADOS</div>
       <div class="kg" id="kpiAmpliadosGrid"></div>
       <div class="stitle">KPIs BIVARIADOS</div>
-      <div class="cg">
-        <div class="card"><div class="ct">Aprobación por Identidad Partidista</div><canvas id="c-npspar"></canvas></div>
-        <div class="card"><div class="ct">Aprobación por Género y Edad</div><canvas id="c-npsdemo"></canvas></div>
+      <div class="cg" style="display:flex; gap:15px;">
+        <div class="card" style="flex:1;"><div class="ct">Aprobación por Identidad Partidista</div><canvas id="c-npspar"></canvas></div>
+        <div class="card" style="flex:1;"><div class="ct">Aprobación por Género y Edad</div><canvas id="c-npsdemo"></canvas></div>
       </div>
     </div>
 
@@ -115,9 +135,9 @@
         <button class="bb" onclick="updSent('edad')">EDAD</button>
         <button class="bb" onclick="updSent('partido')">PARTIDO</button>
       </div>
-      <div class="cg">
-        <div class="card"><div class="ct" id="sent-t">Sentimiento General</div><canvas id="c-sent"></canvas></div>
-        <div class="card"><div class="ct">Clima Digital por Segmento</div><canvas id="c-clima"></canvas></div>
+      <div class="cg" style="display:flex; gap:15px;">
+        <div class="card" style="flex:1;"><div class="ct" id="sent-t">Sentimiento General</div><canvas id="c-sent"></canvas></div>
+        <div class="card" style="flex:1;"><div class="ct">Clima Digital por Segmento</div><canvas id="c-clima"></canvas></div>
       </div>
       <div class="stitle">HALLAZGOS BIVARIADOS</div>
       <div class="ig" id="sentHallazgosGrid"></div>
@@ -134,26 +154,26 @@
     <!-- TAB 4: PLATAFORMAS -->
     <div class="tsec" id="tab-plat">
       <div class="stitle">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
-      <div class="cg">
-        <div class="card"><div class="ct">Alcance por Plataforma</div><canvas id="c-plalc"></canvas></div>
-        <div class="card"><div class="ct">Tono por Plataforma</div><canvas id="c-pltono"></canvas></div>
+      <div class="cg" style="display:flex; gap:15px;">
+        <div class="card" style="flex:1;"><div class="ct">Alcance por Plataforma</div><canvas id="c-plalc"></canvas></div>
+        <div class="card" style="flex:1;"><div class="ct">Tono por Plataforma</div><canvas id="c-pltono"></canvas></div>
       </div>
     </div>
 
     <!-- TAB 5: NARRATIVAS -->
     <div class="tsec" id="tab-nar">
       <div class="stitle">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
-      <div class="ng">
+      <div class="ng" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px;">
         <div class="nc">
-          <div class="nh fav">▲ NARRATIVAS FAVORABLES</div>
+          <div class="nh fav" style="color:#10b981;">▲ NARRATIVAS FAVORABLES</div>
           <div id="narFavContainer"></div>
         </div>
         <div class="nc">
-          <div class="nh crit">▼ NARRATIVAS CRÍTICAS</div>
+          <div class="nh crit" style="color:#ef4444;">▼ NARRATIVAS CRÍTICAS</div>
           <div id="narCritContainer"></div>
         </div>
         <div class="nc">
-          <div class="nh neu">◆ NARRATIVAS NEUTRAS</div>
+          <div class="nh neu" style="color:#f59e0b;">◆ NARRATIVAS NEUTRAS</div>
           <div id="narNeuContainer"></div>
         </div>
       </div>
@@ -162,13 +182,13 @@
     <!-- TAB 6: RIESGOS & OPORTUNIDADES -->
     <div class="tsec" id="tab-risk">
       <div class="stitle">MATRIZ BIVARIADA DE RIESGOS Y OPORTUNIDADES</div>
-      <div class="mg">
+      <div class="mg" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
         <div>
-          <div class="mh risk">⚠ RIESGOS — IMPACTO POR SEGMENTO</div>
+          <div class="mh risk" style="color:#ef4444;">⚠ RIESGOS — IMPACTO POR SEGMENTO</div>
           <div class="mb" id="riesgosContainer"></div>
         </div>
         <div>
-          <div class="mh opp">✦ OPORTUNIDADES — POTENCIAL POR SEGMENTO</div>
+          <div class="mh opp" style="color:#10b981;">✦ OPORTUNIDADES — POTENCIAL POR SEGMENTO</div>
           <div class="mb" id="oportunidadesContainer"></div>
         </div>
       </div>
@@ -177,14 +197,13 @@
     <!-- TAB 7: MAPA TERRITORIAL -->
     <div class="tsec" id="tab-ter">
       <div class="stitle">MAPA DE CALOR TERRITORIAL — APROBACIÓN POR ZONA</div>
-      <div class="hm" id="territorialHeatmap"></div>
+      <div class="hm" id="territorialHeatmap" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px;"></div>
     </div>
 
   </div>
 </main>
 
 <script>
-// Fecha actual en encabezado
 document.getElementById('headerDate').innerText = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
 
 function toggleKPIs() {
@@ -199,7 +218,6 @@ function tab(btn, id) {
   document.getElementById('tab-' + id).classList.add('show');
 }
 
-// LÓGICA CONEXIÓN API (Apify + OpenRouter en Server/Backend)
 async function analizar() {
   const nombre = document.getElementById('nombreInput').value.trim();
   const mes = document.getElementById('mesSelect').value;
@@ -210,12 +228,11 @@ async function analizar() {
     return;
   }
 
-  // Activar UI de Carga
+  // Ocultar Dashboard y mostrar pantalla de carga
   document.getElementById('loadingWrap').style.display = 'block';
   document.getElementById('dashboard').style.display = 'none';
 
   try {
-    // Petición al endpoint backend que integra Apify + OpenRouter
     const res = await fetch('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -226,9 +243,10 @@ async function analizar() {
 
     const data = await res.json();
 
-    // Inyectar datos en la interfaz
+    // Inyectar datos
     renderDashboard(data);
 
+    // Ocultar Carga y Desplegar el Dashboard con formato
     document.getElementById('loadingWrap').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
 
@@ -242,40 +260,31 @@ async function analizar() {
 function renderDashboard(data) {
   document.getElementById('profileName').innerText = data.nombre || "--";
   document.getElementById('profileCargo').innerText = data.cargo || "--";
-  
-  // Renderizar Tags
+
   const tagsCont = document.getElementById('profileTags');
-  tagsCont.innerHTML = (data.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+  tagsCont.innerHTML = (data.tags || []).map(t => `<span class="tag" style="background:#1f2937; padding:4px 8px; border-radius:3px; margin-right:5px; font-size:12px;">${t}</span>`).join('');
 
-  // KPIs Principales (Ocultos por defecto)
-  const kpiRowMain = document.getElementById('kpiRowMain');
-  kpiRowMain.innerHTML = (data.kpis_principales || []).map(k => `
-    <div class="kc ${k.tipo || ''}">
-      <div class="kl">${k.label}</div>
-      <div class="kv">${k.valor}</div>
-      <div class="ks">${k.nota}</div>
+  document.getElementById('kpiRowMain').innerHTML = (data.kpis_principales || []).map(k => `
+    <div class="kc">
+      <div style="font-size:12px; color:#9ca3af;">${k.label}</div>
+      <div style="font-size:24px; font-weight:bold; color:#00c2d4;">${k.valor}</div>
+      <div style="font-size:11px; color:#6b7280;">${k.nota}</div>
     </div>
   `).join('');
 
-  // KPIs Ampliados
-  const kpiAmpliadosGrid = document.getElementById('kpiAmpliadosGrid');
-  kpiAmpliadosGrid.innerHTML = (data.kpis_ampliados || []).map(k => `
-    <div class="kc ${k.tipo || ''}">
-      <div class="kl">${k.label}</div>
-      <div class="kv">${k.valor}</div>
-      <div class="ks">${k.nota}</div>
+  document.getElementById('kpiAmpliadosGrid').innerHTML = (data.kpis_ampliados || []).map(k => `
+    <div class="kc">
+      <div style="font-size:12px; color:#9ca3af;">${k.label}</div>
+      <div style="font-size:24px; font-weight:bold; color:#10b981;">${k.valor}</div>
+      <div style="font-size:11px; color:#6b7280;">${k.nota}</div>
     </div>
   `).join('');
 
-  // Narrativas
   const renderNarrativas = (list) => (list || []).map(n => `
-    <div class="ni">
-      <div class="nt">${n.titulo}</div>
-      <div class="nd">${n.desc}</div>
-      <div class="btags">
-        ${(n.tags || []).map(t => `<span class="btag ${t.clase}">${t.texto}</span>`).join('')}
-      </div>
-      ${n.bivariado_hallazgo ? `<div class="bi"><strong>Crucial:</strong> ${n.bivariado_hallazgo}</div>` : ''}
+    <div style="background:#111827; padding:12px; margin-bottom:10px; border-radius:4px; border-left:3px solid #00c2d4;">
+      <strong style="color:#fff;">${n.titulo}</strong>
+      <p style="font-size:13px; color:#9ca3af; margin:5px 0;">${n.desc}</p>
+      ${n.bivariado_hallazgo ? `<div style="font-size:11px; color:#00c2d4;">${n.bivariado_hallazgo}</div>` : ''}
     </div>
   `).join('');
 
@@ -283,39 +292,33 @@ function renderDashboard(data) {
   document.getElementById('narCritContainer').innerHTML = renderNarrativas(data.narrativas?.criticas);
   document.getElementById('narNeuContainer').innerHTML = renderNarrativas(data.narrativas?.neutras);
 
-  // Riesgos y Oportunidades
   document.getElementById('riesgosContainer').innerHTML = (data.riesgos || []).map(r => `
-    <div class="mc">
-      <span class="msev red">${r.nivel}</span>
-      <div class="mct">${r.titulo}</div>
-      <div class="mcd">${r.desc}</div>
-      <div class="bi"><strong>Impacto Segmentado:</strong> ${r.bivariado}</div>
+    <div style="background:#111827; padding:12px; margin-bottom:10px; border-radius:4px; border-left:3px solid #ef4444;">
+      <span style="background:#ef4444; color:#fff; font-size:10px; padding:2px 6px; border-radius:2px;">${r.nivel}</span>
+      <div style="font-weight:bold; color:#fff; margin-top:5px;">${r.titulo}</div>
+      <p style="font-size:13px; color:#9ca3af; margin:4px 0;">${r.desc}</p>
     </div>
   `).join('');
 
   document.getElementById('oportunidadesContainer').innerHTML = (data.oportunidades || []).map(o => `
-    <div class="mc">
-      <span class="msev green">${o.nivel}</span>
-      <div class="mct">${o.titulo}</div>
-      <div class="mcd">${o.desc}</div>
-      <div class="bi"><strong>Potencial:</strong> ${o.bivariado}</div>
+    <div style="background:#111827; padding:12px; margin-bottom:10px; border-radius:4px; border-left:3px solid #10b981;">
+      <span style="background:#10b981; color:#fff; font-size:10px; padding:2px 6px; border-radius:2px;">${o.nivel}</span>
+      <div style="font-weight:bold; color:#fff; margin-top:5px;">${o.titulo}</div>
+      <p style="font-size:13px; color:#9ca3af; margin:4px 0;">${o.desc}</p>
     </div>
   `).join('');
 
-  // Mapa Territorial
   document.getElementById('territorialHeatmap').innerHTML = (data.mapa_territorial || []).map(z => `
-    <div class="hmi">
-      <div class="hmn">${z.zona}</div>
-      <div class="hmv">${z.nps}</div>
-      <div class="hms">${z.clima}</div>
-      <div class="bi">${z.nota}</div>
+    <div style="background:#111827; padding:12px; border-radius:4px; text-align:center; border:1px solid #1f2937;">
+      <div style="font-weight:bold; color:#fff;">${z.zona}</div>
+      <div style="font-size:20px; color:#00c2d4; font-weight:bold;">${z.nps}</div>
+      <div style="font-size:12px; color:#9ca3af;">${z.clima}</div>
     </div>
   `).join('');
 }
 
 function updSent(tipo) {
-  // Función para conmutar las pestañas secundarias de sentimiento
-  console.log("Cambiando vista de sentimiento a:", tipo);
+  console.log("Segmentación seleccionada:", tipo);
 }
 </script>
 </body>
