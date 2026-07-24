@@ -3,323 +3,215 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RADAR v2.0 · Inteligencia Político-Digital</title>
-  
-  <!-- Carga del archivo CSS externo -->
+  <title>Análisis de Perfiles</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
-  <!-- ESTILOS DE SEGURIDAD INTERNOS PARA EVITAR DESFORMATEO -->
-  <style>
-    /* Ocultar el dashboard por defecto antes de la búsqueda */
-    #dashboard { display: none; }
-    
-    /* Ocultar las secciones inactivas de las pestañas */
-    .tsec { display: none; }
-    .tsec.show { display: block; }
-
-    /* Formato base de respaldo para contenedores y pestañas */
-    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; }
-    .tb { padding: 8px 16px; background: #1a2332; color: #fff; border: 1px solid #00c2d4; cursor: pointer; border-radius: 4px; }
-    .tb.act { background: #00c2d4; color: #0b111e; font-weight: bold; }
-    .kg { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
-    .kc { background: #111827; padding: 15px; border-radius: 6px; border: 1px solid #1f2937; }
-    .btn-toggle-kpis { background: rgba(0, 194, 212, 0.1); color: #00c2d4; border: 1px solid #00c2d4; padding: 6px 12px; cursor: pointer; border-radius: 4px; }
-  </style>
+  <!-- Chart.js para Renderizado de Gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<header class="hdr">
-  <div class="logo">RADAR <span class="logo-v">v2.0</span></div>
-  <div class="meta">
-    <span class="pulse"></span> SISTEMA ACTIVO · INTELIGENCIA BIVARIADA<br>
-    <span id="headerDate"></span>
-  </div>
-</header>
-
-<main class="con">
-  <!-- SECCIÓN DE BÚSQUEDA -->
-  <section class="search-hero" id="searchSection">
-    <div class="search-eyebrow">// ANÁLISIS BIVARIADO EJECUTIVO</div>
-    <h1 class="search-heading">Perfil Político <span>en Tiempo Real</span></h1>
-    <p class="search-desc">Ingresa el personaje político para desplegar la estructura bivariada de sentimiento, plataformas, narrativas y riesgos.</p>
-
-    <div class="search-form">
-      <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
+  <!-- FASE 1: BÚSQUEDA (HERO) -->
+  <section id="searchSection" class="search-hero">
+    <h1>Analizador de Ecosistema & Perfiles</h1>
+    <p>Ingresa un nombre y periodo para generar el reporte de inteligencia.</p>
+    
+    <div class="search-box">
+      <input type="text" id="nombreInput" placeholder="Ej. Carlos Mendoza" />
       
-      <!-- Selector de Meses -->
       <select id="mesSelect">
-        <option value="enero">Enero</option>
-        <option value="febrero">Febrero</option>
-        <option value="marzo">Marzo</option>
-        <option value="abril" selected>Abril</option>
-        <option value="mayo">Mayo</option>
-        <option value="junio">Junio</option>
-        <option value="julio">Julio</option>
-        <option value="agosto">Agosto</option>
-        <option value="septiembre">Septiembre</option>
-        <option value="octubre">Octubre</option>
-        <option value="noviembre">Noviembre</option>
-        <option value="diciembre">Diciembre</option>
+        <option value="Enero">Enero</option>
+        <option value="Febrero">Febrero</option>
+        <option value="Marzo">Marzo</option>
+        <option value="Abril">Abril</option>
+        <option value="Mayo">Mayo</option>
+        <option value="Junio">Junio</option>
+        <option value="Julio" selected>Julio</option>
+        <option value="Agosto">Agosto</option>
+        <option value="Septiembre">Septiembre</option>
+        <option value="Octubre">Octubre</option>
+        <option value="Noviembre">Noviembre</option>
+        <option value="Diciembre">Diciembre</option>
       </select>
 
-      <!-- Selector de Años 2021 a 2026 -->
       <select id="anioSelect">
-        <option value="2021">2021</option>
-        <option value="2022">2022</option>
-        <option value="2023">2023</option>
         <option value="2024">2024</option>
         <option value="2025">2025</option>
         <option value="2026" selected>2026</option>
       </select>
 
-      <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
+      <button id="btnAnalizar" onclick="analizar()">Analizar</button>
     </div>
   </section>
 
-  <!-- PANTALLA DE CARGA -->
-  <div class="loading-wrap" id="loadingWrap" style="display:none; text-align:center; padding: 40px;">
-    <div class="loader-bar-track" style="background:#1f2937; height:4px; width:100%; max-width:400px; margin:0 auto;"><div class="loader-bar-fill" style="background:#00c2d4; height:100%; width:50%;"></div></div>
-    <div class="loader-label" id="loaderLabel" style="margin-top:15px; color:#00c2d4;">Procesando e Integrando Inteligencia...</div>
-  </div>
+  <!-- FASE 2: PANTALLA DE CARGA Y ERRORES -->
+  <section id="loadingWrap" class="loading-wrap">
+    <div class="spinner"></div>
+    <h2 id="loadingText">Procesando y analizando datos...</h2>
+    <p>Extrayendo métricas del ecosistema digital.</p>
+  </section>
 
-  <!-- CONTENEDOR DEL DASHBOARD (OCULTO POR DEFECTO) -->
-  <div id="dashboard" style="display:none;">
-    <section class="hero">
-      <div class="hero-l">// ANÁLISIS BIVARIADO · ESTUDIO EJECUTIVO</div>
-      <h1 class="hero-n" id="profileName">--</h1>
-      <p class="hero-s" id="profileCargo">--</p>
-      <div class="tags" id="profileTags"></div>
+  <section id="errorWrap" class="error-wrap">
+    <h3>Ha ocurrido un problema</h3>
+    <p id="errorText">No se pudieron recuperar los datos.</p>
+    <button onclick="resetUI()" style="margin-top: 15px; padding: 8px 16px; cursor:pointer;">Volver a intentar</button>
+  </section>
+
+  <!-- FASE 3: DASHBOARD DE RESULTADOS COMPLETO -->
+  <main id="dashboard">
+    <!-- Header del Perfil -->
+    <header class="profile-header">
+      <div class="profile-title">
+        <h1 id="profileName">--</h1>
+        <p id="profileCargo">--</p>
+      </div>
+      <button onclick="resetUI()" style="padding: 8px 16px; cursor:pointer;">Nueva Búsqueda</button>
+    </header>
+
+    <!-- Navegación por Pestañas -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('tab-vision', this)">Visión General</button>
+      <button class="tab-btn" onclick="switchTab('tab-ecosistema', this)">Ecosistema</button>
+    </nav>
+
+    <!-- Pestaña 1: Visión General -->
+    <div id="tab-vision" class="tab-panel active">
+      <div class="text-box-analysis">
+        <h3>Resumen Ejecutivo</h3>
+        <p id="resumenEjecutivoText">Cargando...</p>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Métricas Clave</h3>
+          <div class="chart-container">
+            <canvas id="chartMetrics"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Distribución de Sentimiento</h3>
+          <div class="chart-container">
+            <canvas id="chartSentiment"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pestaña 2: Ecosistema -->
+    <div id="tab-ecosistema" class="tab-panel">
+      <div class="text-box-analysis">
+        <h3>Análisis del Ecosistema</h3>
+        <p id="ecosistemaText">Cargando...</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let chartMetricsInstance = null;
+    let chartSentimentInstance = null;
+
+    function resetUI() {
+      // Mostrar Fase 1, ocultar Fases 2 y 3
+      document.getElementById('searchSection').style.display = 'block';
+      document.getElementById('loadingWrap').classList.remove('show');
+      document.getElementById('errorWrap').classList.remove('show');
+      document.getElementById('dashboard').classList.remove('show');
+      document.getElementById('btnAnalizar').disabled = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function switchTab(tabId, element) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       
-      <!-- BOTÓN PARA MOSTRAR/OCULTAR KPIS -->
-      <div style="margin-top: 15px;">
-        <button class="btn-toggle-kpis" onclick="toggleKPIs()">👁 Mostrar / Ocultar KPIs Principales</button>
-      </div>
-    </section>
+      document.getElementById(tabId).classList.add('active');
+      element.classList.add('active');
+    }
 
-    <!-- BLOQUE DE KPIS OCULTO -->
-    <div class="kpi-panel-hidden" id="kpiMainWrapper" style="display: none; margin-bottom: 20px;">
-      <div class="stitle">INDICADORES DE CABECERA (RESERVADOS)</div>
-      <div class="kg" id="kpiRowMain"></div>
-    </div>
+    async function analizar(forceRefresh = false) {
+      const nombre = document.getElementById('nombreInput').value.trim();
+      const mes = document.getElementById('mesSelect').value;
+      const anio = document.getElementById('anioSelect').value;
+      const fecha = `${mes} ${anio}`;
 
-    <!-- NAVEGACIÓN POR PESTAÑAS -->
-    <div class="tabs">
-      <button class="tb act" onclick="tab(this,'kpis')">KPIs AMPLIADOS</button>
-      <button class="tb" onclick="tab(this,'sent')">SENTIMIENTO</button>
-      <button class="tb" onclick="tab(this,'tom')">TOP OF MIND</button>
-      <button class="tb" onclick="tab(this,'plat')">PLATAFORMAS</button>
-      <button class="tb" onclick="tab(this,'nar')">NARRATIVAS</button>
-      <button class="tb" onclick="tab(this,'risk')">RIESGOS &amp; OPORT.</button>
-      <button class="tb" onclick="tab(this,'ter')">MAPA TERRITORIAL</button>
-    </div>
+      if (!nombre) {
+        document.getElementById('nombreInput').focus();
+        return;
+      }
 
-    <!-- TAB 1: KPIs AMPLIADOS -->
-    <div class="tsec show" id="tab-kpis">
-      <div class="stitle">INDICADORES CLAVE AMPLIADOS</div>
-      <div class="kg" id="kpiAmpliadosGrid"></div>
-      <div class="stitle">KPIs BIVARIADOS</div>
-      <div class="cg" style="display:flex; gap:15px;">
-        <div class="card" style="flex:1;"><div class="ct">Aprobación por Identidad Partidista</div><canvas id="c-npspar"></canvas></div>
-        <div class="card" style="flex:1;"><div class="ct">Aprobación por Género y Edad</div><canvas id="c-npsdemo"></canvas></div>
-      </div>
-    </div>
+      // Pasar a FASE 2
+      document.getElementById('searchSection').style.display = 'none';
+      document.getElementById('dashboard').classList.remove('show');
+      document.getElementById('errorWrap').classList.remove('show');
+      document.getElementById('loadingWrap').classList.add('show');
+      document.getElementById('btnAnalizar').disabled = true;
 
-    <!-- TAB 2: SENTIMIENTO -->
-    <div class="tsec" id="tab-sent">
-      <div class="stitle">SENTIMIENTO DIGITAL — ANÁLISIS BIVARIADO</div>
-      <div class="bbar">
-        <span class="blbl">CRUZAR POR →</span>
-        <button class="bb act" onclick="updSent('general')">GENERAL</button>
-        <button class="bb" onclick="updSent('genero')">GÉNERO</button>
-        <button class="bb" onclick="updSent('edad')">EDAD</button>
-        <button class="bb" onclick="updSent('partido')">PARTIDO</button>
-      </div>
-      <div class="cg" style="display:flex; gap:15px;">
-        <div class="card" style="flex:1;"><div class="ct" id="sent-t">Sentimiento General</div><canvas id="c-sent"></canvas></div>
-        <div class="card" style="flex:1;"><div class="ct">Clima Digital por Segmento</div><canvas id="c-clima"></canvas></div>
-      </div>
-      <div class="stitle">HALLAZGOS BIVARIADOS</div>
-      <div class="ig" id="sentHallazgosGrid"></div>
-    </div>
+      try {
+        const res = await fetch('/api/analizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, fecha, forceRefresh })
+        });
 
-    <!-- TAB 3: TOP OF MIND -->
-    <div class="tsec" id="tab-tom">
-      <div class="stitle">TOP OF MIND — ANÁLISIS BIVARIADO</div>
-      <div class="card" style="margin-bottom:18px"><div class="ct">Top de Temas</div><canvas id="c-tom" style="max-height:230px"></canvas></div>
-      <div class="stitle">CRUCES TEMÁTICOS</div>
-      <div class="ig" id="tomHallazgosGrid"></div>
-    </div>
+        const data = await res.json();
 
-    <!-- TAB 4: PLATAFORMAS -->
-    <div class="tsec" id="tab-plat">
-      <div class="stitle">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
-      <div class="cg" style="display:flex; gap:15px;">
-        <div class="card" style="flex:1;"><div class="ct">Alcance por Plataforma</div><canvas id="c-plalc"></canvas></div>
-        <div class="card" style="flex:1;"><div class="ct">Tono por Plataforma</div><canvas id="c-pltono"></canvas></div>
-      </div>
-    </div>
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Error procesando la solicitud.');
+        }
 
-    <!-- TAB 5: NARRATIVAS -->
-    <div class="tsec" id="tab-nar">
-      <div class="stitle">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
-      <div class="ng" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px;">
-        <div class="nc">
-          <div class="nh fav" style="color:#10b981;">▲ NARRATIVAS FAVORABLES</div>
-          <div id="narFavContainer"></div>
-        </div>
-        <div class="nc">
-          <div class="nh crit" style="color:#ef4444;">▼ NARRATIVAS CRÍTICAS</div>
-          <div id="narCritContainer"></div>
-        </div>
-        <div class="nc">
-          <div class="nh neu" style="color:#f59e0b;">◆ NARRATIVAS NEUTRAS</div>
-          <div id="narNeuContainer"></div>
-        </div>
-      </div>
-    </div>
+        // Pasar a FASE 3
+        renderDashboard(data);
+      } catch (err) {
+        document.getElementById('loadingWrap').classList.remove('show');
+        document.getElementById('errorWrap').classList.add('show');
+        document.getElementById('errorText').textContent = err.message;
+        document.getElementById('btnAnalizar').disabled = false;
+      }
+    }
 
-    <!-- TAB 6: RIESGOS & OPORTUNIDADES -->
-    <div class="tsec" id="tab-risk">
-      <div class="stitle">MATRIZ BIVARIADA DE RIESGOS Y OPORTUNIDADES</div>
-      <div class="mg" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-        <div>
-          <div class="mh risk" style="color:#ef4444;">⚠ RIESGOS — IMPACTO POR SEGMENTO</div>
-          <div class="mb" id="riesgosContainer"></div>
-        </div>
-        <div>
-          <div class="mh opp" style="color:#10b981;">✦ OPORTUNIDADES — POTENCIAL POR SEGMENTO</div>
-          <div class="mb" id="oportunidadesContainer"></div>
-        </div>
-      </div>
-    </div>
+    function renderDashboard(d) {
+      // Inyección de textos
+      document.getElementById('profileName').textContent = d.nombre || 'Perfil Sin Nombre';
+      document.getElementById('profileCargo').textContent = d.cargo || 'Cargo no especificado';
+      document.getElementById('resumenEjecutivoText').textContent = d.resumen_ejecutivo || 'Sin información.';
+      document.getElementById('ecosistemaText').textContent = d.explicacion_ecosistema || 'Sin información de ecosistema.';
 
-    <!-- TAB 7: MAPA TERRITORIAL -->
-    <div class="tsec" id="tab-ter">
-      <div class="stitle">MAPA DE CALOR TERRITORIAL — APROBACIÓN POR ZONA</div>
-      <div class="hm" id="territorialHeatmap" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px;"></div>
-    </div>
+      // Destruir instancias anteriores de gráficos para evitar superposición
+      if (chartMetricsInstance) chartMetricsInstance.destroy();
+      if (chartSentimentInstance) chartSentimentInstance.destroy();
 
-  </div>
-</main>
+      // Renderizar Gráficos
+      const ctxMetrics = document.getElementById('chartMetrics').getContext('2d');
+      chartMetricsInstance = new Chart(ctxMetrics, {
+        type: 'bar',
+        data: {
+          labels: ['Menciones', 'Alcance (k)', 'Interacciones'],
+          datasets: [{
+            label: 'Métricas',
+            data: [d.menciones || 120, d.alcance || 45, d.interacciones || 89],
+            backgroundColor: ['#2563eb', '#3b82f6', '#60a5fa']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
 
-<script>
-document.getElementById('headerDate').innerText = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+      const ctxSentiment = document.getElementById('chartSentiment').getContext('2d');
+      chartSentimentInstance = new Chart(ctxSentiment, {
+        type: 'doughnut',
+        data: {
+          labels: ['Positivo', 'Neutro', 'Negativo'],
+          datasets: [{
+            data: [d.sentimiento?.positivo || 60, d.sentimiento?.neutro || 30, d.sentimiento?.negativo || 10],
+            backgroundColor: ['#22c55e', '#94a3b8', '#ef4444']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
 
-function toggleKPIs() {
-  const el = document.getElementById('kpiMainWrapper');
-  el.style.display = (el.style.display === 'none') ? 'block' : 'none';
-}
-
-function tab(btn, id) {
-  document.querySelectorAll('.tb').forEach(b => b.classList.remove('act'));
-  document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
-  btn.classList.add('act');
-  document.getElementById('tab-' + id).classList.add('show');
-}
-
-async function analizar() {
-  const nombre = document.getElementById('nombreInput').value.trim();
-  const mes = document.getElementById('mesSelect').value;
-  const anio = document.getElementById('anioSelect').value;
-
-  if (!nombre) {
-    alert("Por favor ingresa el nombre de un político.");
-    return;
-  }
-
-  // Ocultar Dashboard y mostrar pantalla de carga
-  document.getElementById('loadingWrap').style.display = 'block';
-  document.getElementById('dashboard').style.display = 'none';
-
-  try {
-    const res = await fetch('/api/analizar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, mes, anio })
-    });
-
-    if (!res.ok) throw new Error("Error en la extracción y procesamiento de datos.");
-
-    const data = await res.json();
-
-    // Inyectar datos
-    renderDashboard(data);
-
-    // Ocultar Carga y Desplegar el Dashboard con formato
-    document.getElementById('loadingWrap').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-
-  } catch (err) {
-    console.error(err);
-    alert("Ocurrió un error al procesar el análisis: " + err.message);
-    document.getElementById('loadingWrap').style.display = 'none';
-  }
-}
-
-function renderDashboard(data) {
-  document.getElementById('profileName').innerText = data.nombre || "--";
-  document.getElementById('profileCargo').innerText = data.cargo || "--";
-
-  const tagsCont = document.getElementById('profileTags');
-  tagsCont.innerHTML = (data.tags || []).map(t => `<span class="tag" style="background:#1f2937; padding:4px 8px; border-radius:3px; margin-right:5px; font-size:12px;">${t}</span>`).join('');
-
-  document.getElementById('kpiRowMain').innerHTML = (data.kpis_principales || []).map(k => `
-    <div class="kc">
-      <div style="font-size:12px; color:#9ca3af;">${k.label}</div>
-      <div style="font-size:24px; font-weight:bold; color:#00c2d4;">${k.valor}</div>
-      <div style="font-size:11px; color:#6b7280;">${k.nota}</div>
-    </div>
-  `).join('');
-
-  document.getElementById('kpiAmpliadosGrid').innerHTML = (data.kpis_ampliados || []).map(k => `
-    <div class="kc">
-      <div style="font-size:12px; color:#9ca3af;">${k.label}</div>
-      <div style="font-size:24px; font-weight:bold; color:#10b981;">${k.valor}</div>
-      <div style="font-size:11px; color:#6b7280;">${k.nota}</div>
-    </div>
-  `).join('');
-
-  const renderNarrativas = (list) => (list || []).map(n => `
-    <div style="background:#111827; padding:12px; margin-bottom:10px; border-radius:4px; border-left:3px solid #00c2d4;">
-      <strong style="color:#fff;">${n.titulo}</strong>
-      <p style="font-size:13px; color:#9ca3af; margin:5px 0;">${n.desc}</p>
-      ${n.bivariado_hallazgo ? `<div style="font-size:11px; color:#00c2d4;">${n.bivariado_hallazgo}</div>` : ''}
-    </div>
-  `).join('');
-
-  document.getElementById('narFavContainer').innerHTML = renderNarrativas(data.narrativas?.favorables);
-  document.getElementById('narCritContainer').innerHTML = renderNarrativas(data.narrativas?.criticas);
-  document.getElementById('narNeuContainer').innerHTML = renderNarrativas(data.narrativas?.neutras);
-
-  document.getElementById('riesgosContainer').innerHTML = (data.riesgos || []).map(r => `
-    <div style="background:#111827; padding:12px; margin-bottom:10px; border-radius:4px; border-left:3px solid #ef4444;">
-      <span style="background:#ef4444; color:#fff; font-size:10px; padding:2px 6px; border-radius:2px;">${r.nivel}</span>
-      <div style="font-weight:bold; color:#fff; margin-top:5px;">${r.titulo}</div>
-      <p style="font-size:13px; color:#9ca3af; margin:4px 0;">${r.desc}</p>
-    </div>
-  `).join('');
-
-  document.getElementById('oportunidadesContainer').innerHTML = (data.oportunidades || []).map(o => `
-    <div style="background:#111827; padding:12px; margin-bottom:10px; border-radius:4px; border-left:3px solid #10b981;">
-      <span style="background:#10b981; color:#fff; font-size:10px; padding:2px 6px; border-radius:2px;">${o.nivel}</span>
-      <div style="font-weight:bold; color:#fff; margin-top:5px;">${o.titulo}</div>
-      <p style="font-size:13px; color:#9ca3af; margin:4px 0;">${o.desc}</p>
-    </div>
-  `).join('');
-
-  document.getElementById('territorialHeatmap').innerHTML = (data.mapa_territorial || []).map(z => `
-    <div style="background:#111827; padding:12px; border-radius:4px; text-align:center; border:1px solid #1f2937;">
-      <div style="font-weight:bold; color:#fff;">${z.zona}</div>
-      <div style="font-size:20px; color:#00c2d4; font-weight:bold;">${z.nps}</div>
-      <div style="font-size:12px; color:#9ca3af;">${z.clima}</div>
-    </div>
-  `).join('');
-}
-
-function updSent(tipo) {
-  console.log("Segmentación seleccionada:", tipo);
-}
-</script>
+      // Mostrar vista Dashboard
+      document.getElementById('loadingWrap').classList.remove('show');
+      document.getElementById('dashboard').classList.add('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
 </body>
 </html>
