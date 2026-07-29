@@ -1,46 +1,7 @@
-async function cacheGet(key) {import { ejecutarRadar } from './skills/radar.js';
-import { ejecutarEmociones } from './skills/emociones.js';
-import { ejecutarPlazas } from './skills/plazas.js';
-
-export default async function handler(req, res) {
-  // Solo se permiten peticiones POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
-
-  const { nombre, skill = 'radar', fecha, forceRefresh = false } = req.body;
-
-  if (!nombre) {
-    return res.status(400).json({ error: 'El nombre del actor o territorio es requerido.' });
-  }
-
-  try {
-    let resultado;
-
-    // Conmutador/Dispatcher de Skills
-    switch (skill) {
-      case 'radar':
-        resultado = await ejecutarRadar({ nombre, fecha, forceRefresh });
-        break;
-      case 'emociones':
-        resultado = await ejecutarEmociones({ nombre, fecha, forceRefresh });
-        break;
-      case 'plazas':
-        resultado = await ejecutarPlazas({ nombre, fecha, forceRefresh });
-        break;
-      default:
-        return res.status(400).json({ error: `El skill '${skill}' no es válido.` });
-    }
-
-    return res.status(200).json(resultado);
-  } catch (error) {
-    console.error(`[Error en Skill '${skill}']:`, error);
-    return res.status(500).json({ 
-      error: 'Error interno procesando la solicitud.', 
-      details: error.message 
-    });
-  }
-}
+// ============================================================================
+// FUNCIONES AUXILIARES DE CACHÉ (UPSTASH REDIS)
+// ============================================================================
+async function cacheGet(key) {
   try {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -76,7 +37,11 @@ async function cacheSet(key, value, ttlSeconds) {
   }
 }
 
-export default async function handler(req, res) {
+// ============================================================================
+// HANDLER PRINCIPAL / ROUTER MULTI-SKILL
+// ============================================================================
+module.exports = async function handler(req, res) {
+  // Configuración de Headers y CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -84,88 +49,102 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const { nombre, fecha, forceRefresh } = req.body;
-  if (!nombre) return res.status(400).json({ error: 'Falta el nombre' });
+  // Extracción de parámetros con valores por defecto
+  const { nombre, skill = 'radar', fecha, forceRefresh = false } = req.body || {};
+
+  if (!nombre) {
+    return res.status(400).json({ error: 'El nombre del actor o territorio es requerido.' });
+  }
 
   const fechaCtx = fecha || 'julio 2026';
   const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 horas
-  const cacheKey = `radar:${nombre.trim().toLowerCase()}:${fechaCtx.trim().toLowerCase()}`;
+  const cacheKey = `skill:${skill}:${nombre.trim().toLowerCase()}:${fechaCtx.trim().toLowerCase()}`;
 
+  // 1. Verificación de Caché
   if (!forceRefresh) {
     const cached = await cacheGet(cacheKey);
-    if (cached) return res.status(200).json({ ...cached, _cache: 'HIT' });
+    if (cached) {
+      return res.status(200).json({ ...cached, _cache: 'HIT' });
+    }
   }
 
-  let contextoReal = '';
   try {
-    const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+    // 2. Extracción de Contexto en Vivo mediante Apify (Twitter, Prensa y Facebook)
+    let contextoReal = '';
+    try {
+      const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
-    const tweetsPromise = fetch(
-      `https://api.apify.com/v2/acts/apidojo~twitter-scraper-lite/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          searchTerms: [`${nombre}`, `${nombre} oposicion`, `${nombre} gobierno`],
-          sort: 'Latest',
-          maxItems: 30,
-          tweetLanguage: 'es'
-        })
-      }
-    ).then(r => r.ok ? r.json() : []).catch(() => []);
+      const tweetsPromise = fetch(
+        `https://api.apify.com/v2/acts/apidojo~twitter-scraper-lite/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            searchTerms: [`${nombre}`, `${nombre} oposicion`, `${nombre} gobierno`],
+            sort: 'Latest',
+            maxItems: 30,
+            tweetLanguage: 'es'
+          })
+        }
+      ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    const noticiasPromise = fetch(
-      `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          queries: `${nombre} columna opinion NOTICIAS ${fechaCtx}\n${nombre} oposicion denuncias edomex mexico`,
-          resultsPerPage: 20,
-          maxPagesPerQuery: 1,
-          languageCode: 'es',
-          countryCode: 'mx'
-        })
-      }
-    ).then(r => r.ok ? r.json() : []).catch(() => []);
+      const noticiasPromise = fetch(
+        `https://api.apify.com/v2/acts/apify~google-search-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            queries: `${nombre} columna opinion NOTICIAS ${fechaCtx}\n${nombre} oposicion denuncias edomex mexico`,
+            resultsPerPage: 20,
+            maxPagesPerQuery: 1,
+            languageCode: 'es',
+            countryCode: 'mx'
+          })
+        }
+      ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    const facebookPromise = fetch(
-      `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ searchTerm: nombre, maxPosts: 20 })
-      }
-    ).then(r => r.ok ? r.json() : []).catch(() => []);
+      const facebookPromise = fetch(
+        `https://api.apify.com/v2/acts/apify~facebook-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ searchTerm: nombre, maxPosts: 20 })
+        }
+      ).then(r => r.ok ? r.json() : []).catch(() => []);
 
-    const [tweetsData, noticiasData, facebookData] = await Promise.all([
-      tweetsPromise, noticiasPromise, facebookPromise
-    ]);
+      const [tweetsData, noticiasData, facebookData] = await Promise.all([
+        tweetsPromise, noticiasPromise, facebookPromise
+      ]);
 
-    const tweetsTexto = (tweetsData || []).slice(0, 25).map(t =>
-      `TWEET de @${t.author?.userName || 'usuario'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
-    ).join('\n\n');
+      const tweetsTexto = (tweetsData || []).slice(0, 25).map(t =>
+        `TWEET de @${t.author?.userName || 'usuario'} (${t.createdAt || 's/f'}): ${t.text || t.fullText || ''}\nLikes: ${t.likeCount ?? 0} | RTs: ${t.retweetCount ?? 0}`
+      ).join('\n\n');
 
-    const organicResults = (noticiasData || []).flatMap(item => item.organicResults || []);
-    const noticiasTexto = organicResults.slice(0, 20).map(r =>
-      `TITULAR: ${r.title}\nURL: ${r.url}\nRESUMEN: ${r.description || ''}`
-    ).join('\n\n---\n\n');
+      const organicResults = (noticiasData || []).flatMap(item => item.organicResults || []);
+      const noticiasTexto = organicResults.slice(0, 20).map(r =>
+        `TITULAR: ${r.title}\nURL: ${r.url}\nRESUMEN: ${r.description || ''}`
+      ).join('\n\n---\n\n');
 
-    const fbTexto = (facebookData || []).slice(0, 20).map(f =>
-      `POST FB (${f.user?.name || 'Página/Usuario'}): ${f.text || f.caption || ''}\nReacciones: ${f.likes || 0} | Compartidos: ${f.shares || 0}`
-    ).join('\n\n');
+      const fbTexto = (facebookData || []).slice(0, 20).map(f =>
+        `POST FB (${f.user?.name || 'Página/Usuario'}): ${f.text || f.caption || ''}\nReacciones: ${f.likes || 0} | Compartidos: ${f.shares || 0}`
+      ).join('\n\n');
 
-    contextoReal = `DATOS MULTI-PLATAFORMA EXTRAÍDOS:\n\n` +
-      `=== X / TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos directos.'}\n\n` +
-      `=== MEDIOS DIGITALES Y PRENSA (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin datos directos.'}\n\n` +
-      `=== FACEBOOK (${facebookData?.length || 0} publicaciones) ===\n${fbTexto || 'Sin datos directos.'}`;
+      contextoReal = `DATOS MULTI-PLATAFORMA EXTRAÍDOS:\n\n` +
+        `=== X / TWITTER (${tweetsData?.length || 0} publicaciones) ===\n${tweetsTexto || 'Sin datos directos.'}\n\n` +
+        `=== MEDIOS DIGITALES Y PRENSA (${organicResults.length} artículos) ===\n${noticiasTexto || 'Sin datos directos.'}\n\n` +
+        `=== FACEBOOK (${facebookData?.length || 0} publicaciones) ===\n${fbTexto || 'Sin datos directos.'}`;
 
-  } catch (e) {
-    console.error('Apify exception:', e.message);
-    contextoReal = 'Conexión parcial a fuentes. Generando análisis deductivo amplio.';
-  }
+    } catch (e) {
+      console.error('Apify exception:', e.message);
+      contextoReal = 'Conexión parcial a fuentes. Generando análisis deductivo amplio.';
+    }
 
-  const prompt = `Eres un Director General de Inteligencia Político-Digital. La fecha actual del reporte es: ${fechaCtx}.
+    // 3. Selección del Prompt según el Skill seleccionado
+    let prompt = '';
+
+    switch (skill) {
+      case 'radar':
+        prompt = `Eres un Director General de Inteligencia Político-Digital. La fecha actual del reporte es: ${fechaCtx}.
 
 INFORMACIÓN EXTRAÍDA DE FUENTES PARA "${nombre}":
 ${contextoReal}
@@ -186,22 +165,10 @@ ESTRUCTURA DEL JSON EXIGIDA:
     {"label": "VEL. VIRALIZACIÓN", "valor": "2.1 hrs", "nota": "Tiempo promedio a 1k menciones", "tipo": "go"}
   ],
   "sentimiento": {
-    "general": {
-      "labels": ["Positivo", "Neutro", "Negativo", "Polarizado"],
-      "data": [38, 25, 27, 10]
-    },
-    "genero": {
-      "labels": ["Hombres Pos.", "Hombres Neg.", "Mujeres Pos.", "Mujeres Neg."],
-      "data": [42, -28, 32, -35]
-    },
-    "edad": {
-      "labels": ["18-24", "25-34", "35-49", "50-64", "65+"],
-      "data": [-15, 8, 22, 35, 40]
-    },
-    "partido": {
-      "labels": ["Base Propia", "Oposición A", "Oposición B", "Independientes"],
-      "data": [68, -55, -42, 12]
-    },
+    "general": { "labels": ["Positivo", "Neutro", "Negativo", "Polarizado"], "data": [38, 25, 27, 10] },
+    "genero": { "labels": ["Hombres Pos.", "Hombres Neg.", "Mujeres Pos.", "Mujeres Neg."], "data": [42, -28, 32, -35] },
+    "edad": { "labels": ["18-24", "25-34", "35-49", "50-64", "65+"], "data": [-15, 8, 22, 35, 40] },
+    "partido": { "labels": ["Base Propia", "Oposición A", "Oposición B", "Independientes"], "data": [68, -55, -42, 12] },
     "clima_general": { "labels": ["Favorable", "Inercial", "Crítico", "Indefinido"], "data": [40, 30, 20, 10] },
     "clima_genero": { "labels": ["Hombres Fav", "Hombres Crít", "Mujeres Fav", "Mujeres Crít"], "data": [35, 25, 25, 15] },
     "clima_edad": { "labels": ["Jóvenes", "Adultos", "Mayores", "Otros"], "data": [15, 45, 30, 10] },
@@ -281,8 +248,21 @@ ESTRUCTURA DEL JSON EXIGIDA:
     ]
   }
 }`;
+        break;
 
-  try {
+      case 'emociones':
+        prompt = `Analiza los aspectos emocionales (Rueda de Plutchik) para "${nombre}" en la fecha ${fechaCtx} con base en la siguiente información:\n${contextoReal}\n\nDevuelve un JSON estricto con métricas emocionales (Ira, Miedo, Alegría, Confianza, etc.).`;
+        break;
+
+      case 'plazas':
+        prompt = `Analiza la cobertura territorial y despliegue de plazas para "${nombre}" en la fecha ${fechaCtx} con base en la siguiente información:\n${contextoReal}\n\nDevuelve un JSON estricto detallando las plazas, densidad y penetración de mensaje por región.`;
+        break;
+
+      default:
+        return res.status(400).json({ error: `El skill '${skill}' no está soportado.` });
+    }
+
+    // 4. Ejecución del Modelo de Inteligencia Artificial (OpenRouter)
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -299,28 +279,42 @@ ESTRUCTURA DEL JSON EXIGIDA:
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      return res.status(500).json({ error: 'Error de API: ' + err });
+      const errText = await response.text();
+      return res.status(500).json({ error: 'Error devuelto por la API de IA: ' + errText });
     }
 
     const data = await response.json();
     const rawText = data.choices?.[0]?.message?.content || '';
 
+    // 5. Limpieza y Sanitización de la Respuesta JSON
     let cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return res.status(500).json({ error: 'Respuesta no válida del modelo', raw: rawText.substring(0, 300) });
+
+    if (!jsonMatch) {
+      return res.status(500).json({ 
+        error: 'El modelo no devolvió un JSON con formato válido.', 
+        raw: rawText.substring(0, 300) 
+      });
+    }
 
     cleaned = jsonMatch[0].replace(/:\s*\+(\d)/g, ': $1').replace(/,\s*([}\]])/g, '$1');
 
     try {
       const parsed = JSON.parse(cleaned);
+
+      // Guardado en Caché
       await cacheSet(cacheKey, parsed, CACHE_TTL_SECONDS);
+
       return res.status(200).json({ ...parsed, _cache: 'MISS' });
     } catch (e) {
-      return res.status(500).json({ error: 'JSON inválido: ' + e.message, raw: rawText.substring(0, 500) });
+      return res.status(500).json({ 
+        error: 'Error al parsear el JSON generado: ' + e.message, 
+        raw: rawText.substring(0, 500) 
+      });
     }
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error('Error general en backend:', err);
+    return res.status(500).json({ error: err.message || 'Error interno del servidor.' });
   }
-}
+};
