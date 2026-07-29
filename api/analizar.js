@@ -1,4 +1,46 @@
-async function cacheGet(key) {
+async function cacheGet(key) {import { ejecutarRadar } from './skills/radar.js';
+import { ejecutarEmociones } from './skills/emociones.js';
+import { ejecutarPlazas } from './skills/plazas.js';
+
+export default async function handler(req, res) {
+  // Solo se permiten peticiones POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
+  }
+
+  const { nombre, skill = 'radar', fecha, forceRefresh = false } = req.body;
+
+  if (!nombre) {
+    return res.status(400).json({ error: 'El nombre del actor o territorio es requerido.' });
+  }
+
+  try {
+    let resultado;
+
+    // Conmutador/Dispatcher de Skills
+    switch (skill) {
+      case 'radar':
+        resultado = await ejecutarRadar({ nombre, fecha, forceRefresh });
+        break;
+      case 'emociones':
+        resultado = await ejecutarEmociones({ nombre, fecha, forceRefresh });
+        break;
+      case 'plazas':
+        resultado = await ejecutarPlazas({ nombre, fecha, forceRefresh });
+        break;
+      default:
+        return res.status(400).json({ error: `El skill '${skill}' no es válido.` });
+    }
+
+    return res.status(200).json(resultado);
+  } catch (error) {
+    console.error(`[Error en Skill '${skill}']:`, error);
+    return res.status(500).json({ 
+      error: 'Error interno procesando la solicitud.', 
+      details: error.message 
+    });
+  }
+}
   try {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
