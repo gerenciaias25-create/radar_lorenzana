@@ -1,588 +1,198 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RADAR · Inteligencia Político-Digital</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plataforma de Inteligencia Político-Digital</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-wordmark">RADAR <span>POLÍTICO</span></div>
-    <div class="logo-sep"></div>
-    <div class="logo-sub">Inteligencia<br>Político·Digital</div>
-  </div>
-  <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>Sistema Activo</div>
-    <div class="header-date" id="headerDate"></div>
-    <button class="btn-descargar-top" id="btnDescargar" onclick="descargarDashboard()" style="display:none;">⬇ Descargar Dashboard</button>
-  </div>
-</header>
+  <header>
+    <div class="brand">OSINT Intelligence System</div>
+  </header>
 
-<main class="main-content">
-  <!-- SEARCH HERO -->
-  <section class="search-hero" id="searchSection">
-    <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
-    <h1 class="search-heading">Perfil Político <span>en Tiempo Real</span></h1>
-    <p class="search-desc">Ingresa el nombre del actor político para consultar la extracción explícita de datos, mapa de sentimiento, plataformas y narrativas.</p>
+  <main>
+    <!-- SEARCH HERO CON SELECTOR DE SKILLS -->
+    <section class="search-hero" id="searchSection">
+      <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
+      <h1 class="search-heading">Módulo de <span>Inteligencia Político-Digital</span></h1>
+      <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
-    <div class="search-form">
-      <input type="text" id="nombreInput" placeholder="Nombre del político..." autocomplete="off" />
-      <select id="mesSelect">
-        <option value="enero">Enero</option>
-        <option value="febrero">Febrero</option>
-        <option value="marzo">Marzo</option>
-        <option value="abril">Abril</option>
-        <option value="mayo">Mayo</option>
-        <option value="junio">Junio</option>
-        <option value="julio" selected>Julio</option>
-        <option value="agosto">Agosto</option>
-        <option value="septiembre">Septiembre</option>
-        <option value="octubre">Octubre</option>
-        <option value="noviembre">Noviembre</option>
-        <option value="diciembre">Diciembre</option>
-      </select>
-      <select id="anioSelect">
-        <option value="2026" selected>2026</option>
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-      </select>
-      <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
-    </div>
+      <div class="search-form">
+        <!-- SELECTOR DE SKILL / SERVICIO -->
+        <select id="skillSelect" style="border-right: 1px solid var(--border);">
+          <option value="radar" selected>Skill: RADAR Político</option>
+          <option value="emociones">Skill: Humores y Emociones (Plutchik)</option>
+          <option value="plazas">Skill: Cobertura Territorial / Plazas</option>
+        </select>
 
-    <div class="suggestion-row">
-      <span class="suggestion-label">Sugerencias:</span>
-      <button class="chip" onclick="setChip('Horacio Duarte Olivares')">Horacio Duarte</button>
-      <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
-      <button class="chip" onclick="setChip('AMLO')">AMLO</button>
-      <button class="chip" onclick="setChip('Daniel Serrano')">Daniel Serrano</button>
-      <button class="chip" onclick="setChip('Clara Brugada')">Clara Brugada</button>
-    </div>
-  </section>
+        <input type="text" id="nombreInput" placeholder="Nombre del actor o territorio..." autocomplete="off" />
 
-  <!-- LOADING -->
-  <div class="loading-wrap" id="loadingWrap">
-    <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
-    <div class="loader-label" id="loaderLabel">Procesando Análisis</div>
-    <div class="loader-sub" id="loaderSub">Consultando redes, noticias y buscadores en tiempo real...</div>
-  </div>
+        <select id="mesSelect">
+          <option value="enero">Enero</option>
+          <option value="febrero">Febrero</option>
+          <option value="marzo">Marzo</option>
+          <option value="abril">Abril</option>
+          <option value="mayo">Mayo</option>
+          <option value="junio">Junio</option>
+          <option value="julio" selected>Julio</option>
+          <option value="agosto">Agosto</option>
+          <option value="septiembre">Septiembre</option>
+          <option value="octubre">Octubre</option>
+          <option value="noviembre">Noviembre</option>
+          <option value="diciembre">Diciembre</option>
+        </select>
 
-  <!-- ERROR -->
-  <div class="error-wrap" id="errorWrap">
-    <div class="error-card">
-      <div class="error-label">Error en la Consulta</div>
-      <div class="error-text" id="errorText">Ocurrió un problema consultando las fuentes.</div>
-      <button class="btn-retry" onclick="resetUI()">← Intentar de nuevo</button>
-    </div>
-  </div>
+        <select id="anioSelect">
+          <option value="2026" selected>2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
 
-  <!-- DASHBOARD MAIN CONTAINER -->
-  <div id="dashboard">
-    <div class="dashboard-actions">
-      <button class="btn-new-search" onclick="resetUI()">← NUEVA BÚSQUEDA</button>
-      <div id="cacheIndicator" style="font-family:monospace; font-size:10px; color:var(--bl); cursor:pointer;" onclick="analizar(true)"></div>
-    </div>
-
-    <!-- Profile Hero -->
-    <div class="hero-profile">
-      <div class="hero-l">PERFIL DIGITAL DE ACTOR POLITICO</div>
-      <h1 class="hero-n" id="profileName"></h1>
-      <div class="hero-s" id="profileCargo"></div>
-      <div class="profile-tags" id="profileTags"></div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <nav class="tabs-nav" id="tabsNav">
-      <button class="tab-btn" onclick="showTab('sent', this)">SENTIMIENTO</button>
-      <button class="tab-btn" onclick="showTab('kpis', this)">KPIs AMPLIADOS</button>
-      <button class="tab-btn" onclick="showTab('tom', this)">TOP OF MIND</button>
-      <button class="tab-btn" onclick="showTab('plat', this)">PLATAFORMAS</button>
-      <button class="tab-btn" onclick="showTab('nar', this)">NARRATIVAS</button>
-      <button class="tab-btn" onclick="showTab('risk', this)">RIESGOS &amp; OPORT.</button>
-      <button class="tab-btn" onclick="showTab('ter', this)">MAPA TERRITORIAL</button>
-    </nav>
-
-    <!-- TAB: SENTIMIENTO (activa por defecto) -->
-    <div class="tab-panel" id="tab-sent">
-      <div class="sec-title">SENTIMIENTO DIGITAL — ANÁLISIS BIVARIADO</div>
-      <div class="bbar">
-        <span class="blbl">CRUZAR POR →</span>
-        <button class="bb act" onclick="updSent(this,'general')">GENERAL</button>
-        <button class="bb" onclick="updSent(this,'genero')">GÉNERO</button>
-        <button class="bb" onclick="updSent(this,'edad')">EDAD</button>
-        <button class="bb" onclick="updSent(this,'partido')">PARTIDO</button>
+        <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
       </div>
-      <div class="two-col">
-        <div class="chart-card"><div class="chart-title" id="sentT">Sentimiento General</div><div class="chart-sub">Clasificación semántica del periodo</div><div class="chart-container"><canvas id="c-sent"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Clima Digital por Segmento</div><div class="chart-sub">Temperatura percibida</div><div class="chart-container"><canvas id="c-clima"></canvas></div></div>
-      </div>
-      <div class="sec-title">HALLAZGOS BIVARIADOS</div>
-      <div class="ig" id="hallazgosSentimiento"></div>
-    </div>
 
-    <!-- TAB: KPIs AMPLIADOS -->
-    <div class="tab-panel" id="tab-kpis">
-      <div class="sec-title">INDICADORES CLAVE AMPLIADOS</div>
-      <div class="kpi-grid" id="kpiRow"></div>
-      <div class="sec-title">KPIs BIVARIADOS</div>
-      <div class="two-col">
-        <div class="chart-card"><div class="chart-title">NPS por Identidad Partidista</div><div class="chart-sub">Apoyo real según filiación política</div><div class="chart-container"><canvas id="c-npspar"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">NPS por Género y Edad</div><div class="chart-sub">Brecha de aprobación demográfica</div><div class="chart-container"><canvas id="c-npsdemo"></canvas></div></div>
+      <div class="suggestion-row">
+        <span class="suggestion-label">Sugerencias:</span>
+        <button class="chip" onclick="setChip('Horacio Duarte Olivares')">Horacio Duarte</button>
+        <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
+        <button class="chip" onclick="setChip('Ciudad de Guatemala')">Ciudad de Guatemala</button>
       </div>
-      <div class="two-col">
-        <div class="chart-card"><div class="chart-title">Ratio Ataque/Defensa por Plataforma</div><div class="chart-sub">¿Dónde crece más la conversación adversa?</div><div class="chart-container"><canvas id="c-ratiopl"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">TRA — Evolución del Periodo</div><div class="chart-sub">Temperatura reputacional acumulada</div><div class="chart-container"><canvas id="c-tra"></canvas></div></div>
-      </div>
-    </div>
+    </section>
 
-    <!-- TAB: TOP OF MIND -->
-    <div class="tab-panel" id="tab-tom">
-      <div class="sec-title">TOP OF MIND — ANÁLISIS BIVARIADO</div>
-      <div class="bbar">
-        <span class="blbl">CRUZAR POR →</span>
-        <button class="bb act" onclick="updTom(this,'general')">GENERAL</button>
-        <button class="bb" onclick="updTom(this,'genero')">GÉNERO</button>
-        <button class="bb" onclick="updTom(this,'edad')">EDAD</button>
-        <button class="bb" onclick="updTom(this,'partido')">PARTIDO</button>
+    <!-- ESTADO: CARGANDO -->
+    <section class="view-state" id="loadingWrap">
+      <div class="loading-wrap">
+        <div class="spinner"></div>
+        <p id="loadingMessage">Procesando datos y ejecutando Skill de IA...</p>
       </div>
-      <div class="chart-card" style="margin-bottom:18px"><div class="chart-title" id="tomT">Top de Temas — General</div><div class="chart-sub">¿Qué domina la conversación pública?</div><div class="chart-container" style="max-height:260px"><canvas id="c-tom" style="max-height:250px"></canvas></div></div>
-      <div class="sec-title">CRUCES TEMÁTICOS</div>
-      <div class="ig" id="crucesTematicos"></div>
-    </div>
+    </section>
 
-    <!-- TAB: PLATAFORMAS -->
-    <div class="tab-panel" id="tab-plat">
-      <div class="sec-title">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
-      <div class="two-col">
-        <div class="chart-card"><div class="chart-title">Alcance por Plataforma</div><div class="chart-sub">Peso relativo de cada canal</div><div class="chart-container"><canvas id="c-plalc"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Tono por Plataforma</div><div class="chart-sub">¿Dónde es más alta la crítica?</div><div class="chart-container"><canvas id="c-pltono"></canvas></div></div>
+    <!-- ESTADO: ERROR -->
+    <section class="view-state" id="errorWrap">
+      <div class="error-wrap">
+        <strong id="errorTitle">Ocurrió un error al procesar la consulta:</strong>
+        <p id="errorText" style="margin-top: 0.5rem;"></p>
+        <button class="btn-reset" onclick="resetUI()" style="margin-top: 1rem;">Volver a intentar</button>
       </div>
-      <div class="two-col">
-        <div class="chart-card"><div class="chart-title">Plataforma × Edad</div><div class="chart-sub">¿Dónde está cada generación?</div><div class="chart-container"><canvas id="c-pledad"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Velocidad de Viralización (hrs. a 1K)</div><div class="chart-sub">Crítica vs. contenido propio</div><div class="chart-container"><canvas id="c-plviral"></canvas></div></div>
-      </div>
-      <div class="sec-title">LECTURA ESTRATÉGICA</div>
-      <div class="ig" id="lecturaPlataformas" style="grid-template-columns:repeat(3,1fr);"></div>
-    </div>
+    </section>
 
-    <!-- TAB: NARRATIVAS -->
-    <div class="tab-panel" id="tab-nar">
-      <div class="sec-title">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
-      <div class="nar-grid">
-        <div class="nar-col">
-          <div class="nar-head fav">▲ NARRATIVAS FAVORABLES</div>
-          <div id="narFav"></div>
-        </div>
-        <div class="nar-col">
-          <div class="nar-head cri">▼ NARRATIVAS CRÍTICAS</div>
-          <div id="narCri"></div>
-        </div>
-        <div class="nar-col">
-          <div class="nar-head neu">◆ NARRATIVAS NEUTRAS</div>
-          <div id="narNeu"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: RIESGOS & OPORTUNIDADES -->
-    <div class="tab-panel" id="tab-risk">
-      <div class="sec-title">MATRIZ DE RIESGOS Y OPORTUNIDADES</div>
-      <div class="two-col">
+    <!-- ESTADO: DASHBOARD / RESULTADOS -->
+    <section class="view-state" id="dashboard">
+      <div class="dashboard-header">
         <div>
-          <div style="font-family:monospace; font-size:11px; font-weight:700; color:var(--da); margin-bottom:10px; letter-spacing:1px;">RIESGOS IDENTIFICADOS</div>
-          <div id="riesgosList"></div>
+          <h2 id="dashTitle">Informe Generado</h2>
+          <span id="dashSubtitle" style="color: var(--text-muted); font-size: 0.875rem;"></span>
         </div>
-        <div>
-          <div style="font-family:monospace; font-size:11px; font-weight:700; color:var(--su); margin-bottom:10px; letter-spacing:1px;">OPORTUNIDADES IDENTIFICADAS</div>
-          <div id="oportunidadesList"></div>
-        </div>
+        <button class="btn-reset" onclick="resetUI()">← Nueva consulta</button>
       </div>
-    </div>
 
-    <!-- TAB: MAPA TERRITORIAL -->
-    <div class="tab-panel" id="tab-ter">
-      <div class="sec-title">MAPA DE CALOR TERRITORIAL — NPS POR ZONA</div>
-      <div class="hm" id="territorialHeatmap"></div>
-      <div class="two-col">
-        <div class="chart-card"><div class="chart-title">NPS por Zona</div><div class="chart-sub">Aprobación neta por localidad/región</div><div class="chart-container"><canvas id="c-ternps"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Volumen de Conversación por Zona</div><div class="chart-sub">% del total de menciones del periodo</div><div class="chart-container"><canvas id="c-tervol"></canvas></div></div>
+      <div class="dashboard-content" id="dashboardContent">
+        <!-- Contenido dinámico -->
       </div>
-    </div>
+    </section>
+  </main>
 
-  </div>
-</main>
+  <script>
+    let loadInterval;
 
-<footer><div>RADAR · SISTEMA DE INTELIGENCIA POLÍTICO-DIGITAL · MÉXICO · <span id="footerYear"></span></div></footer>
-
-<script>
-document.getElementById('headerDate').textContent =
-  new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
-document.getElementById('footerYear').textContent = new Date().getFullYear();
-
-function setChip(nombre) {
-  document.getElementById('nombreInput').value = nombre;
-  analizar();
-}
-
-function resetUI() {
-  document.getElementById('searchSection').style.display = '';
-  document.getElementById('dashboard').classList.remove('show');
-  document.getElementById('errorWrap').classList.remove('show');
-  document.getElementById('btnDescargar').style.display = 'none';
-}
-
-let loadInterval = null;
-function startLoad() {
-  const msgs = ['Extrayendo menciones de X/Twitter...', 'Recolectando notas de prensa...', 'Analizando Facebook...', 'Cruzando variables demográficas...', 'Generando dictamen estratégico...'];
-  let i = 0;
-  document.getElementById('loaderSub').textContent = msgs[0];
-  loadInterval = setInterval(() => {
-    i = (i + 1) % msgs.length;
-    document.getElementById('loaderSub').textContent = msgs[i];
-  }, 2200);
-}
-function stopLoad() { clearInterval(loadInterval); }
-
-async function analizar(forceRefresh = false) {
-  const nombreInput = document.getElementById('nombreInput');
-  const mesSelect = document.getElementById('mesSelect');
-  const anioSelect = document.getElementById('anioSelect');
-  const nombre = nombreInput.value.trim();
-  const fecha = `${mesSelect.value} ${anioSelect.value}`;
-
-  if (!nombre) { nombreInput.focus(); return; }
-
-  document.getElementById('searchSection').style.display = 'none';
-  document.getElementById('dashboard').classList.remove('show');
-  document.getElementById('errorWrap').classList.remove('show');
-  document.getElementById('loadingWrap').classList.add('show');
-  document.getElementById('btnAnalizar').disabled = true;
-  startLoad();
-
-  try {
-    const res = await fetch('/api/analizar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, fecha, forceRefresh })
-    });
-
-    const data = await res.json();
-    stopLoad();
-    document.getElementById('loadingWrap').classList.remove('show');
-    document.getElementById('btnAnalizar').disabled = false;
-
-    if (!res.ok || data.error) {
-      document.getElementById('errorWrap').classList.add('show');
-      document.getElementById('errorText').textContent = data.error || 'Error desconocido';
-      return;
+    function setChip(val) {
+      document.getElementById('nombreInput').value = val;
     }
 
-    renderDashboard(data);
-  } catch (err) {
-    stopLoad();
-    document.getElementById('loadingWrap').classList.remove('show');
-    document.getElementById('errorWrap').classList.add('show');
-    document.getElementById('errorText').textContent = err.message;
-    document.getElementById('btnAnalizar').disabled = false;
-  }
-}
+    function resetUI() {
+      document.getElementById('searchSection').style.display = 'block';
+      document.getElementById('dashboard').classList.remove('show');
+      document.getElementById('errorWrap').classList.remove('show');
+      document.getElementById('loadingWrap').classList.remove('show');
+      document.getElementById('btnAnalizar').disabled = false;
+      clearInterval(loadInterval);
+    }
 
-document.getElementById('nombreInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') analizar();
-});
+    function startLoad() {
+      const msgs = [
+        "Consultando fuentes públicas y registros...",
+        "Ejecutando modelo de extracción estructurada...",
+        "Validando formato JSON del Skill...",
+        "Generando métricas visuales..."
+      ];
+      let idx = 0;
+      const msgEl = document.getElementById('loadingMessage');
+      msgEl.textContent = msgs[0];
+      
+      loadInterval = setInterval(() => {
+        idx = (idx + 1) % msgs.length;
+        msgEl.textContent = msgs[idx];
+      }, 2500);
+    }
 
-// ==================================================================
-// RENDER PRINCIPAL
-// ==================================================================
-let ultimoData = null;
+    function stopLoad() {
+      clearInterval(loadInterval);
+    }
 
-function renderDashboard(d) {
-  ultimoData = d;
+    async function analizar(forceRefresh = false) {
+      const nombreInput = document.getElementById('nombreInput');
+      const skillSelect = document.getElementById('skillSelect');
+      const mesSelect = document.getElementById('mesSelect');
+      const anioSelect = document.getElementById('anioSelect');
+      
+      const nombre = nombreInput.value.trim();
+      const skill = skillSelect.value;
+      const fecha = `${mesSelect.value} ${anioSelect.value}`;
 
-  document.getElementById('profileName').textContent = d.nombre || '';
-  document.getElementById('profileCargo').textContent = d.cargo || '';
-  document.getElementById('profileTags').innerHTML = (d.tags || []).map(t => `<span class="ptag">${t}</span>`).join('');
+      if (!nombre) { 
+        nombreInput.focus(); 
+        return; 
+      }
 
-  const cacheEl = document.getElementById('cacheIndicator');
-  if (cacheEl) cacheEl.textContent = d._cache === 'HIT' ? '⟳ Datos en caché — click para forzar actualización' : '✓ Datos recién obtenidos — click para forzar actualización';
+      document.getElementById('searchSection').style.display = 'none';
+      document.getElementById('dashboard').classList.remove('show');
+      document.getElementById('errorWrap').classList.remove('show');
+      document.getElementById('loadingWrap').classList.add('show');
+      document.getElementById('btnAnalizar').disabled = true;
+      
+      startLoad();
 
-  // KPIs ampliados (tab, no visibles por defecto)
-  document.getElementById('kpiRow').innerHTML = (d.kpis_ampliados || []).map(k => `
-    <div class="kpi ${k.tipo || 'ac'}">
-      <div class="kl">${k.label}</div>
-      <div class="kv">${k.valor}</div>
-      <div class="kn">${k.nota || ''}</div>
-    </div>
-  `).join('');
+      try {
+        const res = await fetch('/api/analizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, skill, fecha, forceRefresh })
+        });
 
-  // Narrativas
-  const tagsHtml = tags => (tags || []).map(t => `<span class="btag">${t}</span>`).join('');
-  document.getElementById('narFav').innerHTML = (d.narrativas?.favorables || []).map(n => `
-    <div class="ni"><div class="nit">${n.titulo}</div><div class="nd">${n.descripcion || ''}</div>${tagsHtml(n.tags)}<div class="bi">${n.bivariado || ''}</div></div>
-  `).join('');
-  document.getElementById('narCri').innerHTML = (d.narrativas?.criticas || []).map(n => `
-    <div class="ni"><div class="nit" style="${n.riesgo ? 'color:var(--da)' : ''}">${n.riesgo ? '⚠ ' : ''}${n.titulo}</div><div class="nd">${n.descripcion || ''}</div>${tagsHtml(n.tags)}<div class="bi neg">${n.bivariado || ''}</div></div>
-  `).join('');
-  document.getElementById('narNeu').innerHTML = (d.narrativas?.neutras || []).map(n => `
-    <div class="ni"><div class="nit">${n.titulo}</div><div class="nd">${n.descripcion || ''}</div>${tagsHtml(n.tags)}<div class="bi">${n.bivariado || ''}</div></div>
-  `).join('');
+        const data = await res.json();
+        stopLoad();
+        document.getElementById('loadingWrap').classList.remove('show');
+        document.getElementById('btnAnalizar').disabled = false;
 
-  // Riesgos y oportunidades
-  document.getElementById('riesgosList').innerHTML = (d.riesgos_oportunidades?.riesgos || []).map(r => `
-    <div class="ro-card"><div class="ro-lvl ${r.nivel}">${r.nivel}</div><div class="ro-t">${r.titulo}</div><div class="ro-d">${r.descripcion || ''}</div></div>
-  `).join('');
-  document.getElementById('oportunidadesList').innerHTML = (d.riesgos_oportunidades?.oportunidades || []).map(o => `
-    <div class="ro-card"><div class="ro-lvl ALTO" style="background:var(--su)">${o.nivel}</div><div class="ro-t">${o.titulo}</div><div class="ro-d">${o.descripcion || ''}</div></div>
-  `).join('');
+        if (!res.ok || data.error) {
+          document.getElementById('errorWrap').classList.add('show');
+          document.getElementById('errorText').textContent = data.error || 'Error desconocido al invocar la API.';
+          return;
+        }
 
-  // Mapa territorial - heatmap cells
-  const clasClass = { favorable: 'fav', adversa: 'adv', inercial: 'ine' };
-  const clasLabel = { favorable: '🟢 FAVORABLE', adversa: '🔴 ADVERSA', inercial: '🟡 INERCIAL' };
-  document.getElementById('territorialHeatmap').innerHTML = (d.territorial?.zonas || []).map(z => `
-    <div class="hz ${clasClass[z.clasificacion] || 'ine'}">
-      <div class="hzn">${z.nombre}</div>
-      <div class="hzs">${z.nps > 0 ? '+' : ''}${z.nps}</div>
-      <div class="hzl">${clasLabel[z.clasificacion] || z.clasificacion}</div>
-      <div style="font-size:9px;color:var(--ne);margin-top:5px">${z.nota || ''}</div>
-    </div>
-  `).join('');
+        renderDashboard(data, skill, nombre, fecha);
+      } catch (err) {
+        stopLoad();
+        document.getElementById('loadingWrap').classList.remove('show');
+        document.getElementById('errorWrap').classList.add('show');
+        document.getElementById('errorText').textContent = err.message;
+        document.getElementById('btnAnalizar').disabled = false;
+      }
+    }
 
-  document.getElementById('btnDescargar').style.display = '';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    function renderDashboard(data, skill, nombre, fecha) {
+      const dash = document.getElementById('dashboard');
+      const content = document.getElementById('dashboardContent');
+      
+      document.getElementById('dashTitle').textContent = `Informe: ${skill.toUpperCase()}`;
+      document.getElementById('dashSubtitle').textContent = `Sujeto: ${nombre} | Periodo: ${fecha}`;
 
-  document.getElementById('dashboard').classList.add('show');
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-sent').classList.add('active');
-  document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      content.innerHTML = `<pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 0.5rem; overflow-x: auto;"><code>${JSON.stringify(data, null, 2)}</code></pre>`;
 
-  renderCharts('sent');
-}
-
-function showTab(id, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  btn.classList.add('active');
-  setTimeout(() => renderCharts(id), 60);
-}
-
-// ==================================================================
-// CHARTS (Chart.js)
-// ==================================================================
-const C = { ac:'#00C2D4', go:'#F4C430', da:'#E63946', su:'#2EC4B6', ne:'#8FA3B1', bl:'#1B4F8A' };
-if (window.Chart) { Chart.defaults.color = '#4a5568'; Chart.defaults.font.family = 'system-ui,sans-serif'; }
-const CH = {};
-function mk(id, cfg) {
-  if (CH[id]) CH[id].destroy();
-  const c = document.getElementById(id);
-  if (!c) return;
-  CH[id] = new Chart(c, cfg);
-}
-const GRID = { color: 'rgba(0,0,0,.06)' };
-const pctTick = { callback: v => v + '%' };
-const signedTick = { callback: v => (v > 0 ? '+' : '') + v };
-
-function renderCharts(tab) {
-  if (!ultimoData) return;
-  const d = ultimoData;
-  if (tab === 'kpis') rKpis(d);
-  else if (tab === 'sent') rSent(d, 'general');
-  else if (tab === 'tom') rTom(d, 'general');
-  else if (tab === 'plat') rPlat(d);
-  else if (tab === 'ter') rTer(d);
-}
-
-function rKpis(d) {
-  const kb = d.kpis_bivariados || {};
-  const np = kb.nps_partido || {labels:[],data:[]};
-  mk('c-npspar', { type:'bar', data:{ labels: np.labels, datasets:[{ data: np.data, backgroundColor: np.data.map(v => v >= 0 ? C.su : C.da), borderRadius:2, borderWidth:0 }] }, options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ grid:GRID, ticks:signedTick }, x:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-
-  const nd = kb.nps_demografia || {labels:[],data:[]};
-  mk('c-npsdemo', { type:'bar', data:{ labels: nd.labels, datasets:[{ data: nd.data, backgroundColor: nd.data.map(v => v >= 0 ? C.su : C.da), borderRadius:2, borderWidth:0 }] }, options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ grid:GRID, ticks:signedTick }, x:{ grid:{display:false}, ticks:{font:{size:8}} } } } });
-
-  const rp = kb.ratio_ataque_plataforma || {labels:[],data:[]};
-  mk('c-ratiopl', { type:'bar', data:{ labels: rp.labels, datasets:[{ data: rp.data, backgroundColor: C.da, borderRadius:2, borderWidth:0 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ grid:GRID }, y:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-
-  const tra = kb.tra_evolucion || {labels:[],data:[]};
-  mk('c-tra', { type:'line', data:{ labels: tra.labels, datasets:[{ data: tra.data, borderColor: C.ac, backgroundColor:'rgba(0,194,212,.1)', fill:true, tension:.4, borderWidth:2, pointRadius:3 }] }, options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ grid:GRID, ticks:signedTick }, x:{ grid:{display:false}, ticks:{font:{size:8}} } } } });
-}
-
-function rSent(d, k) {
-  const s = d.sentimiento || {};
-  const seg = s[k] || {labels:[],data:[]};
-  const isBar = k !== 'general';
-  const colorsGeneral = [C.su, C.ne, C.da, C.go];
-  mk('c-sent', {
-    type: isBar ? 'bar' : 'doughnut',
-    data: { labels: seg.labels, datasets: [{ data: seg.data, backgroundColor: isBar ? seg.data.map(v => v >= 0 ? C.su : C.da) : colorsGeneral, borderWidth:0, borderRadius: isBar ? 2 : 0, hoverOffset: isBar ? 0 : 6 }] },
-    options: { responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:9}, padding:8} } }, cutout: isBar ? undefined : '55%', scales: isBar ? { y:{ grid:GRID, ticks: k==='edad'?signedTick:pctTick }, x:{ grid:{display:false}, ticks:{font:{size:9}} } } : undefined }
-  });
-
-  const climaKey = 'clima_' + k;
-  const clima = s[climaKey] || {labels:[],data:[]};
-  mk('c-clima', { type:'doughnut', data:{ labels: clima.labels, datasets:[{ data: clima.data, backgroundColor: [C.su, C.go, C.da, C.ne], borderWidth:0, hoverOffset:6 }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:9}, padding:8} } }, cutout:'55%' } });
-
-  const titles = { general:'Sentimiento General', genero:'Sentimiento por Género', edad:'NPS por Edad', partido:'NPS por Partido' };
-  document.getElementById('sentT').textContent = titles[k];
-
-  document.getElementById('hallazgosSentimiento').innerHTML = (d.hallazgos_sentimiento || []).map(h => `
-    <div class="ic ${h.tipo || 'ac'}"><div class="ih">${h.titulo}</div><div class="ib">${h.cuerpo || ''}</div><div class="im">→ ${h.insight || ''}</div></div>
-  `).join('');
-}
-function updSent(btn, k) {
-  document.querySelectorAll('#tab-sent .bb').forEach(b => b.classList.remove('act'));
-  btn.classList.add('act');
-  rSent(ultimoData, k);
-}
-
-function rTom(d, k) {
-  const t = d.top_of_mind || {};
-  const titles = { general:'Top de Temas — General', genero:'Top of Mind por Género', edad:'Top of Mind por Edad', partido:'Top of Mind por Partido' };
-  document.getElementById('tomT').textContent = titles[k];
-
-  if (k === 'general') {
-    const g = t.general || {labels:[],data:[]};
-    mk('c-tom', { type:'bar', data:{ labels:g.labels, datasets:[{ data:g.data, backgroundColor:C.ac, borderRadius:2, borderWidth:0 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ grid:GRID, ticks:pctTick }, y:{ grid:{display:false}, ticks:{font:{size:10}} } } } });
-  } else if (k === 'genero') {
-    const g = t.genero || {labels:[],hombres:[],mujeres:[]};
-    mk('c-tom', { type:'bar', data:{ labels:g.labels, datasets:[ {label:'Hombres', data:g.hombres, backgroundColor:C.bl, borderRadius:2}, {label:'Mujeres', data:g.mujeres, backgroundColor:'rgba(230,57,70,.7)', borderRadius:2} ] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:9}}}}, scales:{ x:{ grid:GRID, ticks:pctTick }, y:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-  } else if (k === 'edad') {
-    const e = t.edad || {grupos:[],temas:[]};
-    const palette = [C.su, C.ac, C.go, C.da, C.bl, C.ne];
-    mk('c-tom', { type:'bar', data:{ labels:e.grupos, datasets:(e.temas||[]).map((tm,i) => ({ label:tm.tema, data:tm.valores, backgroundColor:palette[i % palette.length], borderRadius:2 })) }, options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:9}}}}, scales:{ y:{ grid:GRID, ticks:pctTick }, x:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-  } else {
-    const p = t.partido || {labels:[],base:[],op1:[],op2:[]};
-    mk('c-tom', { type:'bar', data:{ labels:p.labels, datasets:[ {label:'Base propia', data:p.base, backgroundColor:C.su, borderRadius:2}, {label:'Oposición 1', data:p.op1, backgroundColor:C.da, borderRadius:2}, {label:'Oposición 2', data:p.op2, backgroundColor:C.go, borderRadius:2} ] }, options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:9}}}}, scales:{ y:{ grid:GRID, ticks:pctTick }, x:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-  }
-
-  document.getElementById('crucesTematicos').innerHTML = (d.cruces_tematicos || []).map(h => `
-    <div class="ic ${h.tipo || 'ac'}"><div class="ih">${h.titulo}</div><div class="ib">${h.cuerpo || ''}</div><div class="im">→ ${h.insight || ''}</div></div>
-  `).join('');
-}
-function updTom(btn, k) {
-  document.querySelectorAll('#tab-tom .bb').forEach(b => b.classList.remove('act'));
-  btn.classList.add('act');
-  rTom(ultimoData, k);
-}
-
-function rPlat(d) {
-  const p = d.plataformas || {};
-
-  const alc = p.alcance || {labels:[],data:[]};
-  mk('c-plalc', { type:'doughnut', data:{ labels:alc.labels, datasets:[{ data:alc.data, backgroundColor:[C.ac,C.bl,C.go,C.ne,C.su,C.da], borderWidth:0, hoverOffset:6 }] }, options:{ responsive:true, plugins:{ legend:{position:'bottom', labels:{font:{size:9}, padding:8}} }, cutout:'55%' } });
-
-  const tono = p.tono || {labels:[],positivo:[],negativo:[]};
-  mk('c-pltono', { type:'bar', data:{ labels:tono.labels, datasets:[ {label:'% Positivo', data:tono.positivo, backgroundColor:C.su, borderRadius:2}, {label:'% Negativo', data:tono.negativo, backgroundColor:C.da, borderRadius:2} ] }, options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:9}}}}, scales:{ y:{ grid:GRID, ticks:pctTick }, x:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-
-  const edadP = p.edad || {labels:[],grupos:[]};
-  const paletteEdad = ['rgba(230,57,70,.7)', C.go, C.su, C.ne];
-  mk('c-pledad', { type:'bar', data:{ labels:edadP.labels, datasets:(edadP.grupos||[]).map((g,i)=>({ label:g.grupo, data:g.data, backgroundColor:paletteEdad[i % paletteEdad.length], borderRadius:2 })) }, options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:9}}}}, scales:{ y:{ grid:GRID, ticks:pctTick }, x:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-
-  const vir = p.viralizacion || {labels:[],critica_horas:[],propia_horas:[]};
-  mk('c-plviral', { type:'bar', data:{ labels:vir.labels, datasets:[ {label:'Crítica (hrs)', data:vir.critica_horas, backgroundColor:C.da, borderRadius:2}, {label:'Propia (hrs)', data:vir.propia_horas, backgroundColor:C.su, borderRadius:2} ] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:9}}}}, scales:{ x:{ grid:GRID }, y:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-
-  document.getElementById('lecturaPlataformas').innerHTML = (d.lectura_estrategica_plataformas || []).map(l => `
-    <div class="chart-card"><div class="chart-title" style="font-size:12px;color:var(--ac);margin-bottom:4px">${l.plataforma} · ${l.dato || ''}</div><div class="ib">${l.texto || ''}</div></div>
-  `).join('');
-}
-
-function rTer(d) {
-  const t = d.territorial || {};
-  const zonas = t.zonas || [];
-  mk('c-ternps', { type:'bar', data:{ labels: zonas.map(z=>z.nombre), datasets:[{ data: zonas.map(z=>z.nps), backgroundColor: zonas.map(z => z.nps > 10 ? C.su : z.nps > 0 ? C.go : z.nps > -15 ? C.da : '#AA0000'), borderRadius:2, borderWidth:0 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ grid:GRID, ticks:signedTick }, y:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-
-  const vol = t.volumen || [];
-  mk('c-tervol', { type:'bar', data:{ labels: vol.map(v=>v.nombre), datasets:[{ data: vol.map(v=>v.pct), backgroundColor: C.ac, borderRadius:2, borderWidth:0 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ grid:GRID, ticks:pctTick }, y:{ grid:{display:false}, ticks:{font:{size:9}} } } } });
-}
-
-// ==================================================================
-// DESCARGA — archivo HTML autocontenido con CSS embebido + datos + charts
-// ==================================================================
-async function descargarDashboard() {
-  if (!ultimoData) { alert('Primero genera un análisis.'); return; }
-
-  let cssText = '';
-  try {
-    const cssRes = await fetch('styles.css');
-    cssText = await cssRes.text();
-  } catch (e) {
-    console.error('No se pudo incluir el CSS embebido:', e.message);
-  }
-
-  // Clona el bloque del dashboard ya renderizado (sin el buscador ni loaders)
-  const dashboardHTML = document.getElementById('dashboard').outerHTML;
-  const headerHTML = document.querySelector('header').outerHTML;
-  const footerHTML = document.querySelector('footer').outerHTML;
-
-  const nombreArchivo = (ultimoData.nombre || 'radar').trim().toLowerCase().replace(/\s+/g, '_');
-
-  const htmlFinal = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>RADAR · ${ultimoData.nombre || ''}</title>
-<style>${cssText}
-.btn-descargar-top{display:none !important;}
-.dashboard-actions{display:none !important;}
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
-</head>
-<body>
-${headerHTML}
-<main class="main-content">
-${dashboardHTML}
-</main>
-${footerHTML}
-<script>
-window.__RADAR_DATA__ = ${JSON.stringify(ultimoData)};
-${getRenderScriptSource()}
-document.getElementById('dashboard').classList.add('show');
-document.querySelectorAll('.tab-panel')[0].classList.add('active');
-document.querySelectorAll('.tab-btn')[0].classList.add('active');
-ultimoData = window.__RADAR_DATA__;
-renderCharts('sent');
-<\/script>
-</body>
-</html>`;
-
-  const blob = new Blob([htmlFinal], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `RADAR_${nombreArchivo}_${Date.now()}.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// Reconstruye el bloque de funciones de charts como texto plano para inyectarlo
-// en el archivo exportado (así el dashboard descargado es 100% funcional offline/standalone).
-function getRenderScriptSource() {
-  return `
-const C = { ac:'#00C2D4', go:'#F4C430', da:'#E63946', su:'#2EC4B6', ne:'#8FA3B1', bl:'#1B4F8A' };
-if (window.Chart) { Chart.defaults.color = '#4a5568'; Chart.defaults.font.family = 'system-ui,sans-serif'; }
-const CH = {};
-function mk(id, cfg) { if (CH[id]) CH[id].destroy(); const c = document.getElementById(id); if (!c) return; CH[id] = new Chart(c, cfg); }
-const GRID = { color: 'rgba(0,0,0,.06)' };
-const pctTick = { callback: v => v + '%' };
-const signedTick = { callback: v => (v > 0 ? '+' : '') + v };
-let ultimoData = null;
-function showTab(id, btn) { document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab-' + id).classList.add('active'); btn.classList.add('active'); setTimeout(() => renderCharts(id), 60); }
-function renderCharts(tab) { if (!ultimoData) return; const d = ultimoData; if (tab === 'kpis') rKpis(d); else if (tab === 'sent') rSent(d, 'general'); else if (tab === 'tom') rTom(d, 'general'); else if (tab === 'plat') rPlat(d); else if (tab === 'ter') rTer(d); }
-${rKpis.toString()}
-${rSent.toString()}
-${updSent.toString()}
-${rTom.toString()}
-${updTom.toString()}
-${rPlat.toString()}
-${rTer.toString()}
-`;
-}
-</script>
+      dash.classList.add('show');
+    }
+  </script>
 </body>
 </html>
