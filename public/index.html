@@ -185,17 +185,60 @@
       }
     }
 
-    function renderDashboard(data, skill, nombre, fecha) {
-      const dash = document.getElementById('dashboard');
-      const content = document.getElementById('dashboardContent');
-      
-      document.getElementById('dashTitle').textContent = `Informe: ${skill.toUpperCase()}`;
-      document.getElementById('dashSubtitle').textContent = `Sujeto: ${nombre} | Periodo: ${fecha}`;
+ function renderDashboard(data, skill, nombre, fecha) {
+  const dash = document.getElementById('dashboard');
+  const content = document.getElementById('dashboardContent');
+  
+  document.getElementById('dashTitle').textContent = `Informe: ${skill.toUpperCase()}`;
+  document.getElementById('dashSubtitle').textContent = `Sujeto: ${data.nombre || nombre} | Periodo: ${fecha}`;
 
-      content.innerHTML = `<pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 0.5rem; overflow-x: auto;"><code>${JSON.stringify(data, null, 2)}</code></pre>`;
+  // 1. Renderizado de Tags
+  const tagsHTML = (data.tags || []).map(t => `<span class="chip" style="margin-right: 0.5rem; display: inline-block;">${t}</span>`).join('');
 
-      dash.classList.add('show');
-    }
+  // 2. Renderizado de KPIs principales
+  const kpisHTML = (data.kpis_ampliados || []).map(kpi => `
+    <div style="background: rgba(255,255,255,0.05); padding: 1.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em;">${kpi.label}</div>
+      <div style="font-size: 1.8rem; font-weight: bold; margin: 0.5rem 0; color: #fff;">${kpi.valor}</div>
+      <div style="font-size: 0.75rem; color: #718096;">${kpi.nota || ''}</div>
+    </div>
+  `).join('');
+
+  // 3. Renderizado de Hallazgos / Insights
+  const hallazgosHTML = (data.hallazgos_sentimiento || []).map(h => `
+    <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border-left: 4px solid #3182ce; margin-bottom: 0.75rem;">
+      <strong style="display: block; color: #edf2f7; font-size: 0.95rem;">${h.titulo}</strong>
+      <p style="margin: 0.25rem 0; font-size: 0.85rem; color: #cbd5e0;">${h.cuerpo}</p>
+      <small style="color: #63b3ed; font-style: italic;">Insight: ${h.insight}</small>
+    </div>
+  `).join('');
+
+  // Ensamble final de la interfaz
+  content.innerHTML = `
+    <!-- Perfil del Actor -->
+    <div style="margin-bottom: 2rem;">
+      <h3 style="font-size: 1.25rem; margin-bottom: 0.25rem; color: #fff;">${data.nombre || nombre}</h3>
+      <p style="color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.75rem;">${data.cargo || ''}</p>
+      <div>${tagsHTML}</div>
+    </div>
+
+    <!-- Rejilla de KPIs -->
+    <h4 style="margin-bottom: 1rem; color: #e2e8f0;">Métricas Reputacionales</h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2.5rem;">
+      ${kpisHTML}
+    </div>
+
+    <!-- Sección de Hallazgos clave -->
+    ${data.hallazgos_sentimiento ? `
+      <h4 style="margin-bottom: 1rem; color: #e2e8f0;">Hallazgos Estratégicos</h4>
+      <div style="margin-bottom: 2rem;">
+        ${hallazgosHTML}
+      </div>
+    ` : ''}
+  `;
+
+  dash.classList.add('show');
+}
   </script>
 </body>
 </html>
