@@ -16,30 +16,32 @@
       --border: #e2e8f0;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { width: 100%; height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); overflow: hidden; }
+    body, html { width: 100%; min-height: 100vh; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); display: flex; flex-direction: column; }
 
     /* ENCABEZADO SUPERIOR */
     .top-header {
       background: var(--hdrblue);
-      height: 45px;
+      height: 50px;
       padding: 0 24px;
       display: flex;
       align-items: center;
       color: var(--ac);
       font-weight: 800;
-      font-size: 14px;
+      font-size: 15px;
       letter-spacing: 1px;
     }
 
-    /* CONTENEDOR DE CONTROL Y FILTROS */
+    /* CONTENEDOR PRINCIPAL */
     .control-panel {
-      padding: 20px 24px 10px 24px;
-      background: var(--bg);
+      padding: 40px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
     }
     .panel-card {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 24px;
+      padding: 32px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       border: 1px solid var(--border);
     }
@@ -49,18 +51,18 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
     .title {
-      font-size: 22px;
+      font-size: 24px;
       color: var(--navy);
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .title span { color: var(--btn-blue); font-weight: 700; }
     .description {
       color: #64748b;
-      font-size: 13px;
-      margin-bottom: 18px;
+      font-size: 14px;
+      margin-bottom: 24px;
     }
 
     /* BARRA DE FORMULARIO DE FILTROS */
@@ -68,14 +70,14 @@
       background: #f8fafc;
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 12px;
+      padding: 16px;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
       flex-wrap: wrap;
     }
     .form-control {
-      height: 40px;
+      height: 44px;
       padding: 0 12px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
@@ -88,7 +90,6 @@
     .form-control:focus {
       border-color: var(--btn-blue);
     }
-    select.form-control { cursor: pointer; }
     
     .input-skill { flex: 1.2; min-width: 180px; font-weight: 600; }
     .input-actor { flex: 2; min-width: 220px; }
@@ -99,8 +100,8 @@
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 0 24px;
-      height: 40px;
+      padding: 0 28px;
+      height: 44px;
       font-weight: 600;
       font-size: 14px;
       cursor: pointer;
@@ -115,14 +116,14 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 12px;
-      font-size: 12px;
+      margin-top: 16px;
+      font-size: 13px;
       color: #64748b;
     }
     .chip {
       background: #e2e8f0;
       color: #334155;
-      padding: 4px 12px;
+      padding: 6px 14px;
       border-radius: 16px;
       cursor: pointer;
       font-size: 12px;
@@ -131,14 +132,6 @@
     .chip:hover {
       background: #cbd5e1;
       color: #0f172a;
-    }
-
-    /* ÁREA VACÍA / MARCO DE LA SKILL DETALLES */
-    .view-frame {
-      width: 100%;
-      height: calc(100vh - 250px);
-      border: none;
-      background: var(--bg);
     }
   </style>
 </head>
@@ -152,20 +145,18 @@
       <h1 class="title">Módulo de <span>Inteligencia Político-Digital</span></h1>
       <p class="description">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
-      <!-- FORMULARIO DE EXTRACCIÓN Y FILTRADO -->
-      <form id="search-form" onsubmit="ejecutarAnalisis(event)" class="filter-bar">
-        <!-- Selector de Skill actualizado con la ruta relativa /skills/ -->
-<select id="skill-select" class="form-control input-skill">
-  <option value="skills/radar.html">Skill: RADAR Político</option>
-  <option value="skills/emociones.html">Skill: Humor Social / Emociones</option>
-  <option value="skills/opositor.html">Skill: Perfil Opositor</option>
-  <option value="skills/tensiones.html">Skill: Mapa de Tensiones</option>
-</select>
+      <!-- FORMULARIO DE NAVEGACIÓN DIRECTA -->
+      <form id="search-form" onsubmit="irADashboard(event)" class="filter-bar">
+        <!-- Rutas relativas a la carpeta public/skills/ -->
+        <select id="skill-select" class="form-control input-skill">
+          <option value="skills/radar.html">Skill: RADAR Político</option>
+          <option value="skills/emociones.html">Skill: Humor Social / Emociones</option>
+          <option value="skills/opositor.html">Skill: Perfil Opositor</option>
+          <option value="skills/tensiones.html">Skill: Mapa de Tensiones</option>
+        </select>
 
-        <!-- Campo de Actor Politico -->
         <input type="text" id="actor-input" class="form-control input-actor" value="Alfredo Ramírez Bedolla" placeholder="Nombre del actor político..." required>
 
-        <!-- Selección de Fecha -->
         <select id="mes-select" class="form-control input-date">
           <option value="Enero">Enero</option>
           <option value="Febrero">Febrero</option>
@@ -182,19 +173,14 @@
         </select>
 
         <select id="anio-select" class="form-control input-date">
-           <option value="2024">2021</option>
-           <option value="2024">2022</option>
-           <option value="2024">2023</option>
           <option value="2024">2024</option>
           <option value="2025">2025</option>
           <option value="2026" selected>2026</option>
         </select>
 
-        <!-- Botón para procesar datos -->
         <button type="submit" class="btn-analizar">Analizar</button>
       </form>
 
-      <!-- Chips de Sugerencias Rápida -->
       <div class="suggestions">
         <span>Sugerencias:</span>
         <span class="chip" onclick="setActor('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</span>
@@ -204,17 +190,12 @@
     </div>
   </div>
 
-  <!-- CONTENEDOR DE LA SKILL (SE CARGA SEGÚN LA SELECCIÓN) -->
- <iframe id="content-frame" class="view-frame" src="skills/radar.html"></iframe>
-
   <script>
-    // Asigna el nombre al hacer clic en una sugerencia
     function setActor(nombre) {
       document.getElementById('actor-input').value = nombre;
     }
 
-    // Procesa el envío y le manda los datos a la Skill seleccionada
-    function ejecutarAnalisis(event) {
+    function irADashboard(event) {
       event.preventDefault();
 
       const skillUrl = document.getElementById('skill-select').value;
@@ -222,11 +203,8 @@
       const mes = document.getElementById('mes-select').value;
       const anio = document.getElementById('anio-select').value;
 
-      // Genera la URL enviando parámetros de consulta (?actor=...&mes=...&anio=...)
-      const targetUrl = `${skillUrl}?actor=${actor}&mes=${mes}&anio=${anio}`;
-      
-      // Actualiza la vista iframe
-      document.getElementById('content-frame').src = targetUrl;
+      // REDIRECCIÓN COMPLETA DE PÁGINA (Sin iframe, solucionando bloqueo de Vercel)
+      window.location.href = `${skillUrl}?actor=${actor}&mes=${mes}&anio=${anio}`;
     }
   </script>
 
