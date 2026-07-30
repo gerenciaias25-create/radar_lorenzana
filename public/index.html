@@ -154,13 +154,13 @@
 
       <!-- FORMULARIO DE EXTRACCIÓN Y FILTRADO -->
       <form id="search-form" onsubmit="ejecutarAnalisis(event)" class="filter-bar">
-        <!-- Selector de Skill -->
-        <select id="skill-select" class="form-control input-skill">
-          <option value="radar.html">Skill: RADAR Político</option>
-          <option value="emociones.html">Skill: Humor Social / Emociones</option>
-          <option value="opositor.html">Skill: Perfil Opositor</option>
-          <option value="tensiones.html">Skill: Mapa de Tensiones</option>
-        </select>
+        <!-- Selector de Skill actualizado con la ruta relativa /skills/ -->
+<select id="skill-select" class="form-control input-skill">
+  <option value="skills/radar.html">Skill: RADAR Político</option>
+  <option value="skills/emociones.html">Skill: Humor Social / Emociones</option>
+  <option value="skills/opositor.html">Skill: Perfil Opositor</option>
+  <option value="skills/tensiones.html">Skill: Mapa de Tensiones</option>
+</select>
 
         <!-- Campo de Actor Politico -->
         <input type="text" id="actor-input" class="form-control input-actor" value="Alfredo Ramírez Bedolla" placeholder="Nombre del actor político..." required>
@@ -182,6 +182,9 @@
         </select>
 
         <select id="anio-select" class="form-control input-date">
+           <option value="2024">2021</option>
+           <option value="2024">2022</option>
+           <option value="2024">2023</option>
           <option value="2024">2024</option>
           <option value="2025">2025</option>
           <option value="2026" selected>2026</option>
@@ -202,7 +205,7 @@
   </div>
 
   <!-- CONTENEDOR DE LA SKILL (SE CARGA SEGÚN LA SELECCIÓN) -->
-  <iframe id="content-frame" class="view-frame" src="radar.html"></iframe>
+ <iframe id="content-frame" class="view-frame" src="skills/radar.html"></iframe>
 
   <script>
     // Asigna el nombre al hacer clic en una sugerencia
