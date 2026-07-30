@@ -1,322 +1,231 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Plataforma de Inteligencia Político-Digital</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Módulo de Inteligencia Político-Digital | SIE</title>
   <style>
     :root {
-      --hdrblue: #1C2738;
+      --hdrblue: #1b2a4a;
       --navy: #1C2738;
       --ac: #00C2D4;
-      --go: #F4C430;
-      --da: #E63946;
-      --su: #2EC4B6;
-      --ne: #556B2F;
-      --bl: #1B4F8A;
-      --card: #ffffff;
-      --border: rgba(28,39,56,0.15);
+      --btn-blue: #1c4980;
+      --btn-hover: #153760;
       --bg: #f4f6f9;
-      --text: #1C2738;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+    body, html { width: 100%; height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); overflow: hidden; }
 
-    header { background: var(--hdrblue); color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-    .brand { font-size: 1.25rem; font-weight: 800; letter-spacing: 1px; color: var(--ac); }
+    /* ENCABEZADO SUPERIOR */
+    .top-header {
+      background: var(--hdrblue);
+      height: 45px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      color: var(--ac);
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
 
-    main { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+    /* CONTENEDOR DE CONTROL Y FILTROS */
+    .control-panel {
+      padding: 20px 24px 10px 24px;
+      background: var(--bg);
+    }
+    .panel-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+    }
+    .subtitle {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .title {
+      font-size: 22px;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .title span { color: var(--btn-blue); font-weight: 700; }
+    .description {
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
 
-    .search-hero { background: #fff; padding: 2rem; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .search-eyebrow { font-size: 0.75rem; text-transform: uppercase; color: var(--bl); font-weight: 700; letter-spacing: 1px; }
-    .search-heading { font-size: 1.75rem; margin: 0.5rem 0 1rem; color: var(--navy); }
-    .search-heading span { color: var(--bl); }
-    .search-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 1.5rem; }
-
-    .search-form { display: flex; gap: 0.5rem; flex-wrap: wrap; background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border); }
-    .search-form select, .search-form input { padding: 0.6rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.875rem; outline: none; }
-    .search-form input { flex: 1; min-width: 200px; }
+    /* BARRA DE FORMULARIO DE FILTROS */
+    .filter-bar {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .form-control {
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #334155;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      border-color: var(--btn-blue);
+    }
+    select.form-control { cursor: pointer; }
     
-    .btn-search { background: var(--bl); color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; transition: background .2s; }
-    .btn-search:hover { background: var(--navy); }
+    .input-skill { flex: 1.2; min-width: 180px; font-weight: 600; }
+    .input-actor { flex: 2; min-width: 220px; }
+    .input-date { flex: 0.8; min-width: 90px; }
 
-    .suggestion-row { margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-    .suggestion-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
-    .chip { background: #e2e8f0; border: none; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; cursor: pointer; color: #334155; font-weight: 500; }
-    .chip:hover { background: #cbd5e1; }
+    .btn-analizar {
+      background: var(--btn-blue);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0 24px;
+      height: 40px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-analizar:hover {
+      background: var(--btn-hover);
+    }
 
-    .view-state { display: none; }
-    .view-state.show { display: block; }
+    /* SUGERENCIAS RÁPIDAS */
+    .suggestions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .chip {
+      background: #e2e8f0;
+      color: #334155;
+      padding: 4px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .chip:hover {
+      background: #cbd5e1;
+      color: #0f172a;
+    }
 
-    .loading-wrap { text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 8px; margin-top: 1.5rem; border: 1px solid var(--border); }
-    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--bl); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    .error-wrap { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; }
-    .btn-reset { background: var(--navy); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
-
-    /* DASHBOARD LAYOUT */
-    .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: #fff; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); }
-    
-    .tabs { display: flex; border-bottom: 2px solid var(--navy); overflow-x: auto; margin-bottom: 20px; gap: 4px; }
-    .tb { font-family: monospace; font-size: 11px; padding: 10px 14px; cursor: pointer; color: #718096; border: none; background: rgba(0,0,0,0.03); font-weight: 700; }
-    .tb.act { color: #ffffff; background: var(--navy); border-bottom: 3px solid var(--ac); }
-    
-    .tsec { display: none; }
-    .tsec.show { display: block; animation: fi .3s ease; }
-    @keyframes fi { from { opacity: 0; } to { opacity: 1; } }
-
-    .stitle { font-family: monospace; font-size: 11px; font-weight: 700; color: var(--navy); letter-spacing: 2px; margin: 20px 0 14px; display: flex; align-items: center; gap: 10px; }
-    .stitle::after { content: ''; flex: 1; height: 2px; background: linear-gradient(90deg, var(--border), transparent); }
-
-    .cg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
-    @media(max-width: 768px) { .cg { grid-template-columns: 1fr; } }
-
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-    .ct { font-size: 14px; font-weight: 700; margin-bottom: 3px; color: var(--navy); }
-    .cs { font-size: 11px; color: #64748b; margin-bottom: 14px; }
-
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .kpi-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 14px; text-align: center; }
-    .kpi-val { font-size: 22px; font-weight: 800; color: var(--bl); margin: 4px 0; }
-    .kpi-lbl { font-size: 10px; font-family: monospace; font-weight: 700; color: #64748b; }
-    
-    canvas { max-height: 240px; width: 100% !important; }
+    /* ÁREA VACÍA / MARCO DE LA SKILL DETALLES */
+    .view-frame {
+      width: 100%;
+      height: calc(100vh - 250px);
+      border: none;
+      background: var(--bg);
+    }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">RADAR INTELLIGENCE v2.0</div>
-  </header>
+  <div class="top-header">RADAR INTELLIGENCE v2.0</div>
 
-  <main>
-    <section class="search-hero" id="searchSection">
-      <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
-      <h1 class="search-heading">Módulo de <span>Inteligencia Político-Digital</span></h1>
-      <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
+  <div class="control-panel">
+    <div class="panel-card">
+      <div class="subtitle">Análisis Ejecutivo de Fuentes</div>
+      <h1 class="title">Módulo de <span>Inteligencia Político-Digital</span></h1>
+      <p class="description">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
-      <div class="search-form">
-        <select id="skillSelect">
-          <option value="radar" selected>Skill: RADAR Político</option>
-          <option value="emociones">Skill: Humores y Emociones (Plutchik)</option>
-          <option value="plazas">Skill: Cobertura Territorial / Plazas</option>
+      <!-- FORMULARIO DE EXTRACCIÓN Y FILTRADO -->
+      <form id="search-form" onsubmit="ejecutarAnalisis(event)" class="filter-bar">
+        <!-- Selector de Skill -->
+        <select id="skill-select" class="form-control input-skill">
+          <option value="radar.html">Skill: RADAR Político</option>
+          <option value="emociones.html">Skill: Humor Social / Emociones</option>
+          <option value="opositor.html">Skill: Perfil Opositor</option>
+          <option value="tensiones.html">Skill: Mapa de Tensiones</option>
         </select>
 
-        <input type="text" id="nombreInput" placeholder="Nombre del actor o territorio..." autocomplete="off" />
+        <!-- Campo de Actor Politico -->
+        <input type="text" id="actor-input" class="form-control input-actor" value="Alfredo Ramírez Bedolla" placeholder="Nombre del actor político..." required>
 
-        <select id="mesSelect">
-          <option value="enero">Enero</option>
-          <option value="febrero">Febrero</option>
-          <option value="marzo">Marzo</option>
-          <option value="abril">Abril</option>
-          <option value="mayo">Mayo</option>
-          <option value="junio">Junio</option>
-          <option value="julio" selected>Julio</option>
-          <option value="agosto">Agosto</option>
-          <option value="septiembre">Septiembre</option>
-          <option value="octubre">Octubre</option>
-          <option value="noviembre">Noviembre</option>
-          <option value="diciembre">Diciembre</option>
+        <!-- Selección de Fecha -->
+        <select id="mes-select" class="form-control input-date">
+          <option value="Enero">Enero</option>
+          <option value="Febrero">Febrero</option>
+          <option value="Marzo">Marzo</option>
+          <option value="Abril">Abril</option>
+          <option value="Mayo">Mayo</option>
+          <option value="Junio">Junio</option>
+          <option value="Julio" selected>Julio</option>
+          <option value="Agosto">Agosto</option>
+          <option value="Septiembre">Septiembre</option>
+          <option value="Octubre">Octubre</option>
+          <option value="Noviembre">Noviembre</option>
+          <option value="Diciembre">Diciembre</option>
         </select>
 
-        <select id="anioSelect">
-          <option value="2026" selected>2026</option>
-          <option value="2025">2025</option>
+        <select id="anio-select" class="form-control input-date">
           <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026" selected>2026</option>
         </select>
 
-        <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
-      </div>
+        <!-- Botón para procesar datos -->
+        <button type="submit" class="btn-analizar">Analizar</button>
+      </form>
 
-      <div class="suggestion-row">
-        <span class="suggestion-label">Sugerencias:</span>
-        <button class="chip" onclick="setChip('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</button>
-        <button class="chip" onclick="setChip('Horacio Duarte Olivares')">Horacio Duarte</button>
-        <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
+      <!-- Chips de Sugerencias Rápida -->
+      <div class="suggestions">
+        <span>Sugerencias:</span>
+        <span class="chip" onclick="setActor('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</span>
+        <span class="chip" onclick="setActor('Horacio Duarte')">Horacio Duarte</span>
+        <span class="chip" onclick="setActor('Claudia Sheinbaum')">Claudia Sheinbaum</span>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <section class="view-state" id="loadingWrap">
-      <div class="loading-wrap">
-        <div class="spinner"></div>
-        <p id="loadingMessage">Procesando datos y ejecutando Skill de IA...</p>
-      </div>
-    </section>
-
-    <section class="view-state" id="errorWrap">
-      <div class="error-wrap">
-        <strong id="errorTitle">Ocurrió un error al procesar la consulta:</strong>
-        <p id="errorText" style="margin-top: 0.5rem;"></p>
-        <button class="btn-reset" onclick="resetUI()" style="margin-top: 1rem;">Volver a intentar</button>
-      </div>
-    </section>
-
-    <section class="view-state" id="dashboard">
-      <div class="dashboard-header">
-        <div>
-          <h2 id="dashTitle">Informe Generado</h2>
-          <span id="dashSubtitle" style="color: #64748b; font-size: 0.875rem;"></span>
-        </div>
-        <div>
-          <button class="btn-reset" onclick="analizar(true)" style="background:#00C2D4; color:#000; font-weight:700; margin-right:8px;">Recargar Sin Caché</button>
-          <button class="btn-reset" onclick="resetUI()">← Nueva consulta</button>
-        </div>
-      </div>
-
-      <div id="dashboardContent"></div>
-    </section>
-  </main>
+  <!-- CONTENEDOR DE LA SKILL (SE CARGA SEGÚN LA SELECCIÓN) -->
+  <iframe id="content-frame" class="view-frame" src="radar.html"></iframe>
 
   <script>
-    let loadInterval;
-    const CH = {};
-
-    function setChip(val) { document.getElementById('nombreInput').value = val; }
-
-    function resetUI() {
-      document.getElementById('searchSection').style.display = 'block';
-      document.getElementById('dashboard').classList.remove('show');
-      document.getElementById('errorWrap').classList.remove('show');
-      document.getElementById('loadingWrap').classList.remove('show');
-      document.getElementById('btnAnalizar').disabled = false;
-      clearInterval(loadInterval);
+    // Asigna el nombre al hacer clic en una sugerencia
+    function setActor(nombre) {
+      document.getElementById('actor-input').value = nombre;
     }
 
-    function startLoad() {
-      const msgs = ["Extrayendo fuentes...", "Interpretando gráficos...", "Ensamblando RADAR..."];
-      let idx = 0;
-      const msgEl = document.getElementById('loadingMessage');
-      msgEl.textContent = msgs[0];
-      loadInterval = setInterval(() => {
-        idx = (idx + 1) % msgs.length;
-        msgEl.textContent = msgs[idx];
-      }, 2000);
-    }
+    // Procesa el envío y le manda los datos a la Skill seleccionada
+    function ejecutarAnalisis(event) {
+      event.preventDefault();
 
-    async function analizar(forceRefresh = false) {
-      const nombre = document.getElementById('nombreInput').value.trim();
-      const skill = document.getElementById('skillSelect').value;
-      const fecha = `${document.getElementById('mesSelect').value} ${document.getElementById('anioSelect').value}`;
+      const skillUrl = document.getElementById('skill-select').value;
+      const actor = encodeURIComponent(document.getElementById('actor-input').value);
+      const mes = document.getElementById('mes-select').value;
+      const anio = document.getElementById('anio-select').value;
 
-      if (!nombre) { document.getElementById('nombreInput').focus(); return; }
-
-      document.getElementById('searchSection').style.display = 'none';
-      document.getElementById('dashboard').classList.remove('show');
-      document.getElementById('errorWrap').classList.remove('show');
-      document.getElementById('loadingWrap').classList.add('show');
+      // Genera la URL enviando parámetros de consulta (?actor=...&mes=...&anio=...)
+      const targetUrl = `${skillUrl}?actor=${actor}&mes=${mes}&anio=${anio}`;
       
-      startLoad();
-
-      try {
-        const res = await fetch('/api/analizar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, skill, fecha, forceRefresh })
-        });
-
-        const data = await res.json();
-        clearInterval(loadInterval);
-        document.getElementById('loadingWrap').classList.remove('show');
-
-        if (!res.ok || data.error) {
-          document.getElementById('errorWrap').classList.add('show');
-          document.getElementById('errorText').textContent = data.error || 'Error al invocar API.';
-          return;
-        }
-
-        renderRadarDashboard(data, skill, fecha);
-      } catch (err) {
-        clearInterval(loadInterval);
-        document.getElementById('loadingWrap').classList.remove('show');
-        document.getElementById('errorWrap').classList.add('show');
-        document.getElementById('errorText').textContent = err.message;
-      }
-    }
-
-    function renderRadarDashboard(data, skill, fecha) {
-      document.getElementById('dashTitle').textContent = `${data.nombre || 'Actor'}`;
-      document.getElementById('dashSubtitle').textContent = `${data.cargo || ''} | Periodo: ${fecha} | Skill: ${skill.toUpperCase()}`;
-
-      const content = document.getElementById('dashboardContent');
-
-      // 1. Render KPIs principales arriba
-      const kpisHTML = (data.kpis_ampliados || []).map(k => `
-        <div class="kpi-card">
-          <div class="kpi-lbl">${k.label}</div>
-          <div class="kpi-val">${k.valor}</div>
-          <div style="font-size:9px;color:#64748b">${k.nota || ''}</div>
-        </div>
-      `).join('');
-
-      content.innerHTML = `
-        <div class="kpi-grid">${kpisHTML}</div>
-
-        <div class="tabs">
-          <button class="tb act" onclick="switchTab(this, 'kpis')">KPIs & CRUCES</button>
-          <button class="tb" onclick="switchTab(this, 'sent')">SENTIMIENTO</button>
-          <button class="tb" onclick="switchTab(this, 'plat')">PLATAFORMAS</button>
-        </div>
-
-        <div id="tab-kpis" class="tsec show">
-          <div class="stitle">ANÁLISIS BIVARIADO BASE</div>
-          <div class="cg">
-            <div class="card"><div class="ct">Aprobación por Partido</div><canvas id="c-par"></canvas></div>
-            <div class="card"><div class="ct">Sentimiento por Edad</div><canvas id="c-edad"></canvas></div>
-          </div>
-        </div>
-
-        <div id="tab-sent" class="tsec">
-          <div class="stitle">DESGLOSE DE SENTIMIENTO</div>
-          <div class="cg">
-            <div class="card"><div class="ct">Distribución General</div><canvas id="c-sent-gen"></canvas></div>
-            <div class="card"><div class="ct">Clima Político</div><canvas id="c-sent-clima"></canvas></div>
-          </div>
-        </div>
-
-        <div id="tab-plat" class="tsec">
-          <div class="stitle">MÉTRICAS POR PLATAFORMA</div>
-          <div class="cg">
-            <div class="card"><div class="ct">Alcance Estimado</div><canvas id="c-plat-alc"></canvas></div>
-            <div class="card"><div class="ct">Tono de Menciones</div><canvas id="c-plat-tono"></canvas></div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('dashboard').classList.add('show');
-
-      // Dibujar Gráficos Chart.js de forma segura
-      setTimeout(() => {
-        mkChart('c-par', 'bar', data.kpis_bivariados?.nps_partido?.labels || [], data.kpis_bivariados?.nps_partido?.data || [], '#1B4F8A');
-        mkChart('c-edad', 'bar', data.sentimiento?.edad?.labels || [], data.sentimiento?.edad?.data || [], '#2EC4B6');
-        mkChart('c-sent-gen', 'pie', data.sentimiento?.general?.labels || [], data.sentimiento?.general?.data || [], ['#2EC4B6', '#94A3B8', '#E63946', '#F4C430']);
-        mkChart('c-sent-clima', 'doughnut', data.sentimiento?.clima_general?.labels || [], data.sentimiento?.clima_general?.data || [], ['#1B4F8A', '#2EC4B6', '#E63946', '#94A3B8']);
-        mkChart('c-plat-alc', 'bar', data.plataformas?.alcance?.labels || [], data.plataformas?.alcance?.data || [], '#1C2738');
-        mkChart('c-plat-tono', 'bar', data.plataformas?.tono?.labels || [], data.plataformas?.tono?.positivo || [], '#2EC4B6');
-      }, 100);
-    }
-
-    function switchTab(btn, tabId) {
-      document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
-      document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
-      btn.classList.add('act');
-      document.getElementById('tab-' + tabId).classList.add('show');
-    }
-
-    function mkChart(id, type, labels, data, colors) {
-      if (CH[id]) CH[id].destroy();
-      const el = document.getElementById(id);
-      if (!el) return;
-      CH[id] = new Chart(el, {
-        type: type,
-        data: {
-          labels: labels,
-          datasets: [{ data: data, backgroundColor: colors }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
+      // Actualiza la vista iframe
+      document.getElementById('content-frame').src = targetUrl;
     }
   </script>
+
 </body>
 </html>
