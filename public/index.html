@@ -16,27 +16,32 @@
       --border: #e2e8f0;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { width: 100%; min-height: 100vh; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); display: flex; flex-direction: column; }
+    body, html { width: 100%; min-height: 100vh; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); }
 
-    /* ENCABEZADO SUPERIOR */
+    /* ENCABEZADO PRINCIPAL */
     .top-header {
       background: var(--hdrblue);
       height: 50px;
       padding: 0 24px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       color: var(--ac);
       font-weight: 800;
       font-size: 15px;
       letter-spacing: 1px;
     }
 
-    /* CONTENEDOR PRINCIPAL */
-    .control-panel {
-      padding: 40px 24px;
+    /* CLASE DE CONTROL DE VISIBILIDAD (OCULTAR VISTAS) */
+    .hidden { display: none !important; }
+
+    /* ====================================================
+       1. VISTA DE BÚSQUEDA
+       ==================================================== */
+    #vista-busqueda {
+      padding: 60px 24px;
       max-width: 1100px;
       margin: 0 auto;
-      width: 100%;
     }
     .panel-card {
       background: var(--card-bg);
@@ -45,27 +50,11 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       border: 1px solid var(--border);
     }
-    .subtitle {
-      color: #64748b;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-    }
-    .title {
-      font-size: 24px;
-      color: var(--navy);
-      margin-bottom: 8px;
-    }
+    .subtitle { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .title { font-size: 24px; color: var(--navy); margin-bottom: 8px; }
     .title span { color: var(--btn-blue); font-weight: 700; }
-    .description {
-      color: #64748b;
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
+    .description { color: #64748b; font-size: 14px; margin-bottom: 24px; }
 
-    /* BARRA DE FORMULARIO DE FILTROS */
     .filter-bar {
       background: #f8fafc;
       border: 1px solid var(--border);
@@ -85,12 +74,7 @@
       color: #334155;
       background: #fff;
       outline: none;
-      transition: border-color 0.2s;
     }
-    .form-control:focus {
-      border-color: var(--btn-blue);
-    }
-    
     .input-skill { flex: 1.2; min-width: 180px; font-weight: 600; }
     .input-actor { flex: 2; min-width: 220px; }
     .input-date { flex: 0.8; min-width: 90px; }
@@ -105,49 +89,96 @@
       font-weight: 600;
       font-size: 14px;
       cursor: pointer;
-      transition: background 0.2s;
     }
-    .btn-analizar:hover {
-      background: var(--btn-hover);
-    }
+    .btn-analizar:hover { background: var(--btn-hover); }
 
-    /* SUGERENCIAS RÁPIDAS */
-    .suggestions {
+    .suggestions { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 13px; color: #64748b; }
+    .chip { background: #e2e8f0; color: #334155; padding: 6px 14px; border-radius: 16px; cursor: pointer; font-size: 12px; }
+    .chip:hover { background: #cbd5e1; }
+
+    /* ====================================================
+       2. VISTA DE PROCESANDO (LOADER)
+       ==================================================== */
+    #vista-procesando {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      margin-top: 16px;
+      justify-content: center;
+      min-height: calc(100vh - 50px);
+      text-align: center;
+      padding: 20px;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #cbd5e1;
+      border-top-color: var(--ac);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-title { font-size: 20px; color: var(--navy); font-weight: 700; margin-bottom: 8px; }
+    .loader-sub { font-size: 14px; color: #64748b; }
+
+    /* ====================================================
+       3. VISTA DEL DASHBOARD Y BOTONES DE ACCIÓN
+       ==================================================== */
+    #vista-dashboard {
+      width: 100%;
+      min-height: calc(100vh - 50px);
+      display: flex;
+      flex-direction: column;
+    }
+    .dashboard-actions-bar {
+      background: #ffffff;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-action {
+      padding: 8px 16px;
+      border-radius: 6px;
       font-size: 13px;
-      color: #64748b;
-    }
-    .chip {
-      background: #e2e8f0;
-      color: #334155;
-      padding: 6px 14px;
-      border-radius: 16px;
+      font-weight: 600;
       cursor: pointer;
-      font-size: 12px;
-      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
     }
-    .chip:hover {
-      background: #cbd5e1;
-      color: #0f172a;
+    .btn-back { background: #e2e8f0; color: #334155; }
+    .btn-back:hover { background: #cbd5e1; }
+    .btn-download { background: #059669; color: white; }
+    .btn-download:hover { background: #047857; }
+
+    .dashboard-iframe {
+      width: 100%;
+      height: calc(100vh - 105px);
+      border: none;
+      background: var(--bg);
     }
   </style>
 </head>
 <body>
 
-  <div class="top-header">RADAR INTELLIGENCE v2.0</div>
+  <!-- BARRA SUPERIOR -->
+  <header class="top-header">
+    <span>RADAR INTELLIGENCE v2.0</span>
+  </header>
 
-  <div class="control-panel">
+  <!-- ====================================================
+       VISTA 1: BÚSQUEDA Y FILTROS
+       ==================================================== -->
+  <main id="vista-busqueda">
     <div class="panel-card">
       <div class="subtitle">Análisis Ejecutivo de Fuentes</div>
       <h1 class="title">Módulo de <span>Inteligencia Político-Digital</span></h1>
       <p class="description">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
-      <!-- FORMULARIO DE NAVEGACIÓN DIRECTA -->
-      <form id="search-form" onsubmit="irADashboard(event)" class="filter-bar">
-        <!-- Rutas relativas a la carpeta public/skills/ -->
+      <form onsubmit="iniciarProcesamiento(event)" class="filter-bar">
         <select id="skill-select" class="form-control input-skill">
           <option value="skills/radar.html">Skill: RADAR Político</option>
           <option value="skills/emociones.html">Skill: Humor Social / Emociones</option>
@@ -188,23 +219,79 @@
         <span class="chip" onclick="setActor('Claudia Sheinbaum')">Claudia Sheinbaum</span>
       </div>
     </div>
-  </div>
+  </main>
+
+  <!-- ====================================================
+       VISTA 2: PROCESANDO DATOS
+       ==================================================== -->
+  <section id="vista-procesando" class="hidden">
+    <div class="spinner"></div>
+    <div class="loader-title">Procesando Inteligencia Político-Digital...</div>
+    <div class="loader-sub" id="loader-status">Extrayendo datos de fuentes digitales...</div>
+  </section>
+
+  <!-- ====================================================
+       VISTA 3: DASHBOARD RESULTANTE + BOTÓN DESCARGA
+       ==================================================== -->
+  <section id="vista-dashboard" class="hidden">
+    <!-- Barra de Control del Dashboard -->
+    <div class="dashboard-actions-bar">
+      <button class="btn-action btn-back" onclick="volverABusqueda()">
+        ← Nueva Búsqueda
+      </button>
+
+      <button class="btn-action btn-download" onclick="descargarReporte()">
+        📥 Descargar Dashboard (PDF)
+      </button>
+    </div>
+
+    <!-- Contenedor donde se dibuja la Skill de manera independiente -->
+    <iframe id="dashboard-frame" class="dashboard-iframe"></iframe>
+  </section>
 
   <script>
     function setActor(nombre) {
       document.getElementById('actor-input').value = nombre;
     }
 
-    function irADashboard(event) {
+    // FLUJO 1 -> FLUJO 2 -> FLUJO 3
+    function iniciarProcesamiento(event) {
       event.preventDefault();
+
+      // Ocultar Búsqueda y Mostrar Pantalla de Carga (Procesando)
+      document.getElementById('vista-busqueda').classList.add('hidden');
+      document.getElementById('vista-procesando').classList.remove('hidden');
 
       const skillUrl = document.getElementById('skill-select').value;
       const actor = encodeURIComponent(document.getElementById('actor-input').value);
       const mes = document.getElementById('mes-select').value;
       const anio = document.getElementById('anio-select').value;
 
-      // REDIRECCIÓN COMPLETA DE PÁGINA (Sin iframe, solucionando bloqueo de Vercel)
-      window.location.href = `${skillUrl}?actor=${actor}&mes=${mes}&anio=${anio}`;
+      const targetUrl = `${skillUrl}?actor=${actor}&mes=${mes}&anio=${anio}`;
+
+      // Asignar la ruta al Frame
+      const frame = document.getElementById('dashboard-frame');
+      frame.src = targetUrl;
+
+      // Simular tiempo de extracción y análisis de datos (2 segundos)
+      setTimeout(() => {
+        // Ocultar Carga y Mostrar Dashboard Resultante
+        document.getElementById('vista-procesando').classList.add('hidden');
+        document.getElementById('vista-dashboard').classList.remove('hidden');
+      }, 2000);
+    }
+
+    function volverABusqueda() {
+      // Regresar al estado inicial
+      document.getElementById('vista-dashboard').classList.add('hidden');
+      document.getElementById('vista-busqueda').classList.remove('hidden');
+    }
+
+    function descargarReporte() {
+      // Función para imprimir/descargar el contenido del iframe
+      const iframeWindow = document.getElementById('dashboard-frame').contentWindow;
+      iframeWindow.focus();
+      iframeWindow.print();
     }
   </script>
 
