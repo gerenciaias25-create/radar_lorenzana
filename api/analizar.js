@@ -56,9 +56,10 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'El nombre del actor o territorio es requerido.' });
   }
 
+  const skillNormalizado = String(skill).trim().toLowerCase();
   const fechaCtx = fecha || 'julio 2026';
   const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 horas
-  const cacheKey = `skill:${skill}:${nombre.trim().toLowerCase()}:${fechaCtx.trim().toLowerCase()}`;
+  const cacheKey = `skill:${skillNormalizado}:${nombre.trim().toLowerCase()}:${fechaCtx.trim().toLowerCase()}`;
 
   // 1. Verificación de Caché
   if (!forceRefresh) {
@@ -142,7 +143,7 @@ module.exports = async function handler(req, res) {
     // 3. Selección del Prompt según el Skill seleccionado
     let prompt = '';
 
-    switch (skill) {
+    switch (skillNormalizado) {
       case 'radar':
         prompt = `Eres un Director General de Inteligencia Político-Digital. La fecha actual del reporte es: ${fechaCtx}.
 
@@ -251,11 +252,86 @@ ESTRUCTURA DEL JSON EXIGIDA:
         break;
 
       case 'emociones':
-        prompt = `Analiza los aspectos emocionales (Rueda de Plutchik) para "${nombre}" en la fecha ${fechaCtx} con base en la siguiente información:\n${contextoReal}\n\nDevuelve un JSON estricto con métricas emocionales (Ira, Miedo, Alegría, Confianza, etc.).`;
+        prompt = `Eres un Director General de Inteligencia Político-Digital y Psicometría Social. La fecha actual es: ${fechaCtx}.
+
+INFORMACIÓN EXTRAÍDA DE FUENTES PARA "${nombre}":
+${contextoReal}
+
+INSTRUCCIÓN CRÍTICA: Debes responder OBLIGATORIAMENTE un JSON válido sin marcas de markdown. Analiza el clima emocional basado en el modelo de Plutchik y métricas cuantitativas completas.
+
+ESTRUCTURA DEL JSON EXIGIDA:
+{
+  "nombre": "${nombre}",
+  "cargo": "Cargo y Partido a ${fechaCtx}",
+  "kpis_emocionales": [
+    {"label": "ÍNDICE DE POLARIZACIÓN EMOCIONAL", "valor": "68/100", "nota": "Alto nivel de confrontación", "tipo": "da"},
+    {"label": "EMOCIÓN DOMINANTE", "valor": "Ira / Rechazo", "nota": "Concentrada en X/Twitter", "tipo": "da"},
+    {"label": "EMOCIÓN RESERVA", "valor": "Confianza", "nota": "Base dura de simpatizantes", "tipo": "go"}
+  ],
+  "rueda_plutchik": {
+    "labels": ["Ira", "Miedo", "Tristeza", "Disgusto", "Sorpresa", "Anticipación", "Confianza", "Alegría"],
+    "data": [28, 14, 8, 18, 5, 12, 10, 5]
+  },
+  "desglose_por_plataforma": [
+    {"plataforma": "X / Twitter", "dominante": "Ira", "pct_dominante": 45, "secundaria": "Disgusto", "pct_secundaria": 25},
+    {"plataforma": "Facebook", "dominante": "Confianza", "pct_dominante": 38, "secundaria": "Alegría", "pct_secundaria": 22},
+    {"plataforma": "Noticias / Prensa", "dominante": "Anticipación", "pct_dominante": 40, "secundaria": "Neutro", "pct_secundaria": 30}
+  ],
+  "hallazgos_psicometricos": [
+    {"tipo": "da", "titulo": "Detonadores de Ira", "cuerpo": "Los señalamientos en materia de seguridad provocan picos de molestia y disconformidad social.", "insight": "Adecuar la narrativa hacia respuestas concretas y control de crisis."},
+    {"tipo": "su", "titulo": "Anclaje de Confianza", "cuerpo": "La interacción en programas y eventos territoriales sostiene los niveles de empatía.", "insight": "Potenciar el contenido humano e historias de éxito directas."}
+  ]
+}`;
         break;
 
       case 'plazas':
-        prompt = `Analiza la cobertura territorial y despliegue de plazas para "${nombre}" en la fecha ${fechaCtx} con base en la siguiente información:\n${contextoReal}\n\nDevuelve un JSON estricto detallando las plazas, densidad y penetración de mensaje por región.`;
+        prompt = `Eres un Director General de Inteligencia Político-Digital y Estrategia Territorial. La fecha actual es: ${fechaCtx}.
+
+INFORMACIÓN EXTRAÍDA DE FUENTES PARA "${nombre}":
+${contextoReal}
+
+INSTRUCCIÓN CRÍTICA: Debes responder OBLIGATORIAMENTE un JSON válido sin marcas de markdown. Provee un desglose amplio y cuantitativo de la cobertura y despliegue en territorio.
+
+ESTRUCTURA DEL JSON EXIGIDA:
+{
+  "nombre": "${nombre}",
+  "cargo": "Cargo y Partido a ${fechaCtx}",
+  "kpis_territoriales": [
+    {"label": "PLAZAS PRIORITARIAS", "valor": "12 Zonas", "nota": "Monitoreo prioritario", "tipo": "ac"},
+    {"label": "PENETRACIÓN GLOBAL", "valor": "58%", "nota": "Cobertura en medios locales", "tipo": "su"},
+    {"label": "BASTIÓN MÁS FUERTE", "valor": "Región Centro", "nota": "+32 NPS Favorable", "tipo": "go"}
+  ],
+  "desglose_plazas": [
+    {
+      "zona": "Región Centro - Capital",
+      "nps": 28,
+      "volumen_conversacion_pct": 40,
+      "status": "favorable",
+      "temas_clave": ["Infraestructura", "Presencia Institucional"],
+      "medios_dominantes": ["Prensa Local", "Facebook"]
+    },
+    {
+      "zona": "Región Norte",
+      "nps": -15,
+      "volumen_conversacion_pct": 35,
+      "status": "adversa",
+      "temas_clave": ["Críticas Oposición", "Seguridad"],
+      "medios_dominantes": ["X / Twitter", "Portales Digitales"]
+    },
+    {
+      "zona": "Región Sur / Valles",
+      "nps": 5,
+      "volumen_conversacion_pct": 25,
+      "status": "inercial",
+      "temas_clave": ["Programas Sociales", "Economía"],
+      "medios_dominantes": ["Facebook", "Radio / Grupos"]
+    }
+  ],
+  "recomendaciones_despliegue": [
+    {"prioridad": "ALTA", "zona": "Región Norte", "accion": "Reforzar vocería local y contención de argumentos críticos de la oposición."},
+    {"prioridad": "MEDIA", "zona": "Región Sur", "accion": "Incentivar actividades de campo para convertir la inercia en respaldo activo."}
+  ]
+}`;
         break;
 
       default:
