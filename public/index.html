@@ -4,24 +4,101 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Plataforma de Inteligencia Político-Digital</title>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --hdrblue: #1C2738;
+      --navy: #1C2738;
+      --ac: #00C2D4;
+      --go: #F4C430;
+      --da: #E63946;
+      --su: #2EC4B6;
+      --ne: #556B2F;
+      --bl: #1B4F8A;
+      --card: #ffffff;
+      --border: rgba(28,39,56,0.15);
+      --bg: #f4f6f9;
+      --text: #1C2738;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+
+    header { background: var(--hdrblue); color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .brand { font-size: 1.25rem; font-weight: 800; letter-spacing: 1px; color: var(--ac); }
+
+    main { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    .search-hero { background: #fff; padding: 2rem; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .search-eyebrow { font-size: 0.75rem; text-transform: uppercase; color: var(--bl); font-weight: 700; letter-spacing: 1px; }
+    .search-heading { font-size: 1.75rem; margin: 0.5rem 0 1rem; color: var(--navy); }
+    .search-heading span { color: var(--bl); }
+    .search-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 1.5rem; }
+
+    .search-form { display: flex; gap: 0.5rem; flex-wrap: wrap; background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border); }
+    .search-form select, .search-form input { padding: 0.6rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.875rem; outline: none; }
+    .search-form input { flex: 1; min-width: 200px; }
+    
+    .btn-search { background: var(--bl); color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; transition: background .2s; }
+    .btn-search:hover { background: var(--navy); }
+
+    .suggestion-row { margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .suggestion-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+    .chip { background: #e2e8f0; border: none; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; cursor: pointer; color: #334155; font-weight: 500; }
+    .chip:hover { background: #cbd5e1; }
+
+    .view-state { display: none; }
+    .view-state.show { display: block; }
+
+    .loading-wrap { text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 8px; margin-top: 1.5rem; border: 1px solid var(--border); }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--bl); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .error-wrap { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; }
+    .btn-reset { background: var(--navy); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+
+    /* DASHBOARD LAYOUT */
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: #fff; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); }
+    
+    .tabs { display: flex; border-bottom: 2px solid var(--navy); overflow-x: auto; margin-bottom: 20px; gap: 4px; }
+    .tb { font-family: monospace; font-size: 11px; padding: 10px 14px; cursor: pointer; color: #718096; border: none; background: rgba(0,0,0,0.03); font-weight: 700; }
+    .tb.act { color: #ffffff; background: var(--navy); border-bottom: 3px solid var(--ac); }
+    
+    .tsec { display: none; }
+    .tsec.show { display: block; animation: fi .3s ease; }
+    @keyframes fi { from { opacity: 0; } to { opacity: 1; } }
+
+    .stitle { font-family: monospace; font-size: 11px; font-weight: 700; color: var(--navy); letter-spacing: 2px; margin: 20px 0 14px; display: flex; align-items: center; gap: 10px; }
+    .stitle::after { content: ''; flex: 1; height: 2px; background: linear-gradient(90deg, var(--border), transparent); }
+
+    .cg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+    @media(max-width: 768px) { .cg { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+    .ct { font-size: 14px; font-weight: 700; margin-bottom: 3px; color: var(--navy); }
+    .cs { font-size: 11px; color: #64748b; margin-bottom: 14px; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .kpi-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 14px; text-align: center; }
+    .kpi-val { font-size: 22px; font-weight: 800; color: var(--bl); margin: 4px 0; }
+    .kpi-lbl { font-size: 10px; font-family: monospace; font-weight: 700; color: #64748b; }
+    
+    canvas { max-height: 240px; width: 100% !important; }
+  </style>
 </head>
 <body>
 
   <header>
-    <div class="brand">SIE</div>
+    <div class="brand">RADAR INTELLIGENCE v2.0</div>
   </header>
 
   <main>
-    <!-- SEARCH HERO CON SELECTOR DE SKILLS -->
     <section class="search-hero" id="searchSection">
       <div class="search-eyebrow">Análisis Ejecutivo de Fuentes</div>
       <h1 class="search-heading">Módulo de <span>Inteligencia Político-Digital</span></h1>
       <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
       <div class="search-form">
-        <!-- SELECTOR DE SKILL / SERVICIO -->
-        <select id="skillSelect" style="border-right: 1px solid var(--border);">
+        <select id="skillSelect">
           <option value="radar" selected>Skill: RADAR Político</option>
           <option value="emociones">Skill: Humores y Emociones (Plutchik)</option>
           <option value="plazas">Skill: Cobertura Territorial / Plazas</option>
@@ -48,9 +125,6 @@
           <option value="2026" selected>2026</option>
           <option value="2025">2025</option>
           <option value="2024">2024</option>
-          <option value="2023">2023</option>
-          <option value="2022">2022</option>
-          <option value="2021">2021</option>
         </select>
 
         <button class="btn-search" id="btnAnalizar" onclick="analizar()">Analizar</button>
@@ -58,13 +132,12 @@
 
       <div class="suggestion-row">
         <span class="suggestion-label">Sugerencias:</span>
+        <button class="chip" onclick="setChip('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</button>
         <button class="chip" onclick="setChip('Horacio Duarte Olivares')">Horacio Duarte</button>
         <button class="chip" onclick="setChip('Claudia Sheinbaum')">Claudia Sheinbaum</button>
-        <button class="chip" onclick="setChip('Ciudad de Guatemala')">Ciudad de Guatemala</button>
       </div>
     </section>
 
-    <!-- ESTADO: CARGANDO -->
     <section class="view-state" id="loadingWrap">
       <div class="loading-wrap">
         <div class="spinner"></div>
@@ -72,7 +145,6 @@
       </div>
     </section>
 
-    <!-- ESTADO: ERROR -->
     <section class="view-state" id="errorWrap">
       <div class="error-wrap">
         <strong id="errorTitle">Ocurrió un error al procesar la consulta:</strong>
@@ -81,28 +153,27 @@
       </div>
     </section>
 
-    <!-- ESTADO: DASHBOARD / RESULTADOS -->
     <section class="view-state" id="dashboard">
       <div class="dashboard-header">
         <div>
           <h2 id="dashTitle">Informe Generado</h2>
-          <span id="dashSubtitle" style="color: var(--text-muted); font-size: 0.875rem;"></span>
+          <span id="dashSubtitle" style="color: #64748b; font-size: 0.875rem;"></span>
         </div>
-        <button class="btn-reset" onclick="resetUI()">← Nueva consulta</button>
+        <div>
+          <button class="btn-reset" onclick="analizar(true)" style="background:#00C2D4; color:#000; font-weight:700; margin-right:8px;">Recargar Sin Caché</button>
+          <button class="btn-reset" onclick="resetUI()">← Nueva consulta</button>
+        </div>
       </div>
 
-      <div class="dashboard-content" id="dashboardContent">
-        <!-- Contenido dinámico -->
-      </div>
+      <div id="dashboardContent"></div>
     </section>
   </main>
 
   <script>
     let loadInterval;
+    const CH = {};
 
-    function setChip(val) {
-      document.getElementById('nombreInput').value = val;
-    }
+    function setChip(val) { document.getElementById('nombreInput').value = val; }
 
     function resetUI() {
       document.getElementById('searchSection').style.display = 'block';
@@ -114,46 +185,27 @@
     }
 
     function startLoad() {
-      const msgs = [
-        "Consultando fuentes públicas y registros...",
-        "Ejecutando modelo de extracción estructurada...",
-        "Validando formato JSON del Skill...",
-        "Generando métricas visuales..."
-      ];
+      const msgs = ["Extrayendo fuentes...", "Interpretando gráficos...", "Ensamblando RADAR..."];
       let idx = 0;
       const msgEl = document.getElementById('loadingMessage');
       msgEl.textContent = msgs[0];
-      
       loadInterval = setInterval(() => {
         idx = (idx + 1) % msgs.length;
         msgEl.textContent = msgs[idx];
-      }, 2500);
-    }
-
-    function stopLoad() {
-      clearInterval(loadInterval);
+      }, 2000);
     }
 
     async function analizar(forceRefresh = false) {
-      const nombreInput = document.getElementById('nombreInput');
-      const skillSelect = document.getElementById('skillSelect');
-      const mesSelect = document.getElementById('mesSelect');
-      const anioSelect = document.getElementById('anioSelect');
-      
-      const nombre = nombreInput.value.trim();
-      const skill = skillSelect.value;
-      const fecha = `${mesSelect.value} ${anioSelect.value}`;
+      const nombre = document.getElementById('nombreInput').value.trim();
+      const skill = document.getElementById('skillSelect').value;
+      const fecha = `${document.getElementById('mesSelect').value} ${document.getElementById('anioSelect').value}`;
 
-      if (!nombre) { 
-        nombreInput.focus(); 
-        return; 
-      }
+      if (!nombre) { document.getElementById('nombreInput').focus(); return; }
 
       document.getElementById('searchSection').style.display = 'none';
       document.getElementById('dashboard').classList.remove('show');
       document.getElementById('errorWrap').classList.remove('show');
       document.getElementById('loadingWrap').classList.add('show');
-      document.getElementById('btnAnalizar').disabled = true;
       
       startLoad();
 
@@ -165,80 +217,106 @@
         });
 
         const data = await res.json();
-        stopLoad();
+        clearInterval(loadInterval);
         document.getElementById('loadingWrap').classList.remove('show');
-        document.getElementById('btnAnalizar').disabled = false;
 
         if (!res.ok || data.error) {
           document.getElementById('errorWrap').classList.add('show');
-          document.getElementById('errorText').textContent = data.error || 'Error desconocido al invocar la API.';
+          document.getElementById('errorText').textContent = data.error || 'Error al invocar API.';
           return;
         }
 
-        renderDashboard(data, skill, nombre, fecha);
+        renderRadarDashboard(data, skill, fecha);
       } catch (err) {
-        stopLoad();
+        clearInterval(loadInterval);
         document.getElementById('loadingWrap').classList.remove('show');
         document.getElementById('errorWrap').classList.add('show');
         document.getElementById('errorText').textContent = err.message;
-        document.getElementById('btnAnalizar').disabled = false;
       }
     }
 
- function renderDashboard(data, skill, nombre, fecha) {
-  const dash = document.getElementById('dashboard');
-  const content = document.getElementById('dashboardContent');
-  
-  document.getElementById('dashTitle').textContent = `Informe: ${skill.toUpperCase()}`;
-  document.getElementById('dashSubtitle').textContent = `Sujeto: ${data.nombre || nombre} | Periodo: ${fecha}`;
+    function renderRadarDashboard(data, skill, fecha) {
+      document.getElementById('dashTitle').textContent = `${data.nombre || 'Actor'}`;
+      document.getElementById('dashSubtitle').textContent = `${data.cargo || ''} | Periodo: ${fecha} | Skill: ${skill.toUpperCase()}`;
 
-  // 1. Renderizado de Tags
-  const tagsHTML = (data.tags || []).map(t => `<span class="chip" style="margin-right: 0.5rem; display: inline-block;">${t}</span>`).join('');
+      const content = document.getElementById('dashboardContent');
 
-  // 2. Renderizado de KPIs principales
-  const kpisHTML = (data.kpis_ampliados || []).map(kpi => `
-    <div style="background: rgba(255,255,255,0.05); padding: 1.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-      <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em;">${kpi.label}</div>
-      <div style="font-size: 1.8rem; font-weight: bold; margin: 0.5rem 0; color: #fff;">${kpi.valor}</div>
-      <div style="font-size: 0.75rem; color: #718096;">${kpi.nota || ''}</div>
-    </div>
-  `).join('');
+      // 1. Render KPIs principales arriba
+      const kpisHTML = (data.kpis_ampliados || []).map(k => `
+        <div class="kpi-card">
+          <div class="kpi-lbl">${k.label}</div>
+          <div class="kpi-val">${k.valor}</div>
+          <div style="font-size:9px;color:#64748b">${k.nota || ''}</div>
+        </div>
+      `).join('');
 
-  // 3. Renderizado de Hallazgos / Insights
-  const hallazgosHTML = (data.hallazgos_sentimiento || []).map(h => `
-    <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border-left: 4px solid #3182ce; margin-bottom: 0.75rem;">
-      <strong style="display: block; color: #edf2f7; font-size: 0.95rem;">${h.titulo}</strong>
-      <p style="margin: 0.25rem 0; font-size: 0.85rem; color: #cbd5e0;">${h.cuerpo}</p>
-      <small style="color: #63b3ed; font-style: italic;">Insight: ${h.insight}</small>
-    </div>
-  `).join('');
+      content.innerHTML = `
+        <div class="kpi-grid">${kpisHTML}</div>
 
-  // Ensamble final de la interfaz
-  content.innerHTML = `
-    <!-- Perfil del Actor -->
-    <div style="margin-bottom: 2rem;">
-      <h3 style="font-size: 1.25rem; margin-bottom: 0.25rem; color: #fff;">${data.nombre || nombre}</h3>
-      <p style="color: #a0aec0; font-size: 0.9rem; margin-bottom: 0.75rem;">${data.cargo || ''}</p>
-      <div>${tagsHTML}</div>
-    </div>
+        <div class="tabs">
+          <button class="tb act" onclick="switchTab(this, 'kpis')">KPIs & CRUCES</button>
+          <button class="tb" onclick="switchTab(this, 'sent')">SENTIMIENTO</button>
+          <button class="tb" onclick="switchTab(this, 'plat')">PLATAFORMAS</button>
+        </div>
 
-    <!-- Rejilla de KPIs -->
-    <h4 style="margin-bottom: 1rem; color: #e2e8f0;">Métricas Reputacionales</h4>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2.5rem;">
-      ${kpisHTML}
-    </div>
+        <div id="tab-kpis" class="tsec show">
+          <div class="stitle">ANÁLISIS BIVARIADO BASE</div>
+          <div class="cg">
+            <div class="card"><div class="ct">Aprobación por Partido</div><canvas id="c-par"></canvas></div>
+            <div class="card"><div class="ct">Sentimiento por Edad</div><canvas id="c-edad"></canvas></div>
+          </div>
+        </div>
 
-    <!-- Sección de Hallazgos clave -->
-    ${data.hallazgos_sentimiento ? `
-      <h4 style="margin-bottom: 1rem; color: #e2e8f0;">Hallazgos Estratégicos</h4>
-      <div style="margin-bottom: 2rem;">
-        ${hallazgosHTML}
-      </div>
-    ` : ''}
-  `;
+        <div id="tab-sent" class="tsec">
+          <div class="stitle">DESGLOSE DE SENTIMIENTO</div>
+          <div class="cg">
+            <div class="card"><div class="ct">Distribución General</div><canvas id="c-sent-gen"></canvas></div>
+            <div class="card"><div class="ct">Clima Político</div><canvas id="c-sent-clima"></canvas></div>
+          </div>
+        </div>
 
-  dash.classList.add('show');
-}
+        <div id="tab-plat" class="tsec">
+          <div class="stitle">MÉTRICAS POR PLATAFORMA</div>
+          <div class="cg">
+            <div class="card"><div class="ct">Alcance Estimado</div><canvas id="c-plat-alc"></canvas></div>
+            <div class="card"><div class="ct">Tono de Menciones</div><canvas id="c-plat-tono"></canvas></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('dashboard').classList.add('show');
+
+      // Dibujar Gráficos Chart.js de forma segura
+      setTimeout(() => {
+        mkChart('c-par', 'bar', data.kpis_bivariados?.nps_partido?.labels || [], data.kpis_bivariados?.nps_partido?.data || [], '#1B4F8A');
+        mkChart('c-edad', 'bar', data.sentimiento?.edad?.labels || [], data.sentimiento?.edad?.data || [], '#2EC4B6');
+        mkChart('c-sent-gen', 'pie', data.sentimiento?.general?.labels || [], data.sentimiento?.general?.data || [], ['#2EC4B6', '#94A3B8', '#E63946', '#F4C430']);
+        mkChart('c-sent-clima', 'doughnut', data.sentimiento?.clima_general?.labels || [], data.sentimiento?.clima_general?.data || [], ['#1B4F8A', '#2EC4B6', '#E63946', '#94A3B8']);
+        mkChart('c-plat-alc', 'bar', data.plataformas?.alcance?.labels || [], data.plataformas?.alcance?.data || [], '#1C2738');
+        mkChart('c-plat-tono', 'bar', data.plataformas?.tono?.labels || [], data.plataformas?.tono?.positivo || [], '#2EC4B6');
+      }, 100);
+    }
+
+    function switchTab(btn, tabId) {
+      document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
+      document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
+      btn.classList.add('act');
+      document.getElementById('tab-' + tabId).classList.add('show');
+    }
+
+    function mkChart(id, type, labels, data, colors) {
+      if (CH[id]) CH[id].destroy();
+      const el = document.getElementById(id);
+      if (!el) return;
+      CH[id] = new Chart(el, {
+        type: type,
+        data: {
+          labels: labels,
+          datasets: [{ data: data, backgroundColor: colors }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
   </script>
 </body>
 </html>
