@@ -1,0 +1,712 @@
+<!-- =========================================================
+  EMOCIONES DASHBOARD TEMPLATE v2.0
+  Sistema de Humor Social Emocional — Plutchik Framework
+  ========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EMOCIONES — Dashboard Político</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#ffffff;
+  --bg-card:#d5d1d1;
+  --bg-card2:#d5d1d1;
+  --bg-hdr:#1C2738;
+  --brd:#bcba00;
+  --brd2:#b5b0b0;
+  --tx1:#1e293b;
+  --tx2:#334155;
+  --tx3:#475569;
+  --blue:#1C2738;
+  --blue2:#3b82f6;
+  --red:#dc2626;--red-s:#991b1b;--red-bg:rgba(220,38,38,.12);
+  --org:#ea580c;--org-s:#9a3412;--org-bg:rgba(234,88,12,.12);
+  --ylw:#ca8a04;--ylw-bg:rgba(202,138,4,.12);
+  --grn:#16a34a;--grn-s:#166534;--grn-bg:rgba(22,163,74,.12);
+  --pur:#9333ea;--pur-bg:rgba(147,51,234,.12);
+  --tel:#0891b2;--tel-bg:rgba(8,145,178,.12);
+  --ac: #00C2D4;
+  --hdrblue: #1C2738;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+
+/* HEADER */
+.hdr { background: var(--hdrblue); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 18px 24px; position: sticky; top: 0; backdrop-filter: blur(12px); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+.hdr-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1.2; text-transform: uppercase; }
+.hdr-name span { color: var(--ac); }
+.hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; font-weight: 500; }
+
+.hdr-date-badge{font-size:12px;background:rgba(255,255,255,.1);color:#f1f5f9;padding:6px 14px;border-radius:20px;font-weight:600;letter-spacing:.02em;border:1px solid rgba(255,255,255,.2)}
+.badges{display:none;}
+.badge{font-size:10px;padding:3px 10px;border-radius:4px;font-weight:700;letter-spacing:.04em;border:1px solid}
+.b-red{background:var(--red-bg);color:var(--red-s);border-color:var(--red)}
+.b-org{background:var(--org-bg);color:var(--org-s);border-color:var(--org)}
+.b-blu{background:rgba(28,39,56,.15);color:var(--blue);border-color:var(--blue)}
+.b-pur{background:var(--pur-bg);color:var(--pur);border-color:var(--pur)}
+.b-grn{background:var(--grn-bg);color:var(--grn-s);border-color:var(--grn)}
+.pulse{animation:PULSE 1.5s infinite}
+@keyframes PULSE{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* TABS */
+.tabs{display:flex;overflow-x:auto;border-bottom:2px solid #e2e8f0;padding:0 2rem;background:#ffffff}
+.tab{font-size:12px;font-weight:700;letter-spacing:.02em;padding:.8rem 1.2rem;color:var(--tx3);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .18s}
+.tab:hover{color:var(--tx1);background:#f8fafc}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* CONTENT */
+.cnt{padding:1.4rem 2rem;background:var(--bg)}
+.pnl{display:none}
+.pnl.on{display:block}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+.gauto{display:grid;grid-template-columns:430px 1fr;gap:1.2rem;align-items:start}
+
+/* CARDS */
+.card{background:var(--bg-card);border:1px solid var(--brd2);border-radius:10px;padding:1.1rem 1.2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.card2{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1.1rem 1.2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.cv{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.55rem}
+.cval{font-size:2rem;font-weight:800;line-height:1;color:var(--tx1)}
+.csub{font-size:11px;color:var(--tx2);margin-top:.3rem}
+
+/* SEC LABEL */
+.sl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tx1);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--brd2)}
+
+/* EMOTION ROWS */
+.emr{padding:9px 0;border-bottom:1px solid var(--brd2);cursor:pointer;transition:background .12s;border-radius:4px}
+.emr:hover{background:rgba(0,0,0,.03)}
+.emr:last-child{border-bottom:none}
+.emh{display:flex;align-items:center;gap:7px}
+.emd-box{display:none;margin-top:8px;margin-left:17px;background:rgba(255,255,255,.6);border-radius:6px;padding:8px 10px;border:1px solid var(--brd2)}
+.emd-box.open{display:block}
+.edk{font-size:10.5px;font-weight:700;color:var(--tx1);margin-bottom:3px}
+.edv{font-size:11px;color:var(--tx2);line-height:1.6}
+
+/* DYAD CARDS */
+.dyc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1rem 1.1rem;border-top:4px solid}
+.dyn{font-size:14px;font-weight:800;margin-bottom:3px}
+.dyf{font-size:11px;color:var(--tx3);font-style:italic;margin-bottom:7px}
+.dyt{font-size:12px;color:var(--tx2);line-height:1.6}
+.dybadge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;float:right;margin-top:-2px}
+
+/* MAPA */
+.mpc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:.9rem 1rem}
+.mptt{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.mpi{font-size:12px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--brd2);display:flex;align-items:flex-start;gap:6px}
+.mpi:last-child{border-bottom:none}
+.mpd{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+
+/* QUOTES */
+.qi{padding:9px 0;border-bottom:1px solid var(--brd2)}
+.qi:last-child{border-bottom:none}
+.qt{font-size:12.5px;font-style:italic;color:var(--tx1);line-height:1.55}
+.qt::before{content:'"';color:var(--blue);font-style:normal;font-weight:700}
+.qt::after{content:'"';color:var(--blue);font-style:normal;font-weight:700}
+.qm{font-size:10.5px;color:var(--tx3);margin-top:3px;font-weight:600}
+
+/* BUYER PERSONA — SEGMENTA */
+.bp-card{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:12px;overflow:hidden;margin-bottom:1rem}
+.bp-head{padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;color:#fff}
+.bp-tipo{font-size:10px;font-weight:800;letter-spacing:.1em;opacity:.9}
+.bp-arquetipo{font-size:18px;font-weight:800}
+.bp-subtitulo{font-size:11.5px;opacity:.9;margin-top:2px}
+.bp-meta{text-align:right;font-size:11px}
+.bp-peso{font-size:20px;font-weight:800}
+.bp-persuab{font-size:10px;font-weight:700;padding:2px 9px;border-radius:5px;background:rgba(255,255,255,.25);margin-top:3px;display:inline-block}
+.bp-quote{padding:.85rem 1.2rem;font-size:13px;font-style:italic;color:var(--tx1);border-left:4px solid;background:rgba(255,255,255,.4)}
+.bp-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--brd2)}
+.bp-col{padding:1rem 1.1rem;border-right:1px solid var(--brd2)}
+.bp-col:last-child{border-right:none}
+.bp-col-tt{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:.6rem}
+.bp-row{font-size:11.5px;color:var(--tx2);padding:4px 0;line-height:1.55}
+.bp-row b{color:var(--tx1);font-weight:700}
+.bp-tags{display:flex;flex-wrap:wrap;gap:5px;margin:.3rem 0}
+.bp-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.08);color:var(--tx1);font-weight:600}
+.bp-foot{padding:.7rem 1.2rem;border-top:1px solid var(--brd2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;font-size:11px;color:var(--tx3);background:rgba(0,0,0,.02)}
+
+@media(max-width:780px){.bp-cols{grid-template-columns:1fr}.bp-col{border-right:none;border-bottom:1px solid var(--brd2)}}
+
+/* SEMAFORO */
+.sem{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd2)}
+.sem:last-child{border-bottom:none}
+.semd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.seml{font-size:12px;color:var(--tx2);flex:1;font-weight:500}
+.semv{font-size:12px;font-weight:800}
+
+/* ACTOR CARD */
+.ac{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;overflow:hidden}
+.ach{padding:.9rem 1.1rem;border-bottom:1px solid var(--brd2);background:rgba(255,255,255,.3)}
+.acn{font-size:14px;font-weight:800;color:var(--tx1)}
+.acr{font-size:11px;color:var(--tx3);margin-top:2px;font-weight:600}
+.acb{padding:.9rem 1.1rem}
+.acrow{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd2);font-size:12px}
+.acrow:last-child{border-bottom:none}
+.ack{color:var(--tx3);font-size:11px;font-weight:700}
+.acv{color:var(--tx1);font-weight:600;text-align:right;max-width:65%}
+
+/* CONCEPTO */
+.cbox{background:linear-gradient(135deg,rgba(28,39,56,.08),rgba(59,130,246,.08));border:1px solid var(--brd2);border-radius:12px;padding:1.2rem 1.4rem;border-left:5px solid var(--blue)}
+.cbox-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:.35rem}
+.cbox-name{font-size:21px;font-weight:800;color:var(--tx1);margin-bottom:.45rem}
+.cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72}
+
+/* CHART */
+.cw{position:relative}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#f1f5f9}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+.footer { background: #1C2738; border-top: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 40px; border-radius: 4px; }
+
+/* RESPONSIVE */
+@media(max-width:780px){
+  .gauto,.g2,.g3,.g4{grid-template-columns:1fr}
+  .hdr-name{font-size:1.4rem}
+  .cnt{padding:1rem}
+  .hdr-body,.badges{padding-left:1rem;padding-right:1rem}
+  .tabs{padding:0 1rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ HEADER -->
+
+<header class="hdr">
+  <div>
+    <h1 class="hdr-name" id="hdr-actor-title">CARGANDO...</h1>
+    <p class="hdr-sub" id="hdr-actor-sub">Analizando datos de percepción y humor social...</p>
+  </div>
+  <div>
+    <div class="hdr-date-badge" id="hdr-date">Cargando...</div>
+  </div>
+</header>
+
+<div class="badges" id="hdr-badges" style="display:none;"></div>
+<div class="tabs">
+  <div class="tab on"  onclick="ST('flor',this)">🌸 Flor de Emociones</div>
+  <div class="tab"     onclick="ST('mapa',this)">🗺 Mapa Social</div>
+  <div class="tab"     onclick="ST('diadas',this)">⚡ Díadas</div>
+  <div class="tab"     onclick="ST('identidad',this)">🏛 Identidad Política</div>
+  <div class="tab"     onclick="ST('actores',this)">👤 Actores</div>
+  <div class="tab"     onclick="ST('segmenta',this)">🧩 Segmentos y Perfiles</div>
+</div>
+
+<!-- ══════════════════════════════════════════════ CONTENT -->
+<div class="cnt">
+
+<!-- KPIs -->
+<div class="g4" style="margin-bottom:1rem; display:none;" id="kpis"></div>
+
+<!-- FLOR -->
+<div class="pnl on" id="pnl-flor">
+  <div class="gauto" style="margin-bottom:1rem">
+    <div>
+      <div class="sl">Rueda de Plutchik — <span id="whl-territory"></span></div>
+      <div class="card" style="padding:.8rem;text-align:center">
+        <div id="wheel-wrap"></div>
+        <div style="font-size:10px;color:var(--tx3);margin-top:.4rem;font-weight:600">Toca cualquier pétalo activo para ver detalles</div>
+      </div>
+      <div class="card" style="margin-top:.75rem;padding:.75rem 1rem">
+        <div class="cv">Leyenda de Intensidad</div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:5px"><div id="leg-hi" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2);font-weight:600">Alta ●●●</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div id="leg-md" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2);font-weight:600">Media ●●○</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#94a3b8"></div><span style="font-size:11px;color:var(--tx2);font-weight:600">Inactiva ○○○</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sl">Emociones Activas — clic para expandir</div>
+      <div class="card" id="em-list"></div>
+      <div class="card" style="margin-top:.75rem;padding:.9rem 1rem">
+        <div class="sl" style="margin-bottom:.5rem">Emociones Secundarias (Latentes)</div>
+        <div id="em-sec"></div>
+      </div>
+    </div>
+  </div>
+  <div class="cbox" style="margin-bottom:1rem" id="concepto-box"></div>
+  <div class="card">
+    <div class="sl">Distribución de Intensidad Emocional</div>
+    <div class="cw" style="height:200px"><canvas id="ch-intens" role="img" aria-label="Intensidad emocional por emoción"></canvas></div>
+  </div>
+</div>
+
+<!-- MAPA -->
+<div class="pnl" id="pnl-mapa">
+  <div class="g3" style="margin-bottom:1rem" id="mapa-cols"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Frases Ciudadanas</div><div id="quotes"></div></div>
+    <div class="card">
+      <div class="sl">Emociones por Temática</div>
+      <div class="cw" style="height:260px"><canvas id="ch-temas" role="img" aria-label="Emociones por temática"></canvas></div>
+    </div>
+  </div>
+  <div class="card"><div class="sl">Semáforo Emocional del Territorio</div><div class="g3" id="semaforo"></div></div>
+</div>
+
+<!-- DÍADAS -->
+<div class="pnl" id="pnl-diadas">
+  <div class="g3" style="margin-bottom:1rem" id="dyad-cards"></div>
+  <div class="g2">
+    <div class="card">
+      <div class="sl">Score de Riesgo por Díada</div>
+      <div class="cw" style="height:220px"><canvas id="ch-diadas" role="img" aria-label="Riesgo por díada"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sl">Interpretación Estratégica</div>
+      <div id="dyad-interp" style="font-size:12.5px;color:var(--tx2);line-height:1.75;margin-top:.3rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- IDENTIDAD -->
+<div class="pnl" id="pnl-identidad">
+  <div class="cbox" style="margin-bottom:1rem" id="id-pregunta"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Percepción del Gobierno Municipal</div><div id="gov-sem"></div></div>
+    <div class="card">
+      <div class="sl">Carga Emocional por Partido</div>
+      <div class="cw" style="height:220px"><canvas id="ch-partidos" role="img" aria-label="Emociones por partido"></canvas></div>
+    </div>
+  </div>
+  <div class="card"><div class="sl">Percepción Ciudadana por Partido</div><div id="partidos-tbl"></div></div>
+</div>
+
+<!-- ACTORES -->
+<div class="pnl" id="pnl-actores">
+  <div class="g2" style="margin-bottom:1rem" id="actores-grid"></div>
+  <div class="card">
+    <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
+    <div class="cw" style="height:280px"><canvas id="ch-actores" role="img" aria-label="Posicionamiento emocional de actores"></canvas></div>
+  </div>
+</div>
+
+<!-- SEGMENTOS Y PERFILES (SEGMENTA — 4 Buyer Personas Electorales) -->
+<div class="pnl" id="pnl-segmenta">
+  <div id="segmenta-personas"></div>
+</div>
+
+</div><!-- /cnt -->
+
+<div class="footer">
+  <span id="ft-actor">SIE - Emociones</span>
+  <span>CONFIDENCIAL &middot; Uso estratégico exclusivo &middot; </span>
+</div>
+
+<!-- ══════════════════════════════════════════════ DATA ENGINE & INTEGRATOR -->
+<script>
+// 1. OBTENER PARÁMETROS URL
+const urlParams = new URLSearchParams(window.location.search);
+const ACTOR = urlParams.get('actor') || 'Alfredo Ramírez Bedolla';
+const MES = urlParams.get('mes') || 'Julio';
+const ANIO = urlParams.get('anio') || '2026';
+
+// Split de nombre e iniciales
+const nameParts = ACTOR.split(' ');
+const firstName = nameParts[0] || 'ACTOR';
+const lastName = nameParts.slice(1).join(' ') || '';
+
+// 2. DATOS POR DEFECTO / PLANTILLA DINÁMICA
+let D = {
+  territory: ACTOR,
+  subtitle: `Análisis de Humor Social Emocional · ${MES} ${ANIO}`,
+  date: `${MES} ${ANIO}`,
+  riskLevel: "ALTO",
+  concept: `Percepción Pública de ${firstName}`,
+  conceptDesc: `Clima emocional dinámico asociado a la gestión y figura pública de ${ACTOR}. La medición refleja las tensiones sociales y expectativas ciudadanas del periodo evaluado.`,
+
+  emotions: [
+    { key:"ira", label:"Ira / Furia", active:true, intensity:3, deg:180, color:["#FEE2E2","#FCA5A5","#B91C1C"], sublabel:"Furia · Ira · Enfado", triggers:[`Críticas sobre avances en la gestión de ${ACTOR}`, "Descontento con servicios y seguridad"], consequences:["Peticiones y manifestaciones de protesta", "Escrutinio mediático alto"] },
+    { key:"miedo", label:"Miedo / Terror", active:true, intensity:2, deg:0, color:["#CFFAFE","#67E8F9","#0E7490"], sublabel:"Terror · Miedo · Temor", triggers:["Percepción de inseguridad", "Incertidumbre socioeconómica"], consequences:["Demanda de mayor presencia policial", "Desconfianza en el entorno"] },
+    { key:"anticipacion", label:"Anticipación", active:true, intensity:3, deg:225, color:["#FFEDD5","#FDba74","#C2410C"], sublabel:"Vigilancia · Anticipación · Interés", triggers:[`Anuncios de nuevos proyectos por ${ACTOR}`, "Próximos eventos del calendario político"], consequences:["Alta atención de medios y opinión pública", "Debate sobre el cumplimiento de compromisos"] },
+    { key:"tristeza", label:"Tristeza", active:true, intensity:2, deg:90, color:["#EDE9FE","#A78BFA","#4C1D95"], sublabel:"Aflicción · Tristeza · Melancolía", triggers:["Necesidades no resueltas en colonias periféricas", "Costo de vida elevado"], consequences:["Apatía y desafección hacia el proceso político", "Normalización de problemas"] },
+    { key:"asco", label:"Asco / Aversión", active:true, intensity:1, deg:135, color:["#DCFCE7","#86EFAC","#15803D"], sublabel:"Aversión · Asco · Aburrimiento", triggers:["Cuestionamiento sobre opacidad en trámites"], consequences:["Demanda constante de transparencia"] },
+    { key:"alegria", label:"Alegría", active:false, intensity:0, deg:-90, color:["#FFF9C4","#FFF176","#F9A825"], sublabel:"Éxtasis · Alegría · Serenidad", triggers:[], consequences:[] },
+    { key:"confianza", label:"Confianza", active:false, intensity:0, deg:-45, color:["#D1FAE5","#6EE7B7","#059669"], sublabel:"Admiración · Confianza · Aceptación", triggers:[], consequences:[] },
+    { key:"sorpresa", label:"Sorpresa", active:true, intensity:1, deg:45, color:["#DBEAFE","#93C5FD","#2563EB"], sublabel:"Asombro · Sorpresa · Distracción", triggers:[`Declaraciones recientes de ${lastName || firstName}`], consequences:["Reacciones en redes sociales"] }
+  ],
+
+  secondary: [
+    { name:"Expectativa Vigilante", color:"#2563EB", text:`Aumento del interés crítico por el seguimiento de propuestas clave presentadas por ${ACTOR}.` },
+    { name:"Reserva Ciudadana", color:"#059669", text:"Mantenida por simpatizantes de la base dura que valoran la continuidad, frente a la volatilidad del humor social." }
+  ],
+
+  dyads: [
+    { name:"Escrutinio Crítico", formula:"Ira + Anticipación", type:"Primaria", text:`Combinación de malestar y vigilancia constante ante el desempeño de ${ACTOR}.`, risk:"CRÍTICO", score:82 },
+    { name:"Anhelos de Cambio", formula:"Miedo + Anticipación", type:"Secundaria", text:"Incertidumbre combinada con el deseo de soluciones visibles en el corto plazo.", risk:"ALTO", score:70 },
+    { name:"Apatía Acumulada", formula:"Tristeza + Asco", type:"Secundaria", text:"Saturación de promesas políticas no cumplidas en periodos anteriores.", risk:"MEDIO", score:58 }
+  ],
+  dyadInterp: `Las emociones y díadas activas señalan una etapa donde la opinión pública demanda avances tangibles. El posicionamiento de ${ACTOR} dependerá de su capacidad para transformar la anticipación de la ciudadanía en credibilidad con resultados medibles.`,
+
+  problematics: ["Obras públicas incompletas o lentas","Percepción de inseguridad ciudadana","Deficiencias en servicios básicos","Demandas económicas no atendidas"],
+  fears: ["Incremento de incidentes de inseguridad","Falta de respuesta gubernamental efectiva","Afectación a la economía familiar"],
+  prides: ["Identidad local y cultural","Capacidad de respuesta y organización comunitaria","Iniciativas de participación ciudadana"],
+
+  quotes: [
+    { text:`Esperamos resultados concretos de las obras anunciadas por ${ACTOR}.`, topic:"Infraestructura", emotion:"Anticipación", territory:"Distrito Central" },
+    { text:"La seguridad debe seguir siendo la prioridad principal.", topic:"Seguridad", emotion:"Miedo", territory:"Zona Norte" },
+    { text:"Hay temas de trámites y respuesta que aún deben mejorar bastante.", topic:"Atención", emotion:"Ira", territory:"Zona Sur" }
+  ],
+
+  semaforo: [
+    { label:"Estado emocional general", val:"MEDIO-ALTO", color:"#ea580c" },
+    { label:"Riesgo de desgaste de imagen", val:"72", color:"#dc2626" },
+    { label:"Exigencia de rendición de cuentas", val:"80", color:"#ea580c" },
+    { label:"Capital de confianza positivo", val:"28%", color:"#ca8a04" },
+    { label:"Legitimidad percibida", val:"Baja-Media", color:"#ea580c" },
+    { label:"Capacidad de respuesta percibida", val:"48%", color:"#ca8a04" }
+  ],
+
+  preguntaPolitica: `¿Logrará ${ACTOR} consolidar sus compromisos en el periodo actual?`,
+  preguntaDesc: "La ciudadanía se orienta a evaluar el impacto real y diario de la gestión más allá de las narrativas institucionales.",
+
+  govSemaforo: [
+    { label:`Evaluación general de ${ACTOR}`, val:"Bajo escrutinio", color:"#ea580c" },
+    { label:"Manejo de infraestructura", val:"Regular", color:"#ca8a04" },
+    { label:"Percepción de seguridad", val:"Atención requerida", color:"#dc2626" },
+    { label:"Cercanía con la ciudadanía", val:"Moderada", color:"#ca8a04" }
+  ],
+
+  partidos: [
+    { nombre:"Oficialismo", emocion:"Confianza parcial / Exigencia", capital:"Medio", tendencia:"→ Estable bajo presión", color:"#2563EB" },
+    { nombre:"Oposición Principal", emocion:"Ira / Oportunidad", capital:"Medio", tendencia:"↑ Capitaliza desgastes", color:"#ea580c" },
+    { nombre:"Fuerzas Independientes", emocion:"Anticipación / Búsqueda", capital:"Bajo-Medio", tendencia:"↑ Espacio en crecimiento", color:"#0891b2" }
+  ],
+  partidosChart: [[55,30,15],[30,60,10],[20,35,45]],
+
+  actores: [
+    { name: ACTOR, role: `Figura evaluada · Periodo: ${MES} ${ANIO}`, partido: "Oficialismo", borderColor: "#2563EB",
+      rows:[["Fortaleza","Capacidad de convocatoria y presencia mediática"],
+            ["Debilidad","Escrutinio alto en ejecución de proyectos"],
+            ["Oportunidad","Entregas de impacto social y obras clave"],
+            ["Amenaza","Acumulación de demandas sociales no resueltas"],
+            ["Emoción principal","Anticipación e Ira (destino focal)"],
+            ["Riesgo reputacional","Medio-Alto"]] },
+    { name: "Oposición / Críticos", role: "Bloque de Contraste", partido: "Oposición", borderColor: "#ea580c",
+      rows:[["Fortaleza","Capacidad de amplificación de fallas gubernamentales"],
+            ["Debilidad","Propuestas alternativas poco claras"],
+            ["Oportunidad","Capitalizar el descontento de sectores indecisos"],
+            ["Amenaza","Fragmentación interna"],
+            ["Emoción principal","Ira impulsora"],
+            ["Riesgo reputacional","Bajo"]] }
+  ],
+  actoresRadar: { labels:[ACTOR, "Oposición Principal", "Independientes"],
+    data:[[60,70,40,75,65,50],[40,55,30,80,45,40],[30,35,50,40,40,60]],
+    colors:["#2563EB","#ea580c","#0891b2"] },
+
+  segmentos: [
+    { tipo:"S1", arquetipo:"El Ciudadano Exigente", subtitulo:"Elector Fluido / Indeciso", peso:"35%", persuabilidad:"ALTA", color:"#1A3A5C",
+      fraseEmblema:"Queremos ver hechos reales, no solo discursos políticos.",
+      perfil:{ edad:"25-50 años", zona:"Centros urbanos", ocupacion:"Comercio / Profesionales / Empleados", escolaridad:"Media / Superior", digital:"Redes sociales (X, Facebook, WhatsApp)", historialElectoral:"Voto volátil según desempeño" },
+      emocional:{ emocion:"Anticipación + Ira contenida", vidaCotidiana:"Siente el impacto de los servicios y el costo de vida.", tension:"Exigencia de resultados inmediatos", dolor:"Incertidumbre económica", miedo:"Estancamiento de proyectos", orgullo:"Pertenencia y arraigo a su comunidad", narrativa:"Exijo cumplimiento de compromisos" },
+      estrategia:{ problematicas:["Infraestructura","Seguridad","Transparencia"], orgulloComunitario:"Trabajo y esfuerzo local", consumoDigital:"Formatos cortos y noticias en redes", loAcerca:"Evidencia física de trabajo", loAleja:"Promesas sin sustento", frame:"Gestión basada en hechos", palanca:"Comunicación de avance de obras" },
+      vector:{ canal:"Redes Sociales y WhatsApp", tono:"Directo y transparente", formato:"Video / Infografía" } },
+    { tipo:"S2", arquetipo:"El Base Leal", subtitulo:"Identidad de Apoyo", peso:"25%", persuabilidad:"BAJA", color:"#4338CA",
+      fraseEmblema:`Creemos en el proyecto de ${firstName} y su equipo.`,
+      perfil:{ edad:"35-65 años", zona:"Zonas populares", ocupacion:"Trabajadores independientes / Líderes locales", escolaridad:"Básica / Media", digital:"Facebook / Grupos vecinales", historialElectoral:"Voto constante con el oficialismo" },
+      emocional:{ emocion:"Confianza + Orgullo", vidaCotidiana:"Participa activamente en asambleas y redes de apoyo.", tension:"Defensa de los programas sociales", dolor:"Falta de respaldo mediático", miedo:"Pérdida de continuidad gubernamental", orgullo:"Logros sociales alcanzados", narrativa:"Consolidar el proyecto en marcha" },
+      estrategia:{ problematicas:["Atención social","Servicios locales"], orgulloComunitario:"Organización vecinal", consumoDigital:"Facebook y canal directo", loAcerca:"Atención personalizada y presencia en territorio", loAleja:"Distanciamiento institucional", frame:"Continuidad y avance", palanca:"Activación comunitaria" },
+      vector:{ canal:"Encuentros en territorio y Facebook", tono:"Cercano y optimista", formato:"Mítines / Asambleas" } }
+  ],
+
+  temasChart: [["Infraestructura y servicios",35,"#B91C1C"],["Seguridad y justicia",30,"#0E7490"],["Transparencia / Desempeño",20,"#4C1D95"],["Economía / Empleo",15,"#C2410C"]]
+};
+
+/* ── ACTUALIZAR HEADER CON DATOS ────────────────────────────────── */
+function updateHeader() {
+  document.getElementById("hdr-actor-title").innerHTML = `${firstName} <span>${lastName}</span>`;
+  document.getElementById("hdr-actor-sub").innerText = `Análisis de Percepción Emocional · Periodo: ${MES} ${ANIO}`;
+  document.getElementById("hdr-date").innerText = `Monitoreo Activo · ${MES} ${ANIO}`;
+  document.getElementById("ft-actor").innerText = `SIE - Emociones · ${ACTOR} ·`;
+}
+
+/* ── CONFIGURACIÓN DE RIESGO ──────────────────────────────────────── */
+const RC={CRÍTICO:{bg:"var(--red-bg)",tx:"var(--red-s)",hex:"#dc2626"},
+          ALTO:   {bg:"var(--org-bg)",tx:"var(--org-s)",hex:"#ea580c"},
+          MEDIO:  {bg:"var(--ylw-bg)",tx:"#ca8a04",    hex:"#ca8a04"},
+          BAJO:   {bg:"var(--grn-bg)",tx:"var(--grn-s)",hex:"#16a34a"}};
+let rc = RC[D.riskLevel] || RC.ALTO;
+
+/* ── MANEJO DE TABS ──────────────────────────────────────────────── */
+function ST(id,el){
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('pnl-'+id).classList.add('on');
+  el.classList.add('on');
+}
+
+/* ── DIBUJAR RUEDA SVG DE PLUTCHIK ───────────────────────────────── */
+const CX=220,CY=220,R=[62,108,154,200],GAP=1.4;
+const rad=d=>d*Math.PI/180;
+const pt=(r,d)=>[CX+r*Math.cos(rad(d)),CY+r*Math.sin(rad(d))];
+function arc(r1,r2,s,e){
+  const a=s+GAP,b=e-GAP;
+  const[x1,y1]=pt(r1,a),[x2,y2]=pt(r2,a),[x3,y3]=pt(r2,b),[x4,y4]=pt(r1,b);
+  return`M${x1.toFixed(2)},${y1.toFixed(2)}L${x2.toFixed(2)},${y2.toFixed(2)}A${r2},${r2} 0 0,1 ${x3.toFixed(2)},${y3.toFixed(2)}L${x4.toFixed(2)},${y4.toFixed(2)}A${r1},${r1} 0 0,0 ${x1.toFixed(2)},${y1.toFixed(2)}Z`;
+}
+const IN=["#cbd5e1","#94a3b8","#64748b"];
+
+function buildWheel(){
+  let p="";
+  D.emotions.forEach(em=>{
+    const{active:ac,intensity:iv,color,deg,key,label}=em;
+    [1,2,3].forEach(i=>{
+      const fill=ac&&iv>=i?color[i-1]:IN[i-1];
+      p+=`<path d="${arc(R[i-1],R[i],deg,deg+45)}" fill="${fill}" stroke="#ffffff" stroke-width="2" ${ac?`onclick="toggleEm('${key}')" style="cursor:pointer"`:''}/>`;
+    });
+    const md=deg+22.5,lr=R[3]+23;
+    const[lx,ly]=pt(lr,md);
+    const an=Math.cos(rad(md))>.12?"start":Math.cos(rad(md))<-.12?"end":"middle";
+    p+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${an}" dominant-baseline="middle" font-size="11" font-family="-apple-system,sans-serif" fill="${ac?"#0f172a":"#64748b"}" font-weight="${ac?"700":"500"}" style="pointer-events:none">${label}</text>`;
+    if(ac&&iv===3){
+      const[bx,by]=pt(R[3]+6,md);
+      p+=`<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="5" fill="${color[2]}" style="pointer-events:none"><animate attributeName="opacity" values="1;.25;1" dur="1.6s" repeatCount="indefinite"/></circle>`;
+    }
+  });
+  return`<svg width="440" height="440" viewBox="0 0 440 440">${p}<circle cx="${CX}" cy="${CY}" r="${R[0]-4}" fill="#d5d1d1" stroke="#b5b0b0" stroke-width="1.5"/><text x="${CX}" y="${CY-7}" text-anchor="middle" font-size="9.5" font-family="-apple-system,sans-serif" fill="#334155" font-weight="800" letter-spacing="2">HUMOR</text><text x="${CX}" y="${CY+7}" text-anchor="middle" font-size="9.5" font-family="-apple-system,sans-serif" fill="#334155" font-weight="800" letter-spacing="2">SOCIAL</text></svg>`;
+}
+
+function toggleEm(key){
+  const d=document.getElementById("emd-"+key);
+  if(!d)return;
+  const open=d.classList.contains("open");
+  document.querySelectorAll(".emd-box").forEach(x=>x.classList.remove("open"));
+  if(!open)d.classList.add("open");
+}
+
+/* ── CONFIGURACIÓN GRÁFICOS CHART.JS ────────────────────────────── */
+const CD={responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{backgroundColor:"#1C2738",titleColor:"#ffffff",bodyColor:"#cbd5e1",borderColor:"#334155",borderWidth:1}},
+  scales:{x:{ticks:{color:"#334155",font:{size:11,weight:"600"}},grid:{color:"rgba(0,0,0,.06)"}},
+          y:{ticks:{color:"#334155",font:{size:11,weight:"600"}},grid:{color:"rgba(0,0,0,.06)"}}}};
+
+/* ── INICIALIZACIÓN Y RENDER ────────────────────────────────────── */
+function renderDashboard(){
+  updateHeader();
+
+  /* Rueda Plutchik Territorio Header */
+  document.getElementById("whl-territory").textContent = D.territory;
+  
+  /* Badges */
+  const rLabel=`● ${D.riskLevel}`;
+  const activeEm=D.emotions.filter(e=>e.active);
+  const neg=activeEm.filter(e=>["miedo","ira","tristeza","asco"].includes(e.key)).length;
+  const pos=activeEm.filter(e=>["alegria","confianza","anticipacion"].includes(e.key)).length;
+  const cap=neg+pos>0?Math.round(pos/(neg+pos)*100):0;
+  const hiEms=activeEm.filter(e=>e.intensity===3).map(e=>e.label).join(" + ");
+  
+  document.getElementById("hdr-badges").innerHTML=`
+    <span class="badge b-red pulse">${rLabel}</span>
+    ${hiEms?`<span class="badge b-red">${hiEms}: DOMINANTES</span>`:""}
+    <span class="badge b-org">DÍADAS: ${D.dyads.filter(d=>d.risk==="CRÍTICO").length} CRÍTICAS</span>
+    <span class="badge b-blu">CAPITAL POSITIVO: ${cap}%</span>
+    <span class="badge b-pur">CONCEPTO: ${D.concept.toUpperCase()}</span>`;
+
+  /* KPIs */
+  const domEm=activeEm.sort((a,b)=>b.intensity-a.intensity)[0];
+  document.getElementById("kpis").innerHTML=`
+    <div class="card"><div class="cv">Emociones Activas</div><div class="cval" style="color:${rc.hex}">${activeEm.length}</div><div class="csub">de 8 primarias · Plutchik</div></div>
+    <div class="card"><div class="cv">Emoción Dominante</div><div class="cval" style="color:${domEm?domEm.color[2]:"var(--tx1)"};font-size:1.3rem">${domEm?domEm.label:"—"}</div><div class="csub">Intensidad máxima ●●●</div></div>
+    <div class="card"><div class="cv">Díadas de Riesgo</div><div class="cval" style="color:var(--org)">${D.dyads.filter(d=>d.risk==="CRÍTICO"||d.risk==="ALTO").length}</div><div class="csub">Nivel crítico o alto</div></div>
+    <div class="card"><div class="cv">Capital Positivo</div><div class="cval" style="color:${cap>30?"#16a34a":"#dc2626"}">${cap}%</div><div class="csub">${cap===0?"Sin emociones constructivas activas":"Emociones constructivas"}</div></div>`;
+
+  /* SVG Wheel Render */
+  document.getElementById("wheel-wrap").innerHTML=buildWheel();
+  const hiColor=activeEm.filter(e=>e.intensity===3)[0];
+  const mdColor=activeEm.filter(e=>e.intensity===2)[0];
+  if(hiColor && document.getElementById("leg-hi")) document.getElementById("leg-hi").style.background=hiColor.color[2];
+  if(mdColor && document.getElementById("leg-md")) document.getElementById("leg-md").style.background=mdColor.color[1];
+
+  /* Lista de Emociones */
+  const emList=document.getElementById("em-list");
+  emList.innerHTML=activeEm.map(em=>{
+    const iv=em.intensity;
+    const riskTx=iv===3?"var(--red-s)":iv===2?"var(--org-s)":"var(--ylw)";
+    const dots="●".repeat(iv)+'<span style="color:#94a3b8">'+"○".repeat(3-iv)+"</span>";
+    return`<div class="emr" onclick="toggleEm('${em.key}')">
+      <div class="emh">
+        <div style="width:10px;height:10px;border-radius:50%;background:${em.color[2]};box-shadow:0 0 6px ${em.color[2]}55;flex-shrink:0"></div>
+        <span style="font-size:13px;font-weight:700;color:var(--tx1)">${em.label}</span>
+        <span style="margin-left:auto;font-size:13px;color:${riskTx}">${dots}</span>
+      </div>
+      <div style="font-size:10.5px;color:var(--tx3);margin-top:2px;margin-left:17px;font-weight:600">${em.sublabel}</div>
+      <div class="emd-box" id="emd-${em.key}">
+        ${em.triggers.length?`<div class="edk">Detonantes:</div><div class="edv">${em.triggers.join(" · ")}</div>`:""}
+        ${em.consequences.length?`<div class="edk" style="margin-top:5px">Consecuencias:</div><div class="edv">${em.consequences.join(" · ")}</div>`:""}
+      </div>
+    </div>`;
+  }).join("");
+
+  /* Emociones Secundarias */
+  document.getElementById("em-sec").innerHTML=D.secondary.map(s=>`
+    <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd2)">
+      <div style="width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;margin-top:4px"></div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--tx1)">${s.name}</div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.55">${s.text}</div></div>
+    </div>`).join("");
+
+  /* Concepto Central */
+  document.getElementById("concepto-box").innerHTML=`<div class="cbox-label">Concepto Central del Territorio</div><div class="cbox-name">"${D.concept}"</div><div class="cbox-text">${D.conceptDesc}</div>`;
+
+  /* Mapa Social / Problemáticas / Miedos / Orgullos */
+  const makeMP=(arr,dc)=>arr.map(t=>`<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join("");
+  document.getElementById("mapa-cols").innerHTML=`
+    <div class="mpc"><div class="mptt" style="color:#ca8a04">⚠ Problemáticas</div>${makeMP(D.problematics,"#ca8a04")}</div>
+    <div class="mpc"><div class="mptt" style="color:#dc2626">⬡ Miedos</div>${makeMP(D.fears,"#dc2626")}</div>
+    <div class="mpc"><div class="mptt" style="color:#16a34a">★ Orgullos</div>${makeMP(D.prides,"#16a34a")}</div>`;
+
+  /* Frases / Quotes */
+  document.getElementById("quotes").innerHTML=D.quotes.map(q=>`<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion} · ${q.territory}</div></div>`).join("");
+
+  /* Semáforo */
+  const makeSem=(arr,id)=>{ document.getElementById(id).innerHTML=arr.map(s=>`<div class="sem"><div class="semd" style="background:${s.color}"></div><div class="seml">${s.label}</div><div class="semv" style="color:${s.color}">${s.val}</div></div>`).join(""); };
+  makeSem(D.semaforo,"semaforo");
+
+  /* Díadas Cards */
+  const riskHex={CRÍTICO:"#dc2626",ALTO:"#ea580c",MEDIO:"#ca8a04"};
+  const riskBg={CRÍTICO:"#fee2e2",ALTO:"#ffedd5",MEDIO:"#fef9c3"};
+  document.getElementById("dyad-cards").innerHTML=D.dyads.map(d=>`<div class="dyc" style="border-top-color:${riskHex[d.risk]||"#64748b"}">
+    <span class="dybadge" style="background:${riskBg[d.risk]};color:${riskHex[d.risk]}">${d.risk}</span>
+    <div class="dyn" style="color:${riskHex[d.risk]||"var(--tx1)"}">${d.name}</div>
+    <div class="dyf">Díada ${d.type} · ${d.formula}</div>
+    <div class="dyt">${d.text}</div>
+  </div>`).join("");
+  document.getElementById("dyad-interp").innerHTML=D.dyadInterp;
+
+  /* Identidad Política */
+  document.getElementById("id-pregunta").innerHTML=`<div class="cbox-label">Pregunta Política del Territorio</div><div class="cbox-name" style="font-size:18px">"${D.preguntaPolitica}"</div><div class="cbox-text">${D.preguntaDesc}</div>`;
+  makeSem(D.govSemaforo,"gov-sem");
+  document.getElementById("partidos-tbl").innerHTML=D.partidos.map(p=>`<div style="display:grid;grid-template-columns:1.2fr 2fr 1fr 1fr;gap:.5rem;padding:8px 0;border-bottom:1px solid var(--brd2);font-size:12px">
+    <div style="font-weight:700;color:var(--tx1)">${p.nombre}</div>
+    <div style="color:var(--tx2)">${p.emocion}</div>
+    <div style="color:var(--tx3);font-weight:600">${p.capital}</div>
+    <div style="color:${p.tendencia.includes("↓")?"#dc2626":p.tendencia.includes("↑")?"#16a34a":"#475569"};font-weight:700">${p.tendencia}</div>
+  </div>`).join("");
+
+  /* Actores Grid */
+  document.getElementById("actores-grid").innerHTML=D.actores.map(a=>`<div class="ac">
+    <div class="ach" style="border-left:4px solid ${a.borderColor||"#1C2738"}">
+      <div class="acn">${a.name}</div><div class="acr">${a.role}</div>
+    </div>
+    <div class="acb">${a.rows.map(([k,v])=>`<div class="acrow"><span class="ack">${k}</span><span class="acv">${v}</span></div>`).join("")}</div>
+  </div>`).join("");
+
+  /* Segmentos - Buyer Personas */
+  if(D.segmentos)document.getElementById("segmenta-personas").innerHTML=D.segmentos.map(s=>`
+    <div class="bp-card">
+      <div class="bp-head" style="background:linear-gradient(120deg,${s.color},${s.color}ee)">
+        <div><div class="bp-tipo">${s.tipo} · ${s.subtitulo}</div><div class="bp-arquetipo">${s.arquetipo}</div></div>
+        <div class="bp-meta"><div class="bp-peso">${s.peso}</div><span class="bp-persuab">Persuabilidad: ${s.persuabilidad}</span></div>
+      </div>
+      <div class="bp-quote" style="border-left-color:${s.color}">${s.fraseEmblema}</div>
+      <div class="bp-cols">
+        <div class="bp-col">
+          <div class="bp-col-tt">Perfil sociodemográfico</div>
+          <div class="bp-row"><b>Edad/género:</b> ${s.perfil.edad}</div>
+          <div class="bp-row"><b>Zona:</b> ${s.perfil.zona}</div>
+          <div class="bp-row"><b>Ocupación:</b> ${s.perfil.ocupacion}</div>
+          <div class="bp-row"><b>Escolaridad/ingresos:</b> ${s.perfil.escolaridad}</div>
+          <div class="bp-row"><b>Digital:</b> ${s.perfil.digital}</div>
+          <div class="bp-row"><b>Historia electoral:</b> ${s.perfil.historialElectoral}</div>
+        </div>
+        <div class="bp-col">
+          <div class="bp-col-tt">Mundo emocional y tensiones</div>
+          <div class="bp-row"><b>Emoción:</b> ${s.emocional.emocion}</div>
+          <div class="bp-row">${s.emocional.vidaCotidiana}</div>
+          <div class="bp-row"><b>Tensión:</b> ${s.emocional.tension}</div>
+          <div class="bp-row"><b>Dolor:</b> ${s.emocional.dolor}</div>
+          <div class="bp-row"><b>Miedo:</b> ${s.emocional.miedo}</div>
+          <div class="bp-row"><b>Orgullo:</b> ${s.emocional.orgullo}</div>
+          <div class="bp-row"><b>Narrativa maestra:</b> ${s.emocional.narrativa}</div>
+        </div>
+        <div class="bp-col">
+          <div class="bp-col-tt">Problemáticas, orgullos y palancas</div>
+          <div class="bp-tags">${(s.estrategia.problematicas||[]).map(p=>`<span class="bp-tag">${p}</span>`).join("")}</div>
+          <div class="bp-row"><b>Orgullo comunitario:</b> ${s.estrategia.orgulloComunitario}</div>
+          <div class="bp-row"><b>Consumo digital:</b> ${s.estrategia.consumoDigital}</div>
+          <div class="bp-row"><b>Lo acerca:</b> ${s.estrategia.loAcerca}</div>
+          <div class="bp-row"><b>Lo aleja:</b> ${s.estrategia.loAleja}</div>
+          <div class="bp-row"><b>Frame cognitivo:</b> ${s.estrategia.frame}</div>
+          <div class="bp-row"><b>Palanca:</b> ${s.estrategia.palanca}</div>
+        </div>
+      </div>
+      <div class="bp-foot">
+        <span>Vector: ${s.vector.canal} · ${s.vector.tono} · ${s.vector.formato}</span>
+        <span style="color:${s.color};font-weight:800">${s.persuabilidad}</span>
+      </div>
+    </div>`).join("");
+
+  /* ── CONSTRUCCIÓN DE CHARTS.JS ────────────────────────────────── */
+  /* Chart 1: Intensidades */
+  const acEm=D.emotions.filter(e=>e.active);
+  new Chart(document.getElementById("ch-intens"),{type:"bar",
+    data:{labels:acEm.map(e=>e.label),datasets:[{data:acEm.map(e=>e.intensity),backgroundColor:acEm.map(e=>e.color[2]+"dd"),borderColor:acEm.map(e=>e.color[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
+    options:{...CD,indexAxis:"y",plugins:{...CD.plugins,tooltip:{...CD.plugins.tooltip,callbacks:{label:c=>" "+["Inactiva","Baja","Media","Alta"][c.raw]}}},
+      scales:{x:{...CD.scales.x,min:0,max:3,ticks:{...CD.scales.x.ticks,stepSize:1,callback:v=>["○○○","●○○","●●○","●●●"][v]}},y:{...CD.scales.y}}}
+  });
+
+  /* Chart 2: Temas */
+  new Chart(document.getElementById("ch-temas"),{type:"doughnut",
+    data:{labels:D.temasChart.map(t=>t[0]),datasets:[{data:D.temasChart.map(t=>t[1]),backgroundColor:D.temasChart.map(t=>t[2]),borderColor:"#d5d1d1",borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"right",labels:{color:"#334155",font:{size:11,weight:"600"},boxWidth:12,padding:10}},tooltip:{...CD.plugins.tooltip,callbacks:{label:c=>" "+c.label+": "+c.raw+"%"}}}}
+  });
+
+  /* Chart 3: Díadas */
+  new Chart(document.getElementById("ch-diadas"),{type:"bar",
+    data:{labels:D.dyads.map(d=>d.name),datasets:[{label:"Score de riesgo",data:D.dyads.map(d=>d.score),backgroundColor:D.dyads.map(d=>riskHex[d.risk]+"dd"),borderColor:D.dyads.map(d=>riskHex[d.risk]),borderWidth:1,borderRadius:6,borderSkipped:false}]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:false}},scales:{x:{...CD.scales.x},y:{...CD.scales.y,min:0,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+"/100"}}}}
+  });
+
+  /* Chart 4: Partidos */
+  const pLabels=D.partidos.map(p=>p.nombre);
+  new Chart(document.getElementById("ch-partidos"),{type:"bar",
+    data:{labels:pLabels,datasets:[
+      {label:"Ira/Asco",data:D.partidosChart.map(x=>x[0]),backgroundColor:"#B91C1Cdd",borderRadius:4,borderSkipped:false},
+      {label:"Decepción/Tristeza",data:D.partidosChart.map(x=>x[1]),backgroundColor:"#4C1D95dd",borderRadius:4,borderSkipped:false},
+      {label:"Interés disponible",data:D.partidosChart.map(x=>x[2]),backgroundColor:"#15803Ddd",borderRadius:4,borderSkipped:false},
+    ]},
+    options:{...CD,plugins:{...CD.plugins,legend:{display:true,labels:{color:"#334155",font:{size:10,weight:"600"},boxWidth:10}}},
+      scales:{x:{...CD.scales.x},y:{...CD.scales.y,min:0,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+"%"}}}}
+  });
+
+  /* Chart 5: Radar Actores */
+  const radarLabels=["Legitimidad","Presencia","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
+  new Chart(document.getElementById("ch-actores"),{type:"radar",
+    data:{labels:radarLabels,datasets:D.actoresRadar.labels.map((lbl,i)=>({label:lbl,data:D.actoresRadar.data[i],borderColor:D.actoresRadar.colors[i],backgroundColor:D.actoresRadar.colors[i]+"33",pointBackgroundColor:D.actoresRadar.colors[i],pointRadius:4}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{r:{ticks:{color:"#475569",font:{size:9,weight:"600"},stepSize:20},grid:{color:"rgba(0,0,0,.1)"},pointLabels:{color:"#1e293b",font:{size:10,weight:"700"}},angleLines:{color:"rgba(0,0,0,.1)"},min:0,max:100}},
+      plugins:{legend:{display:true,labels:{color:"#334155",font:{size:11,weight:"600"},boxWidth:10}},tooltip:{...CD.plugins.tooltip}}}
+  });
+}
+
+// 3. CARGA DE DATOS DESDE LA API VERCEL / LOCAL
+async function fetchDatosBackend() {
+  try {
+    const res = await fetch(`/api/analizar?actor=${encodeURIComponent(ACTOR)}&mes=${MES}&anio=${ANIO}`);
+    if (res.ok) {
+      const dataBackend = await res.json();
+      if (dataBackend && dataBackend.emociones) {
+        // Asignar respuesta de la API si contiene el objeto emociones estructurado
+        D = Object.assign({}, D, dataBackend.emociones);
+      }
+    }
+  } catch (err) {
+    console.log("Modo demo con datos locales activos:", err);
+  } finally {
+    renderDashboard();
+  }
+}
+
+// Iniciar renderizado al cargar DOM
+document.addEventListener("DOMContentLoaded", fetchDatosBackend);
+</script>
+</body>
+</html>
