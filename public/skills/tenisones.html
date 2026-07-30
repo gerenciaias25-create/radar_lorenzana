@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RADAR DE TENSIONES - Pachuca de Soto 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  /* PALETA DE COLORES Y VARIABLES DE SISTEMA */
+  --bg:#FFFFFF;
+  --header-bg:#1C2738;
+  --card-bg:#d5d1d1;
+  --border:rgba(0,0,0,.08);
+  --border2:rgba(0,0,0,.15);
+  --text:#1F2937;
+  --muted:#4B5563;
+  --dim:#6B7280;
+  --ac: #00C2D4;
+  --hdrblue: #1C2738;
+  
+  /* ALERTAS Y SEMÁFOROS DE CONTRASTE */
+  --red:#C53030;--red-bg:rgba(197,48,48,.1);--red-br:rgba(197,48,48,.3);
+  --org:#C05621;--org-bg:rgba(192,86,33,.1);--org-br:rgba(192,86,33,.3);
+  --yel:#B7791F;--yel-bg:rgba(183,121,31,.08);--yel-br:rgba(183,121,31,.25);
+  --grn:#2F855A;--grn-bg:rgba(47,133,90,.08);--grn-br:rgba(47,133,90,.25);
+  --cyan:#2B6CB0;--acc:#4C51BF;--acc-bg:rgba(76,81,191,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;animation:blink 1.4s infinite;flex-shrink:0}
+
+/* ENCABEZADO */
+.hdr { background: var(--hdrblue); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 18px 24px; position: sticky; top: 0; backdrop-filter: blur(12px); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+.hdr-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1.2; }
+.hdr-name span { color: var(--ac); }
+.hsub{font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;line-height:1.4}
+
+/* NAVEGACIÓN */
+.nav{background:var(--header-bg);border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;overflow-x:auto;gap:0;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{padding:14px 18px;font-size:12px;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;border:none;border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s;background:none}
+.nb:hover{color:#FFFFFF}
+.nb.on{color:#FFFFFF;border-bottom-color:#FBD38D;font-weight:600}
+
+/* CONTENIDO Y TARJETAS */
+.ct{padding:1.75rem 2rem}
+.view{display:none}
+.view.on{display:block;animation:fadeIn .2s ease}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.mb{margin-bottom:1.25rem}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;color:var(--text)}
+
+.ctit{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem;display:flex;align-items:center;gap:6px}
+.cdot{width:5px;height:5px;border-radius:50%;background:var(--org);flex-shrink:0}
+.stit{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--org);flex-shrink:0;display:inline-block}
+
+/* METODOLOGÍA / FORMULA BOX */
+.metodo-box{background:#FFFFFF;border:1px solid var(--border2);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.formula-tag{font-family:monospace;font-size:12px;background:rgba(0,0,0,.05);padding:6px 12px;border-radius:6px;display:inline-block;color:var(--hdrblue);font-weight:700;margin:.4rem 0 .6rem 0}
+
+.trow{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:3px;border:1px solid transparent;background:rgba(255,255,255,.4)}
+.trow:hover{background:rgba(255,255,255,.7)}
+.trow.sel{background:#FFFFFF;border-color:var(--border2);box-shadow:0 2px 4px rgba(0,0,0,.04)}
+.tnum{font-size:11px;color:var(--dim);width:14px;text-align:center;flex-shrink:0}
+.tname{font-size:12.5px;flex:1;color:var(--text);font-weight:500}
+.tbar{width:90px;height:6px;background:rgba(0,0,0,.08);border-radius:3px;flex-shrink:0}
+.tbar-f{height:6px;border-radius:3px}
+.tsco{font-size:12px;font-weight:700;width:26px;text-align:right;flex-shrink:0}
+.tniv{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
+.tdelta{font-size:11px;font-weight:700;width:32px;text-align:right;flex-shrink:0}
+
+.dg{display:grid;grid-template-columns:115px 1fr;gap:6px 10px;font-size:12.5px}
+.dk{color:var(--muted);font-weight:600}
+.dv{color:var(--text);line-height:1.5}
+.drec{margin-top:.85rem;padding:.8rem;background:#FFFFFF;border-radius:8px;font-size:12.5px;line-height:1.6;border-left:3px solid var(--org);box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.dempty{font-size:12px;color:var(--dim);line-height:1.7;padding:.5rem 0}
+
+.ch260{position:relative;height:260px;width:100%}
+.ch300{position:relative;height:300px;width:100%}
+.ch320{position:relative;height:320px;width:100%}
+
+.ebar{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.ebar:last-child{border-bottom:none}
+.enam{font-size:12.5px;width:120px;flex-shrink:0;color:var(--text);font-weight:500}
+.ebg{flex:1;height:8px;background:rgba(0,0,0,.08);border-radius:4px;overflow:hidden}
+.efill{height:8px;border-radius:4px}
+.epts{font-size:11px;width:34px;text-align:right;flex-shrink:0}
+
+.ter{background:var(--card-bg);border-radius:10px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer;overflow:hidden}
+.ter-h{padding:10px 12px;display:flex;align-items:flex-start;gap:8px}
+.ter-info{flex:1}
+.ter-name{font-size:13px;font-weight:700}
+.ter-sub{font-size:11px;opacity:.8;margin-top:3px}
+.ter-arr{font-size:11px;margin-top:2px;transition:transform .2s;flex-shrink:0}
+.ter-arr.op{transform:rotate(180deg)}
+.ter-body{display:none;padding:10px 12px;padding-top:0;font-size:12px;line-height:1.65;color:var(--muted);background:rgba(255,255,255,.5)}
+.ter-body.op{display:block;animation:fadeIn .2s ease}
+
+.nar{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer}
+.nar-h{padding:10px 12px;display:flex;align-items:flex-start;gap:8px}
+.nar-info{flex:1}
+.nar-name{font-size:12.5px;font-weight:700;color:var(--text)}
+.nar-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.nar-arr{font-size:11px;color:var(--dim);flex-shrink:0;margin-top:2px;transition:transform .2s}
+.nar-arr.op{transform:rotate(180deg)}
+.nar-body{display:none;padding:10px 12px;border-top:1px solid var(--border);font-size:12.5px;color:var(--muted);background:rgba(255,255,255,.5);line-height:1.55}
+.nar-body.op{display:block;animation:fadeIn .2s ease}
+.nfrase{font-size:12px;font-style:italic;color:var(--cyan);margin-top:6px;font-weight:500}
+
+.abox{background:var(--red-bg);border:1px solid var(--red-br);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:1rem;cursor:pointer}
+.abox:last-child{margin-bottom:0}
+.abox-h{display:flex;align-items:center;justify-content:space-between}
+.abox-t{font-size:13px;font-weight:700;color:var(--red);display:flex;align-items:center;gap:8px}
+.abox-arr{color:var(--red);font-size:12px;transition:transform .2s}
+.abox-arr.op{transform:rotate(180deg)}
+.abox-body{display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--red-br);animation:fadeIn .2s ease}
+.abox-body.op{display:block}
+.ag{display:grid;grid-template-columns:130px 1fr;gap:5px 10px;font-size:12px}
+.ak{color:var(--red);font-weight:700}
+.av{color:var(--text);line-height:1.55}
+
+.traj-table{width:100%;border-collapse:collapse;font-size:12px}
+.traj-table th{text-align:left;padding:7px 10px;color:var(--muted);font-weight:700;font-size:10px;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border2)}
+.traj-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.traj-table tr:last-child td{border-bottom:none}
+.traj-table tr:hover td{background:rgba(255,255,255,.5)}
+.vchip{font-size:9.5px;padding:2px 7px;border-radius:4px;font-weight:700}
+.vr{background:var(--org-bg);color:var(--org);border:1px solid var(--org-br)}
+.vo{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid var(--border)}
+.vg{background:var(--grn-bg);color:var(--grn);border:1px solid var(--grn-br)}
+
+.hallazgo{margin-top:1.1rem;padding:1rem 1.25rem;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;border-left:3px solid var(--org)}
+
+.footer{background:var(--header-bg);border-top:1px solid var(--border);padding:1rem 2rem;font-size:11px;color:rgba(255,255,255,.6);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+@media(max-width:1000px){.g2,.g3{grid-template-columns:1fr}}
+@media(max-width:640px){.ag,.dg{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div>
+    <h1 class="hdr-name">PACHUCA DE SOTO <span>HIDALGO</span></h1>
+    <div class="hsub">Presidente Municipal: Jorge Alberto Reyes Hernández &middot; Morena &middot; Periodo analizado: 8 marzo - 6 julio 2026</div>
+  </div>
+</header>
+
+<div class="nav" id="main-nav">
+  <button class="nb on" data-tab="tensiones">Tensiones</button>
+  <button class="nb" data-tab="emociones">Emociones</button>
+  <button class="nb" data-tab="narrativas">Narrativas</button>
+  <button class="nb" data-tab="territorios">Territorios</button>
+  <button class="nb" data-tab="riesgos">Riesgos</button>
+  <button class="nb" data-tab="trayectoria">Trayectoria</button>
+  <button class="nb" data-tab="alertas">Alertas prioritarias</button>
+</div>
+
+<div class="ct">
+<!-- VISTA TENSIONES -->
+<div class="view on" id="v-tensiones">
+  <div class="metodo-box">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Marco Metodológico de Medición</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.5">
+      El <strong>Score de Tensión Social (STS)</strong> mide el nivel de conflicto latente u ostensible mediante la fórmula:
+      <div class="formula-tag">STS = (Volumen × 0.25) + (Intensidad Emocional × 0.35) + (Capacidad de Movilización × 0.25) + (Erosión Institucional × 0.15)</div>
+      Escala de Evaluación: <strong>0-35 Bajo (Verde)</strong> | <strong>36-55 Relevante (Amarillo)</strong> | <strong>56-75 Alto (Naranja)</strong> | <strong>76-100 Crítico (Rojo)</strong>
+    </div>
+  </div>
+
+  <div class="stit"><span class="sdot"></span>Ranking de tensiones sociales &middot; clic en fila para análisis completo</div>
+  <div class="g2 mb">
+    <div><div id="tens-list"></div></div>
+    <div><div id="tens-detail"><div class="card"><div class="dempty">Selecciona una tensión del ranking para ver el análisis completo: narrativa, emoción dominante, actor responsabilizado, evidencia verificada y recomendación accionable.</div></div></div></div>
+  </div>
+  <div class="card">
+    <div class="ctit"><span class="cdot"></span>Scores de tensión social &mdash; Pachuca, marzo-julio 2026</div>
+    <div class="ch300"><canvas id="cTensH" role="img" aria-label="Gráfica de scores de tensión social por tema, Pachuca, marzo a julio 2026"></canvas></div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;font-weight:500">Haz clic en una barra para ver la narrativa dominante asociada</div>
+    <div id="panel-narrv" style="font-size:11.5px;color:var(--text);font-style:italic;text-align:center;margin-top:4px;font-weight:600"></div>
+  </div>
+</div>
+
+<!-- VISTA EMOCIONES -->
+<div class="view" id="v-emociones">
+  <div class="stit"><span class="sdot"></span>Mapa emocional del municipio &middot; escala 1-5</div>
+  <div class="g2 mb">
+    <div class="card"><div class="ctit"><span class="cdot"></span>Intensidad emocional &middot; lectura política</div><div id="emo-bars"></div></div>
+    <div class="card"><div class="ctit"><span class="cdot"></span>Distribución emocional del municipio</div><div class="ch260"><canvas id="cEmoD" role="img" aria-label="Gráfica de distribución emocional del municipio de Pachuca"></canvas></div></div>
+  </div>
+  <div class="hallazgo">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--org);margin-bottom:.5rem;text-transform:uppercase">Hallazgo estratégico emocional</div>
+    <div style="font-size:12.5px;line-height:1.75;color:var(--text)">A diferencia de municipios con una crisis dominante y un solo culpable simbólico, Pachuca muestra un patrón de <strong style="color:var(--org)">hartazgo distribuido en al menos cinco frentes simultáneos</strong> &mdash; agua, tarifa de transporte, credibilidad del gobierno municipal, violencia de género y comercio informal &mdash; sin que ninguno alcance por sí solo el nivel crítico. Este patrón es más difícil de gestionar comunicacionalmente que una crisis única: no hay un solo mensaje que desactive el malestar, porque la ciudadanía no está enojada por un evento sino cansada de la acumulación de pendientes cotidianos sin resolver.</div>
+  </div>
+</div>
+
+<!-- VISTA NARRATIVAS -->
+<div class="view" id="v-narrativas">
+  <div class="stit"><span class="sdot"></span>Narrativas emergentes &middot; ordenadas por potencial político</div>
+  <div id="nar-list"></div>
+</div>
+
+<!-- VISTA TERRITORIOS -->
+<div class="view" id="v-territorios">
+  <div class="stit"><span class="sdot"></span>Territorios sensibles &middot; clic para ver evidencia documentada</div>
+  <div id="ter-list"></div>
+</div>
+
+<!-- VISTA RIESGOS -->
+<div class="view" id="v-riesgos">
+  <div class="metodo-box">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Score de Riesgo Reputacional (SRR)</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.5">
+      Métrica estandarizada que evalúa el costo de imagen y la probabilidad de desgaste de la figura pública/institucional frente al conflicto local:
+      <div class="formula-tag">SRR = (Exposición del Actor × 0.40) + (Viralidad de Senal × 0.30) + (Severidad del Tema × 0.30)</div>
+    </div>
+  </div>
+  <div class="stit"><span class="sdot"></span>Riesgos reputacionales &middot; SRR por tensión</div>
+  <div class="card mb"><div class="ch300"><canvas id="cSRR" role="img" aria-label="Gráfica de Score de Riesgo Reputacional por tensión, Pachuca"></canvas></div></div>
+  <div id="riesgo-list"></div>
+</div>
+
+<!-- VISTA TRAYECTORIA -->
+<div class="view" id="v-trayectoria">
+  <div class="stit"><span class="sdot"></span>Trayectoria de tensiones &middot; evolución 4 periodos, marzo-julio 2026</div>
+  <div class="card mb"><table class="traj-table"><thead><tr><th>Tensión</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun-Jul</th><th>Delta</th><th>Velocidad</th><th>Tipo</th></tr></thead><tbody id="traj-body"></tbody></table></div>
+  <div class="card mb"><div class="ctit"><span class="cdot"></span>Evolución comparada &mdash; marzo a julio 2026</div><div class="ch320"><canvas id="cTraj" role="img" aria-label="Gráfica de evolución de tensiones sociales en Pachuca, marzo a julio 2026"></canvas></div></div>
+  <div class="hallazgo">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--org);margin-bottom:.5rem;text-transform:uppercase">Hallazgo estratégico de trayectoria</div>
+    <div style="font-size:12.5px;line-height:1.75;color:var(--text)">El desabasto de agua es la tensión más persistente y de mayor riesgo estructural: pasó de STS 54 en marzo a 70 en julio (+16 puntos en el periodo), impulsada por el traslape entre las fallas crónicas de infraestructura que documenta CAASIM y los cortes de hasta 96 horas derivados de las obras del tren México-Pachuca, con la temporada de estiaje de julio como agravante inmediato. La tarifa de transporte y la credibilidad institucional (audio filtrado del alcalde) son tensiones <strong style="color:var(--org)">nuevas</strong> que no existían en marzo y ya superan a la mitad de las tensiones estructurales del municipio, lo que indica que el último trimestre generó más malestar propio que el heredado de ciclos anteriores.</div>
+  </div>
+</div>
+
+<!-- VISTA ALERTAS -->
+<div class="view" id="v-alertas">
+  <div class="stit"><span class="sdot"></span>Alertas prioritarias &middot; análisis completo &middot; clic para expandir</div>
+  <div id="alertas-list"></div>
+</div>
+
+</div>
+
+<div class="footer">
+  <span>Radar de Tensiones Sociales &middot; Pachuca de Soto, Hidalgo</span>
+  <span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span>
+</div>
+
+<script>
+var T = [
+  {n:"Desabasto de agua / obras Tren México-Pachuca",s:70,c:"#C05621",bg:"rgba(192,86,33,.1)",br:"rgba(192,86,33,.3)",niv:"Alto",delta:"+7",emo:"Hartazgo + Desprotección",int:4,nar:"El agua es un privilegio en Pachuca",act:"CAASIM - Gobierno municipal y estatal - SEDENA (obra del tren)",ter:"Colonias poniente (Santa Julia, La Loma, San Cayetano) - Zona oriente limítrofe con Mineral de la Reforma",pol:"Movilización sectorial recurrente — riesgo de bloqueos en temporada de estiaje",ev:"Corte de hasta 96h en mayo por rehabilitación planta Tezontle y acueducto Tizayuca (La Silla Rota, ICF 4.3) - Nuevo corte de hasta 96h anunciado el 5 de julio por obras del tren México-Pachuca (La Silla Rota, ICF 4.3) - Colonias Carboneras, El Saucillo, La Calera y Santa Julia entre las de mayor solicitud de pipas (La Silla Rota / El Sol de Hidalgo, ICF 4.0) - CAASIM reporta reducción de 88.4% en colonias con desabasto histórico desde 2022, pero reconoce zanjas abiertas de hasta 7 meses en Piracantos (La Silla Rota, ICF 4.2)",rec:"Publicar calendario colonia por colonia antes del inicio del estiaje, con fecha y responsable nombrado. Diferenciar comunicacionalmente los cortes por obra del tren (competencia federal/SEDENA) de los cortes por rezago de infraestructura municipal-estatal, para evitar que ambos se fundan en una sola narrativa de abandono."},
+  {n:"Aumento del 20% a la tarifa de transporte público",s:64,c:"#C05621",bg:"rgba(192,86,33,.1)",br:"rgba(192,86,33,.3)",niv:"Alto",delta:"+6",emo:"Hartazgo + Frustración",int:4,nar:"El aumento no llegó con mejor servicio",act:"Secretaría de Movilidad y Transporte de Hidalgo (Semot) - Concesionarios de combis y microbuses",ter:"Rutas de transporte convencional en toda la zona metropolitana de Pachuca",pol:"Malestar económico cotidiano — bajo riesgo de voto de castigo municipal directo por ser competencia estatal, pero erosiona percepción de autoridad sobre el transporte",ev:"Tarifa de combis y microbuses subió de 10 a 12 pesos (20%) a partir del 6-7 de mayo de 2026, tras publicación en el Periódico Oficial del Estado (El Universal / Milenio, ICF 4.5) - A 5 días del ajuste, unidades cobraban la nueva tarifa sin exhibir tarifario actualizado (Quadratín, ICF 4.0) - Dos accidentes de transporte público documentados en la misma semana, incluido un atropellamiento en el bulevar Javier Rojo Gómez (Quadratín, ICF 4.0) - El sistema Tuzobús mantuvo su tarifa en 10 pesos como medida diferenciada (La Silla Rota, ICF 4.3)",rec:"Exigir a la Semot estatal fiscalización visible de tarifarios y mantenimiento de unidades en rutas que operan dentro de Pachuca, y comunicar activamente que el ayuntamiento supervisa la calidad del servicio aunque la tarifa sea de competencia estatal."},
+  {n:"Violencia de género y feminicidios / marcha 8M",s:62,c:"#C05621",bg:"rgba(192,86,33,.1)",br:"rgba(192,86,33,.3)",niv:"Alto",delta:"+2",emo:"Indignación + Miedo femenino",int:4,nar:"Ni una más, el Estado no protege",act:"Gobierno municipal - Secretaría de las Mujeres de Pachuca - Alcalde Jorge Reyes Hernández",ter:"Centro histórico / Plaza Independencia / Monumento a la Mujer - Municipio completo",pol:"Movilización estructural — alto potencial de voto crítico entre mujeres jóvenes y urbanas",ev:"Marcha del 8M reunió entre 3 mil y 5 mil mujeres en Pachuca exigiendo justicia por feminicidios, desapariciones y represión de 2025 (La Silla Rota / Milenio, ICF 4.4) - Colectivas denunciaron 199 feminicidios en Hidalgo entre 2016 y 2025, con solo 15 casos tipificados como tales en 2025 pese a 64 muertes violentas de mujeres documentadas (El Universal, ICF 4.5) - El alcalde advirtió sanciones y procesos jurídicos contra quienes intervinieran el Reloj Monumental durante la marcha, lo que activistas calificaron de discurso de amenaza (La Silla Rota / Periódico Central, ICF 4.1) - Colectivas exigieron presupuesto para refugio de mujeres, revisión de protocolos policiales y fin a la vigilancia sobre manifestantes",rec:"Sustituir el enfoque de protección patrimonial (vallas, amenaza de sanciones) por una respuesta institucional visible: presupuesto etiquetado para refugio de víctimas y mesa pública con colectivas antes del próximo ciclo de movilización."},
+  {n:"Credibilidad institucional / audio filtrado del alcalde",s:57,c:"#B7791F",bg:"rgba(183,121,31,.08)",br:"rgba(183,121,31,.25)",niv:"Relevante",delta:"+7",emo:"Desconfianza + Cinismo",int:3,nar:"Un like o la calle",act:"Alcalde Jorge Reyes Hernández — credibilidad personal e institucional directa",ter:"Municipio completo — daño a la percepción de comunicación gubernamental",pol:"Erosión de confianza transversal — narrativa de simulación digital con potencial de desgaste sostenido",ev:"El 11 de mayo de 2026 se filtró un audio en el que el alcalde pedía a trabajadores del ayuntamiento compartir sus publicaciones en redes bajo amenaza de despido (La Silla Rota, ICF 4.3) - El alcalde reconoció la grabación pero aseguró que databa de agosto de 2024 y fue sacada de contexto - La filtración se volvió tendencia nacional en redes, con cientos de comentarios burlándose de la petición de 'likes' (La Silla Rota, ICF 4.3) - El episodio ocurre en el arranque del proceso electoral 2026-2027 para las 84 alcaldías de Hidalgo",rec:"Comunicado breve y sin justificaciones extensas que reconozca la práctica y anuncie su cese explícito; cualquier intento de minimizar el hallazgo alimenta más la narrativa de simulación que el hecho original."},
+  {n:"Comercio informal / reubicación de ambulantes al mercado Benito Juárez",s:52,c:"#B7791F",bg:"rgba(183,121,31,.08)",br:"rgba(183,121,31,.25)",niv:"Relevante",delta:"+2",emo:"Ansiedad económica + Frustración",int:3,nar:"Nos reubicaron para hacernos desaparecer",act:"Ayuntamiento de Pachuca - Dirección de Comercio y Abasto",ter:"Centro Histórico - Explanada del mercado Benito Juárez",pol:"Conflicto sectorial recurrente — riesgo de retorno a la vía pública y choques con autoridad",ev:"Más de 200 puestos fueron retirados de la plaza Constitución en abril de 2026 tras una obra de 5.6 millones de pesos para reubicarlos junto al mercado Benito Juárez (Criterio Hidalgo, ICF 4.0) - En junio, comerciantes protestaron en la presidencia municipal por la baja afluencia de clientes en el nuevo espacio; el alcalde ofreció publicidad institucional como respuesta (La Silla Rota, ICF 4.3) - El líder de la Foideh señaló que el espacio resulta insuficiente para los cerca de 220 comerciantes originales y que analizan comprar un terreno propio (La Jornada Hidalgo, ICF 4.1) - Se documentaron cuotas internas no oficiales de 25 pesos diarios por metro cuadrado cobradas por dirigencias de comerciantes (Criterio Hidalgo, ICF 4.0)",rec:"Auditar y transparentar el cobro de cuotas internas entre comerciantes, y coordinar con la Semot estatal la instalación de un paradero de transporte público frente a la nueva explanada antes de que el conflicto escale a un intento de retorno al Centro Histórico."},
+  {n:"Percepción de inseguridad, robos y extorsión cotidiana",s:48,c:"#B7791F",bg:"rgba(183,121,31,.08)",br:"rgba(183,121,31,.25)",niv:"Relevante",delta:"-1",emo:"Miedo + Desconfianza",int:3,nar:"La percepción no es la realidad, dice el alcalde",act:"Alcalde Jorge Reyes Hernández - Secretaría de Seguridad Pública de Pachuca",ter:"Municipio completo - colonias Cubitos y 20 de Noviembre citadas por el propio gobierno como de mejora reciente",pol:"Distancia discursiva entre autoridad y ciudadanía — riesgo de que el mensaje oficial se perciba como minimización",ev:"La percepción de inseguridad en Pachuca bajó de 59.9% en diciembre de 2025 a 50.0% en marzo de 2026 según la ENSU-INEGI, una de las mayores caídas del país (INEGI / Effeta, ICF 4.6) - Pese a la mejora, la mitad de la población sigue sintiéndose insegura y persisten 56 carpetas de investigación por robo con violencia en taxis en la zona (Criterio Hidalgo, ICF 4.0) - El alcalde declaró que la percepción 'no significa que Pachuca sea peligrosa' y atribuyó parte del fenómeno al consumo de redes sociales (La Jornada Hidalgo, ICF 4.1)",rec:"Acompañar la mejora estadística real con comunicación que no minimice la experiencia subjetiva de la mitad de la población que aún se siente insegura, evitando declaraciones que puedan leerse como negación del malestar ciudadano."},
+  {n:"Seguridad estudiantil y violencia digital en Universidad de Pachuca",s:44,c:"#B7791F",bg:"rgba(183,121,31,.08)",br:"rgba(183,121,31,.25)",niv:"Relevante",delta:"0",emo:"Miedo + Desprotección juvenil",int:3,nar:"La universidad protege a la institución, no a las alumnas",act:"Escuela de Medicina Intermédica (aval UNAM) - Autoridades académicas",ter:"Plantel Universidad de Pachuca / Escuela de Medicina Intermédica",pol:"Riesgo de escalamiento hacia narrativa de violencia digital de género institucional si no hay resolución visible",ev:"Estudiantes y padres de familia denunciaron en mayo de 2026 presunta venta de exámenes, amenazas entre alumnos y difusión de contenido íntimo de estudiantes dentro del plantel (Criterio Hidalgo, ICF 4.0) - La institución confirmó el inicio de investigaciones internas tras la publicación - Alumnos señalaron que la administración 'solo actúa cuando los padres intervienen directamente' y que el personal minimiza reportes de acoso (Criterio Hidalgo, ICF 4.0) - El plantel alberga a cerca de 500 alumnos y los afectados buscan llevar el caso ante la UNAM, que avala académicamente a la escuela",rec:"Dar seguimiento público y verificable a la auditoría académica y de seguridad solicitada por los estudiantes; un desenlace sin transparencia puede escalar la tensión hacia una narrativa de violencia digital de género con alcance estatal."}
+];
+
+var E = [
+  {n:"Hartazgo",i:4,c:"#C05621",chg:"Estructural, multi-frente",lec:"Agua, tarifa de transporte y comercio informal se acumulan sin resolución visible",p:30},
+  {n:"Indignación",i:4,c:"#C53030",chg:"Pico en marzo (8M), sostenida",lec:"Anclada en feminicidios e impunidad — el frente más movilizable",p:22},
+  {n:"Desconfianza",i:4,c:"#C05621",chg:"Nueva dimensión desde mayo",lec:"Detonada por el audio filtrado del alcalde — cuestiona la comunicación oficial en su conjunto",p:18},
+  {n:"Miedo",i:3,c:"#B7791F",chg:"Estructural, en descenso leve",lec:"Inseguridad cotidiana y violencia digital estudiantil, pese a mejora estadística oficial",p:14},
+  {n:"Ansiedad",i:3,c:"#B7791F",chg:"Sostenida desde abril",lec:"Ingresos de comerciantes reubicados y estiaje inminente en colonias sin agua",p:10},
+  {n:"Resignación",i:2,c:"#2F855A",chg:"Estable",lec:"Persiste en colonias con desabasto histórico ya normalizado",p:4},
+  {n:"Esperanza",i:1,c:"#2F855A",chg:"Baja pero presente",lec:"Vinculada a la mejora real y verificada en percepción de seguridad (ENSU)",p:2}
+];
+
+var TER = [
+  {n:"Centro Histórico - Explanada mercado Benito Juárez",niv:"Naranja",c:"#C05621",bg:"rgba(192,86,33,.1)",br:"rgba(192,86,33,.3)",emo:"Ansiedad económica - Frustración",ten:"Comercio informal — reubicación de ambulantes",obs:"Más de 200 comerciantes retirados de plaza Constitución en abril 2026 y reubicados en obra de 5.6 mdp junto al mercado Benito Juárez. Protesta en junio por baja afluencia; cuotas internas no oficiales de 25 pesos/m2 diarios documentadas entre agremiados. (Criterio Hidalgo / La Silla Rota, ICF 4.0-4.3)"},
+  {n:"Colonias poniente: Santa Julia, La Loma, San Cayetano, Nopancalco, San Bartolo, Unión Popular",niv:"Rojo",c:"#C53030",bg:"rgba(197,48,48,.1)",br:"rgba(197,48,48,.3)",emo:"Hartazgo - Desprotección",ten:"Desabasto de agua potable",obs:"Zona poniente con cortes recurrentes de hasta 96 horas por mantenimiento de la planta de bombeo Tezontle y el acueducto Tizayuca. En julio, nuevo corte de hasta 96h por obras del tren México-Pachuca coordinadas con SEDENA. (La Silla Rota, ICF 4.3)"},
+  {n:"Zona oriente limítrofe con Mineral de la Reforma: Carboneras, El Saucillo, La Calera, Dos Carlos, Ávila Camacho",niv:"Naranja",c:"#C05621",bg:"rgba(192,86,33,.1)",br:"rgba(192,86,33,.3)",emo:"Hartazgo - Ansiedad",ten:"Agua — mayor demanda de pipas",obs:"Colonias con el mayor número de solicitudes de abastecimiento por pipa según CAASIM, atribuido a fallas hidráulicas y obras de modernización. Dotación de 2,000 litros por vivienda con prioridad a usuarios al corriente de pago. (La Silla Rota / El Sol de Hidalgo, ICF 4.0)"},
+  {n:"Plaza Independencia / Reloj Monumental (Centro)",niv:"Naranja",c:"#C05621",bg:"rgba(192,86,33,.1)",br:"rgba(192,86,33,.3)",emo:"Indignación - Miedo femenino",ten:"Violencia de género / protesta feminista",obs:"Epicentro de la marcha del 8M (3,000-5,000 mujeres). El ayuntamiento colocó vallas y advirtió sanciones por posibles pintas al Reloj Monumental, lo que colectivas calificaron de discurso de amenaza y polarización. (La Silla Rota / Periódico Central, ICF 4.1-4.4)"},
+  {n:"Rutas de transporte convencional — toda la zona metropolitana",niv:"Amarillo",c:"#B7791F",bg:"rgba(183,121,31,.08)",br:"rgba(183,121,31,.25)",emo:"Hartazgo - Frustración",ten:"Aumento tarifario y mal servicio",obs:"Tarifa subió de 10 a 12 pesos en mayo de 2026 (+20%). Unidades cobrando sin tarifario visible durante al menos 5 días; dos accidentes documentados en la misma semana del ajuste. (Quadratín / El Universal, ICF 4.0-4.5)"},
+  {n:"Colonias Cubitos y 20 de Noviembre",niv:"Amarillo",c:"#B7791F",bg:"rgba(183,121,31,.08)",br:"rgba(183,121,31,.25)",emo:"Miedo residual - Esperanza cautelosa",ten:"Percepción de inseguridad",obs:"Citadas por el propio alcalde como zonas con mejora en la actividad de grupos delictivos, con incremento en detenciones por narcomenudeo y préstamos ilegales 'gota a gota'. La percepción negativa persiste pese a la mejora estadística oficial. (La Jornada Hidalgo, ICF 4.1)"},
+  {n:"Plantel Universidad de Pachuca — Escuela de Medicina Intermédica",niv:"Amarillo",c:"#B7791F",bg:"rgba(183,121,31,.08)",br:"rgba(183,121,31,.25)",emo:"Miedo - Desprotección juvenil",ten:"Seguridad estudiantil y violencia digital",obs:"Denuncias de venta de exámenes, amenazas y difusión de contenido íntimo de alumnas en mayo de 2026. Institución con aval de la UNAM ya inició investigaciones internas; cerca de 500 alumnos matriculados. (Criterio Hidalgo, ICF 4.0)"}
+];
+
+var NAR = [
+  {n:"El agua es un privilegio en Pachuca",tema:"Agua / infraestructura hidráulica",act:"CAASIM - Gobierno municipal y estatal",pol:"Movilización sectorial recurrente — riesgo de bloqueos en estiaje",f:"Otra vez sin agua, y ahora encima por las obras del tren",orig:"Síntesis de quejas vecinales — La Silla Rota, mayo-julio 2026 — ICF 4.3"},
+  {n:"El aumento no llegó con mejor servicio",tema:"Transporte público / tarifa",act:"Semot estatal - Concesionarios de combis",pol:"Malestar económico cotidiano — bajo riesgo de voto de castigo municipal directo",f:"Subieron el pasaje y las combis siguen igual de destartaladas",orig:"Síntesis de quejas de usuarios — Quadratín, mayo 2026 — ICF 4.0"},
+  {n:"Ni una más, el Estado no protege",tema:"Violencia de género / feminicidios",act:"Gobierno municipal + Secretaría de las Mujeres",pol:"Movilización estructural — alto potencial de voto crítico entre mujeres",f:"Ni una más, ni una asesinada más",orig:"Consigna de la marcha del 8M — La Silla Rota / Milenio, 8 marzo 2026 — ICF 4.4"},
+  {n:"Un like o la calle",tema:"Credibilidad institucional",act:"Alcalde Jorge Reyes Hernández",pol:"Erosión de confianza transversal — narrativa de simulación digital",f:"Aquí tiene mi like, señor presidente, para que no me despida",orig:"Burla ciudadana viral tras filtración de audio — La Silla Rota, mayo 2026 — ICF 4.3"},
+  {n:"Nos reubicaron para hacernos desaparecer",tema:"Comercio informal",act:"Ayuntamiento - Dirección de Comercio y Abasto",pol:"Conflicto sectorial recurrente — riesgo de retorno al Centro Histórico",f:"Venimos prácticamente a la quiebra desde que nos reubicaron",orig:"Óscar Pelcastre, líder Foideh — La Jornada Hidalgo, abril 2026 — ICF 4.1"},
+  {n:"La percepción no es la realidad, dice el alcalde",tema:"Seguridad pública",act:"Alcalde Jorge Reyes Hernández",pol:"Distancia discursiva entre autoridad y ciudadanía",f:"Está la percepción, pero no significa que Pachuca sea peligrosa",orig:"Declaraciones del alcalde — La Jornada Hidalgo, enero 2026 — ICF 4.1"},
+  {n:"La universidad protege a la institución, no a las alumnas",tema:"Educación / violencia digital de género",act:"Escuela de Medicina Intermédica (aval UNAM)",pol:"Riesgo de escalar a narrativa de violencia digital de género institucional",f:"Solo actúan cuando los padres intervienen directamente",orig:"Testimonio estudiantil — Criterio Hidalgo, mayo 2026 — ICF 4.0"}
+];
+
+var RG = [
+  {n:"Desabasto de agua / obras Tren México-Pachuca",srr:68,act:"CAASIM - Gobierno municipal y estatal - SEDENA",tipo:"Amplificada legítima",prob:"Alta",accion:"Calendario público colonia por colonia antes del estiaje; deslindar responsabilidad municipal de la obra federal del tren.",c:"#C05621"},
+  {n:"Violencia de género y feminicidios",srr:64,act:"Gobierno municipal - Secretaría de las Mujeres",tipo:"Orgánica",prob:"Alta",accion:"Presupuesto etiquetado para refugio y mesa pública con colectivas antes del próximo ciclo de movilización.",c:"#C05621"},
+  {n:"Credibilidad institucional / audio filtrado",srr:60,act:"Alcalde Jorge Reyes Hernández",tipo:"Orgánica (viral genuina)",prob:"Media-Alta",accion:"Comunicado breve reconociendo la práctica y anunciando su cese explícito, sin justificaciones extensas.",c:"#B7791F"},
+  {n:"Aumento tarifario de transporte público",srr:55,act:"Semot estatal - Concesionarios",tipo:"Orgánica",prob:"Media",accion:"Fiscalización visible de tarifarios y mantenimiento de unidades en rutas dentro de Pachuca.",c:"#B7791F"},
+  {n:"Seguridad estudiantil / Universidad de Pachuca",srr:52,act:"Escuela de Medicina Intermédica (aval UNAM)",tipo:"Orgánica",prob:"Media-Alta",accion:"Dar seguimiento público y verificable a la auditoría académica y de seguridad solicitada por los estudiantes.",c:"#B7791F"},
+  {n:"Percepción de inseguridad y extorsión cotidiana",srr:50,act:"Alcalde - Secretaría de Seguridad Pública",tipo:"Orgánica",prob:"Media",accion:"Mantener comunicación con datos desagregados por colonia, sin declaraciones que minimicen el malestar ciudadano.",c:"#B7791F"},
+  {n:"Comercio informal / reubicación de ambulantes",srr:46,act:"Ayuntamiento - Dirección de Comercio y Abasto",tipo:"Orgánica",prob:"Media",accion:"Auditar cuotas internas entre comerciantes y coordinar paradero de transporte público frente a la nueva explanada.",c:"#B7791F"}
+];
+
+var TRAJ = [
+  {n:"Desabasto de agua",t3:54,t2:58,t1:63,ta:70,tipo:"Persistente",vel:"Creciendo",vc:"o"},
+  {n:"Tarifa de transporte público",t3:15,t2:34,t1:58,ta:64,tipo:"Nueva",vel:"Creciendo",vc:"o"},
+  {n:"Violencia de género",t3:66,t2:63,t1:60,ta:62,tipo:"Persistente",vel:"Estable",vc:"g"},
+  {n:"Credibilidad institucional",t3:5,t2:10,t1:50,ta:57,tipo:"Nueva",vel:"Creciendo",vc:"o"},
+  {n:"Comercio informal",t3:22,t2:49,t1:50,ta:52,tipo:"Persistente",vel:"Estable",vc:"g"},
+  {n:"Percepción de inseguridad",t3:55,t2:51,t1:49,ta:48,tipo:"Persistente",vel:"Estable",vc:"g"},
+  {n:"Seguridad estudiantil UP",t3:0,t2:5,t1:44,ta:44,tipo:"Nueva",vel:"Estable",vc:"g"}
+];
+
+var ALRT = [
+  {t:"Audio filtrado del alcalde: publicaciones a cambio del empleo",rows:[
+    ["Territorio","Municipio completo — daño a la percepción de comunicación gubernamental"],
+    ["Emoción","Desconfianza 4/5 - Cinismo institucional 3/5"],
+    ["Actor expuesto","Alcalde Jorge Reyes Hernández — credibilidad personal e institucional directa"],
+    ["Qué ocurrió","El 11 de mayo de 2026 se filtró un audio donde el alcalde pide a trabajadores del ayuntamiento compartir sus publicaciones en redes sociales bajo amenaza de despido. El edil reconoció la grabación pero aseguró que databa de agosto de 2024 y fue sacada de contexto. La filtración se volvió tendencia nacional, con cientos de comentarios burlones exigiendo su 'like' para no ser despedidos."],
+    ["Narrativa activa","Un like o la calle / gobernar es comunicar, aunque sea bajo presión"],
+    ["Fuente verificadora","La Silla Rota Hidalgo — 12 mayo 2026 — ICF 4.3"],
+    ["Riesgo","Medio-Alto — SRR 60 — Cobertura nacional viral, coincide con el arranque del proceso electoral 2026-2027"],
+    ["Escalamiento","Probabilidad media — el episodio puede reactivarse si surgen nuevas grabaciones o si opositores lo capitalizan de cara al proceso electoral"],
+    ["Acción inmediata","Comunicado breve que reconozca la práctica y anuncie su cese explícito. Evitar justificaciones extensas: cada explicación adicional alimenta más la narrativa de simulación que el hecho original."]
+  ]},
+  {t:"Corte de agua de hasta 96 horas por obras del Tren México-Pachuca",rows:[
+    ["Territorio","Zona poniente de la Zona Metropolitana de Pachuca (Santa Julia, La Loma, San Cayetano, San Bartolo, Unión Popular) y zonas dependientes del sistema Matilde"],
+    ["Emoción","Hartazgo 4/5 - Desprotección 3/5 - Ansiedad 3/5"],
+    ["Actor expuesto","CAASIM - Gobierno municipal y estatal - SEDENA (obra federal del tren)"],
+    ["Qué ocurrió","El 5 de julio de 2026 CAASIM anunció un corte de hasta 96 horas derivado de las obras del tren México-Pachuca, que requieren adecuar infraestructura hídrica en su trazo. Es el segundo corte mayor en dos meses, tras el de mayo por mantenimiento de la planta Tezontle y el acueducto Tizayuca. El anuncio llega al inicio de la temporada de calor y estiaje."],
+    ["Narrativa activa","El agua es un privilegio en Pachuca / otra vez sin agua, y ahora por el tren"],
+    ["Fuente verificadora","La Silla Rota Hidalgo — 5 julio 2026 — ICF 4.3"],
+    ["Riesgo","Alto — SRR 68 — Antecedente de bloqueos vecinales documentados en años previos ante desabasto prolongado"],
+    ["Escalamiento","Probabilidad alta si el estiaje de julio-agosto se combina con nuevos cortes sin aviso anticipado o sin recorridos de pipas suficientes"],
+    ["Acción inmediata","Calendario público colonia por colonia con fecha y responsable nombrado. Comunicar de forma diferenciada que el corte actual responde a una obra federal (SEDENA), no a rezago exclusivamente municipal, para no cargar toda la responsabilidad narrativa sobre el ayuntamiento."]
+  ]},
+  {t:"Escándalo de violencia digital en Universidad de Pachuca",rows:[
+    ["Territorio","Plantel Universidad de Pachuca — Escuela de Medicina Intermédica"],
+    ["Emoción","Miedo 3/5 - Desprotección juvenil 3/5"],
+    ["Actor expuesto","Escuela de Medicina Intermédica (aval académico de la UNAM)"],
+    ["Qué ocurrió","En mayo de 2026, estudiantes y padres de familia denunciaron presunta venta de exámenes por 1,500 pesos, amenazas entre alumnos y la difusión de contenido íntimo de estudiantes dentro de un grupo interno del plantel. La institución confirmó el inicio de investigaciones internas. Los afectados buscan llevar el caso ante la UNAM y solicitan una auditoría académica y de seguridad."],
+    ["Narrativa activa","La universidad protege a la institución, no a las alumnas"],
+    ["Fuente verificadora","Criterio Hidalgo — 9 mayo 2026 — ICF 4.0"],
+    ["Riesgo","Medio-Alto — SRR 52 — Riesgo de escalar hacia una narrativa de violencia digital de género institucional de alcance estatal si no hay resolución visible"],
+    ["Escalamiento","Probabilidad media-alta si la UNAM se pronuncia públicamente o si nuevas víctimas se suman con testimonios documentados"],
+    ["Acción inmediata","Dar seguimiento público y verificable a la auditoría solicitada por los estudiantes, con plazos y resultados comunicados, para evitar que el silencio institucional alimente la narrativa de encubrimiento."]
+  ]}
+];
+
+// INTERFAZ Y NAVEGACIÓN
+function switchTab(id) {
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
+  document.getElementById('v-' + id).classList.add('on');
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.toggle('on', b.dataset.tab === id)});
+  if (id === 'emociones') setTimeout(buildEmoD, 50);
+  if (id === 'tensiones') setTimeout(buildTensH, 50);
+  if (id === 'riesgos') setTimeout(buildSRR, 50);
+  if (id === 'trayectoria') setTimeout(buildTraj, 50);
+}
+document.getElementById('main-nav').addEventListener('click', function(e){
+  var b = e.target.closest('.nb');
+  if (b) switchTab(b.dataset.tab);
+});
+
+var CR = {};
+function buildEmoD() {
+  if (CR.emoD) return;
+  var ctx = document.getElementById('cEmoD');
+  if (!ctx) return;
+  CR.emoD = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: E.map(function(e){return e.n}),
+      datasets: [{ label:'Distribución emocional (%)', data: E.map(function(e){return e.p}),
+        backgroundColor: E.map(function(e){return e.c}), borderRadius:5, borderSkipped:false }]},
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ min:0, max:35, ticks:{color:'#333333',font:{size:11, weight:'600'}}, grid:{color:'rgba(0,0,0,0.08)'} },
+               y:{ ticks:{color:'#333333',font:{size:11, weight:'600'}}, grid:{display:false} } } }
+  });
+}
+
+function buildTensH() {
+  if (CR.tensH) return;
+  var ctx = document.getElementById('cTensH');
+  if (!ctx) return;
+  CR.tensH = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:T.map(function(t){return t.n}),
+      datasets:[{ label:'Score de Tensión Social', data:T.map(function(t){return t.s}),
+        backgroundColor:T.map(function(t){return t.c}), borderRadius:5, borderSkipped:false }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      onClick:function(evt, els){
+        if (!els.length) return;
+        var idx = els[0].index;
+        var t = T[idx];
+        document.getElementById('panel-narrv').textContent = 'Narrativa dominante: ' + t.nar;
+      },
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ min:0, max:100, ticks:{color:'#333333',font:{size:11, weight:'600'},stepSize:20}, grid:{color:'rgba(0,0,0,0.08)'} },
+               y:{ ticks:{color:'#333333',font:{size:11, weight:'600'}}, grid:{display:false} } } }
+  });
+}
+
+function buildSRR() {
+  if (CR.srr) return;
+  var ctx = document.getElementById('cSRR');
+  if (!ctx) return;
+  CR.srr = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:RG.map(function(r){return r.n}),
+      datasets:[{ label:'Score de Riesgo Reputacional', data:RG.map(function(r){return r.srr}),
+        backgroundColor:RG.map(function(r){return r.c}), borderRadius:5, borderSkipped:false }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ min:0, max:100, ticks:{color:'#333333',font:{size:11, weight:'600'},stepSize:20}, grid:{color:'rgba(0,0,0,0.08)'} },
+               y:{ ticks:{color:'#333333',font:{size:11, weight:'600'}}, grid:{display:false} } } }
+  });
+}
+
+function buildTraj() {
+  if (CR.traj) return;
+  var ctx = document.getElementById('cTraj');
+  if (!ctx) return;
+  var palette = ['#C05621','#B7791F','#C53030','#2B6CB0','#2F855A','#4C51BF','#B7791F'];
+  CR.traj = new Chart(ctx, {
+    type:'line',
+    data:{ labels:['Marzo','Abril','Mayo','Jun-Jul'],
+      datasets: TRAJ.map(function(row, i){
+        return { label: row.n, data:[row.t3,row.t2,row.t1,row.ta], borderColor:palette[i%palette.length],
+          backgroundColor:'transparent', tension:.3, borderWidth:2.5, pointRadius:4 };
+      }) },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ color:'#222222', font:{size:10, weight:'600'}, boxWidth:12 } } },
+      scales:{ x:{ ticks:{color:'#333333',font:{size:11, weight:'600'}}, grid:{display:false} },
+               y:{ min:0, max:100, ticks:{color:'#333333',font:{size:11, weight:'600'}}, grid:{color:'rgba(0,0,0,0.08)'} } } }
+  });
+}
+
+function selT(i) {
+  var rows = document.querySelectorAll('#tens-list .trow');
+  for (var k=0;k<rows.length;k++) rows[k].classList.remove('sel');
+  var row = document.querySelector('#tens-list .trow[data-idx="'+i+'"]');
+  if (row) row.classList.add('sel');
+  var t = T[i];
+  document.getElementById('tens-detail').innerHTML =
+    '<div class="card" style="border-color:'+t.br+'; background:#FFFFFF; box-shadow:0 4px 6px rgba(0,0,0,0.05); animation:fadeIn .2s ease">'
+    + '<div class="ctit" style="color:'+t.c+'; font-size:13px; font-weight:700"><span style="width:6px;height:6px;border-radius:50%;background:'+t.c+';display:inline-block;flex-shrink:0"></span>&nbsp;'+t.n+' &mdash; STS '+t.s+'</div>'
+    + '<div class="dg">'
+    + '<span class="dk">Nivel</span><span class="dv" style="color:'+t.c+';font-weight:700">'+t.niv+' &middot; '+t.s+'/100</span>'
+    + '<span class="dk">Emoción</span><span class="dv" style="font-weight:500">'+t.emo+' &middot; '+t.int+'/5</span>'
+    + '<span class="dk">Narrativa</span><span class="dv" style="font-style:italic; font-weight:500">&ldquo;'+t.nar+'&rdquo;</span>'
+    + '<span class="dk">Actor</span><span class="dv">'+t.act+'</span>'
+    + '<span class="dk">Territorio</span><span class="dv">'+t.ter+'</span>'
+    + '<span class="dk">Potencial</span><span class="dv">'+t.pol+'</span>'
+    + '<span class="dk">Evidencia</span><span class="dv" style="font-size:11.5px; color:var(--muted)">'+t.ev+'</span>'
+    + '</div><div class="drec" style="background:var(--card-bg)">'+t.rec+'</div></div>';
+}
+
+function renderAll() {
+  var th='';
+  for (var i=0;i<T.length;i++){
+    var t=T[i];
+    var dcolor = t.delta.indexOf('+')===0 ? (parseInt(t.delta)>10?'var(--red)':'var(--org)') : (parseInt(t.delta)<-5?'var(--grn)':'var(--dim)');
+    th += '<div class="trow" data-idx="'+i+'">'
+        + '<span class="tnum">'+(i+1)+'</span>'
+        + '<span class="tname">'+t.n+'</span>'
+        + '<span class="tdelta" style="color:'+dcolor+'">'+t.delta+'</span>'
+        + '<span class="tbar"><span class="tbar-f" style="width:'+t.s+'%;background:'+t.c+';display:block"></span></span>'
+        + '<span class="tsco" style="color:'+t.c+'">'+t.s+'</span>'
+        + '<span class="tniv" style="background:'+t.bg+';color:'+t.c+'">'+t.niv+'</span>'
+        + '</div>';
+  }
+  document.getElementById('tens-list').innerHTML = th;
+
+  var eh='';
+  for (var i=0;i<E.length;i++){
+    var e=E[i];
+    var dots='';
+    for (var d=1; d<=5; d++) dots += (d<=e.i ? '\u25CF' : '\u25CB');
+    eh += '<div class="ebar"><span class="enam">'+e.n+'</span>'
+        + '<span class="ebg"><span class="efill" style="width:'+(e.i*20)+'%;background:'+e.c+';display:block"></span></span>'
+        + '<span class="epts" style="color:'+e.c+'">'+dots+'</span></div>'
+        + '<div style="font-size:11px;color:var(--muted);margin:-4px 0 8px 0;padding-left:0;font-weight:500">'+e.chg+' &middot; '+e.lec+'</div>';
+  }
+  document.getElementById('emo-bars').innerHTML = eh;
+
+  var tr='';
+  for (var i=0;i<TER.length;i++){
+    var z=TER[i];
+    tr += '<div class="ter" style="border-color:'+z.br+'" data-ter="'+i+'">'
+        + '<div class="ter-h" style="background:rgba(255,255,255,.4)"><div class="ter-info">'
+        + '<div class="ter-name" style="color:'+z.c+'">'+z.n+'</div>'
+        + '<div class="ter-sub" style="color:var(--text); font-weight:500">'+z.ten+' &middot; <span style="color:var(--muted)">Emoción: '+z.emo+'</span></div>'
+        + '</div><span class="tniv" style="background:'+z.bg+';color:'+z.c+';flex-shrink:0;height:fit-content">'+z.niv+'</span>'
+        + '<span class="ter-arr" id="ta'+i+'">&#9660;</span></div>'
+        + '<div class="ter-body" id="tb'+i+'">'+z.obs+'</div></div>';
+  }
+  document.getElementById('ter-list').innerHTML = tr;
+
+  var nh='';
+  for (var i=0;i<NAR.length;i++){
+    var n=NAR[i];
+    nh += '<div class="nar" data-nar="'+i+'"><div class="nar-h" style="background:rgba(255,255,255,.4)"><div class="nar-info">'
+        + '<div class="nar-name">'+n.n+'</div>'
+        + '<div class="nar-meta">'+n.tema+' &middot; <b>Actor:</b> '+n.act+'</div>'
+        + '</div><span class="nar-arr" id="na'+i+'">&#9660;</span></div>'
+        + '<div class="nar-body" id="nb'+i+'"><div><b>Potencial político:</b> '+n.pol+'</div>'
+        + '<div class="nfrase" style="color:var(--cyan)">&ldquo;'+n.f+'&rdquo;</div>'
+        + '<div style="font-size:11px;color:var(--dim);margin-top:4px;font-weight:500">'+n.orig+'</div></div></div>';
+  }
+  document.getElementById('nar-list').innerHTML = nh;
+
+  var rh='';
+  for (var i=0;i<RG.length;i++){
+    var r=RG[i];
+    rh += '<div class="card mb"><div class="dg">'
+        + '<span class="dk">Tensión</span><span class="dv" style="font-weight:700">'+r.n+'</span>'
+        + '<span class="dk">SRR</span><span class="dv" style="color:'+r.c+';font-weight:700">'+r.srr+' / 100</span>'
+        + '<span class="dk">Actor expuesto</span><span class="dv">'+r.act+'</span>'
+        + '<span class="dk">Tipo de señal</span><span class="dv">'+r.tipo+'</span>'
+        + '<span class="dk">Prob. de escalar</span><span class="dv">'+r.prob+'</span>'
+        + '</div><div class="drec" style="background:#FFFFFF">'+r.accion+'</div></div>';
+  }
+  document.getElementById('riesgo-list').innerHTML = rh;
+
+  var tj='';
+  for (var i=0;i<TRAJ.length;i++){
+    var j=TRAJ[i];
+    var delta = j.ta - j.t1;
+    var dsign = delta>0 ? '+'+delta : String(delta);
+    var vclass = j.vc==='o' ? 'vr' : (j.vc==='g' ? 'vo' : 'vg');
+    var arrow = delta>10 ? '\u2191' : (delta>=1 ? '\u2192' : (delta<=-6 ? '\u2193' : '\u2014'));
+    var tipoClass = j.tipo==='Nueva' ? 'vr' : (j.tipo==='Recurrente' ? 'vg' : 'vo');
+    tj += '<tr><td><b>'+j.n+'</b></td><td style="text-align:center;color:var(--muted);font-weight:500">'+j.t3+'</td>'
+        + '<td style="text-align:center;color:var(--muted);font-weight:500">'+j.t2+'</td>'
+        + '<td style="text-align:center;color:var(--muted);font-weight:500">'+j.t1+'</td>'
+        + '<td style="text-align:center;font-weight:700; font-size:13px">'+j.ta+'</td>'
+        + '<td style="text-align:center;font-weight:700; color:var(--text)">'+arrow+' '+dsign+'</td>'
+        + '<td><span class="vchip '+vclass+'">'+j.vel+'</span></td>'
+        + '<td><span class="vchip '+tipoClass+'">'+j.tipo+'</span></td></tr>';
+  }
+  document.getElementById('traj-body').innerHTML = tj;
+
+  var al='';
+  for (var i=0;i<ALRT.length;i++){
+    var a=ALRT[i];
+    var rowsHtml='';
+    for (var j=0;j<a.rows.length;j++){
+      rowsHtml += '<span class="ak">'+a.rows[j][0]+'</span><span class="av">'+a.rows[j][1]+'</span>';
+    }
+    al += '<div class="abox" data-al="'+i+'"><div class="abox-h"><div class="abox-t"><span class="pulse"></span>Alerta '+(i+1)+' &mdash; '+a.t+'</div>'
+        + '<span class="abox-arr" id="aa'+i+'">&#9658;</span></div>'
+        + '<div class="abox-body" id="ab'+i+'" style="background:#FFFFFF; padding:12px; border-radius:8px; margin-top:8px"><div class="ag">'+rowsHtml+'</div></div></div>';
+  }
+  document.getElementById('alertas-list').innerHTML = al;
+}
+
+// CONTROLADORES DE EVENTOS
+document.addEventListener('click', function(e){
+  var row = e.target.closest('#tens-list .trow[data-idx]');
+  if (row) { selT(parseInt(row.dataset.idx,10)); return; }
+
+  var ter = e.target.closest('[data-ter]');
+  if (ter) {
+    var gi = ter.dataset.ter;
+    var b = document.getElementById('tb'+gi), a = document.getElementById('ta'+gi);
+    if (!b || !a) return;
+    var op = b.classList.contains('op');
+    b.classList.toggle('op', !op); a.classList.toggle('op', !op);
+    a.innerHTML = op ? '&#9660;' : '&#9650;';
+    return;
+  }
+  var nar = e.target.closest('[data-nar]');
+  if (nar) {
+    var gi = nar.dataset.nar;
+    var b = document.getElementById('nb'+gi), a = document.getElementById('na'+gi);
+    if (!b || !a) return;
+    var op = b.classList.contains('op');
+    b.classList.toggle('op', !op); a.classList.toggle('op', !op);
+    a.innerHTML = op ? '&#9660;' : '&#9650;';
+    return;
+  }
+  var al = e.target.closest('[data-al]');
+  if (al) {
+    var gi = al.dataset.al;
+    var b = document.getElementById('ab'+gi), a = document.getElementById('aa'+gi);
+    if (!b || !a) return;
+    var op = b.classList.contains('op');
+    b.classList.toggle('op', !op); a.classList.toggle('op', !op);
+    a.innerHTML = op ? '&#9658;' : '&#9660;';
+    return;
+  }
+});
+
+renderAll();
+setTimeout(buildTensH, 80);
+</script>
+</body>
+</html>
