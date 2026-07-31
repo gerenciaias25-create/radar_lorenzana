@@ -222,12 +222,12 @@ function loadSelectedSkill() {
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // Guardar contexto en localStorage por si los JS internos de las skills lo buscan
+  // 1. Guardar en localStorage para que los JS dentro de las Skills lo usen
   localStorage.setItem('selectedPersonaje', targetName);
   localStorage.setItem('selectedMes', month);
   localStorage.setItem('selectedAnio', year);
 
-  // Separar nombre y apellido para reemplazo de variables {{...}}
+  // 2. Preparar variables para reemplazar plantillas Handlebars {{ACTOR_...}}
   const nameParts = targetName.split(' ');
   const firstName = nameParts[0] || targetName;
   const lastName = nameParts.slice(1).join(' ') || '';
@@ -251,7 +251,7 @@ function loadSelectedSkill() {
       return response.text();
     })
     .then(htmlContent => {
-      // Reemplazo dinámico de {{VARIABLE}}
+      // Reemplazo de etiquetas {{...}} en el HTML recibido
       let processedHtml = htmlContent;
       for (const [key, value] of Object.entries(templateData)) {
         const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
@@ -267,7 +267,7 @@ function loadSelectedSkill() {
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
-      // Re-ejecutar scripts inyectados
+      // Re-ejecución dinámica de scripts
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
@@ -276,7 +276,7 @@ function loadSelectedSkill() {
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
-      // Disparar eventos de inicio y funciones dinámicas
+      // Disparar render de las gráficas
       setTimeout(() => {
         window.dispatchEvent(new Event('DOMContentLoaded'));
         window.dispatchEvent(new Event('load'));
