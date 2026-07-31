@@ -216,7 +216,6 @@
     <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
     <div class="filter-box">
-      <!-- SELECTOR CON TODAS LAS SKILLS -->
       <select id="skillSelect" class="filter-select">
         <option value="radar">Skill: RADAR Político</option>
         <option value="humor_social">Skill: Humor Social</option>
@@ -225,10 +224,8 @@
         <option value="analisis_corporal">Skill: Análisis Corporal</option>
       </select>
 
-      <!-- INPUT LIMPIO SIN TEXTO PRECONFIGURADO -->
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
 
-      <!-- LOS 12 MESES DEL AÑO -->
       <select id="monthSelect" class="filter-select">
         <option value="Enero">Enero</option>
         <option value="Febrero">Febrero</option>
@@ -244,7 +241,6 @@
         <option value="Diciembre">Diciembre</option>
       </select>
 
-      <!-- PERIODO DE 2021 A 2026 -->
       <select id="yearSelect" class="filter-select">
         <option value="2026" selected>2026</option>
         <option value="2025">2025</option>
@@ -292,8 +288,8 @@
 
     <!-- PESTAÑA 1: PERFIL -->
     <div class="sec active" id="pf">
-      <div class="st">Perfil Estratégico</div>
-      <div class="ss">Evaluación ejecutiva y cronología procesada.</div>
+      <div class="st" id="secTitlePf">Perfil Estratégico</div>
+      <div class="ss" id="secSubPf">Evaluación ejecutiva y cronología procesada.</div>
       <div class="pg">
         <div class="c" id="pfCard"></div>
         <div class="c">
@@ -348,7 +344,7 @@
     <div class="sec" id="red">
       <div class="st">Red de Poder y Estructura</div>
       <div class="g2" style="margin-bottom:20px">
-        <div class="c"><div class="ch">📡 RADAR DIMENSIONAL</div><div class="cc"><canvas id="radarChart"></canvas></div></div>
+        <div class="c"><div class="ch" id="radarTitle">📡 RADAR DIMENSIONAL</div><div class="cc"><canvas id="radarChart"></canvas></div></div>
         <div id="redAlerts"></div>
       </div>
       <table class="tbl">
@@ -364,11 +360,99 @@
 let ierChartInstance = null;
 let radarChartInstance = null;
 
+// TEMPLATES CONFIGURADOS POR SKILL
+const SKILL_TEMPLATES = {
+  radar: {
+    icon: "📡",
+    label: "RADAR Político",
+    sub: "Mapeo Estratégico y Gobernabilidad",
+    barLabels: ['Gobernabilidad', 'Seguridad', 'Presupuesto', 'Alianzas'],
+    barData: [8.2, 6.8, 7.9, 8.5],
+    radarLabels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas', 'Presupuesto', 'Redes'],
+    radarData: [8.2, 7.5, 6.8, 8.5, 7.9, 8.0],
+    alertHtml: `<div class="al al-g"><h4>🟢 Estabilidad Gobernativa</h4><p>Nivel de cohesión estructural adecuado en el periodo.</p></div>`,
+    bars: [
+      { l: "Índice de Gobernabilidad", v: 82, t: "8.2/10", c: "var(--green)" },
+      { l: "Control Territorial", v: 68, t: "6.8/10", c: "var(--yellow)" }
+    ],
+    coTable: [{ id: "R1", cat: "Política", p1: "Línea Oficial", p2: "Alineación en Congreso", tag: "tg", imp: "BAJO" }],
+    vectorText: "Consolidación de alianzas estratégicas y control de agenda.",
+    radarTitle: "📡 RADAR DIMENSIONAL DE GOBERNABILIDAD"
+  },
+  humor_social: {
+    icon: "🗣️",
+    label: "Humor Social",
+    sub: "Análisis de Conversación, Sentimiento y Redes Sociales",
+    barLabels: ['Sent. Positivo', 'Sent. Neutro', 'Sent. Negativo', 'Viralidad'],
+    barData: [25, 45, 30, 88],
+    radarLabels: ['Aprobación', 'Rechazo', 'Empatía', 'Orgánico', 'Bots/Spam', 'Alcance'],
+    radarData: [5.2, 6.8, 4.5, 7.0, 3.2, 8.8],
+    alertHtml: `<div class="al al-r"><h4>🔴 Fricción Digital Activa</h4><p>Picos conversacionales negativos impulsados por temas de coyuntura.</p></div>`,
+    bars: [
+      { l: "Sentimiento Positivo", v: 25, t: "25%", c: "var(--green)" },
+      { l: "Conversación Crítica / Rechazo", v: 30, t: "30%", c: "var(--red)" }
+    ],
+    coTable: [{ id: "HS1", cat: "Redes", p1: "Discurso Integrador", p2: "Comentarios en X / FB negativos", tag: "tr", imp: "ALTO" }],
+    vectorText: "Despliegue de vocerías digitales y contención de conversación adversa.",
+    radarTitle: "📊 RADAR DE HUMOR SOCIAL Y DIGITAL"
+  },
+  tensiones: {
+    icon: "⚡",
+    label: "Tensiones",
+    sub: "Mapa de Puntos Críticos y Conflicto Social",
+    barLabels: ['Conflicto Laboral', 'Presión Social', 'Riesgo Político', 'Efecto Medios'],
+    barData: [6.5, 8.2, 7.0, 8.8],
+    radarLabels: ['Social', 'Gremial', 'Electoral', 'Económico', 'Mediático', 'Seguridad'],
+    radarData: [8.2, 6.5, 7.0, 5.8, 8.8, 7.4],
+    alertHtml: `<div class="al al-y"><h4>🟡 Tensión Media-Alta</h4><p>Riesgo focalizado en frentes sindicales y grupos de presión.</p></div>`,
+    bars: [
+      { l: "Nivel de Tensión General", v: 78, t: "7.8/10", c: "var(--orange)" },
+      { l: "Capacidad de Despresurización", v: 55, t: "5.5/10", c: "var(--yellow)" }
+    ],
+    coTable: [{ id: "T1", cat: "Fricción", p1: "Compromiso de Mesa", p2: "Protestas en vía pública", tag: "ty", imp: "MEDIO" }],
+    vectorText: "Apertura urgente de mesas de diálogo y concertación sectorial.",
+    radarTitle: "⚡ RADAR DE VECTORES DE CONFLICTIVIDAD"
+  },
+  opositor: {
+    icon: "🎯",
+    label: "Opositor",
+    sub: "Ataques de Oposición y Vulnerabilidades",
+    barLabels: ['Narrativa Adversaria', 'Impacto Notas', 'Fuerza Oposición', 'Desgaste'],
+    barData: [7.8, 8.0, 6.5, 7.2],
+    radarLabels: ['Ataque Media', 'Fiscalización', 'Redes Opositoras', 'Respuesta', 'Flancos', 'Cohesión'],
+    radarData: [8.0, 7.8, 8.5, 5.0, 7.2, 6.0],
+    alertHtml: `<div class="al al-r"><h4>🔴 Flanco Reputacional Expuesto</h4><p>Embates constantes coordinados desde bloques opositores.</p></div>`,
+    bars: [
+      { l: "Intensidad de Ataques", v: 80, t: "8.0/10", c: "var(--red)" },
+      { l: "Efectividad de Réplica", v: 50, t: "5.0/10", c: "var(--yellow)" }
+    ],
+    coTable: [{ id: "OP1", cat: "Oposición", p1: "Postura Oficial", p2: "Señalamientos del bloque adversario", tag: "tr", imp: "ALTO" }],
+    vectorText: "Refuerzo de argumentos de contraste y blindaje institucional.",
+    radarTitle: "🎯 RADAR DE VULNERABILIDAD Y OPOSICIÓN"
+  },
+  analisis_corporal: {
+    icon: "🧘",
+    label: "Análisis Corporal",
+    sub: "Lenguaje No Verbal, Comunicación Gestual y Congruencia",
+    barLabels: ['Seguridad', 'Empatía Gestual', 'Tensión Facial', 'Microexpresiones'],
+    barData: [8.8, 6.2, 7.5, 8.0],
+    radarLabels: ['Postura', 'Contacto Visual', 'Tono Vocal', 'Microgestos', 'Congruencia', 'Estrés'],
+    radarData: [8.8, 7.0, 8.2, 8.0, 6.5, 7.5],
+    alertHtml: `<div class="al al-y"><h4>🟡 Indicadores de Estrés Detectados</h4><p>Falta de micro-congruencia corporal en discursos de crisis.</p></div>`,
+    bars: [
+      { l: "Índice de Dominancia Corporal", v: 88, t: "8.8/10", c: "var(--blue)" },
+      { l: "Nivel de Estrés Percibido", v: 75, t: "7.5/10", c: "var(--yellow)" }
+    ],
+    coTable: [{ id: "AC1", cat: "Gestual", p1: "Discurso Seguro", p2: "Microexpresión de duda / evasión visual", tag: "ty", imp: "MEDIO" }],
+    vectorText: "Coaching de proyección escénica y manejo gestual en medios.",
+    radarTitle: "🧘 RADAR DE LENGUAJE NO VERBAL Y PROYECCIÓN"
+  }
+};
+
 function setSuggestion(name) {
   document.getElementById('targetProfile').value = name;
 }
 
-// PASO DE VISTA 1 A VISTA 2
 function startSearchProcess() {
   const targetName = document.getElementById('targetProfile').value.trim();
   
@@ -377,63 +461,78 @@ function startSearchProcess() {
     return;
   }
 
-  const skillText = document.getElementById('skillSelect').options[document.getElementById('skillSelect').selectedIndex].text;
+  const skillKey = document.getElementById('skillSelect').value;
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // Ocultar Vista 1, Mostrar Vista 2
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Consultando ${skillText} para "${targetName}" (${month} ${year})...`;
+  document.getElementById('loadingText').textContent = `Ejecutando ${SKILL_TEMPLATES[skillKey].label} para "${targetName}" (${month} ${year})...`;
 
-  // Simulación de búsqueda con Apify -> Pasar a Vista 3
   setTimeout(() => {
     document.getElementById('view2').style.display = 'none';
     document.getElementById('view3').style.display = 'block';
-    renderDashboard(targetName, skillText, month, year);
-  }, 1200);
+    renderDashboard(targetName, skillKey, month, year);
+  }, 1000);
 }
 
-// REGRESAR DE VISTA 3 A VISTA 1
 function resetToSearch() {
   document.getElementById('view3').style.display = 'none';
   document.getElementById('view2').style.display = 'none';
   document.getElementById('view1').style.display = 'block';
-  document.getElementById('targetProfile').value = ''; // Se limpia el campo
+  document.getElementById('targetProfile').value = '';
 }
 
-function renderDashboard(profileName, skillText, month, year) {
-  document.getElementById('dispName').innerHTML = `${profileName.toUpperCase()} <span>(${month} ${year})</span>`;
-  document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillText}`;
+function renderDashboard(profileName, skillKey, month, year) {
+  const template = SKILL_TEMPLATES[skillKey] || SKILL_TEMPLATES['radar'];
 
-  // Datos mock adaptables según búsqueda
-  const profileCard = `<div class="av">👤</div><div class="pn">${profileName}</div><div class="pr">Análisis de Inteligencia</div><div class="ps"><strong>Extracción</strong>Apify Active</div><div class="ps"><strong>Periodo</strong>${month} ${year}</div>`;
+  document.getElementById('dispName').innerHTML = `${profileName.toUpperCase()} <span>(${month} ${year})</span>`;
+  document.getElementById('hdrSubText').textContent = `${template.label} · ${template.sub}`;
+
+  // Card perfil
+  const profileCard = `<div class="av">${template.icon}</div><div class="pn">${profileName}</div><div class="pr">Análisis: ${template.label}</div><div class="ps"><strong>Extracción</strong>Apify Active</div><div class="ps"><strong>Periodo</strong>${month} ${year}</div>`;
   document.getElementById('pfCard').innerHTML = profileCard;
 
-  const timelineHtml = `
+  // Timeline
+  document.getElementById('pfTimeline').innerHTML = `
     <div style="margin-bottom:10px">
       <strong style="color:var(--ac);font-size:11px">${year}</strong><br>
-      <strong>Mapeo de Conversación y Tendencias</strong>
-      <p style="font-size:12px;color:var(--muted)">Análisis de datos procesado con base en la Skill: ${skillText}.</p>
+      <strong>Procesamiento en tiempo real (${template.label})</strong>
+      <p style="font-size:12px;color:var(--muted)">Información procesada vía Apify para el perfil de ${profileName}.</p>
     </div>
   `;
-  document.getElementById('pfTimeline').innerHTML = timelineHtml;
 
-  // Gráficos dinámicos
-  renderIERChart(['Gobernabilidad', 'Imagen', 'Estrategia', 'Mapeo Social'], [7.5, 8.0, 6.9, 7.8]);
+  // Gráfico Bar
+  renderIERChart(template.barLabels, template.barData);
 
-  document.getElementById('ovLeftAlerts').innerHTML = `<div class="al al-g"><h4>✅ Análisis Completado</h4><p>Datos sincronizados correctamente para ${profileName}.</p></div>`;
-  document.getElementById('ovBars').innerHTML = `<div class="pw"><div class="pl"><span>Métrica de Desempeño</span><span style="color:var(--green)">8.0/10</span></div><div class="pb"><div class="pf" style="width:80%;background:var(--green)"></div></div></div>`;
+  // Alertas e indicadores
+  document.getElementById('ovLeftAlerts').innerHTML = template.alertHtml;
+  
+  let barsHtml = '';
+  template.bars.forEach(b => {
+    barsHtml += `<div class="pw"><div class="pl"><span>${b.l}</span><span style="color:${b.c}">${b.t}</span></div><div class="pb"><div class="pf" style="width:${b.v}%;background:${b.c}"></div></div></div>`;
+  });
+  document.getElementById('ovBars').innerHTML = barsHtml;
 
-  document.getElementById('coBars').innerHTML = `<div class="pw"><div class="pl"><span>Fricción Detectada</span><span style="color:var(--yellow)">Medio</span></div><div class="pb"><div class="pf" style="width:50%;background:var(--yellow)"></div></div></div>`;
-  document.getElementById('coTableBody').innerHTML = `<tr><td><strong>1</strong></td><td>Inconsistencia</td><td>Declaración Pública</td><td>Reporte de Medios</td><td><span class="tag ty">MEDIO</span></td></tr>`;
+  // Contradicciones
+  document.getElementById('coBars').innerHTML = `<div class="pw"><div class="pl"><span>Grado de Fricción (${template.label})</span><span style="color:var(--orange)">7.5/10</span></div><div class="pb"><div class="pf" style="width:75%;background:var(--orange)"></div></div></div>`;
+  
+  let coTableHtml = '';
+  template.coTable.forEach(r => {
+    coTableHtml += `<tr><td><strong>${r.id}</strong></td><td>${r.cat}</td><td>${r.p1}</td><td>${r.p2}</td><td><span class="tag ${r.tag}">${r.imp}</span></td></tr>`;
+  });
+  document.getElementById('coTableBody').innerHTML = coTableHtml;
 
-  document.getElementById('vaContainer').innerHTML = `<div class="vc" onclick="this.classList.toggle('expanded')"><div class="vh"><div class="vnum">1</div><div class="vt">Acción Estratégica Recomendada</div><span class="tag tg">OPTIMO</span></div><div class="vb"><p>Diagnóstico de alineación con respecto a ${skillText}.</p></div></div>`;
+  // Vectores
+  document.getElementById('vaContainer').innerHTML = `<div class="vc" onclick="this.classList.toggle('expanded')"><div class="vh"><div class="vnum">1</div><div class="vt">Recomendación Estratégica (${template.label})</div><span class="tag tg">ACTIVO</span></div><div class="vb"><p>${template.vectorText}</p></div></div>`;
 
-  document.getElementById('redAlerts').innerHTML = `<div class="al al-g"><h4>✅ Mapa Estratégico</h4><p>Red de influencia verificada.</p></div>`;
-  document.getElementById('redTableBody').innerHTML = `<tr><td><strong>Gabinete / Entorno</strong></td><td>Coordinación</td><td>Estable</td></tr>`;
+  // Red de poder
+  document.getElementById('radarTitle').textContent = template.radarTitle;
+  document.getElementById('redAlerts').innerHTML = `<div class="al al-g"><h4>✅ Mapeo Completo</h4><p>Análisis para la Skill de ${template.label} concluido.</p></div>`;
+  document.getElementById('redTableBody').innerHTML = `<tr><td><strong>Entorno de Análisis</strong></td><td>Frente Directo</td><td>Monitoreado</td></tr>`;
 
-  renderRadarChart([7.5, 8.0, 6.9, 7.8, 7.2, 8.1]);
+  // Radar Chart
+  renderRadarChart(template.radarLabels, template.radarData);
 }
 
 function showTab(id, btn) {
@@ -453,13 +552,13 @@ function renderIERChart(labels, data) {
   });
 }
 
-function renderRadarChart(data) {
+function renderRadarChart(labels, data) {
   if (radarChartInstance) radarChartInstance.destroy();
   const ctx = document.getElementById('radarChart').getContext('2d');
   radarChartInstance = new Chart(ctx, {
     type: 'radar',
     data: {
-      labels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas', 'Presupuesto', 'Redes'],
+      labels: labels,
       datasets: [{ data: data, fill: true, backgroundColor: 'rgba(0, 194, 212, 0.2)', borderColor: '#00C2D4' }]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
