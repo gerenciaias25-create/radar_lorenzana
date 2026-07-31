@@ -222,12 +222,16 @@ function loadSelectedSkill() {
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // Separar nombre y apellido para las variables {{ACTOR_NOMBRE_PRINCIPAL}} y {{ACTOR_APELLIDOS}}
+  // Guardar contexto en localStorage por si los JS internos de las skills lo buscan
+  localStorage.setItem('selectedPersonaje', targetName);
+  localStorage.setItem('selectedMes', month);
+  localStorage.setItem('selectedAnio', year);
+
+  // Separar nombre y apellido para reemplazo de variables {{...}}
   const nameParts = targetName.split(' ');
   const firstName = nameParts[0] || targetName;
   const lastName = nameParts.slice(1).join(' ') || '';
 
-  // 1. DICCIONARIO DE VARIABLES PARA REEMPLAZAR EN PLANTILLAS HTML
   const templateData = {
     'ACTOR_NOMBRE_PRINCIPAL': firstName.toUpperCase(),
     'ACTOR_APELLIDOS': lastName.toUpperCase(),
@@ -247,7 +251,7 @@ function loadSelectedSkill() {
       return response.text();
     })
     .then(htmlContent => {
-      // 2. REEMPLAZO DINÁMICO DE ETIQUETAS {{VARIABLE}}
+      // Reemplazo dinámico de {{VARIABLE}}
       let processedHtml = htmlContent;
       for (const [key, value] of Object.entries(templateData)) {
         const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
@@ -263,7 +267,7 @@ function loadSelectedSkill() {
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
-      // 3. RE-EJECUCIÓN DE SCRIPTS INTERNOS (Canvas, Chart.js, etc.)
+      // Re-ejecutar scripts inyectados
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
@@ -272,35 +276,17 @@ function loadSelectedSkill() {
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
-      // 4. FORZAR INICIALIZACIÓN DE GRÁFICAS O MÓDULOS DE RADAR Y EMOCIONES
+      // Disparar eventos de inicio y funciones dinámicas
       setTimeout(() => {
         window.dispatchEvent(new Event('DOMContentLoaded'));
         window.dispatchEvent(new Event('load'));
 
-        // Disparar funciones comunes si las skills las usan
         if (typeof renderData === 'function') renderData();
         if (typeof initSkill === 'function') initSkill();
         if (typeof renderCharts === 'function') renderCharts();
-      }, 150);
-
-    })
-    .catch(err => {
-      alert("Error: " + err.message);
-      resetToSearch();
-    });
-}
-      // 3. Disparar eventos comunes de inicio por si las skills los usan (DOMContentLoaded / load / custom trigger)
-      setTimeout(() => {
-        // Disparar evento DOMContentLoaded manual por si la Skill dependía de él
-        window.dispatchEvent(new Event('DOMContentLoaded'));
-        window.dispatchEvent(new Event('load'));
-
-        // Si la skill tiene funciones comunes de renderizado, forzamos su llamada:
-        if (typeof renderData === 'function') renderData();
-        if (typeof initSkill === 'function') initSkill();
         if (typeof loadData === 'function') loadData();
         if (typeof cargarDatos === 'function') cargarDatos();
-      }, 100);
+      }, 150);
 
     })
     .catch(err => {
