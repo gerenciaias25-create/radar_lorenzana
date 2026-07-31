@@ -10,11 +10,6 @@
     --dark: #0f172a;
     --card: #ffffff;
     --border: #cbd5e1;
-    --red: #dc2626;
-    --yellow: #d97706;
-    --orange: #ea580c;
-    --green: #16a34a;
-    --blue: #2563eb;
     --text: #0f172a;
     --muted: #64748b;
     --ac: #00C2D4;
@@ -102,24 +97,6 @@
   }
   .btn-analyze:hover { background: #172554; }
 
-  .suggestions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 16px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .chip {
-    background: #e2e8f0;
-    color: #334155;
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
   /* VISTA 2: LOADER */
   .loading-view {
     display: none;
@@ -142,7 +119,7 @@
   .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
   .loading-subtitle { font-size: 13px; color: var(--muted); }
 
-  /* VISTA 3: DASHBOARD LIMPICITO SIN PLANTILLA PREDETERMINADA */
+  /* VISTA 3: CONTENEDOR CONTENEDOR DE LA SKILL CARGADA */
   .dashboard-view { display: none; width: 100%; }
   
   .hdr { background: var(--hdrblue); border-radius: 8px 8px 0 0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
@@ -151,46 +128,12 @@
   .hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; }
   .btn-reset { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
-  .nav { background: #0f172a; padding: 0 20px; display: flex; gap: 3px; overflow-x: auto; }
-  .nb { background: none; border: none; color: #94a3b8; padding: 14px 16px; font-size: .78rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; }
-  .nb:hover, .nb.active { color: #ffffff; border-bottom-color: var(--ac); }
-
-  .sec { display: none; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0 0 8px 8px; }
-  .sec.active { display: block; }
-  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
-  .c { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 17px; }
-  .ch { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 7px; font-weight: 700; }
-  .st { font-size: 1.3rem; font-weight: 800; margin-bottom: 5px; color: var(--hdrblue); }
-  .ss { color: var(--muted); font-size: .85rem; margin-bottom: 20px; }
-
-  .tbl { width: 100%; border-collapse: collapse; font-size: .82rem; }
-  .tbl th { background: var(--hdrblue); color: #fff; padding: 10px; text-align: left; font-size: .7rem; text-transform: uppercase; }
-  .tbl td { padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-
-  .tag { display: inline-block; font-size: .65rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; }
-  .tr { background: var(--red); color: #fff; } .ty { background: var(--yellow); color: #fff; } .tg { background: var(--green); color: #fff; }
-
-  .pw { margin-bottom: 11px; }
-  .pl { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: .8rem; font-weight: 600; }
-  .pb { height: 8px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
-  .pf { height: 100%; border-radius: 5px; }
-
-  .al { border-radius: 6px; padding: 12px; margin-bottom: 11px; border-left: 4px solid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-  .al-g { border-color: var(--green); }
-
-  .vc { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 8px; }
-  .vh { display: flex; align-items: center; gap: 8px; }
-  .vnum { width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 800; color: #fff; background: var(--hdrblue); }
-  .vt { font-size: .88rem; font-weight: 700; flex: 1; }
-  .vb { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: .82rem; }
-
-  .pg { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; }
-  .av { width: 56px; height: 56px; border-radius: 50%; background: var(--hdrblue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 10px; }
-  .pn { font-size: 1.1rem; font-weight: 800; color: var(--hdrblue); }
-  .pr { font-size: .8rem; color: var(--muted); margin-bottom: 10px; }
-  .ps { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f1f5f9; font-size: .8rem; }
-
-  .cc { position: relative; height: 220px; }
+  #skillContainer {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+    padding: 24px;
+  }
 </style>
 </head>
 <body>
@@ -199,20 +142,20 @@
 
 <div class="app-viewport">
   
-  <!-- VISTA 1: INICIAL -->
+  <!-- VISTA 1: BÚSQUEDA Y MENÚ DE SELECCIÓN -->
   <div class="search-container" id="view1">
     <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
     <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
     <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
     <div class="filter-box">
+      <!-- MAPEO DIRECTO A TUS ARCHIVOS HTML EN public/skills/ -->
       <select id="skillSelect" class="filter-select">
         <option value="" disabled selected>Selecciona una Skill...</option>
-        <option value="radar">Skill: RADAR Político</option>
-        <option value="humor_social">Skill: Humor Social</option>
-        <option value="tensiones">Skill: Tensiones</option>
-        <option value="opositor">Skill: Opositor</option>
-        <option value="analisis_corporal">Skill: Análisis Corporal</option>
+        <option value="skills/radar.html">Skill: RADAR Político</option>
+        <option value="skills/emociones.html">Skill: Humor Social / Emociones</option>
+        <option value="skills/tensiones.html">Skill: Tensiones</option>
+        <option value="skills/opositor.html">Skill: Opositor</option>
       </select>
 
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
@@ -241,129 +184,44 @@
         <option value="2021">2021</option>
       </select>
 
-      <button class="btn-analyze" onclick="startSearchProcess()">Analizar</button>
-    </div>
-
-    <div class="suggestions">
-      <span>Sugerencias:</span>
-      <span class="chip" onclick="setSuggestion('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</span>
-      <span class="chip" onclick="setSuggestion('Horacio Duarte')">Horacio Duarte</span>
-      <span class="chip" onclick="setSuggestion('Claudia Sheinbaum')">Claudia Sheinbaum</span>
+      <button class="btn-analyze" onclick="loadSelectedSkill()">Analizar</button>
     </div>
   </div>
 
-  <!-- VISTA 2: LOADER -->
+  <!-- VISTA 2: LOADER DE EXTRACCIÓN Y CARGA DE ARCHIVO -->
   <div class="loading-view" id="view2">
     <div class="spinner"></div>
     <div class="loading-title">Extrayendo datos con Apify...</div>
-    <div class="loading-subtitle" id="loadingText">Procesando información político-digital...</div>
+    <div class="loading-subtitle" id="loadingText">Cargando archivo de la Skill...</div>
   </div>
 
-  <!-- VISTA 3: DASHBOARD (SE LLENA DINÁMICAMENTE SIN DATOS PREVIOS DENTRO DEL DOM) -->
+  <!-- VISTA 3: DÓNDE SE INYECTA LA SKILL DE LA CARPETA /skills/ -->
   <div class="dashboard-view" id="view3">
     <header class="hdr">
       <div>
         <h1 class="hdr-name" id="dispName">-- <span>(--)</span></h1>
-        <p class="hdr-sub" id="hdrSubText">Esperando selección...</p>
+        <p class="hdr-sub" id="hdrSubText">Mapeo Estratégico Generado</p>
       </div>
       <button class="btn-reset" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
     </header>
 
-    <nav class="nav">
-      <button class="nb active" onclick="showTab('pf',this)">Perfil</button>
-      <button class="nb" onclick="showTab('ov',this)">Resumen / Riesgos</button>
-      <button class="nb" onclick="showTab('co',this)">Contradicciones</button>
-      <button class="nb" onclick="showTab('va',this)">Vectores Estratégicos</button>
-      <button class="nb" onclick="showTab('red',this)">Red de Poder</button>
-    </nav>
-
-    <!-- PESTAÑA 1 -->
-    <div class="sec active" id="pf">
-      <div class="st">Perfil Estratégico</div>
-      <div class="ss">Evaluación ejecutiva y cronología procesada.</div>
-      <div class="pg">
-        <div class="c" id="pfCard"></div>
-        <div class="c">
-          <div class="ch">📅 Hitos de Impacto</div>
-          <div id="pfTimeline"></div>
-        </div>
-      </div>
-      <div class="c">
-        <div class="ch" id="chartTitle">📊 Métrica Principal del Skill</div>
-        <div class="cc"><canvas id="ierChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- PESTAÑA 2 -->
-    <div class="sec" id="ov">
-      <div class="g2">
-        <div id="ovLeftAlerts"></div>
-        <div>
-          <div class="c">
-            <div class="ch">📊 Indicadores Cuantitativos</div>
-            <div id="ovBars"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PESTAÑA 3 -->
-    <div class="sec" id="co">
-      <div class="st">Mapa de Fricciones y Contradicciones</div>
-      <div class="ss">Análisis de inconsistencias en la fuente extraída.</div>
-      <div class="g2" style="margin-bottom:20px">
-        <div class="c">
-          <div class="ch">Impacto Evaluado</div>
-          <div id="coBars"></div>
-        </div>
-      </div>
-      <table class="tbl">
-        <thead>
-          <tr><th>#</th><th>Categoría / Skill</th><th>Posición Observada</th><th>Evidencia Extraída</th><th>Estatus</th></tr>
-        </thead>
-        <tbody id="coTableBody"></tbody>
-      </table>
-    </div>
-
-    <!-- PESTAÑA 4 -->
-    <div class="sec" id="va">
-      <div class="st">Vectores de Acción</div>
-      <div id="vaContainer"></div>
-    </div>
-
-    <!-- PESTAÑA 5 -->
-    <div class="sec" id="red">
-      <div class="st">Red de Poder y Estructura</div>
-      <div class="g2" style="margin-bottom:20px">
-        <div class="c"><div class="ch" id="radarTitle">📡 RADAR DE PODER</div><div class="cc"><canvas id="radarChart"></canvas></div></div>
-        <div id="redAlerts"></div>
-      </div>
-      <table class="tbl">
-        <thead><tr><th>Actor / Entorno</th><th>Vínculo</th><th>Evaluación</th></tr></thead>
-        <tbody id="redTableBody"></tbody>
-      </table>
-    </div>
+    <!-- AQUÍ SE CARGA EL ARCHIVO HTML DE LA SKILL SELECCIONADA -->
+    <div id="skillContainer"></div>
   </div>
 
 </div>
 
 <script>
-let ierChartInstance = null;
-let radarChartInstance = null;
-
-function setSuggestion(name) {
-  document.getElementById('targetProfile').value = name;
-}
-
-function startSearchProcess() {
+function loadSelectedSkill() {
   const skillSelect = document.getElementById('skillSelect');
   const targetInput = document.getElementById('targetProfile');
 
-  const skillValue = skillSelect.value;
+  const skillPath = skillSelect.value;
   const targetName = targetInput.value.trim();
 
-  if (!skillValue) {
-    alert("Por favor selecciona una Skill antes de continuar.");
+  // Validaciones mínimas
+  if (!skillPath) {
+    alert("Por favor selecciona una Skill del menú.");
     return;
   }
   if (!targetName) {
@@ -375,15 +233,43 @@ function startSearchProcess() {
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
+  // Mostrar Loader
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Extrayendo datos con Apify para "${targetName}" mediante ${skillText}...`;
+  document.getElementById('loadingText').textContent = `Procesando ${skillText} para ${targetName}...`;
 
-  setTimeout(() => {
-    document.getElementById('view2').style.display = 'none';
-    document.getElementById('view3').style.display = 'block';
-    renderDashboardDynamic(targetName, skillValue, skillText, month, year);
-  }, 1000);
+  // Carga asíncrona del HTML correspondiente en /skills/
+  fetch(skillPath)
+    .then(response => {
+      if (!response.ok) throw new Error("No se pudo cargar el archivo HTML de la Skill.");
+      return response.text();
+    })
+    .then(htmlContent => {
+      // Ocultar Loader y Mostrar Dashboard
+      document.getElementById('view2').style.display = 'none';
+      document.getElementById('view3').style.display = 'block';
+
+      // Actualizar Header
+      document.getElementById('dispName').innerHTML = `${targetName.toUpperCase()} <span>(${month} ${year})</span>`;
+      document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillText}`;
+
+      // Inyectar el HTML de la habilidad dentro del contenedor principal
+      const container = document.getElementById('skillContainer');
+      container.innerHTML = htmlContent;
+
+      // Si los scripts dentro de las skills necesitan ejecutarse al cargar:
+      const scripts = container.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    })
+    .catch(err => {
+      alert("Error al cargar la Skill: " + err.message);
+      resetToSearch();
+    });
 }
 
 function resetToSearch() {
@@ -393,194 +279,7 @@ function resetToSearch() {
   
   document.getElementById('targetProfile').value = '';
   document.getElementById('skillSelect').selectedIndex = 0;
-}
-
-function renderDashboardDynamic(profileName, skillKey, skillLabel, month, year) {
-  document.getElementById('dispName').innerHTML = `${profileName.toUpperCase()} <span>(${month} ${year})</span>`;
-  document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillLabel}`;
-
-  document.getElementById('pfCard').innerHTML = `
-    <div class="av">👤</div>
-    <div class="pn">${profileName}</div>
-    <div class="pr">Análisis de Inteligencia</div>
-    <div class="ps"><strong>Estatus Apify</strong>Activo</div>
-    <div class="ps"><strong>Skill</strong>${skillLabel}</div>
-    <div class="ps"><strong>Periodo</strong>${month} ${year}</div>
-  `;
-
-  document.getElementById('pfTimeline').innerHTML = `
-    <div>
-      <strong style="color:var(--ac);font-size:11px">${year}</strong><br>
-      <strong>Sintetización del Skill Seleccionado</strong>
-      <p style="font-size:12px;color:var(--muted)">Iniciando procesamiento de métricas para ${profileName} mediante ${skillLabel}.</p>
-    </div>
-  `;
-
-  // DICCIONARIO ÚNICO DE DATOS POR SKILL
-  let categories = [];
-  let barData = [];
-  let radarLabels = [];
-  let radarData = [];
-  let alertTitle = '';
-  let alertDesc = '';
-  let vectorDesc = '';
-
-  if (skillKey === 'humor_social') {
-    categories = ['Aprobación Directa', 'Neutralidad', 'Menciones Negativas', 'Viralidad Redes'];
-    barData = [45, 30, 25, 80];
-    radarLabels = ['Empatía', 'Aprobación', 'Interacción', 'Difusión', 'Comentarios', 'Sentimiento'];
-    radarData = [6.5, 7.2, 5.8, 8.5, 4.0, 7.9];
-    alertTitle = '🗣️ Diagnóstico de Humor Social';
-    alertDesc = `Análisis de opinión pública finalizado para ${profileName}.`;
-    vectorDesc = `Consolidar las líneas con mayor aprobación recibidas durante el mes de ${month}.`;
-  } else if (skillKey === 'tensiones') {
-    categories = ['Presión Social', 'Controversia Prensa', 'Riesgo Político', 'Gobernabilidad'];
-    barData = [70, 85, 60, 75];
-    radarLabels = ['Social', 'Gremial', 'Oposición', 'Económico', 'Medios', 'Interno'];
-    radarData = [7.0, 6.2, 8.0, 5.5, 8.5, 7.1];
-    alertTitle = '⚡ Mapeo de Tensiones';
-    alertDesc = `Focos de fricción identificados activamente en la conversación.`;
-    vectorDesc = `Activar protocolos de mitigación para reducir la tensión mediática detectada.`;
-  } else if (skillKey === 'opositor') {
-    categories = ['Ataques Directos', 'Críticas Narrativas', 'Capacidad Resp.', 'Solidez Discurso'];
-    barData = [78, 65, 50, 82];
-    radarLabels = ['Prensa Crítica', 'Fiscalización', 'Estrategia Bloque', 'Defensa', 'Flancos', 'Redes Opp'];
-    radarData = [8.0, 7.5, 8.2, 5.5, 7.0, 6.2];
-    alertTitle = '🎯 Evaluación de Bloque Opositor';
-    alertDesc = `Mapeo de respuestas y embates de grupos de oposición.`;
-    vectorDesc = `Reforzar los puntos de contraste frente a las líneas narrativas opositoras.`;
-  } else if (skillKey === 'analisis_corporal') {
-    categories = ['Dominancia Escénica', 'Empatía Gestual', 'Microgestos Estrés', 'Congruencia Vocal'];
-    barData = [85, 60, 40, 88];
-    radarLabels = ['Postura', 'Mirada', 'Tono', 'Microexpresiones', 'Seguridad', 'Cadencia'];
-    radarData = [8.8, 7.5, 8.0, 6.2, 8.5, 7.9];
-    alertTitle = '🧘 Lenguaje No Verbal y Discurso';
-    alertDesc = `Procesamiento de gestos y comportamiento corporal en presentaciones.`;
-    vectorDesc = `Ajustar técnicas de proyección presencial para optimizar la percepción pública.`;
-  } else { // radar
-    categories = ['Gobernabilidad', 'Posicionamiento', 'Estrategia', 'Cohesión'];
-    barData = [78, 82, 69, 75];
-    radarLabels = ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas', 'Presupuesto', 'Redes'];
-    radarData = [7.8, 8.2, 6.9, 7.5, 8.0, 7.1];
-    alertTitle = '📡 RADAR Político Integral';
-    alertDesc = `Evaluación multidimensional completada con éxito.`;
-    vectorDesc = `Consolidar los ejes clave de la estructura directiva de ${profileName}.`;
-  }
-
-  // RENDER GRÁFICO BARRAS
-  renderIERChart(categories, barData);
-
-  // RENDER ALERTAS E INDICADORES
-  document.getElementById('ovLeftAlerts').innerHTML = `
-    <div class="al al-g">
-      <h4>${alertTitle}</h4>
-      <p>${alertDesc}</p>
-    </div>
-  `;
-
-  let barsHtml = '';
-  categories.forEach((cat, idx) => {
-    const val = barData[idx];
-    barsHtml += `
-      <div class="pw">
-        <div class="pl"><span>${cat}</span><span style="color:var(--btn-blue)">${val}</span></div>
-        <div class="pb"><div class="pf" style="width:${val}%;background:var(--btn-blue)"></div></div>
-      </div>
-    `;
-  });
-  document.getElementById('ovBars').innerHTML = barsHtml;
-
-  // RENDER CONTRADICCIONES
-  document.getElementById('coBars').innerHTML = `
-    <div class="pw">
-      <div class="pl"><span>Fricción Observada en ${skillLabel}</span><span style="color:var(--yellow)">Modera</span></div>
-      <div class="pb"><div class="pf" style="width:50%;background:var(--yellow)"></div></div>
-    </div>
-  `;
-
-  document.getElementById('coTableBody').innerHTML = `
-    <tr>
-      <td><strong>1</strong></td>
-      <td>${skillLabel}</td>
-      <td>Lectura general del modelo</td>
-      <td>Información procesada mediante Apify (${month} ${year})</td>
-      <td><span class="tag tg">PROCESADO</span></td>
-    </tr>
-  `;
-
-  // RENDER VECTORES
-  document.getElementById('vaContainer').innerHTML = `
-    <div class="vc">
-      <div class="vh">
-        <div class="vnum">1</div>
-        <div class="vt">Recomendación Estratégica (${skillLabel})</div>
-        <span class="tag tg">ACTIVO</span>
-      </div>
-      <div class="vb">
-        <p>${vectorDesc}</p>
-      </div>
-    </div>
-  `;
-
-  // RENDER RED / RADAR CHART
-  document.getElementById('radarTitle').textContent = `📡 Métrica Radar: ${skillLabel}`;
-  document.getElementById('redAlerts').innerHTML = `
-    <div class="al al-g">
-      <h4>✅ Análisis Completado</h4>
-      <p>Procesamiento ejecutado correctamente utilizando <strong>${skillLabel}</strong>.</p>
-    </div>
-  `;
-  
-  document.getElementById('redTableBody').innerHTML = `
-    <tr>
-      <td><strong>Red/Ecosistema Directo</strong></td>
-      <td>Mapeo de Fuentes</td>
-      <td>Evaluado</td>
-    </tr>
-  `;
-
-  renderRadarChart(radarLabels, radarData);
-}
-
-function showTab(id, btn) {
-  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  btn.classList.add('active');
-}
-
-function renderIERChart(labels, data) {
-  if (ierChartInstance) ierChartInstance.destroy();
-  const ctx = document.getElementById('ierChart').getContext('2d');
-  ierChartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: { 
-      labels: labels, 
-      datasets: [{ data: data, backgroundColor: '#1e3a8a', borderRadius: 4 }] 
-    },
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false, 
-      plugins: { legend: { display: false } } 
-    }
-  });
-}
-
-function renderRadarChart(labels, data) {
-  if (radarChartInstance) radarChartInstance.destroy();
-  const ctx = document.getElementById('radarChart').getContext('2d');
-  radarChartInstance = new Chart(ctx, {
-    type: 'radar',
-    data: {
-      labels: labels,
-      datasets: [{ data: data, fill: true, backgroundColor: 'rgba(0, 194, 212, 0.2)', borderColor: '#00C2D4' }]
-    },
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false, 
-      plugins: { legend: { display: false } } 
-    }
-  });
+  document.getElementById('skillContainer').innerHTML = '';
 }
 </script>
 </body>
