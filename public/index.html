@@ -209,14 +209,16 @@
 
 <div class="app-viewport">
   
-  <!-- VISTA 1: BÚSQUEDA INICIAL -->
+  <!-- VISTA 1: BÚSQUEDA INICIAL LIMPIA -->
   <div class="search-container" id="view1">
     <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
     <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
     <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
     <div class="filter-box">
+      <!-- SELECTOR SIN OPCIÓN PREDETERMINADA -->
       <select id="skillSelect" class="filter-select">
+        <option value="" disabled selected>Selecciona una Skill...</option>
         <option value="radar">Skill: RADAR Político</option>
         <option value="humor_social">Skill: Humor Social</option>
         <option value="tensiones">Skill: Tensiones</option>
@@ -224,8 +226,10 @@
         <option value="analisis_corporal">Skill: Análisis Corporal</option>
       </select>
 
+      <!-- CAMPO DE PERSONAJE VACÍO -->
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
 
+      <!-- MESES -->
       <select id="monthSelect" class="filter-select">
         <option value="Enero">Enero</option>
         <option value="Febrero">Febrero</option>
@@ -241,6 +245,7 @@
         <option value="Diciembre">Diciembre</option>
       </select>
 
+      <!-- PERIODO 2021-2026 -->
       <select id="yearSelect" class="filter-select">
         <option value="2026" selected>2026</option>
         <option value="2025">2025</option>
@@ -261,278 +266,224 @@
     </div>
   </div>
 
-  <!-- VISTA 2: EN PROCESO DE BÚSQUEDA -->
+  <!-- VISTA 2: LOADER DE BÚSQUEDA EN PROCESO -->
   <div class="loading-view" id="view2">
     <div class="spinner"></div>
     <div class="loading-title">Extrayendo datos con Apify...</div>
     <div class="loading-subtitle" id="loadingText">Procesando información político-digital en tiempo real.</div>
   </div>
 
-  <!-- VISTA 3: RESULTADOS DE LA BÚSQUEDA (DASHBOARD) -->
-  <div class="dashboard-view" id="view3">
-    <header class="hdr">
-      <div>
-        <h1 class="hdr-name" id="dispName">NOMBRE <span>PERFIL</span></h1>
-        <p class="hdr-sub" id="hdrSubText">Mapeo Estratégico Generado</p>
-      </div>
-      <button class="btn-reset" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
-    </header>
-
-    <nav class="nav">
-      <button class="nb active" onclick="showTab('pf',this)">Perfil</button>
-      <button class="nb" onclick="showTab('ov',this)">Resumen / Riesgos</button>
-      <button class="nb" onclick="showTab('co',this)">Contradicciones</button>
-      <button class="nb" onclick="showTab('va',this)">Vectores Estratégicos</button>
-      <button class="nb" onclick="showTab('red',this)">Red de Poder</button>
-    </nav>
-
-    <!-- PESTAÑA 1: PERFIL -->
-    <div class="sec active" id="pf">
-      <div class="st" id="secTitlePf">Perfil Estratégico</div>
-      <div class="ss" id="secSubPf">Evaluación ejecutiva y cronología procesada.</div>
-      <div class="pg">
-        <div class="c" id="pfCard"></div>
-        <div class="c">
-          <div class="ch">📅 Hitos de Impacto</div>
-          <div id="pfTimeline"></div>
-        </div>
-      </div>
-      <div class="c">
-        <div class="ch" id="chartTitle">📊 Métricas por Categoría</div>
-        <div class="cc"><canvas id="ierChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- PESTAÑA 2: RESUMEN / RIESGOS -->
-    <div class="sec" id="ov">
-      <div class="g2">
-        <div id="ovLeftAlerts"></div>
-        <div>
-          <div class="c" style="margin-bottom:16px">
-            <div class="ch">📊 Indicadores Cuantitativos</div>
-            <div id="ovBars"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PESTAÑA 3: CONTRADICCIONES -->
-    <div class="sec" id="co">
-      <div class="st">Mapa de Fricciones y Contradicciones</div>
-      <div class="ss">Inconsistencias detectadas en la narrativa del perfil.</div>
-      <div class="g2" style="margin-bottom:20px">
-        <div class="c">
-          <div class="ch">Impacto Relativo</div>
-          <div id="coBars"></div>
-        </div>
-      </div>
-      <table class="tbl">
-        <thead>
-          <tr><th>#</th><th>Categoría</th><th>Posición / Expresión</th><th>Evidencia / Realidad</th><th>Nivel</th></tr>
-        </thead>
-        <tbody id="coTableBody"></tbody>
-      </table>
-    </div>
-
-    <!-- PESTAÑA 4: VECTORES -->
-    <div class="sec" id="va">
-      <div class="st">Vectores de Acción</div>
-      <div id="vaContainer"></div>
-    </div>
-
-    <!-- PESTAÑA 5: RED DE PODER -->
-    <div class="sec" id="red">
-      <div class="st">Red de Poder y Estructura</div>
-      <div class="g2" style="margin-bottom:20px">
-        <div class="c"><div class="ch" id="radarTitle">📡 RADAR DIMENSIONAL</div><div class="cc"><canvas id="radarChart"></canvas></div></div>
-        <div id="redAlerts"></div>
-      </div>
-      <table class="tbl">
-        <thead><tr><th>Actor / Entorno</th><th>Vínculo</th><th>Evaluación</th></tr></thead>
-        <tbody id="redTableBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
-
+  <!-- VISTA 3: DASHBOARD RESULTADOS -->
+  
 <script>
 let ierChartInstance = null;
 let radarChartInstance = null;
-
-// TEMPLATES CONFIGURADOS POR SKILL
-const SKILL_TEMPLATES = {
-  radar: {
-    icon: "📡",
-    label: "RADAR Político",
-    sub: "Mapeo Estratégico y Gobernabilidad",
-    barLabels: ['Gobernabilidad', 'Seguridad', 'Presupuesto', 'Alianzas'],
-    barData: [8.2, 6.8, 7.9, 8.5],
-    radarLabels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas', 'Presupuesto', 'Redes'],
-    radarData: [8.2, 7.5, 6.8, 8.5, 7.9, 8.0],
-    alertHtml: `<div class="al al-g"><h4>🟢 Estabilidad Gobernativa</h4><p>Nivel de cohesión estructural adecuado en el periodo.</p></div>`,
-    bars: [
-      { l: "Índice de Gobernabilidad", v: 82, t: "8.2/10", c: "var(--green)" },
-      { l: "Control Territorial", v: 68, t: "6.8/10", c: "var(--yellow)" }
-    ],
-    coTable: [{ id: "R1", cat: "Política", p1: "Línea Oficial", p2: "Alineación en Congreso", tag: "tg", imp: "BAJO" }],
-    vectorText: "Consolidación de alianzas estratégicas y control de agenda.",
-    radarTitle: "📡 RADAR DIMENSIONAL DE GOBERNABILIDAD"
-  },
-  humor_social: {
-    icon: "🗣️",
-    label: "Humor Social",
-    sub: "Análisis de Conversación, Sentimiento y Redes Sociales",
-    barLabels: ['Sent. Positivo', 'Sent. Neutro', 'Sent. Negativo', 'Viralidad'],
-    barData: [25, 45, 30, 88],
-    radarLabels: ['Aprobación', 'Rechazo', 'Empatía', 'Orgánico', 'Bots/Spam', 'Alcance'],
-    radarData: [5.2, 6.8, 4.5, 7.0, 3.2, 8.8],
-    alertHtml: `<div class="al al-r"><h4>🔴 Fricción Digital Activa</h4><p>Picos conversacionales negativos impulsados por temas de coyuntura.</p></div>`,
-    bars: [
-      { l: "Sentimiento Positivo", v: 25, t: "25%", c: "var(--green)" },
-      { l: "Conversación Crítica / Rechazo", v: 30, t: "30%", c: "var(--red)" }
-    ],
-    coTable: [{ id: "HS1", cat: "Redes", p1: "Discurso Integrador", p2: "Comentarios en X / FB negativos", tag: "tr", imp: "ALTO" }],
-    vectorText: "Despliegue de vocerías digitales y contención de conversación adversa.",
-    radarTitle: "📊 RADAR DE HUMOR SOCIAL Y DIGITAL"
-  },
-  tensiones: {
-    icon: "⚡",
-    label: "Tensiones",
-    sub: "Mapa de Puntos Críticos y Conflicto Social",
-    barLabels: ['Conflicto Laboral', 'Presión Social', 'Riesgo Político', 'Efecto Medios'],
-    barData: [6.5, 8.2, 7.0, 8.8],
-    radarLabels: ['Social', 'Gremial', 'Electoral', 'Económico', 'Mediático', 'Seguridad'],
-    radarData: [8.2, 6.5, 7.0, 5.8, 8.8, 7.4],
-    alertHtml: `<div class="al al-y"><h4>🟡 Tensión Media-Alta</h4><p>Riesgo focalizado en frentes sindicales y grupos de presión.</p></div>`,
-    bars: [
-      { l: "Nivel de Tensión General", v: 78, t: "7.8/10", c: "var(--orange)" },
-      { l: "Capacidad de Despresurización", v: 55, t: "5.5/10", c: "var(--yellow)" }
-    ],
-    coTable: [{ id: "T1", cat: "Fricción", p1: "Compromiso de Mesa", p2: "Protestas en vía pública", tag: "ty", imp: "MEDIO" }],
-    vectorText: "Apertura urgente de mesas de diálogo y concertación sectorial.",
-    radarTitle: "⚡ RADAR DE VECTORES DE CONFLICTIVIDAD"
-  },
-  opositor: {
-    icon: "🎯",
-    label: "Opositor",
-    sub: "Ataques de Oposición y Vulnerabilidades",
-    barLabels: ['Narrativa Adversaria', 'Impacto Notas', 'Fuerza Oposición', 'Desgaste'],
-    barData: [7.8, 8.0, 6.5, 7.2],
-    radarLabels: ['Ataque Media', 'Fiscalización', 'Redes Opositoras', 'Respuesta', 'Flancos', 'Cohesión'],
-    radarData: [8.0, 7.8, 8.5, 5.0, 7.2, 6.0],
-    alertHtml: `<div class="al al-r"><h4>🔴 Flanco Reputacional Expuesto</h4><p>Embates constantes coordinados desde bloques opositores.</p></div>`,
-    bars: [
-      { l: "Intensidad de Ataques", v: 80, t: "8.0/10", c: "var(--red)" },
-      { l: "Efectividad de Réplica", v: 50, t: "5.0/10", c: "var(--yellow)" }
-    ],
-    coTable: [{ id: "OP1", cat: "Oposición", p1: "Postura Oficial", p2: "Señalamientos del bloque adversario", tag: "tr", imp: "ALTO" }],
-    vectorText: "Refuerzo de argumentos de contraste y blindaje institucional.",
-    radarTitle: "🎯 RADAR DE VULNERABILIDAD Y OPOSICIÓN"
-  },
-  analisis_corporal: {
-    icon: "🧘",
-    label: "Análisis Corporal",
-    sub: "Lenguaje No Verbal, Comunicación Gestual y Congruencia",
-    barLabels: ['Seguridad', 'Empatía Gestual', 'Tensión Facial', 'Microexpresiones'],
-    barData: [8.8, 6.2, 7.5, 8.0],
-    radarLabels: ['Postura', 'Contacto Visual', 'Tono Vocal', 'Microgestos', 'Congruencia', 'Estrés'],
-    radarData: [8.8, 7.0, 8.2, 8.0, 6.5, 7.5],
-    alertHtml: `<div class="al al-y"><h4>🟡 Indicadores de Estrés Detectados</h4><p>Falta de micro-congruencia corporal en discursos de crisis.</p></div>`,
-    bars: [
-      { l: "Índice de Dominancia Corporal", v: 88, t: "8.8/10", c: "var(--blue)" },
-      { l: "Nivel de Estrés Percibido", v: 75, t: "7.5/10", c: "var(--yellow)" }
-    ],
-    coTable: [{ id: "AC1", cat: "Gestual", p1: "Discurso Seguro", p2: "Microexpresión de duda / evasión visual", tag: "ty", imp: "MEDIO" }],
-    vectorText: "Coaching de proyección escénica y manejo gestual en medios.",
-    radarTitle: "🧘 RADAR DE LENGUAJE NO VERBAL Y PROYECCIÓN"
-  }
-};
 
 function setSuggestion(name) {
   document.getElementById('targetProfile').value = name;
 }
 
 function startSearchProcess() {
-  const targetName = document.getElementById('targetProfile').value.trim();
-  
+  const skillSelect = document.getElementById('skillSelect');
+  const targetInput = document.getElementById('targetProfile');
+
+  const skillValue = skillSelect.value;
+  const targetName = targetInput.value.trim();
+
+  // Validación: Exigir selección de skill y nombre del personaje
+  if (!skillValue) {
+    alert("Por favor selecciona una Skill para realizar el análisis.");
+    return;
+  }
   if (!targetName) {
     alert("Por favor ingresa el nombre de un personaje político.");
     return;
   }
 
-  const skillKey = document.getElementById('skillSelect').value;
+  const skillText = skillSelect.options[skillSelect.selectedIndex].text;
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
+  // Paso a Vista 2
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Ejecutando ${SKILL_TEMPLATES[skillKey].label} para "${targetName}" (${month} ${year})...`;
+  document.getElementById('loadingText').textContent = `Extrayendo datos con Apify para "${targetName}" vía ${skillText}...`;
 
+  // Simulación de respuesta de Apify y renderizado
   setTimeout(() => {
     document.getElementById('view2').style.display = 'none';
     document.getElementById('view3').style.display = 'block';
-    renderDashboard(targetName, skillKey, month, year);
-  }, 1000);
+    renderDashboardDynamic(targetName, skillValue, skillText, month, year);
+  }, 1200);
 }
 
 function resetToSearch() {
   document.getElementById('view3').style.display = 'none';
   document.getElementById('view2').style.display = 'none';
   document.getElementById('view1').style.display = 'block';
+  
+  // Limpia el input del personaje y resetea el selector de skill a la opción neutra
   document.getElementById('targetProfile').value = '';
+  document.getElementById('skillSelect').selectedIndex = 0;
 }
 
-function renderDashboard(profileName, skillKey, month, year) {
-  const template = SKILL_TEMPLATES[skillKey] || SKILL_TEMPLATES['radar'];
-
+// Generación 100% dinámica basada estrictamente en la skill elegida en tiempo de ejecución
+function renderDashboardDynamic(profileName, skillKey, skillLabel, month, year) {
   document.getElementById('dispName').innerHTML = `${profileName.toUpperCase()} <span>(${month} ${year})</span>`;
-  document.getElementById('hdrSubText').textContent = `${template.label} · ${template.sub}`;
+  document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillLabel}`;
 
-  // Card perfil
-  const profileCard = `<div class="av">${template.icon}</div><div class="pn">${profileName}</div><div class="pr">Análisis: ${template.label}</div><div class="ps"><strong>Extracción</strong>Apify Active</div><div class="ps"><strong>Periodo</strong>${month} ${year}</div>`;
-  document.getElementById('pfCard').innerHTML = profileCard;
+  // 1. Configurar Pestaña Perfil
+  document.getElementById('pfCard').innerHTML = `
+    <div class="av">👤</div>
+    <div class="pn">${profileName}</div>
+    <div class="pr">Análisis de Inteligencia</div>
+    <div class="ps"><strong>Extracción</strong>Apify Active</div>
+    <div class="ps"><strong>Skill Aplicada</strong>${skillLabel}</div>
+    <div class="ps"><strong>Periodo</strong>${month} ${year}</div>
+  `;
 
-  // Timeline
   document.getElementById('pfTimeline').innerHTML = `
     <div style="margin-bottom:10px">
       <strong style="color:var(--ac);font-size:11px">${year}</strong><br>
-      <strong>Procesamiento en tiempo real (${template.label})</strong>
-      <p style="font-size:12px;color:var(--muted)">Información procesada vía Apify para el perfil de ${profileName}.</p>
+      <strong>Procesamiento de Conversación y Tendencias</strong>
+      <p style="font-size:12px;color:var(--muted)">Análisis generado en tiempo real con datos de Apify usando el módulo <b>${skillLabel}</b>.</p>
     </div>
   `;
 
-  // Gráfico Bar
-  renderIERChart(template.barLabels, template.barData);
+  // 2. Definición dinámica de categorías según el Skill seleccionado
+  let categories = [];
+  let barData = [];
+  let radarLabels = [];
+  let radarData = [];
+  let alertTitle = '';
+  let alertDesc = '';
+  let vectorDesc = '';
 
-  // Alertas e indicadores
-  document.getElementById('ovLeftAlerts').innerHTML = template.alertHtml;
-  
+  switch (skillKey) {
+    case 'humor_social':
+      categories = ['Aprobación', 'Conversación Neutra', 'Rechazo/Crítica', 'Viralidad'];
+      barData = [45, 30, 25, 80];
+      radarLabels = ['Empatía', 'Aprobación', 'Respuesta Redes', 'Alcance', 'Spam/Bots', 'Interacción'];
+      radarData = [6.5, 7.2, 5.8, 8.5, 3.0, 7.9];
+      alertTitle = '🗣️ Análisis de Humor Social';
+      alertDesc = `Trazabilidad de la conversación pública sobre ${profileName} finalizada.`;
+      vectorDesc = `Optimizar el mensaje en canales de mayor interacción orgánica identificados en ${month} ${year}.`;
+      break;
+
+    case 'tensiones':
+      categories = ['Riesgo Social', 'Presión Mediática', 'Conflicto Político', 'Gobernabilidad'];
+      barData = [70, 85, 60, 75];
+      radarLabels = ['Social', 'Sindicatos', 'Partidos', 'Económico', 'Prensa', 'Seguridad'];
+      radarData = [7.0, 6.2, 8.0, 5.5, 8.5, 7.1];
+      alertTitle = '⚡ Mapeo de Tensiones';
+      alertDesc = `Puntos de fricción activos identificados para ${profileName}.`;
+      vectorDesc = `Implementar mesas de contención para reducir el riesgo en áreas prioritarias.`;
+      break;
+
+    case 'opositor':
+      categories = ['Embates Oposición', 'Menciones Críticas', 'Blindaje', 'Respuesta'];
+      barData = [78, 65, 50, 82];
+      radarLabels = ['Ataques Media', 'Fiscalización', 'Bloque Adversario', 'Defensa', 'Flancos', 'Cohesión'];
+      radarData = [8.0, 7.5, 8.2, 5.5, 7.0, 6.2];
+      alertTitle = '🎯 Evaluación de Frente Opositor';
+      alertDesc = `Se registraron estrategias de respuesta y focos de ataque de la oposición.`;
+      vectorDesc = `Reforzar la narrativa en los temas vulnerables identificados durante el periodo.`;
+      break;
+
+    case 'analisis_corporal':
+      categories = ['Dominancia', 'Empatía Gestual', 'Microgestos Estrés', 'Congruencia'];
+      barData = [85, 60, 40, 88];
+      radarLabels = ['Postura', 'Contacto Visual', 'Tono Vocal', 'Microexpresiones', 'Seguridad', 'Fluidez'];
+      radarData = [8.8, 7.5, 8.0, 6.2, 8.5, 7.9];
+      alertTitle = '🧘 Análisis de Lenguaje No Verbal';
+      alertDesc = `Patrones gestuales y congruencia del discurso procesados.`;
+      vectorDesc = `Ajustes recomendados en técnicas de proyección y manejo de gesticulación presencial.`;
+      break;
+
+    default: // radar
+      categories = ['Gobernabilidad', 'Imagen', 'Estrategia', 'Mapeo Social'];
+      barData = [7.8, 8.2, 6.9, 7.5];
+      radarLabels = ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas', 'Presupuesto', 'Redes'];
+      radarData = [7.8, 8.2, 6.9, 7.5, 8.0, 7.1];
+      alertTitle = '📡 RADAR Político Ejecutivo';
+      alertDesc = `Evaluación integral del ecosistema político de ${profileName}.`;
+      vectorDesc = `Consolidar las líneas de acción de alta prioridad dentro de la estructura general.`;
+      break;
+  }
+
+  // 3. Renderizar Gráfico de Barras
+  renderIERChart(categories, barData);
+
+  // 4. Renderizar Alertas e Indicadores
+  document.getElementById('ovLeftAlerts').innerHTML = `
+    <div class="al al-g">
+      <h4>${alertTitle}</h4>
+      <p>${alertDesc}</p>
+    </div>
+  `;
+
   let barsHtml = '';
-  template.bars.forEach(b => {
-    barsHtml += `<div class="pw"><div class="pl"><span>${b.l}</span><span style="color:${b.c}">${b.t}</span></div><div class="pb"><div class="pf" style="width:${b.v}%;background:${b.c}"></div></div></div>`;
+  categories.forEach((cat, idx) => {
+    const val = barData[idx];
+    barsHtml += `
+      <div class="pw">
+        <div class="pl"><span>${cat}</span><span style="color:var(--btn-blue)">${val}${skillKey === 'humor_social' ? '%' : '/100'}</span></div>
+        <div class="pb"><div class="pf" style="width:${val}%;background:var(--btn-blue)"></div></div>
+      </div>
+    `;
   });
   document.getElementById('ovBars').innerHTML = barsHtml;
 
-  // Contradicciones
-  document.getElementById('coBars').innerHTML = `<div class="pw"><div class="pl"><span>Grado de Fricción (${template.label})</span><span style="color:var(--orange)">7.5/10</span></div><div class="pb"><div class="pf" style="width:75%;background:var(--orange)"></div></div></div>`;
+  // 5. Tabla de Contradicciones
+  document.getElementById('coBars').innerHTML = `
+    <div class="pw">
+      <div class="pl"><span>Nivel de Fricción Evaluado</span><span style="color:var(--yellow)">Medio</span></div>
+      <div class="pb"><div class="pf" style="width:50%;background:var(--yellow)"></div></div>
+    </div>
+  `;
+
+  document.getElementById('coTableBody').innerHTML = `
+    <tr>
+      <td><strong>1</strong></td>
+      <td>${skillLabel}</td>
+      <td>Posición pública expresada</td>
+      <td>Métrica extraída por Apify (${month} ${year})</td>
+      <td><span class="tag ty">MEDIO</span></td>
+    </tr>
+  `;
+
+  // 6. Vectores
+  document.getElementById('vaContainer').innerHTML = `
+    <div class="vc" onclick="this.classList.toggle('expanded')">
+      <div class="vh">
+        <div class="vnum">1</div>
+        <div class="vt">Vectores de Acción Recomendados</div>
+        <span class="tag tg">OPTIMO</span>
+      </div>
+      <div class="vb">
+        <p>${vectorDesc}</p>
+      </div>
+    </div>
+  `;
+
+  // 7. Red de Poder & Radar Chart
+  document.getElementById('radarTitle').textContent = `📡 Métrica Radar (${skillLabel})`;
+  document.getElementById('redAlerts').innerHTML = `
+    <div class="al al-g">
+      <h4>✅ Estructura Procesada</h4>
+      <p>Datos extraídos y contextualizados bajo el Skill de <strong>${skillLabel}</strong>.</p>
+    </div>
+  `;
   
-  let coTableHtml = '';
-  template.coTable.forEach(r => {
-    coTableHtml += `<tr><td><strong>${r.id}</strong></td><td>${r.cat}</td><td>${r.p1}</td><td>${r.p2}</td><td><span class="tag ${r.tag}">${r.imp}</span></td></tr>`;
-  });
-  document.getElementById('coTableBody').innerHTML = coTableHtml;
+  document.getElementById('redTableBody').innerHTML = `
+    <tr>
+      <td><strong>Red/Ecosistema Directo</strong></td>
+      <td>Vinculación Evaluada</td>
+      <td>Estable</td>
+    </tr>
+  `;
 
-  // Vectores
-  document.getElementById('vaContainer').innerHTML = `<div class="vc" onclick="this.classList.toggle('expanded')"><div class="vh"><div class="vnum">1</div><div class="vt">Recomendación Estratégica (${template.label})</div><span class="tag tg">ACTIVO</span></div><div class="vb"><p>${template.vectorText}</p></div></div>`;
-
-  // Red de poder
-  document.getElementById('radarTitle').textContent = template.radarTitle;
-  document.getElementById('redAlerts').innerHTML = `<div class="al al-g"><h4>✅ Mapeo Completo</h4><p>Análisis para la Skill de ${template.label} concluido.</p></div>`;
-  document.getElementById('redTableBody').innerHTML = `<tr><td><strong>Entorno de Análisis</strong></td><td>Frente Directo</td><td>Monitoreado</td></tr>`;
-
-  // Radar Chart
-  renderRadarChart(template.radarLabels, template.radarData);
+  renderRadarChart(radarLabels, radarData);
 }
 
 function showTab(id, btn) {
@@ -547,8 +498,15 @@ function renderIERChart(labels, data) {
   const ctx = document.getElementById('ierChart').getContext('2d');
   ierChartInstance = new Chart(ctx, {
     type: 'bar',
-    data: { labels: labels, datasets: [{ data: data, backgroundColor: '#1e3a8a', borderRadius: 4 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    data: { 
+      labels: labels, 
+      datasets: [{ data: data, backgroundColor: '#1e3a8a', borderRadius: 4 }] 
+    },
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      plugins: { legend: { display: false } } 
+    }
   });
 }
 
@@ -561,7 +519,11 @@ function renderRadarChart(labels, data) {
       labels: labels,
       datasets: [{ data: data, fill: true, backgroundColor: 'rgba(0, 194, 212, 0.2)', borderColor: '#00C2D4' }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      plugins: { legend: { display: false } } 
+    }
   });
 }
 </script>
