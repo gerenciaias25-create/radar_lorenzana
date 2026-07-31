@@ -222,11 +222,20 @@ function loadSelectedSkill() {
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // 1. Guardar contexto para que el JS de las Skills lo pueda leer si lo necesita
-  window.CURRENT_TARGET = { name: targetName, month: month, year: year };
-  localStorage.setItem('selectedPersonaje', targetName);
-  localStorage.setItem('selectedMes', month);
-  localStorage.setItem('selectedAnio', year);
+  // Separar nombre y apellido para las variables {{ACTOR_NOMBRE_PRINCIPAL}} y {{ACTOR_APELLIDOS}}
+  const nameParts = targetName.split(' ');
+  const firstName = nameParts[0] || targetName;
+  const lastName = nameParts.slice(1).join(' ') || '';
+
+  // 1. DICCIONARIO DE VARIABLES PARA REEMPLAZAR EN PLANTILLAS HTML
+  const templateData = {
+    'ACTOR_NOMBRE_PRINCIPAL': firstName.toUpperCase(),
+    'ACTOR_APELLIDOS': lastName.toUpperCase(),
+    'ACTOR_CARGO': 'Servidor(a) Público(a)',
+    'ACTOR_ENTIDAD': 'Estado de México',
+    'ACTOR_PARTIDO': 'Gobernador(a)',
+    'PERIODO_EVALUADO': `${month.toUpperCase()} ${year}`
+  };
 
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
@@ -238,6 +247,13 @@ function loadSelectedSkill() {
       return response.text();
     })
     .then(htmlContent => {
+      // 2. REEMPLAZO DINÁMICO DE ETIQUETAS {{VARIABLE}}
+      let processedHtml = htmlContent;
+      for (const [key, value] of Object.entries(templateData)) {
+        const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+        processedHtml = processedHtml.replace(regex, value);
+      }
+
       document.getElementById('view2').style.display = 'none';
       document.getElementById('view3').style.display = 'block';
 
@@ -245,20 +261,34 @@ function loadSelectedSkill() {
       document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillText}`;
 
       const container = document.getElementById('skillContainer');
-      container.innerHTML = htmlContent;
+      container.innerHTML = processedHtml;
 
-      // 2. Re-ejecución profunda de scripts inyectados
+      // 3. RE-EJECUCIÓN DE SCRIPTS INTERNOS (Canvas, Chart.js, etc.)
       const scripts = Array.from(container.querySelectorAll("script"));
-      
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
         Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
         newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-        
-        // Reemplazamos para que el navegador ejecute el JS recién insertado
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
+      // 4. FORZAR INICIALIZACIÓN DE GRÁFICAS O MÓDULOS DE RADAR Y EMOCIONES
+      setTimeout(() => {
+        window.dispatchEvent(new Event('DOMContentLoaded'));
+        window.dispatchEvent(new Event('load'));
+
+        // Disparar funciones comunes si las skills las usan
+        if (typeof renderData === 'function') renderData();
+        if (typeof initSkill === 'function') initSkill();
+        if (typeof renderCharts === 'function') renderCharts();
+      }, 150);
+
+    })
+    .catch(err => {
+      alert("Error: " + err.message);
+      resetToSearch();
+    });
+}
       // 3. Disparar eventos comunes de inicio por si las skills los usan (DOMContentLoaded / load / custom trigger)
       setTimeout(() => {
         // Disparar evento DOMContentLoaded manual por si la Skill dependía de él
