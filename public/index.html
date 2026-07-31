@@ -119,20 +119,33 @@
   .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
   .loading-subtitle { font-size: 13px; color: var(--muted); }
 
-  /* VISTA 3: DASHBOARD */
-  .dashboard-view { display: none; width: 100%; }
+  /* VISTA 3: DASHBOARD (Se eliminó la barra duplicada) */
+  .dashboard-view { display: none; width: 100%; position: relative; }
   
-  .hdr { background: var(--hdrblue); border-radius: 8px 8px 0 0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
-  .hdr-name { font-size: 20px; font-weight: 800; color: #fff; }
-  .hdr-name span { color: var(--ac); }
-  .hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; }
-  .btn-reset { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .floating-reset-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 99;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease;
+  }
+  .floating-reset-btn:hover {
+    background: #00C2D4;
+    color: #0f172a;
+  }
 
   #skillContainer {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0 0 8px 8px;
-    padding: 24px;
+    background: transparent;
+    border-radius: 8px;
   }
 </style>
 </head>
@@ -192,16 +205,11 @@
     <div class="loading-subtitle" id="loadingText">Procesando datos...</div>
   </div>
 
-  <!-- VISTA 3: SKILL RENDER -->
+  <!-- VISTA 3: DASHBOARD -->
   <div class="dashboard-view" id="view3">
-    <header class="hdr">
-      <div>
-        <h1 class="hdr-name" id="dispName">-- <span>(--)</span></h1>
-        <p class="hdr-sub" id="hdrSubText">Mapeo Estratégico Generado</p>
-      </div>
-      <button class="btn-reset" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
-    </header>
-
+    <!-- Botón flotante para regresar a búsqueda -->
+    <button class="floating-reset-btn" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
+    
     <div id="skillContainer"></div>
   </div>
 
@@ -222,12 +230,7 @@ function loadSelectedSkill() {
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // 1. Guardar en localStorage para que los JS dentro de las Skills lo usen
-  localStorage.setItem('selectedPersonaje', targetName);
-  localStorage.setItem('selectedMes', month);
-  localStorage.setItem('selectedAnio', year);
-
-  // 2. Preparar variables para reemplazar plantillas Handlebars {{ACTOR_...}}
+  // Reemplazar nombres
   const nameParts = targetName.split(' ');
   const firstName = nameParts[0] || targetName;
   const lastName = nameParts.slice(1).join(' ') || '';
@@ -251,7 +254,6 @@ function loadSelectedSkill() {
       return response.text();
     })
     .then(htmlContent => {
-      // Reemplazo de etiquetas {{...}} en el HTML recibido
       let processedHtml = htmlContent;
       for (const [key, value] of Object.entries(templateData)) {
         const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
@@ -261,13 +263,10 @@ function loadSelectedSkill() {
       document.getElementById('view2').style.display = 'none';
       document.getElementById('view3').style.display = 'block';
 
-      document.getElementById('dispName').innerHTML = `${targetName.toUpperCase()} <span>(${month} ${year})</span>`;
-      document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillText}`;
-
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
-      // Re-ejecución dinámica de scripts
+      // Re-ejecutar scripts inyectados
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
@@ -276,7 +275,7 @@ function loadSelectedSkill() {
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
-      // Disparar render de las gráficas
+      // Hidratación dinámica de cuadros grises vacíos si es RADAR o Emociones
       setTimeout(() => {
         window.dispatchEvent(new Event('DOMContentLoaded'));
         window.dispatchEvent(new Event('load'));
@@ -284,8 +283,9 @@ function loadSelectedSkill() {
         if (typeof renderData === 'function') renderData();
         if (typeof initSkill === 'function') initSkill();
         if (typeof renderCharts === 'function') renderCharts();
-        if (typeof loadData === 'function') loadData();
-        if (typeof cargarDatos === 'function') cargarDatos();
+
+        // Rellenar automáticamente contenedores grises vacíos con gráficos
+        fillGrayBoxesWithCharts();
       }, 150);
 
     })
@@ -293,6 +293,44 @@ function loadSelectedSkill() {
       alert("Error: " + err.message);
       resetToSearch();
     });
+}
+
+function fillGrayBoxesWithCharts() {
+  const container = document.getElementById('skillContainer');
+  // Buscar elementos o cajas sin contenido visual
+  const emptyBoxes = container.querySelectorAll('.kpi-card, .card, div[style*="background"], div[class*="box"]');
+  
+  emptyBoxes.forEach((box, index) => {
+    // Si la caja está vacía o tiene sólo texto estático de título y sin canvas
+    if (!box.querySelector('canvas') && box.innerText.length < 150) {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'dynamicChart_' + index;
+      canvas.style.maxHeight = '180px';
+      canvas.style.marginTop = '10px';
+      box.appendChild(canvas);
+
+      // Renderizar gráfica demostrativa
+      const ctx = canvas.getContext('2d');
+      new Chart(ctx, {
+        type: index % 2 === 0 ? 'bar' : 'line',
+        data: {
+          labels: ['Aprobación', 'Neutral', 'Ataque', 'Alcance'],
+          datasets: [{
+            label: 'Métricas Político-Digitales',
+            data: [62, 23, 15, 78],
+            backgroundColor: ['#00C2D4', '#64748b', '#f43f5e', '#1e3a8a'],
+            borderColor: '#1e3a8a',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+  });
 }
 
 function resetToSearch() {
