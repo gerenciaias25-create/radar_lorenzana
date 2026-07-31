@@ -119,7 +119,7 @@
   .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
   .loading-subtitle { font-size: 13px; color: var(--muted); }
 
-  /* VISTA 3: CONTENEDOR CONTENEDOR DE LA SKILL CARGADA */
+  /* VISTA 3: DASHBOARD */
   .dashboard-view { display: none; width: 100%; }
   
   .hdr { background: var(--hdrblue); border-radius: 8px 8px 0 0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
@@ -142,14 +142,13 @@
 
 <div class="app-viewport">
   
-  <!-- VISTA 1: BÚSQUEDA Y MENÚ DE SELECCIÓN -->
+  <!-- VISTA 1: BÚSQUEDA -->
   <div class="search-container" id="view1">
     <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
     <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
-    <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
+    <p class="search-desc">Selecciona la Skill y ejecuta la consulta sobre el objetivo.</p>
 
     <div class="filter-box">
-      <!-- MAPEO DIRECTO A TUS ARCHIVOS HTML EN public/skills/ -->
       <select id="skillSelect" class="filter-select">
         <option value="" disabled selected>Selecciona una Skill...</option>
         <option value="skills/radar.html">Skill: RADAR Político</option>
@@ -166,8 +165,8 @@
         <option value="Marzo">Marzo</option>
         <option value="Abril">Abril</option>
         <option value="Mayo">Mayo</option>
-        <option value="Junio">Junio</option>
-        <option value="Julio" selected>Julio</option>
+        <option value="Junio" selected>Junio</option>
+        <option value="Julio">Julio</option>
         <option value="Agosto">Agosto</option>
         <option value="Septiembre">Septiembre</option>
         <option value="Octubre">Octubre</option>
@@ -180,22 +179,20 @@
         <option value="2025">2025</option>
         <option value="2024">2024</option>
         <option value="2023">2023</option>
-        <option value="2022">2022</option>
-        <option value="2021">2021</option>
       </select>
 
       <button class="btn-analyze" onclick="loadSelectedSkill()">Analizar</button>
     </div>
   </div>
 
-  <!-- VISTA 2: LOADER DE EXTRACCIÓN Y CARGA DE ARCHIVO -->
+  <!-- VISTA 2: LOADER -->
   <div class="loading-view" id="view2">
     <div class="spinner"></div>
-    <div class="loading-title">Extrayendo datos con Apify...</div>
-    <div class="loading-subtitle" id="loadingText">Cargando archivo de la Skill...</div>
+    <div class="loading-title">Cargando Inteligencia...</div>
+    <div class="loading-subtitle" id="loadingText">Procesando datos...</div>
   </div>
 
-  <!-- VISTA 3: DÓNDE SE INYECTA LA SKILL DE LA CARPETA /skills/ -->
+  <!-- VISTA 3: SKILL RENDER -->
   <div class="dashboard-view" id="view3">
     <header class="hdr">
       <div>
@@ -205,7 +202,6 @@
       <button class="btn-reset" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
     </header>
 
-    <!-- AQUÍ SE CARGA EL ARCHIVO HTML DE LA SKILL SELECCIONADA -->
     <div id="skillContainer"></div>
   </div>
 
@@ -219,55 +215,66 @@ function loadSelectedSkill() {
   const skillPath = skillSelect.value;
   const targetName = targetInput.value.trim();
 
-  // Validaciones mínimas
-  if (!skillPath) {
-    alert("Por favor selecciona una Skill del menú.");
-    return;
-  }
-  if (!targetName) {
-    alert("Por favor ingresa el nombre de un personaje político.");
-    return;
-  }
+  if (!skillPath) { alert("Por favor selecciona una Skill."); return; }
+  if (!targetName) { alert("Por favor ingresa un nombre."); return; }
 
   const skillText = skillSelect.options[skillSelect.selectedIndex].text;
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // Mostrar Loader
+  // 1. Guardar contexto para que el JS de las Skills lo pueda leer si lo necesita
+  window.CURRENT_TARGET = { name: targetName, month: month, year: year };
+  localStorage.setItem('selectedPersonaje', targetName);
+  localStorage.setItem('selectedMes', month);
+  localStorage.setItem('selectedAnio', year);
+
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Procesando ${skillText} para ${targetName}...`;
+  document.getElementById('loadingText').textContent = `Cargando ${skillText} para ${targetName}...`;
 
-  // Carga asíncrona del HTML correspondiente en /skills/
   fetch(skillPath)
     .then(response => {
-      if (!response.ok) throw new Error("No se pudo cargar el archivo HTML de la Skill.");
+      if (!response.ok) throw new Error("No se pudo cargar la Skill.");
       return response.text();
     })
     .then(htmlContent => {
-      // Ocultar Loader y Mostrar Dashboard
       document.getElementById('view2').style.display = 'none';
       document.getElementById('view3').style.display = 'block';
 
-      // Actualizar Header
       document.getElementById('dispName').innerHTML = `${targetName.toUpperCase()} <span>(${month} ${year})</span>`;
       document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillText}`;
 
-      // Inyectar el HTML de la habilidad dentro del contenedor principal
       const container = document.getElementById('skillContainer');
       container.innerHTML = htmlContent;
 
-      // Si los scripts dentro de las skills necesitan ejecutarse al cargar:
-      const scripts = container.querySelectorAll("script");
+      // 2. Re-ejecución profunda de scripts inyectados
+      const scripts = Array.from(container.querySelectorAll("script"));
+      
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
         Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
         newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+        
+        // Reemplazamos para que el navegador ejecute el JS recién insertado
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
+
+      // 3. Disparar eventos comunes de inicio por si las skills los usan (DOMContentLoaded / load / custom trigger)
+      setTimeout(() => {
+        // Disparar evento DOMContentLoaded manual por si la Skill dependía de él
+        window.dispatchEvent(new Event('DOMContentLoaded'));
+        window.dispatchEvent(new Event('load'));
+
+        // Si la skill tiene funciones comunes de renderizado, forzamos su llamada:
+        if (typeof renderData === 'function') renderData();
+        if (typeof initSkill === 'function') initSkill();
+        if (typeof loadData === 'function') loadData();
+        if (typeof cargarDatos === 'function') cargarDatos();
+      }, 100);
+
     })
     .catch(err => {
-      alert("Error al cargar la Skill: " + err.message);
+      alert("Error: " + err.message);
       resetToSearch();
     });
 }
@@ -276,9 +283,6 @@ function resetToSearch() {
   document.getElementById('view3').style.display = 'none';
   document.getElementById('view2').style.display = 'none';
   document.getElementById('view1').style.display = 'block';
-  
-  document.getElementById('targetProfile').value = '';
-  document.getElementById('skillSelect').selectedIndex = 0;
   document.getElementById('skillContainer').innerHTML = '';
 }
 </script>
