@@ -119,33 +119,49 @@
   .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
   .loading-subtitle { font-size: 13px; color: var(--muted); }
 
-  /* VISTA 3: DASHBOARD (Se eliminó la barra duplicada) */
+  /* VISTA 3: DASHBOARD CON BOTONES SUPERIORES */
   .dashboard-view { display: none; width: 100%; position: relative; }
   
-  .floating-reset-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 99;
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: #fff;
+  .dashboard-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .btn-action {
+    background: #1C2738;
+    border: 1px solid #334155;
+    color: #ffffff;
     padding: 8px 16px;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    backdrop-filter: blur(4px);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     transition: all 0.2s ease;
   }
-  .floating-reset-btn:hover {
+  .btn-action:hover {
     background: #00C2D4;
     color: #0f172a;
+    border-color: #00C2D4;
   }
 
   #skillContainer {
     background: transparent;
     border-radius: 8px;
+  }
+
+  /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN / DESCARGA DE PDF */
+  @media print {
+    .top-brand, .dashboard-toolbar, .search-container, .loading-view {
+      display: none !important;
+    }
+    body { background: #fff !important; padding: 0 !important; }
+    .app-viewport { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    #skillContainer { border: none !important; }
   }
 </style>
 </head>
@@ -207,8 +223,11 @@
 
   <!-- VISTA 3: DASHBOARD -->
   <div class="dashboard-view" id="view3">
-    <!-- Botón flotante para regresar a búsqueda -->
-    <button class="floating-reset-btn" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
+    <!-- Barra con Botones de Acción -->
+    <div class="dashboard-toolbar">
+      <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte</button>
+      <button class="btn-action" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
+    </div>
     
     <div id="skillContainer"></div>
   </div>
@@ -230,12 +249,10 @@ function loadSelectedSkill() {
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // Guardar en localStorage por si los scripts internos leen de ahí
   localStorage.setItem('selectedPersonaje', targetName);
   localStorage.setItem('selectedMes', month);
   localStorage.setItem('selectedAnio', year);
 
-  // Separar nombre y apellidos
   const nameParts = targetName.split(' ');
   const firstName = nameParts[0] || targetName;
   const lastName = nameParts.slice(1).join(' ') || '';
@@ -259,7 +276,6 @@ function loadSelectedSkill() {
       return response.text();
     })
     .then(htmlContent => {
-      // Reemplazo de {{ACTOR_...}}
       let processedHtml = htmlContent;
       for (const [key, value] of Object.entries(templateData)) {
         const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
@@ -272,7 +288,6 @@ function loadSelectedSkill() {
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
-      // 1. Re-ejecutar scripts inyectados de la skill
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
@@ -281,7 +296,6 @@ function loadSelectedSkill() {
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
-      // 2. Activar interactividad de pestañas y renderizado de gráficas
       setTimeout(() => {
         setupTabsAndCharts(container);
       }, 100);
@@ -294,9 +308,8 @@ function loadSelectedSkill() {
 }
 
 function setupTabsAndCharts(container) {
-  // A) ACTIVAR CLICS EN LAS PESTAÑAS
+  // Activar evento de clic en las pestañas nativas del dashboard
   const tabButtons = container.querySelectorAll('button, .tab, [class*="tab"], [onclick]');
-  
   tabButtons.forEach(btn => {
     btn.addEventListener('click', function() {
       tabButtons.forEach(b => b.classList.remove('active', 'bg-blue-600', 'selected'));
@@ -304,11 +317,10 @@ function setupTabsAndCharts(container) {
     });
   });
 
-  // B) DIBUJAR GRÁFICAS EN LOS CANVASES O CAJAS VACÍAS
+  // Renderizar gráficos interactivos en tarjetas o canvases vacíos
   const boxes = container.querySelectorAll('div[class*="card"], div[class*="box"], div[style*="background"], .kpi-card');
   
   boxes.forEach((box, idx) => {
-    // Si no hay canvas o gráfico en esta tarjeta, lo insertamos automáticamente
     let canvas = box.querySelector('canvas');
     if (!canvas && box.offsetHeight > 80) {
       canvas = document.createElement('canvas');
@@ -320,7 +332,6 @@ function setupTabsAndCharts(container) {
 
     if (canvas) {
       const ctx = canvas.getContext('2d');
-      // Destruir instancia previa de chart si existía para evitar parpadeos
       const existingChart = Chart.getChart(canvas);
       if (existingChart) existingChart.destroy();
 
@@ -345,17 +356,18 @@ function setupTabsAndCharts(container) {
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { display: currentType === 'doughnut' }
-          }
+          plugins: { legend: { display: currentType === 'doughnut' } }
         }
       });
     }
   });
 
-  // Intentar ejecutar funciones nativas si el JS de radar.html las incluyó
   if (typeof init === 'function') init();
   if (typeof render === 'function') render();
+}
+
+function downloadReport() {
+  window.print();
 }
 
 function resetToSearch() {
