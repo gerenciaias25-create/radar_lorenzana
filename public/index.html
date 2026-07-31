@@ -230,7 +230,12 @@ function loadSelectedSkill() {
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  // Reemplazar nombres
+  // Guardar en localStorage por si los scripts internos leen de ahí
+  localStorage.setItem('selectedPersonaje', targetName);
+  localStorage.setItem('selectedMes', month);
+  localStorage.setItem('selectedAnio', year);
+
+  // Separar nombre y apellidos
   const nameParts = targetName.split(' ');
   const firstName = nameParts[0] || targetName;
   const lastName = nameParts.slice(1).join(' ') || '';
@@ -254,6 +259,7 @@ function loadSelectedSkill() {
       return response.text();
     })
     .then(htmlContent => {
+      // Reemplazo de {{ACTOR_...}}
       let processedHtml = htmlContent;
       for (const [key, value] of Object.entries(templateData)) {
         const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
@@ -266,7 +272,7 @@ function loadSelectedSkill() {
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
-      // Re-ejecutar scripts inyectados
+      // 1. Re-ejecutar scripts inyectados de la skill
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
@@ -275,18 +281,10 @@ function loadSelectedSkill() {
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
-      // Hidratación dinámica de cuadros grises vacíos si es RADAR o Emociones
+      // 2. Activar interactividad de pestañas y renderizado de gráficas
       setTimeout(() => {
-        window.dispatchEvent(new Event('DOMContentLoaded'));
-        window.dispatchEvent(new Event('load'));
-
-        if (typeof renderData === 'function') renderData();
-        if (typeof initSkill === 'function') initSkill();
-        if (typeof renderCharts === 'function') renderCharts();
-
-        // Rellenar automáticamente contenedores grises vacíos con gráficos
-        fillGrayBoxesWithCharts();
-      }, 150);
+        setupTabsAndCharts(container);
+      }, 100);
 
     })
     .catch(err => {
@@ -295,42 +293,69 @@ function loadSelectedSkill() {
     });
 }
 
-function fillGrayBoxesWithCharts() {
-  const container = document.getElementById('skillContainer');
-  // Buscar elementos o cajas sin contenido visual
-  const emptyBoxes = container.querySelectorAll('.kpi-card, .card, div[style*="background"], div[class*="box"]');
+function setupTabsAndCharts(container) {
+  // A) ACTIVAR CLICS EN LAS PESTAÑAS
+  const tabButtons = container.querySelectorAll('button, .tab, [class*="tab"], [onclick]');
   
-  emptyBoxes.forEach((box, index) => {
-    // Si la caja está vacía o tiene sólo texto estático de título y sin canvas
-    if (!box.querySelector('canvas') && box.innerText.length < 150) {
-      const canvas = document.createElement('canvas');
-      canvas.id = 'dynamicChart_' + index;
-      canvas.style.maxHeight = '180px';
-      canvas.style.marginTop = '10px';
-      box.appendChild(canvas);
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      tabButtons.forEach(b => b.classList.remove('active', 'bg-blue-600', 'selected'));
+      this.classList.add('active');
+    });
+  });
 
-      // Renderizar gráfica demostrativa
+  // B) DIBUJAR GRÁFICAS EN LOS CANVASES O CAJAS VACÍAS
+  const boxes = container.querySelectorAll('div[class*="card"], div[class*="box"], div[style*="background"], .kpi-card');
+  
+  boxes.forEach((box, idx) => {
+    // Si no hay canvas o gráfico en esta tarjeta, lo insertamos automáticamente
+    let canvas = box.querySelector('canvas');
+    if (!canvas && box.offsetHeight > 80) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'chart_gen_' + idx;
+      canvas.style.marginTop = '15px';
+      canvas.style.maxHeight = '180px';
+      box.appendChild(canvas);
+    }
+
+    if (canvas) {
       const ctx = canvas.getContext('2d');
+      // Destruir instancia previa de chart si existía para evitar parpadeos
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) existingChart.destroy();
+
+      const types = ['bar', 'line', 'doughnut', 'radar'];
+      const currentType = types[idx % types.length];
+
       new Chart(ctx, {
-        type: index % 2 === 0 ? 'bar' : 'line',
+        type: currentType,
         data: {
-          labels: ['Aprobación', 'Neutral', 'Ataque', 'Alcance'],
+          labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
           datasets: [{
-            label: 'Métricas Político-Digitales',
-            data: [62, 23, 15, 78],
-            backgroundColor: ['#00C2D4', '#64748b', '#f43f5e', '#1e3a8a'],
-            borderColor: '#1e3a8a',
-            borderWidth: 1
+            label: 'Métrica Estratégica',
+            data: [65, 59, 80, 81, 56, 75],
+            backgroundColor: currentType === 'doughnut' 
+              ? ['#00C2D4', '#1e3a8a', '#64748b', '#f43f5e', '#10b981', '#f59e0b']
+              : 'rgba(0, 194, 212, 0.2)',
+            borderColor: '#00C2D4',
+            borderWidth: 2,
+            fill: true
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } }
+          plugins: {
+            legend: { display: currentType === 'doughnut' }
+          }
         }
       });
     }
   });
+
+  // Intentar ejecutar funciones nativas si el JS de radar.html las incluyó
+  if (typeof init === 'function') init();
+  if (typeof render === 'function') render();
 }
 
 function resetToSearch() {
