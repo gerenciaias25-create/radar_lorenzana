@@ -9,7 +9,6 @@
   :root {
     --dark: #0f172a;
     --card: #ffffff;
-    --card-bg: #f8fafc;
     --border: #cbd5e1;
     --red: #dc2626;
     --yellow: #d97706;
@@ -23,7 +22,7 @@
     --btn-blue: #1e3a8a;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:var(--text);min-height:100vh}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:var(--text);min-height:100vh;padding-bottom:40px}
 
   /* TOP BRAND BAR */
   .top-brand {
@@ -35,14 +34,22 @@
     letter-spacing: 1.5px;
   }
 
+  /* CONTENEDOR PRINCIPAL APLICA A BÚSQUEDA Y DASHBOARD */
+  .app-viewport {
+    max-width: 1200px;
+    margin: 24px auto 0;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
   /* CONTROL PANEL SEARCH CONTAINER */
   .search-container {
-    max-width: 1200px;
-    margin: 24px auto;
     background: #ffffff;
     border-radius: 12px;
     padding: 24px 32px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     border: 1px solid #e2e8f0;
   }
   .search-header-sub {
@@ -126,14 +133,17 @@
   .loader-overlay {
     display: none;
     text-align: center;
-    padding: 40px;
+    padding: 20px;
     font-size: 14px;
     font-weight: 700;
     color: #1e3a8a;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
   }
 
   /* MAIN DASHBOARD CONTENT */
-  .main-dashboard { max-width: 1200px; margin: 0 auto 40px; padding: 0 10px; }
+  .main-dashboard { width: 100%; }
   
   .hdr { background: var(--hdrblue); border-radius: 8px 8px 0 0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
   .hdr-name { font-size: 20px; font-weight: 800; color: #fff; }
@@ -189,108 +199,103 @@
 
 <div class="top-brand">RADAR INTELLIGENCE v2.0</div>
 
-<!-- BUSCADOR CON SELECTOR DE SKILL Y FECHA -->
-<div class="search-container">
-  <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
-  <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
-  <p class="search-desc">Selecciona el tipo de informe e integra la extracción explícita de datos vía Apify en tiempo real.</p>
+<div class="app-viewport">
+  <!-- BUSCADOR CON SKILL FIJA A "RADAR POLÍTICO" -->
+  <div class="search-container">
+    <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
+    <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
+    <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
-  <div class="filter-box">
-    <select id="skillSelect" class="filter-select">
-      <option value="radar">Skill: RADAR Político</option>
-      <option value="humor_social">Skill: Humor Social</option>
-      <option value="tensiones">Skill: Tensiones</option>
-      <option value="opositor">Skill: Opositor</option>
-      <option value="analisis_corporal">Skill: Análisis Corporal</option>
-    </select>
+    <div class="filter-box">
+      <!-- SELECTOR FIJO A RADAR POLÍTICO -->
+      <select id="skillSelect" class="filter-select" disabled>
+        <option value="radar" selected>Skill: RADAR Político</option>
+      </select>
 
-    <input type="text" id="targetProfile" class="filter-input" value="Alfredo Ramírez Bedolla" placeholder="Nombre del personaje...">
+      <input type="text" id="targetProfile" class="filter-input" value="Alfredo Ramírez Bedolla" placeholder="Nombre del personaje...">
 
-    <select id="monthSelect" class="filter-select">
-      <option value="Julio">Julio</option>
-      <option value="Agosto">Agosto</option>
-    </select>
+      <select id="monthSelect" class="filter-select">
+        <option value="Julio">Julio</option>
+        <option value="Agosto">Agosto</option>
+      </select>
 
-    <select id="yearSelect" class="filter-select">
-      <option value="2026">2026</option>
-      <option value="2025">2025</option>
-    </select>
+      <select id="yearSelect" class="filter-select">
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+      </select>
 
-    <button class="btn-analyze" onclick="triggerApifyAnalysis()">Analizar</button>
-  </div>
-
-  <div class="suggestions">
-    <span>Sugerencias:</span>
-    <span class="chip" onclick="setProfile('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</span>
-    <span class="chip" onclick="setProfile('Horacio Duarte')">Horacio Duarte</span>
-    <span class="chip" onclick="setProfile('Claudia Sheinbaum')">Claudia Sheinbaum</span>
-  </div>
-</div>
-
-<div class="loader-overlay" id="loader">
-  🔄 Conectando con API / Apify Actor... Extrayendo datos del perfil y generando reporte...
-</div>
-
-<!-- PANEL DINÁMICO DE RESULTADOS -->
-<div class="main-dashboard" id="dashboardUI">
-  <header class="hdr">
-    <div>
-      <h1 class="hdr-name" id="dispName">ALFREDO RAMÍREZ <span>BEDOLLA</span></h1>
-      <p class="hdr-sub" id="hdrSubText">Gobernador de Michoacán · Mapeo Estratégico General</p>
+      <button class="btn-analyze" onclick="triggerApifyAnalysis()">Analizar</button>
     </div>
-  </header>
 
-  <nav class="nav">
-    <button class="nb active" onclick="show('pf',this)">Perfil</button>
-    <button class="nb" onclick="show('ov',this)" id="tab2Btn">Resumen / Riesgos</button>
-    <button class="nb" onclick="show('co',this)">Contradicciones</button>
-    <button class="nb" onclick="show('va',this)" id="tab4Btn">Vectores Estratégicos</button>
-    <button class="nb" onclick="show('red',this)">Red de Poder</button>
-  </nav>
-
-  <!-- PESTAÑA 1: PERFIL -->
-  <div class="sec active" id="pf">
-    <div class="st">Perfil Estratégico</div>
-    <div class="ss">Evaluación ejecutiva y cronología procesada.</div>
-    <div class="pg">
-      <div class="c" id="pfCard"></div>
-      <div class="c">
-        <div class="ch">📅 Hitomas de Impacto</div>
-        <div id="pfTimeline"></div>
-      </div>
-    </div>
-    <div class="c">
-      <div class="ch" id="chartTitle">📊 Métricas por Categoría</div>
-      <div class="cc"><canvas id="ierChart"></canvas></div>
+    <div class="suggestions">
+      <span>Sugerencias:</span>
+      <span class="chip" onclick="setProfile('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</span>
+      <span class="chip" onclick="setProfile('Horacio Duarte')">Horacio Duarte</span>
+      <span class="chip" onclick="setProfile('Claudia Sheinbaum')">Claudia Sheinbaum</span>
     </div>
   </div>
 
-  <!-- PESTAÑA 2: RESUMEN / RIESGOS -->
-  <div class="sec" id="ov">
-    <div class="g2">
-      <div id="ovLeftAlerts"></div>
+  <div class="loader-overlay" id="loader">
+    🔄 Conectando con API / Apify Actor... Extrayendo datos del perfil y generando reporte...
+  </div>
+
+  <!-- PANEL DINÁMICO DE RESULTADOS (EN LA MISMA VISTA) -->
+  <div class="main-dashboard" id="dashboardUI">
+    <header class="hdr">
       <div>
-        <div class="c" style="margin-bottom:16px">
-          <div class="ch">📊 Indicadores Cuantitativos</div>
-          <div id="ovBars"></div>
-        </div>
-        <div class="c" id="ovRightBlock"></div>
+        <h1 class="hdr-name" id="dispName">ALFREDO RAMÍREZ <span>BEDOLLA</span></h1>
+        <p class="hdr-sub" id="hdrSubText">Gobernador de Michoacán · Mapeo Estratégico General</p>
       </div>
-    </div>
-  </div>
+    </header>
 
-  <!-- PESTAÑA 3: CONTRADICCIONES -->
-  <div class="sec" id="co">
-    <div class="st">Mapa de Fricciones y Contradicciones</div>
-    <div class="ss">Inconsistencias detectadas en la narrativa del perfil.</div>
-    <div class="g2" style="margin-bottom:20px">
-      <div class="c">
-        <div class="ch">Impacto Relativo</div>
-        <div id="coBars"></div>
+    <nav class="nav">
+      <button class="nb active" onclick="show('pf',this)">Perfil</button>
+      <button class="nb" onclick="show('ov',this)">Resumen / Riesgos</button>
+      <button class="nb" onclick="show('co',this)">Contradicciones</button>
+      <button class="nb" onclick="show('va',this)">Vectores Estratégicos</button>
+      <button class="nb" onclick="show('red',this)">Red de Poder</button>
+    </nav>
+
+    <!-- PESTAÑA 1: PERFIL -->
+    <div class="sec active" id="pf">
+      <div class="st">Perfil Estratégico</div>
+      <div class="ss">Evaluación ejecutiva y cronología procesada.</div>
+      <div class="pg">
+        <div class="c" id="pfCard"></div>
+        <div class="c">
+          <div class="ch">📅 Hitos de Impacto</div>
+          <div id="pfTimeline"></div>
+        </div>
       </div>
-      <div class="c" id="coUniqueBlock"></div>
+      <div class="c">
+        <div class="ch">📊 Métricas por Categoría</div>
+        <div class="cc"><canvas id="ierChart"></canvas></div>
+      </div>
     </div>
-    <div class="tbl-wrap">
+
+    <!-- PESTAÑA 2: RESUMEN / RIESGOS -->
+    <div class="sec" id="ov">
+      <div class="g2">
+        <div id="ovLeftAlerts"></div>
+        <div>
+          <div class="c" style="margin-bottom:16px">
+            <div class="ch">📊 Indicadores Cuantitativos</div>
+            <div id="ovBars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: CONTRADICCIONES -->
+    <div class="sec" id="co">
+      <div class="st">Mapa de Fricciones y Contradicciones</div>
+      <div class="ss">Inconsistencias detectadas en la narrativa del perfil.</div>
+      <div class="g2" style="margin-bottom:20px">
+        <div class="c">
+          <div class="ch">Impacto Relativo</div>
+          <div id="coBars"></div>
+        </div>
+      </div>
       <table class="tbl">
         <thead>
           <tr><th>#</th><th>Categoría</th><th>Posición / Expresión</th><th>Evidencia / Realidad</th><th>Nivel</th></tr>
@@ -298,25 +303,25 @@
         <tbody id="coTableBody"></tbody>
       </table>
     </div>
-  </div>
 
-  <!-- PESTAÑA 4: VECTORES -->
-  <div class="sec" id="va">
-    <div class="st">Vectores de Acción</div>
-    <div id="vaContainer"></div>
-  </div>
-
-  <!-- PESTAÑA 5: RED DE PODER -->
-  <div class="sec" id="red">
-    <div class="st">Red de Poder y Estructura</div>
-    <div class="g2" style="margin-bottom:20px">
-      <div class="c"><div class="ch">📡 Radar Dimensional</div><div class="cc"><canvas id="radarChart"></canvas></div></div>
-      <div id="redAlerts"></div>
+    <!-- PESTAÑA 4: VECTORES -->
+    <div class="sec" id="va">
+      <div class="st">Vectores de Acción</div>
+      <div id="vaContainer"></div>
     </div>
-    <table class="tbl">
-      <thead><tr><th>Actor / Entorno</th><th>Vínculo</th><th>Evaluación</th></tr></thead>
-      <tbody id="redTableBody"></tbody>
-    </table>
+
+    <!-- PESTAÑA 5: RED DE PODER -->
+    <div class="sec" id="red">
+      <div class="st">Red de Poder y Estructura</div>
+      <div class="g2" style="margin-bottom:20px">
+        <div class="c"><div class="ch">📡 RADAR DIMENSIONAL</div><div class="cc"><canvas id="radarChart"></canvas></div></div>
+        <div id="redAlerts"></div>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Actor / Entorno</th><th>Vínculo</th><th>Evaluación</th></tr></thead>
+        <tbody id="redTableBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -324,56 +329,36 @@
 let ierChartInstance = null;
 let radarChartInstance = null;
 
-// BASE DE DATOS MULTI-PERFIL Y MULTI-SKILL (BASE O EXTRAÍDA DE APIFY)
 const DATABASE = {
   "Alfredo Ramírez Bedolla": {
-    radar: {
-      hdrSub: "Gobernador de Michoacán · Mapeo Estratégico y Gobernabilidad",
-      pfCard: `<div class="av">🏛️</div><div class="pn">Alfredo Ramírez Bedolla</div><div class="pr">Gobernador de Michoacán</div><div class="ps"><strong>Partido</strong>MORENA</div><div class="ps"><strong>Estatus</strong>Ejecutivo Estatal</div>`,
-      timeline: [{y:"2021",t:"Asunción del Cargo",d:"Llegada a la gubernatura de Michoacán."},{y:"2024",t:"Coordinación de Seguridad",d:"Despliegue con fuerzas federales."}],
-      chartLabels: ['Gobernabilidad', 'Seguridad', 'Presupuesto', 'Alianzas'],
-      chartData: [7, 6, 8, 7],
-      ovLeft: `<div class="al al-y"><h4>🟡 Reto de Seguridad Regional</h4><p>Focos rojos puntuales en zonas agrícolas de Tierra Caliente.</p></div>`,
-      ovBars: [{l:"Estabilidad de Gabinete", v:80, t:"8/10", c:"var(--green)"},{l:"Percepción de Seguridad", v:55, t:"5.5/10", c:"var(--yellow)"}],
-      coBars: [{l:"Discurso Paz vs Eventos Locales", v:75, t:"Alto", c:"var(--orange)"}],
-      coTable: [{id:"A1",cat:"Seguridad",p1:"Pacificación Total",p2:"Incidentes esporádicos en municipios fronterizos",tag:"ty",imp:"MEDIO"}],
-      vaItems: [{num:"1",t:"Consolidación de Infraestructura",tag:"PRIORITARIO",p1:"Avance en carreteras estatales.",p2:"Estrategia: Entregas continuas de obra pública."}],
-      radarData: [7,6,8,7,6,7],
-      redAlerts: `<div class="al al-g"><h4>✅ Alineación Federal</h4><p>Relación fluida con el Gabinete de Seguridad Nacional.</p></div>`,
-      redTable: [{a:"Gabinete Federal",v:"Coordinación Directa",e:"Apoyo operativo constante."}]
-    },
-    humor_social: {
-      hdrSub: "Gobernador de Michoacán · Análisis de Conversación y Redes",
-      pfCard: `<div class="av">🗣️</div><div class="pn">Alfredo Ramírez Bedolla</div><div class="pr">Sentimiento y Opinión Digital</div><div class="ps"><strong>Sentimiento</strong>40% Neg / 45% Neu / 15% Pos</div>`,
-      timeline: [{y:"2026",t:"Conversación Digital",d:"Dominada por temas de seguridad agrícola y servicios."}],
-      chartLabels: ['Negativo', 'Neutro', 'Positivo'],
-      chartData: [40, 45, 15],
-      ovLeft: `<div class="al al-r"><h4>🔴 Conversación Crítica en Redes</h4><p>Picos de reclamo por carreteras y seguridad agrícola.</p></div>`,
-      ovBars: [{l:"Rechazo Digital", v:60, t:"60%", c:"var(--red)"}],
-      coBars: [{l:"Imagen Institucional vs Comentarios", v:80, t:"Alto", c:"var(--orange)"}],
-      coTable: [{id:"HS1",cat:"Redes",p1:"Avances Productivos",p2:"Peticiones directas de productores en comentarios",tag:"tr",imp:"ALTO"}],
-      vaItems: [{num:"1",t:"Gestión de Crisis Digital",tag:"URGENTE",p1:"Infoxicación en temas locales.",p2:"Estrategia: Comunicación oportuna desde vocería."}],
-      radarData: [6,4,7,5,8,6],
-      redAlerts: `<div class="al al-y"><h4>⚠️ Presión Medios Locales</h4><p>Atención constante en portales regionales.</p></div>`,
-      redTable: [{a:"Productores Agrícolas",v:"Sector Clave",e:"Demanda de mayor presencia."}]
-    }
+    hdrSub: "Gobernador de Michoacán · Mapeo Estratégico y Gobernabilidad",
+    pfCard: `<div class="av">🏛️</div><div class="pn">Alfredo Ramírez Bedolla</div><div class="pr">Gobernador de Michoacán</div><div class="ps"><strong>Partido</strong>MORENA</div><div class="ps"><strong>Estatus</strong>Ejecutivo Estatal</div>`,
+    timeline: [{y:"2021",t:"Asunción del Cargo",d:"Llegada a la gubernatura de Michoacán."},{y:"2024",t:"Coordinación de Seguridad",d:"Despliegue con fuerzas federales."}],
+    chartLabels: ['Gobernabilidad', 'Seguridad', 'Presupuesto', 'Alianzas'],
+    chartData: [7.8, 6.5, 8.1, 7.2],
+    ovLeft: `<div class="al al-y"><h4>🟡 Reto de Seguridad Regional</h4><p>Focos rojos puntuales en zonas agrícolas de Tierra Caliente.</p></div>`,
+    ovBars: [{l:"Estabilidad de Gabinete", v:80, t:"8.0/10", c:"var(--green)"},{l:"Percepción de Seguridad", v:55, t:"5.5/10", c:"var(--yellow)"}],
+    coBars: [{l:"Discurso Paz vs Eventos Locales", v:75, t:"Alto", c:"var(--orange)"}],
+    coTable: [{id:"A1",cat:"Seguridad",p1:"Pacificación Total",p2:"Incidentes esporádicos en municipios fronterizos",tag:"ty",imp:"MEDIO"}],
+    vaItems: [{num:"1",t:"Consolidación de Infraestructura",tag:"PRIORITARIO",p1:"Avance en carreteras estatales.",p2:"Estrategia: Entregas continuas de obra pública."}],
+    radarData: [7.8, 6.5, 8.1, 7.2, 6.8, 7.5],
+    redAlerts: `<div class="al al-g"><h4>✅ Alineación Federal</h4><p>Relación fluida con el Gabinete de Seguridad Nacional.</p></div>`,
+    redTable: [{a:"Gabinete Federal",v:"Coordinación Directa",e:"Apoyo operativo constante."}]
   },
-  "Horacio Duarte": {
-    radar: {
-      hdrSub: "Secretario General de Gobierno · Edomex 2023-2029",
-      pfCard: `<div class="av">📡</div><div class="pn">Horacio Duarte Olivares</div><div class="pr">Operación Política Estatal</div><div class="ps"><strong>Estatus</strong>Operador Central</div>`,
-      timeline: [{y:"2023",t:"Llegada a Sec. Gobierno",d:"Manejo de la gobernabilidad en Edomex."}],
-      chartLabels: ['Control Terr.', 'Congreso', 'Gabinete', 'Imagen'],
-      chartData: [9, 8, 9, 6],
-      ovLeft: `<div class="al al-g"><h4>🟢 Control Institucional</h4><p>Coordinación con los 125 municipios y Congreso local.</p></div>`,
-      ovBars: [{l:"Control Territorial", v:90, t:"9/10", c:"var(--green)"}],
-      coBars: [{l:"Riesgo Reputacional", v:65, t:"Medio", c:"var(--yellow)"}],
-      coTable: [{id:"H1",cat:"Posición",p1:"Gestión Técnica",p2:"Notas pasadas sobre aduanas",tag:"ty",imp:"MEDIO"}],
-      vaItems: [{num:"1",t:"Gobernabilidad Municipal",tag:"ALTO",p1:"Mantener consenso.",p2:"Atención a demandas sociales."}],
-      radarData: [9,7,8,6,7,8],
-      redAlerts: `<div class="al al-g"><h4>✅ Enlace Congreso</h4><p>Sólida mayoría coordinada.</p></div>`,
-      redTable: [{a:"Congreso Edomex",v:"Coordinación",e:"Fluidez legislativa."}]
-    }
+  "Claudia Sheinbaum": {
+    hdrSub: "Presidenta de México · Mapeo Estratégico RADAR Político",
+    pfCard: `<div class="av">🇲🇽</div><div class="pn">Claudia Sheinbaum</div><div class="pr">Presidenta de la República</div><div class="ps"><strong>Partido</strong>MORENA</div><div class="ps"><strong>Estatus</strong>Ejecutivo Federal</div>`,
+    timeline: [{y:"2024",t:"Elección Presidencial",d:"Triunfo con amplia mayoría nacional."},{y:"2026",t:"Consolidación del Plan",d:"Implementación de reformas estructurales."}],
+    chartLabels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas'],
+    chartData: [8.5, 8.0, 7.2, 8.8],
+    ovLeft: `<div class="al al-g"><h4>🟢 Alta Aprobación Popular</h4><p>Respaldo sólido en indicadores de gestión pública.</p></div>`,
+    ovBars: [{l:"Aprobación Ciudadana", v:85, t:"8.5/10", c:"var(--green)"},{l:"Cohesión Legislativa", v:90, t:"9.0/10", c:"var(--green)"}],
+    coBars: [{l:"Fricción Oposición vs Metas", v:45, t:"Bajo", c:"var(--green)"}],
+    coTable: [{id:"C1",cat:"Presupuesto",p1:"Austeridad Republicana",p2:"Inversión récord en proyectos clave",tag:"tg",imp:"BAJO"}],
+    vaItems: [{num:"1",t:"Sostenibilidad Transición Energética",tag:"PRIORITARIO",p1:"Proyección internacional.",p2:"Estrategia: Impulso a proyectos mixtos."}],
+    radarData: [8.5, 8.0, 7.2, 8.8, 8.1, 8.5],
+    redAlerts: `<div class="al al-g"><h4>✅ Mayoría Político-Electoral</h4><p>Poder de convocatoria en gobernaturas federadas.</p></div>`,
+    redTable: [{a:"Gobernadores MORENA",v:"Liderazgo Político",e:"Coordinación disciplinada."}]
   }
 };
 
@@ -384,44 +369,37 @@ function setProfile(name) {
 
 function triggerApifyAnalysis() {
   const profileName = document.getElementById('targetProfile').value.trim();
-  const skillKey = document.getElementById('skillSelect').value;
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
   document.getElementById('loader').style.display = 'block';
 
-  // SIMULACIÓN DE EXTRACCIÓN APIFY
   setTimeout(() => {
     document.getElementById('loader').style.display = 'none';
-    renderDashboard(profileName, skillKey, month, year);
-  }, 600);
+    renderDashboard(profileName, month, year);
+  }, 400);
 }
 
-function renderDashboard(profileName, skillKey, month, year) {
-  // Extraer datos del objeto local o generar genérico si Apify trae un perfil nuevo
-  let profileData = DATABASE[profileName] && DATABASE[profileName][skillKey] 
-    ? DATABASE[profileName][skillKey] 
-    : {
-        hdrSub: `${profileName} · Análisis de ${skillKey.toUpperCase()} (${month} ${year})`,
-        pfCard: `<div class="av">👤</div><div class="pn">${profileName}</div><div class="pr">Perfil Automático Apify</div><div class="ps"><strong>Periodo</strong>${month} ${year}</div>`,
-        timeline: [{y:year, t:"Dato Procesado", d:"Información recopilada vía Apify Actor."}],
-        chartLabels: ['Métrica 1', 'Métrica 2', 'Métrica 3'],
-        chartData: [7, 8, 6],
-        ovLeft: `<div class="al al-g"><h4>✅ Datos Actualizados</h4><p>Información procesada para ${profileName}.</p></div>`,
-        ovBars: [{l:"Índice General", v:75, t:"7.5/10", c:"var(--blue)"}],
-        coBars: [{l:"Incongruencia Narrativa", v:40, t:"Bajo", c:"var(--green)"}],
-        coTable: [{id:"X1",cat:"General",p1:"Discurso Oficial",p2:"Datos de Redes",tag:"tg",imp:"BAJO"}],
-        vaItems: [{num:"1",t:"Estrategia General",tag:"AUTOMÁTICO",p1:"Línea de acción generada.",p2:"Plan de contingencia."}],
-        radarData: [7,7,7,7,7,7],
-        redAlerts: `<div class="al al-g"><h4>✅ Red Identificada</h4><p>Vínculos mapeados con éxito.</p></div>`,
-        redTable: [{a:"Entorno Directo",v:"Asociado",e:"Relación Monitoreada."}]
-      };
+function renderDashboard(profileName, month, year) {
+  let profileData = DATABASE[profileName] || {
+    hdrSub: `${profileName} · Mapeo Estratégico RADAR Político`,
+    pfCard: `<div class="av">👤</div><div class="pn">${profileName}</div><div class="pr">Perfil Automático Apify</div><div class="ps"><strong>Periodo</strong>${month} ${year}</div>`,
+    timeline: [{y:year, t:"Dato Procesado", d:"Información recopilada vía Apify Actor."}],
+    chartLabels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas'],
+    chartData: [7.2, 7.0, 6.8, 7.4],
+    ovLeft: `<div class="al al-g"><h4>✅ Datos Actualizados</h4><p>Información procesada para ${profileName}.</p></div>`,
+    ovBars: [{l:"Índice General", v:72, t:"7.2/10", c:"var(--blue)"}],
+    coBars: [{l:"Incongruencia Narrativa", v:40, t:"Bajo", c:"var(--green)"}],
+    coTable: [{id:"X1",cat:"General",p1:"Discurso Oficial",p2:"Datos de Redes",tag:"tg",imp:"BAJO"}],
+    vaItems: [{num:"1",t:"Estrategia General",tag:"AUTOMÁTICO",p1:"Línea de acción generada.",p2:"Plan de contingencia."}],
+    radarData: [7.2, 7.0, 6.8, 7.4, 7.0, 7.2],
+    redAlerts: `<div class="al al-g"><h4>✅ Red Identificada</h4><p>Vínculos mapeados con éxito.</p></div>`,
+    redTable: [{a:"Entorno Directo",v:"Asociado",e:"Relación Monitoreada."}]
+  };
 
-  // Renderizar Nombre y Título
   document.getElementById('dispName').innerHTML = `${profileName.toUpperCase()} <span>(${month} ${year})</span>`;
   document.getElementById('hdrSubText').textContent = profileData.hdrSub;
 
-  // Renderizar Perfil
   document.getElementById('pfCard').innerHTML = profileData.pfCard;
   let tlHtml = '';
   profileData.timeline.forEach(t => {
@@ -429,10 +407,8 @@ function renderDashboard(profileName, skillKey, month, year) {
   });
   document.getElementById('pfTimeline').innerHTML = tlHtml;
 
-  // Gráfico IER
   renderIERChart(profileData.chartLabels, profileData.chartData);
 
-  // Resumen
   document.getElementById('ovLeftAlerts').innerHTML = profileData.ovLeft;
   let barsHtml = '';
   profileData.ovBars.forEach(b => {
@@ -440,7 +416,6 @@ function renderDashboard(profileName, skillKey, month, year) {
   });
   document.getElementById('ovBars').innerHTML = barsHtml;
 
-  // Contradicciones
   let coBarsHtml = '';
   profileData.coBars.forEach(b => {
     coBarsHtml += `<div class="pw"><div class="pl"><span>${b.l}</span><span style="color:${b.c}">${b.t}</span></div><div class="pb"><div class="pf" style="width:${b.v}%;background:${b.c}"></div></div></div>`;
@@ -453,14 +428,12 @@ function renderDashboard(profileName, skillKey, month, year) {
   });
   document.getElementById('coTableBody').innerHTML = coTableHtml;
 
-  // Vectores
   let vaHtml = '';
   profileData.vaItems.forEach(v => {
     vaHtml += `<div class="vc" onclick="this.classList.toggle('expanded')"><div class="vh"><div class="vnum">${v.num}</div><div class="vt">${v.t}</div><span class="tag tr">${v.tag}</span></div><div class="vb"><p><strong>Diagnóstico:</strong> ${v.p1}</p><p><strong>Acción:</strong> ${v.p2}</p></div></div>`;
   });
   document.getElementById('vaContainer').innerHTML = vaHtml;
 
-  // Red de Poder
   document.getElementById('redAlerts').innerHTML = profileData.redAlerts;
   let redTableHtml = '';
   profileData.redTable.forEach(r => {
@@ -497,14 +470,13 @@ function renderRadarChart(data) {
   radarChartInstance = new Chart(ctx, {
     type: 'radar',
     data: {
-      labels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Redes', 'Presupuesto', 'Alianzas'],
+      labels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas', 'Presupuesto', 'Redes'],
       datasets: [{ data: data, fill: true, backgroundColor: 'rgba(0, 194, 212, 0.2)', borderColor: '#00C2D4' }]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 }
 
-// Carga Inicial
 window.onload = function() {
   triggerApifyAnalysis();
 };
