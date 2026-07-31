@@ -34,21 +34,17 @@
     letter-spacing: 1.5px;
   }
 
-  /* CONTENEDOR PRINCIPAL APLICA A BÚSQUEDA Y DASHBOARD */
   .app-viewport {
     max-width: 1200px;
-    margin: 24px auto 0;
+    margin: 32px auto 0;
     padding: 0 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
   }
 
-  /* CONTROL PANEL SEARCH CONTAINER */
+  /* VISTA 1: BARRA DE BÚSQUEDA */
   .search-container {
     background: #ffffff;
     border-radius: 12px;
-    padding: 24px 32px;
+    padding: 32px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     border: 1px solid #e2e8f0;
   }
@@ -70,7 +66,7 @@
   .search-desc {
     font-size: 13px;
     color: var(--muted);
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
 
   /* FORM INPUTS BAR */
@@ -87,19 +83,19 @@
   .filter-select, .filter-input {
     background: #ffffff;
     border: 1px solid #cbd5e1;
-    padding: 9px 12px;
+    padding: 10px 12px;
     border-radius: 6px;
     font-size: 13px;
     color: #0f172a;
     font-weight: 600;
     outline: none;
   }
-  .filter-input { flex: 1; min-width: 200px; }
+  .filter-input { flex: 1; min-width: 220px; }
   .btn-analyze {
     background: #1e3a8a;
     color: #ffffff;
     border: none;
-    padding: 9px 24px;
+    padding: 10px 24px;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 700;
@@ -113,7 +109,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 14px;
+    margin-top: 16px;
     font-size: 12px;
     color: var(--muted);
   }
@@ -129,26 +125,38 @@
   }
   .chip:hover { background: #cbd5e1; color: #0f172a; }
 
-  /* LOADER OVERLAY */
-  .loader-overlay {
+  /* VISTA 2: LOADER DE BÚSQUEDA EN PROCESO */
+  .loading-view {
     display: none;
-    text-align: center;
-    padding: 20px;
-    font-size: 14px;
-    font-weight: 700;
-    color: #1e3a8a;
     background: #ffffff;
-    border-radius: 8px;
+    border-radius: 12px;
+    padding: 60px 32px;
+    text-align: center;
     border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   }
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #00C2D4;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+  .loading-subtitle { font-size: 13px; color: var(--muted); }
 
-  /* MAIN DASHBOARD CONTENT */
-  .main-dashboard { width: 100%; }
+  /* VISTA 3: DASHBOARD RESULTADOS */
+  .dashboard-view { display: none; width: 100%; }
   
   .hdr { background: var(--hdrblue); border-radius: 8px 8px 0 0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
   .hdr-name { font-size: 20px; font-weight: 800; color: #fff; }
   .hdr-name span { color: var(--ac); }
   .hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; }
+  .btn-reset { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-reset:hover { background: rgba(255,255,255,0.2); }
 
   .nav { background: #0f172a; padding: 0 20px; display: flex; gap: 3px; overflow-x: auto; }
   .nb { background: none; border: none; color: #94a3b8; padding: 14px 16px; font-size: .78rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; }
@@ -200,60 +208,86 @@
 <div class="top-brand">RADAR INTELLIGENCE v2.0</div>
 
 <div class="app-viewport">
-  <!-- BUSCADOR CON SKILL FIJA A "RADAR POLÍTICO" -->
-  <div class="search-container">
+  
+  <!-- VISTA 1: BÚSQUEDA INICIAL -->
+  <div class="search-container" id="view1">
     <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
     <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
     <p class="search-desc">Selecciona el tipo de informe y consulta el análisis explícito de datos en tiempo real.</p>
 
     <div class="filter-box">
-      <!-- SELECTOR FIJO A RADAR POLÍTICO -->
-      <select id="skillSelect" class="filter-select" disabled>
-        <option value="radar" selected>Skill: RADAR Político</option>
+      <!-- SELECTOR CON TODAS LAS SKILLS -->
+      <select id="skillSelect" class="filter-select">
+        <option value="radar">Skill: RADAR Político</option>
+        <option value="humor_social">Skill: Humor Social</option>
+        <option value="tensiones">Skill: Tensiones</option>
+        <option value="opositor">Skill: Opositor</option>
+        <option value="analisis_corporal">Skill: Análisis Corporal</option>
       </select>
 
-      <input type="text" id="targetProfile" class="filter-input" value="Alfredo Ramírez Bedolla" placeholder="Nombre del personaje...">
+      <!-- INPUT LIMPIO SIN TEXTO PRECONFIGURADO -->
+      <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
 
+      <!-- LOS 12 MESES DEL AÑO -->
       <select id="monthSelect" class="filter-select">
-        <option value="Julio">Julio</option>
+        <option value="Enero">Enero</option>
+        <option value="Febrero">Febrero</option>
+        <option value="Marzo">Marzo</option>
+        <option value="Abril">Abril</option>
+        <option value="Mayo">Mayo</option>
+        <option value="Junio">Junio</option>
+        <option value="Julio" selected>Julio</option>
         <option value="Agosto">Agosto</option>
+        <option value="Septiembre">Septiembre</option>
+        <option value="Octubre">Octubre</option>
+        <option value="Noviembre">Noviembre</option>
+        <option value="Diciembre">Diciembre</option>
       </select>
 
+      <!-- PERIODO DE 2021 A 2026 -->
       <select id="yearSelect" class="filter-select">
-        <option value="2026">2026</option>
+        <option value="2026" selected>2026</option>
         <option value="2025">2025</option>
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
       </select>
 
-      <button class="btn-analyze" onclick="triggerApifyAnalysis()">Analizar</button>
+      <button class="btn-analyze" onclick="startSearchProcess()">Analizar</button>
     </div>
 
     <div class="suggestions">
       <span>Sugerencias:</span>
-      <span class="chip" onclick="setProfile('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</span>
-      <span class="chip" onclick="setProfile('Horacio Duarte')">Horacio Duarte</span>
-      <span class="chip" onclick="setProfile('Claudia Sheinbaum')">Claudia Sheinbaum</span>
+      <span class="chip" onclick="setSuggestion('Alfredo Ramírez Bedolla')">Alfredo Ramírez Bedolla</span>
+      <span class="chip" onclick="setSuggestion('Horacio Duarte')">Horacio Duarte</span>
+      <span class="chip" onclick="setSuggestion('Claudia Sheinbaum')">Claudia Sheinbaum</span>
     </div>
   </div>
 
-  <div class="loader-overlay" id="loader">
-    🔄 Conectando con API / Apify Actor... Extrayendo datos del perfil y generando reporte...
+  <!-- VISTA 2: EN PROCESO DE BÚSQUEDA -->
+  <div class="loading-view" id="view2">
+    <div class="spinner"></div>
+    <div class="loading-title">Extrayendo datos con Apify...</div>
+    <div class="loading-subtitle" id="loadingText">Procesando información político-digital en tiempo real.</div>
   </div>
 
-  <!-- PANEL DINÁMICO DE RESULTADOS (EN LA MISMA VISTA) -->
-  <div class="main-dashboard" id="dashboardUI">
+  <!-- VISTA 3: RESULTADOS DE LA BÚSQUEDA (DASHBOARD) -->
+  <div class="dashboard-view" id="view3">
     <header class="hdr">
       <div>
-        <h1 class="hdr-name" id="dispName">ALFREDO RAMÍREZ <span>BEDOLLA</span></h1>
-        <p class="hdr-sub" id="hdrSubText">Gobernador de Michoacán · Mapeo Estratégico General</p>
+        <h1 class="hdr-name" id="dispName">NOMBRE <span>PERFIL</span></h1>
+        <p class="hdr-sub" id="hdrSubText">Mapeo Estratégico Generado</p>
       </div>
+      <button class="btn-reset" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
     </header>
 
     <nav class="nav">
-      <button class="nb active" onclick="show('pf',this)">Perfil</button>
-      <button class="nb" onclick="show('ov',this)">Resumen / Riesgos</button>
-      <button class="nb" onclick="show('co',this)">Contradicciones</button>
-      <button class="nb" onclick="show('va',this)">Vectores Estratégicos</button>
-      <button class="nb" onclick="show('red',this)">Red de Poder</button>
+      <button class="nb active" onclick="showTab('pf',this)">Perfil</button>
+      <button class="nb" onclick="showTab('ov',this)">Resumen / Riesgos</button>
+      <button class="nb" onclick="showTab('co',this)">Contradicciones</button>
+      <button class="nb" onclick="showTab('va',this)">Vectores Estratégicos</button>
+      <button class="nb" onclick="showTab('red',this)">Red de Poder</button>
     </nav>
 
     <!-- PESTAÑA 1: PERFIL -->
@@ -268,7 +302,7 @@
         </div>
       </div>
       <div class="c">
-        <div class="ch">📊 Métricas por Categoría</div>
+        <div class="ch" id="chartTitle">📊 Métricas por Categoría</div>
         <div class="cc"><canvas id="ierChart"></canvas></div>
       </div>
     </div>
@@ -323,128 +357,86 @@
       </table>
     </div>
   </div>
+
 </div>
 
 <script>
 let ierChartInstance = null;
 let radarChartInstance = null;
 
-const DATABASE = {
-  "Alfredo Ramírez Bedolla": {
-    hdrSub: "Gobernador de Michoacán · Mapeo Estratégico y Gobernabilidad",
-    pfCard: `<div class="av">🏛️</div><div class="pn">Alfredo Ramírez Bedolla</div><div class="pr">Gobernador de Michoacán</div><div class="ps"><strong>Partido</strong>MORENA</div><div class="ps"><strong>Estatus</strong>Ejecutivo Estatal</div>`,
-    timeline: [{y:"2021",t:"Asunción del Cargo",d:"Llegada a la gubernatura de Michoacán."},{y:"2024",t:"Coordinación de Seguridad",d:"Despliegue con fuerzas federales."}],
-    chartLabels: ['Gobernabilidad', 'Seguridad', 'Presupuesto', 'Alianzas'],
-    chartData: [7.8, 6.5, 8.1, 7.2],
-    ovLeft: `<div class="al al-y"><h4>🟡 Reto de Seguridad Regional</h4><p>Focos rojos puntuales en zonas agrícolas de Tierra Caliente.</p></div>`,
-    ovBars: [{l:"Estabilidad de Gabinete", v:80, t:"8.0/10", c:"var(--green)"},{l:"Percepción de Seguridad", v:55, t:"5.5/10", c:"var(--yellow)"}],
-    coBars: [{l:"Discurso Paz vs Eventos Locales", v:75, t:"Alto", c:"var(--orange)"}],
-    coTable: [{id:"A1",cat:"Seguridad",p1:"Pacificación Total",p2:"Incidentes esporádicos en municipios fronterizos",tag:"ty",imp:"MEDIO"}],
-    vaItems: [{num:"1",t:"Consolidación de Infraestructura",tag:"PRIORITARIO",p1:"Avance en carreteras estatales.",p2:"Estrategia: Entregas continuas de obra pública."}],
-    radarData: [7.8, 6.5, 8.1, 7.2, 6.8, 7.5],
-    redAlerts: `<div class="al al-g"><h4>✅ Alineación Federal</h4><p>Relación fluida con el Gabinete de Seguridad Nacional.</p></div>`,
-    redTable: [{a:"Gabinete Federal",v:"Coordinación Directa",e:"Apoyo operativo constante."}]
-  },
-  "Claudia Sheinbaum": {
-    hdrSub: "Presidenta de México · Mapeo Estratégico RADAR Político",
-    pfCard: `<div class="av">🇲🇽</div><div class="pn">Claudia Sheinbaum</div><div class="pr">Presidenta de la República</div><div class="ps"><strong>Partido</strong>MORENA</div><div class="ps"><strong>Estatus</strong>Ejecutivo Federal</div>`,
-    timeline: [{y:"2024",t:"Elección Presidencial",d:"Triunfo con amplia mayoría nacional."},{y:"2026",t:"Consolidación del Plan",d:"Implementación de reformas estructurales."}],
-    chartLabels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas'],
-    chartData: [8.5, 8.0, 7.2, 8.8],
-    ovLeft: `<div class="al al-g"><h4>🟢 Alta Aprobación Popular</h4><p>Respaldo sólido en indicadores de gestión pública.</p></div>`,
-    ovBars: [{l:"Aprobación Ciudadana", v:85, t:"8.5/10", c:"var(--green)"},{l:"Cohesión Legislativa", v:90, t:"9.0/10", c:"var(--green)"}],
-    coBars: [{l:"Fricción Oposición vs Metas", v:45, t:"Bajo", c:"var(--green)"}],
-    coTable: [{id:"C1",cat:"Presupuesto",p1:"Austeridad Republicana",p2:"Inversión récord en proyectos clave",tag:"tg",imp:"BAJO"}],
-    vaItems: [{num:"1",t:"Sostenibilidad Transición Energética",tag:"PRIORITARIO",p1:"Proyección internacional.",p2:"Estrategia: Impulso a proyectos mixtos."}],
-    radarData: [8.5, 8.0, 7.2, 8.8, 8.1, 8.5],
-    redAlerts: `<div class="al al-g"><h4>✅ Mayoría Político-Electoral</h4><p>Poder de convocatoria en gobernaturas federadas.</p></div>`,
-    redTable: [{a:"Gobernadores MORENA",v:"Liderazgo Político",e:"Coordinación disciplinada."}]
-  }
-};
-
-function setProfile(name) {
+function setSuggestion(name) {
   document.getElementById('targetProfile').value = name;
-  triggerApifyAnalysis();
 }
 
-function triggerApifyAnalysis() {
-  const profileName = document.getElementById('targetProfile').value.trim();
+// PASO DE VISTA 1 A VISTA 2
+function startSearchProcess() {
+  const targetName = document.getElementById('targetProfile').value.trim();
+  
+  if (!targetName) {
+    alert("Por favor ingresa el nombre de un personaje político.");
+    return;
+  }
+
+  const skillText = document.getElementById('skillSelect').options[document.getElementById('skillSelect').selectedIndex].text;
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  document.getElementById('loader').style.display = 'block';
+  // Ocultar Vista 1, Mostrar Vista 2
+  document.getElementById('view1').style.display = 'none';
+  document.getElementById('view2').style.display = 'block';
+  document.getElementById('loadingText').textContent = `Consultando ${skillText} para "${targetName}" (${month} ${year})...`;
 
+  // Simulación de búsqueda con Apify -> Pasar a Vista 3
   setTimeout(() => {
-    document.getElementById('loader').style.display = 'none';
-    renderDashboard(profileName, month, year);
-  }, 400);
+    document.getElementById('view2').style.display = 'none';
+    document.getElementById('view3').style.display = 'block';
+    renderDashboard(targetName, skillText, month, year);
+  }, 1200);
 }
 
-function renderDashboard(profileName, month, year) {
-  let profileData = DATABASE[profileName] || {
-    hdrSub: `${profileName} · Mapeo Estratégico RADAR Político`,
-    pfCard: `<div class="av">👤</div><div class="pn">${profileName}</div><div class="pr">Perfil Automático Apify</div><div class="ps"><strong>Periodo</strong>${month} ${year}</div>`,
-    timeline: [{y:year, t:"Dato Procesado", d:"Información recopilada vía Apify Actor."}],
-    chartLabels: ['Gobernabilidad', 'Imagen', 'Seguridad', 'Alianzas'],
-    chartData: [7.2, 7.0, 6.8, 7.4],
-    ovLeft: `<div class="al al-g"><h4>✅ Datos Actualizados</h4><p>Información procesada para ${profileName}.</p></div>`,
-    ovBars: [{l:"Índice General", v:72, t:"7.2/10", c:"var(--blue)"}],
-    coBars: [{l:"Incongruencia Narrativa", v:40, t:"Bajo", c:"var(--green)"}],
-    coTable: [{id:"X1",cat:"General",p1:"Discurso Oficial",p2:"Datos de Redes",tag:"tg",imp:"BAJO"}],
-    vaItems: [{num:"1",t:"Estrategia General",tag:"AUTOMÁTICO",p1:"Línea de acción generada.",p2:"Plan de contingencia."}],
-    radarData: [7.2, 7.0, 6.8, 7.4, 7.0, 7.2],
-    redAlerts: `<div class="al al-g"><h4>✅ Red Identificada</h4><p>Vínculos mapeados con éxito.</p></div>`,
-    redTable: [{a:"Entorno Directo",v:"Asociado",e:"Relación Monitoreada."}]
-  };
+// REGRESAR DE VISTA 3 A VISTA 1
+function resetToSearch() {
+  document.getElementById('view3').style.display = 'none';
+  document.getElementById('view2').style.display = 'none';
+  document.getElementById('view1').style.display = 'block';
+  document.getElementById('targetProfile').value = ''; // Se limpia el campo
+}
 
+function renderDashboard(profileName, skillText, month, year) {
   document.getElementById('dispName').innerHTML = `${profileName.toUpperCase()} <span>(${month} ${year})</span>`;
-  document.getElementById('hdrSubText').textContent = profileData.hdrSub;
+  document.getElementById('hdrSubText').textContent = `Mapeo Estratégico · ${skillText}`;
 
-  document.getElementById('pfCard').innerHTML = profileData.pfCard;
-  let tlHtml = '';
-  profileData.timeline.forEach(t => {
-    tlHtml += `<div style="margin-bottom:10px"><strong style="color:var(--ac);font-size:11px">${t.y}</strong><br><strong>${t.t}</strong><p style="font-size:12px;color:var(--muted)">${t.d}</p></div>`;
-  });
-  document.getElementById('pfTimeline').innerHTML = tlHtml;
+  // Datos mock adaptables según búsqueda
+  const profileCard = `<div class="av">👤</div><div class="pn">${profileName}</div><div class="pr">Análisis de Inteligencia</div><div class="ps"><strong>Extracción</strong>Apify Active</div><div class="ps"><strong>Periodo</strong>${month} ${year}</div>`;
+  document.getElementById('pfCard').innerHTML = profileCard;
 
-  renderIERChart(profileData.chartLabels, profileData.chartData);
+  const timelineHtml = `
+    <div style="margin-bottom:10px">
+      <strong style="color:var(--ac);font-size:11px">${year}</strong><br>
+      <strong>Mapeo de Conversación y Tendencias</strong>
+      <p style="font-size:12px;color:var(--muted)">Análisis de datos procesado con base en la Skill: ${skillText}.</p>
+    </div>
+  `;
+  document.getElementById('pfTimeline').innerHTML = timelineHtml;
 
-  document.getElementById('ovLeftAlerts').innerHTML = profileData.ovLeft;
-  let barsHtml = '';
-  profileData.ovBars.forEach(b => {
-    barsHtml += `<div class="pw"><div class="pl"><span>${b.l}</span><span style="color:${b.c}">${b.t}</span></div><div class="pb"><div class="pf" style="width:${b.v}%;background:${b.c}"></div></div></div>`;
-  });
-  document.getElementById('ovBars').innerHTML = barsHtml;
+  // Gráficos dinámicos
+  renderIERChart(['Gobernabilidad', 'Imagen', 'Estrategia', 'Mapeo Social'], [7.5, 8.0, 6.9, 7.8]);
 
-  let coBarsHtml = '';
-  profileData.coBars.forEach(b => {
-    coBarsHtml += `<div class="pw"><div class="pl"><span>${b.l}</span><span style="color:${b.c}">${b.t}</span></div><div class="pb"><div class="pf" style="width:${b.v}%;background:${b.c}"></div></div></div>`;
-  });
-  document.getElementById('coBars').innerHTML = coBarsHtml;
+  document.getElementById('ovLeftAlerts').innerHTML = `<div class="al al-g"><h4>✅ Análisis Completado</h4><p>Datos sincronizados correctamente para ${profileName}.</p></div>`;
+  document.getElementById('ovBars').innerHTML = `<div class="pw"><div class="pl"><span>Métrica de Desempeño</span><span style="color:var(--green)">8.0/10</span></div><div class="pb"><div class="pf" style="width:80%;background:var(--green)"></div></div></div>`;
 
-  let coTableHtml = '';
-  profileData.coTable.forEach(r => {
-    coTableHtml += `<tr><td><strong>${r.id}</strong></td><td>${r.cat}</td><td>${r.p1}</td><td>${r.p2}</td><td><span class="tag ${r.tag}">${r.imp}</span></td></tr>`;
-  });
-  document.getElementById('coTableBody').innerHTML = coTableHtml;
+  document.getElementById('coBars').innerHTML = `<div class="pw"><div class="pl"><span>Fricción Detectada</span><span style="color:var(--yellow)">Medio</span></div><div class="pb"><div class="pf" style="width:50%;background:var(--yellow)"></div></div></div>`;
+  document.getElementById('coTableBody').innerHTML = `<tr><td><strong>1</strong></td><td>Inconsistencia</td><td>Declaración Pública</td><td>Reporte de Medios</td><td><span class="tag ty">MEDIO</span></td></tr>`;
 
-  let vaHtml = '';
-  profileData.vaItems.forEach(v => {
-    vaHtml += `<div class="vc" onclick="this.classList.toggle('expanded')"><div class="vh"><div class="vnum">${v.num}</div><div class="vt">${v.t}</div><span class="tag tr">${v.tag}</span></div><div class="vb"><p><strong>Diagnóstico:</strong> ${v.p1}</p><p><strong>Acción:</strong> ${v.p2}</p></div></div>`;
-  });
-  document.getElementById('vaContainer').innerHTML = vaHtml;
+  document.getElementById('vaContainer').innerHTML = `<div class="vc" onclick="this.classList.toggle('expanded')"><div class="vh"><div class="vnum">1</div><div class="vt">Acción Estratégica Recomendada</div><span class="tag tg">OPTIMO</span></div><div class="vb"><p>Diagnóstico de alineación con respecto a ${skillText}.</p></div></div>`;
 
-  document.getElementById('redAlerts').innerHTML = profileData.redAlerts;
-  let redTableHtml = '';
-  profileData.redTable.forEach(r => {
-    redTableHtml += `<tr><td><strong>${r.a}</strong></td><td>${r.v}</td><td>${r.e}</td></tr>`;
-  });
-  document.getElementById('redTableBody').innerHTML = redTableHtml;
+  document.getElementById('redAlerts').innerHTML = `<div class="al al-g"><h4>✅ Mapa Estratégico</h4><p>Red de influencia verificada.</p></div>`;
+  document.getElementById('redTableBody').innerHTML = `<tr><td><strong>Gabinete / Entorno</strong></td><td>Coordinación</td><td>Estable</td></tr>`;
 
-  renderRadarChart(profileData.radarData);
+  renderRadarChart([7.5, 8.0, 6.9, 7.8, 7.2, 8.1]);
 }
 
-function show(id, btn) {
+function showTab(id, btn) {
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -456,10 +448,7 @@ function renderIERChart(labels, data) {
   const ctx = document.getElementById('ierChart').getContext('2d');
   ierChartInstance = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{ data: data, backgroundColor: '#1e3a8a', borderRadius: 4 }]
-    },
+    data: { labels: labels, datasets: [{ data: data, backgroundColor: '#1e3a8a', borderRadius: 4 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 }
@@ -476,10 +465,6 @@ function renderRadarChart(data) {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 }
-
-window.onload = function() {
-  triggerApifyAnalysis();
-};
 </script>
 </body>
 </html>
