@@ -298,8 +298,8 @@
       </div>
     </div>
     <div class="cg">
-      <div class="card"><div class="ct">NPS-P por Zona</div><div class="cs">Aprobación neta geográfica</div><canvas id="c-ternps"></canvas></div>
-      <div class="card"><div class="ct">Volumen por Zona</div><div class="cs">% del total de menciones</div><canvas id="c-tervol"></canvas></div>
+      <div class="card"><div class="ct">NPS-P por Zona Geográfica</div><div class="cs">Aprobación neta geográfica</div><canvas id="c-ternps"></canvas></div>
+      <div class="card"><div class="ct">Volumen Menciones por Zona</div><div class="cs">% del total de menciones territorial</div><canvas id="c-tervol"></canvas></div>
     </div>
   </div>
 </main>
@@ -369,12 +369,11 @@ function rKpis() {
   });
 }
 
-// DICCIONARIOS BIVARIADOS DE SENTIMIENTO Y TOP OF MIND
 const DATA_SENT = {
-  general: { t: 'Sentimiento General', s: 'Clasificación semántica global', type: 'doughnut', labels: ['Positivo', 'Neutral', 'Negativo'], data: [58, 27, 15], bg: [C.su, C.ne, C.da] },
-  genero: { t: 'Sentimiento por Género', s: 'Aprobación Hombres vs Mujeres', type: 'bar', labels: ['Hombres Pos.', 'Hombres Neg.', 'Mujeres Pos.', 'Mujeres Neg.'], data: [48, 22, 65, 12], bg: [C.bl, C.da, C.su, C.da] },
-  edad: { t: 'Sentimiento por Rango de Edad', s: 'Aprobación por grupos etarios', type: 'bar', labels: ['18-29 años', '30-44 años', '45-59 años', '60+ años'], data: [38, 58, 72, 84], bg: [C.go, C.ac, C.bl, C.su] },
-  partido: { t: 'Sentimiento por Identidad Política', s: 'Distribución por filiación partidista', type: 'doughnut', labels: ['Base Propia', 'Independientes', 'Oposición'], data: [82, 45, 12], bg: [C.su, C.go, C.da] }
+  general: { t: 'Sentimiento General', s: 'Clasificación semántica del periodo', type: 'doughnut', labels: ['Positivo', 'Neutral', 'Negativo'], data: [58, 27, 15], bg: [C.su, C.ne, C.da] },
+  genero: { t: 'Sentimiento por Género', s: 'Distribución por Hombres y Mujeres', type: 'bar', labels: ['Hombres Pos.', 'Hombres Neg.', 'Mujeres Pos.', 'Mujeres Neg.'], data: [48, 22, 65, 12], bg: [C.bl, C.da, C.su, C.da] },
+  edad: { t: 'Sentimiento por Rango Etario', s: 'Distribución por grupos de edad', type: 'bar', labels: ['18-29 años', '30-44 años', '45-59 años', '60+ años'], data: [38, 58, 72, 84], bg: [C.go, C.ac, C.bl, C.su] },
+  partido: { t: 'Sentimiento por Identidad Política', s: 'Aprobación según la filiación', type: 'doughnut', labels: ['Base Propia', 'Independientes', 'Oposición'], data: [82, 45, 12], bg: [C.su, C.go, C.da] }
 };
 
 function rSent(k = 'general') {
@@ -399,10 +398,10 @@ function updSent(btn, k) {
 }
 
 const DATA_TOM = {
-  general: { t: 'Top de Temas — General', s: 'Dominio de conversación pública', labels: ['Infraestructura', 'Programas Sociales', 'Seguridad', 'Economía', 'Transparencia'], data: [42, 35, 28, 18, 12], color: C.ac },
-  genero: { t: 'Top de Temas por Género', s: 'Interés prioritario por segmento', labels: ['Seguridad (H)', 'Seguridad (M)', 'Programas (H)', 'Programas (M)'], data: [52, 68, 28, 74], color: C.bl },
-  edad: { t: 'Top de Temas por Edad', s: 'Interés por rango de edad', labels: ['Empleo (18-29)', 'Conectividad (18-29)', 'Salud (45+)', 'Seguridad (45+)'], data: [85, 62, 78, 88], color: C.go },
-  partido: { t: 'Top de Temas por Filiación', s: 'Enfoque según simpatía política', labels: ['Rendición de Cuentas', 'Obras', 'Presupuesto', 'Servicios'], data: [75, 60, 42, 30], color: C.da }
+  general: { t: 'Top de Temas — General', s: 'Volumen de conversación global', labels: ['Infraestructura', 'Programas Sociales', 'Seguridad', 'Economía', 'Transparencia'], data: [42, 35, 28, 18, 12], color: C.ac },
+  genero: { t: 'Top de Temas por Género', s: 'Interés por segmento demográfico', labels: ['Seguridad Hombres', 'Seguridad Mujeres', 'Programas Hombres', 'Programas Mujeres'], data: [52, 68, 28, 74], color: C.bl },
+  edad: { t: 'Top de Temas por Edad', s: 'Temas clave por rango etario', labels: ['Empleo (18-29)', 'Conectividad (18-29)', 'Salud (45+)', 'Seguridad (45+)'], data: [85, 62, 78, 88], color: C.go },
+  partido: { t: 'Top de Temas por Partido', s: 'Debate por preferencia política', labels: ['Rendición Cuentas', 'Obras Públicas', 'Presupuesto', 'Servicios'], data: [75, 60, 42, 30], color: C.da }
 };
 
 function rTom(k = 'general') {
@@ -427,15 +426,55 @@ function updTom(btn, k) {
 }
 
 function rPlat() {
-  mk('c-plalc', { type: 'pie', data: { labels: ['FB', 'X', 'TK', 'IG'], datasets: [{ data: [45, 25, 20, 10], backgroundColor: [C.bl, C.da, C.go, C.su] }] } });
-  mk('c-pltono', { type: 'bar', data: { labels: ['FB', 'X', 'TK', 'IG'], datasets: [{ label: 'Aprobación', data: [70, 30, 65, 80], backgroundColor: C.su }] } });
-  mk('c-pledad', { type: 'bar', data: { labels: ['18-29', '30-44', '45+'], datasets: [{ label: 'Alcance', data: [80, 60, 40], backgroundColor: C.ac }] } });
-  mk('c-plviral', { type: 'line', data: { labels: ['1h', '6h', '12h', '24h'], datasets: [{ label: 'Viralidad', data: [10, 45, 80, 100], borderColor: C.da }] } });
+  mk('c-plalc', { 
+    type: 'pie', 
+    data: { 
+      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], 
+      datasets: [{ data: [45, 25, 20, 10], backgroundColor: [C.bl, C.da, C.go, C.su] }] 
+    } 
+  });
+  mk('c-pltono', { 
+    type: 'bar', 
+    data: { 
+      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], 
+      datasets: [{ label: 'Aprobación (%)', data: [70, 30, 65, 80], backgroundColor: C.su }] 
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+  mk('c-pledad', { 
+    type: 'bar', 
+    data: { 
+      labels: ['18-29 años', '30-44 años', '45+ años'], 
+      datasets: [{ label: 'Penetración (%)', data: [80, 60, 40], backgroundColor: C.ac }] 
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+  mk('c-plviral', { 
+    type: 'line', 
+    data: { 
+      labels: ['1 hora', '6 horas', '12 horas', '24 horas'], 
+      datasets: [{ label: 'Viralidad (%)', data: [10, 45, 80, 100], borderColor: C.da, backgroundColor: 'rgba(230,57,70,0.1)', fill: true, tension: 0.3 }] 
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
 }
 
 function rTer() {
-  mk('c-ternps', { type: 'bar', data: { labels: ['Centro', 'Norte', 'Sur', 'Industrial'], datasets: [{ data: [68, -14, 45, 12], backgroundColor: [C.su, C.da, C.su, C.go] }] } });
-  mk('c-tervol', { type: 'doughnut', data: { labels: ['Centro', 'Norte', 'Sur', 'Industrial'], datasets: [{ data: [40, 25, 20, 15], backgroundColor: [C.bl, C.da, C.su, C.go] }] } });
+  mk('c-ternps', { 
+    type: 'bar', 
+    data: { 
+      labels: ['Zona Centro / Capital', 'Zona Norte / Periferia', 'Zona Sur / Rural', 'Zona Industrial'], 
+      datasets: [{ label: 'NPS-P', data: [68, -14, 45, 12], backgroundColor: [C.su, C.da, C.su, C.go] }] 
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+  mk('c-tervol', { 
+    type: 'doughnut', 
+    data: { 
+      labels: ['Zona Centro / Capital', 'Zona Norte / Periferia', 'Zona Sur / Rural', 'Zona Industrial'], 
+      datasets: [{ data: [40, 25, 20, 15], backgroundColor: [C.bl, C.da, C.su, C.go] }] 
+    } 
+  });
 }
 
 function rCharts(t) {
