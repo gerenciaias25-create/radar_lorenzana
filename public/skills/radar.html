@@ -369,14 +369,26 @@ function rKpis() {
   });
 }
 
-function rSent(k) {
+// DICCIONARIOS BIVARIADOS DE SENTIMIENTO Y TOP OF MIND
+const DATA_SENT = {
+  general: { t: 'Sentimiento General', s: 'Clasificación semántica global', type: 'doughnut', labels: ['Positivo', 'Neutral', 'Negativo'], data: [58, 27, 15], bg: [C.su, C.ne, C.da] },
+  genero: { t: 'Sentimiento por Género', s: 'Aprobación Hombres vs Mujeres', type: 'bar', labels: ['Hombres Pos.', 'Hombres Neg.', 'Mujeres Pos.', 'Mujeres Neg.'], data: [48, 22, 65, 12], bg: [C.bl, C.da, C.su, C.da] },
+  edad: { t: 'Sentimiento por Rango de Edad', s: 'Aprobación por grupos etarios', type: 'bar', labels: ['18-29 años', '30-44 años', '45-59 años', '60+ años'], data: [38, 58, 72, 84], bg: [C.go, C.ac, C.bl, C.su] },
+  partido: { t: 'Sentimiento por Identidad Política', s: 'Distribución por filiación partidista', type: 'doughnut', labels: ['Base Propia', 'Independientes', 'Oposición'], data: [82, 45, 12], bg: [C.su, C.go, C.da] }
+};
+
+function rSent(k = 'general') {
+  const info = DATA_SENT[k] || DATA_SENT.general;
+  document.getElementById('sent-t').textContent = info.t;
+  document.getElementById('sent-s').textContent = info.s;
+
   mk('c-sent', {
-    type: 'doughnut',
+    type: info.type,
     data: {
-      labels: ['Positivo', 'Neutral', 'Negativo'],
-      datasets: [{ data: [58, 27, 15], backgroundColor: [C.su, C.ne, C.da], borderWidth: 0 }]
+      labels: info.labels,
+      datasets: [{ data: info.data, backgroundColor: info.bg, borderWidth: 0 }]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    options: { responsive: true, plugins: { legend: { position: 'bottom', display: info.type === 'doughnut' } } }
   });
 }
 
@@ -386,12 +398,23 @@ function updSent(btn, k) {
   rSent(k);
 }
 
-function rTom(k) {
+const DATA_TOM = {
+  general: { t: 'Top de Temas — General', s: 'Dominio de conversación pública', labels: ['Infraestructura', 'Programas Sociales', 'Seguridad', 'Economía', 'Transparencia'], data: [42, 35, 28, 18, 12], color: C.ac },
+  genero: { t: 'Top de Temas por Género', s: 'Interés prioritario por segmento', labels: ['Seguridad (H)', 'Seguridad (M)', 'Programas (H)', 'Programas (M)'], data: [52, 68, 28, 74], color: C.bl },
+  edad: { t: 'Top de Temas por Edad', s: 'Interés por rango de edad', labels: ['Empleo (18-29)', 'Conectividad (18-29)', 'Salud (45+)', 'Seguridad (45+)'], data: [85, 62, 78, 88], color: C.go },
+  partido: { t: 'Top de Temas por Filiación', s: 'Enfoque según simpatía política', labels: ['Rendición de Cuentas', 'Obras', 'Presupuesto', 'Servicios'], data: [75, 60, 42, 30], color: C.da }
+};
+
+function rTom(k = 'general') {
+  const info = DATA_TOM[k] || DATA_TOM.general;
+  document.getElementById('tom-t').textContent = info.t;
+  document.getElementById('tom-s').textContent = info.s;
+
   mk('c-tom', {
     type: 'bar',
     data: {
-      labels: ['Infraestructura', 'Programas Sociales', 'Seguridad', 'Economía', 'Transparencia'],
-      datasets: [{ label: '% Menciones', data: [42, 35, 28, 18, 12], backgroundColor: C.ac, borderRadius: 2 }]
+      labels: info.labels,
+      datasets: [{ label: '% Menciones', data: info.data, backgroundColor: info.color, borderRadius: 2 }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
