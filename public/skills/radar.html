@@ -115,7 +115,7 @@
     .im { font-size: 10px; color: var(--bl); margin-top: 5px; font-weight: 600; }
 
     .footer { background: #1C2738; border-top: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 40px; border-radius: 4px; }
-    canvas { max-height: 220px; }
+    canvas { max-height: 230px; }
   </style>
 </head>
 <body>
@@ -145,7 +145,7 @@
       <div class="card"><div class="ct">NPS-P por Identidad Partidista</div><div class="cs">Aprobación según filiación política</div><canvas id="c-npspar"></canvas></div>
       <div class="card"><div class="ct">NPS-P por Género y Edad</div><div class="cs">Brecha demográfica</div><canvas id="c-npsdemo"></canvas></div>
       <div class="card"><div class="ct">Ratio Ataque/Defensa por Plataforma</div><div class="cs">Conversación adversa por red</div><canvas id="c-ratiopl"></canvas></div>
-      <div class="card"><div class="ct">TRA — Evolución Reputacional</div><div class="cs">Temperatura acumulada en el tiempo</div><canvas id="c-tra"></canvas></div>
+      <div class="card"><div class="ct">TRA — Evolución Reputacional</div><div class="cs">Temperatura acumulada por periodos de evaluación</div><canvas id="c-tra"></canvas></div>
     </div>
   </div>
 
@@ -191,7 +191,7 @@
     </div>
   </div>
 
-  <!-- 4. PLATAFORMAS -->
+  <!-- 4. PLATAFORMAS (CORREGIDO DE ACUERDO A TU CAPTURA) -->
   <div class="tsec" id="tab-plat">
     <div class="stitle">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
     <div class="cg">
@@ -203,7 +203,7 @@
     <div class="stitle">LECTURA ESTRATÉGICA</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px">
       <div class="card"><div class="ct" style="font-size:12px;color:var(--bl);margin-bottom:4px;font-weight:700">Facebook</div><div class="ib">Canal de mayor volumen para la comunidad institucional. Excelente recepción en adultos de 35+.</div></div>
-      <div class="card"><div class="ct" style="font-size:12px;color:var(--bl);margin-bottom:4px;font-weight:700">Twitter / X</div><div class="ib">Núcleo del debate político y periodístico. Requiere monitoreo rápido de tendencias adversas.</div></div>
+      <div class="card"><div class="ct" style="font-size:12px;color:var(--bl);margin-bottom:4px;font-weight:700">X / Twitter</div><div class="ib">Núcleo del debate político y periodístico. Requiere monitoreo rápido de tendencias adversas.</div></div>
       <div class="card"><div class="ct" style="font-size:12px;color:var(--da);margin-bottom:4px;font-weight:700">TikTok</div><div class="ib">Plataforma clave para humanizar la figura pública y conectar con votantes jóvenes.</div></div>
     </div>
   </div>
@@ -310,7 +310,10 @@
 </div>
 
 <script>
-const C = { ac: '#1B4F8A', go: '#B8860B', da: '#E63946', su: '#008080', ne: '#4a5568', bl: '#1C2738' };
+const C = { ac: '#00C2D4', go: '#F4C430', da: '#E63946', su: '#2EC4B6', ne: '#556B2F', bl: '#1B4F8A', navy: '#1C2738' };
+
+// ELIMINAR CUALQUIER CONFIGURACIÓN GLOBAL PREVIA DE LABELS QUE INYECTE MESES
+delete Chart.defaults.labels;
 Chart.defaults.color = '#2d3748';
 Chart.defaults.font.family = 'system-ui,sans-serif';
 
@@ -325,7 +328,9 @@ function tab(btn, id) {
 
 const CH = {};
 function mk(id, cfg) {
-  if (CH[id]) CH[id].destroy();
+  if (CH[id]) {
+    CH[id].destroy();
+  }
   const c = document.getElementById(id);
   if (!c) return;
   CH[id] = new Chart(c, cfg);
@@ -336,7 +341,7 @@ function rKpis() {
     type: 'bar',
     data: {
       labels: ['Base Propia', 'Independientes', 'Oposición'],
-      datasets: [{ data: [78, 42, -35], backgroundColor: [C.su, C.ne, C.da], borderRadius: 2 }]
+      datasets: [{ data: [78, 42, -35], backgroundColor: [C.su, C.go, C.da], borderRadius: 2 }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
@@ -354,7 +359,7 @@ function rKpis() {
     type: 'bar',
     data: {
       labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'],
-      datasets: [{ data: [85, 35, 60, 72], backgroundColor: [C.su, C.da, C.go, C.su], borderRadius: 2 }]
+      datasets: [{ data: [85, 35, 60, 72], backgroundColor: [C.bl, C.da, C.go, C.su], borderRadius: 2 }]
     },
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
   });
@@ -362,15 +367,15 @@ function rKpis() {
   mk('c-tra', {
     type: 'line',
     data: {
-      labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
-      datasets: [{ label: 'Aprobación', data: [62, 65, 59, 74], borderColor: C.ac, backgroundColor: 'rgba(27,79,138,.1)', fill: true, tension: .4 }]
+      labels: ['S-1 (Inicial)', 'S-2 (Campaña)', 'S-3 (Debate)', 'S-4 (Cierre)'],
+      datasets: [{ label: 'Aprobación', data: [62, 65, 59, 74], borderColor: C.bl, backgroundColor: 'rgba(27,79,138,.1)', fill: true, tension: .4 }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
 }
 
 const DATA_SENT = {
-  general: { t: 'Sentimiento General', s: 'Clasificación semántica del periodo', type: 'doughnut', labels: ['Positivo', 'Neutral', 'Negativo'], data: [58, 27, 15], bg: [C.su, C.ne, C.da] },
+  general: { t: 'Sentimiento General', s: 'Clasificación semántica del periodo', type: 'doughnut', labels: ['Positivo', 'Neutral', 'Negativo'], data: [58, 27, 15], bg: [C.su, C.go, C.da] },
   genero: { t: 'Sentimiento por Género', s: 'Distribución por Hombres y Mujeres', type: 'bar', labels: ['Hombres Pos.', 'Hombres Neg.', 'Mujeres Pos.', 'Mujeres Neg.'], data: [48, 22, 65, 12], bg: [C.bl, C.da, C.su, C.da] },
   edad: { t: 'Sentimiento por Rango Etario', s: 'Distribución por grupos de edad', type: 'bar', labels: ['18-29 años', '30-44 años', '45-59 años', '60+ años'], data: [38, 58, 72, 84], bg: [C.go, C.ac, C.bl, C.su] },
   partido: { t: 'Sentimiento por Identidad Política', s: 'Aprobación según la filiación', type: 'doughnut', labels: ['Base Propia', 'Independientes', 'Oposición'], data: [82, 45, 12], bg: [C.su, C.go, C.da] }
@@ -398,8 +403,8 @@ function updSent(btn, k) {
 }
 
 const DATA_TOM = {
-  general: { t: 'Top de Temas — General', s: 'Volumen de conversación global', labels: ['Infraestructura', 'Programas Sociales', 'Seguridad', 'Economía', 'Transparencia'], data: [42, 35, 28, 18, 12], color: C.ac },
-  genero: { t: 'Top de Temas por Género', s: 'Interés por segmento demográfico', labels: ['Seguridad Hombres', 'Seguridad Mujeres', 'Programas Hombres', 'Programas Mujeres'], data: [52, 68, 28, 74], color: C.bl },
+  general: { t: 'Top de Temas — General', s: 'Volumen de conversación global', labels: ['Infraestructura', 'Programas Sociales', 'Seguridad', 'Economía', 'Transparencia'], data: [42, 35, 28, 18, 12], color: C.bl },
+  genero: { t: 'Top de Temas por Género', s: 'Interés por segmento demográfico', labels: ['Seguridad Hombres', 'Seguridad Mujeres', 'Programas Hombres', 'Programas Mujeres'], data: [52, 68, 28, 74], color: C.navy },
   edad: { t: 'Top de Temas por Edad', s: 'Temas clave por rango etario', labels: ['Empleo (18-29)', 'Conectividad (18-29)', 'Salud (45+)', 'Seguridad (45+)'], data: [85, 62, 78, 88], color: C.go },
   partido: { t: 'Top de Temas por Partido', s: 'Debate por preferencia política', labels: ['Rendición Cuentas', 'Obras Públicas', 'Presupuesto', 'Servicios'], data: [75, 60, 42, 30], color: C.da }
 };
@@ -425,35 +430,54 @@ function updTom(btn, k) {
   rTom(k);
 }
 
+// CORRECCIÓN ESPECÍFICA PARA LA PESTAÑA DE PLATAFORMAS DE ACUERDO A TU SCREENSHOT
 function rPlat() {
+  // 1. Alcance por Plataforma (Doughnut)
   mk('c-plalc', { 
-    type: 'pie', 
+    type: 'doughnut', 
     data: { 
-      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], 
-      datasets: [{ data: [45, 25, 20, 10], backgroundColor: [C.bl, C.da, C.go, C.su] }] 
-    } 
-  });
-  mk('c-pltono', { 
-    type: 'bar', 
-    data: { 
-      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], 
-      datasets: [{ label: 'Aprobación (%)', data: [70, 30, 65, 80], backgroundColor: C.su }] 
+      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram', 'YouTube', 'LinkedIn'], 
+      datasets: [{ data: [35, 25, 18, 12, 7, 3], backgroundColor: [C.bl, C.navy, C.da, C.su, C.go, '#718096'] }] 
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: { responsive: true, plugins: { legend: { position: 'top' } } }
   });
+
+  // 2. Tono por Plataforma (Radar / Spider como en tu captura)
+  mk('c-pltono', { 
+    type: 'radar', 
+    data: { 
+      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram', 'YouTube', 'LinkedIn'], 
+      datasets: [{
+        label: 'Aprobación / Tono Positivo',
+        data: [75, 60, 80, 82, 65, 70],
+        borderColor: C.ac,
+        backgroundColor: 'rgba(0,194,212,0.25)',
+        pointBackgroundColor: C.ac
+      }] 
+    },
+    options: { 
+      responsive: true, 
+      scales: { r: { min: 0, max: 100 } },
+      plugins: { legend: { display: false } } 
+    }
+  });
+
+  // 3. Plataforma × Edad (Barras por rango de edad)
   mk('c-pledad', { 
     type: 'bar', 
     data: { 
-      labels: ['18-29 años', '30-44 años', '45+ años'], 
-      datasets: [{ label: 'Penetración (%)', data: [80, 60, 40], backgroundColor: C.ac }] 
+      labels: ['18-24 yrs', '25-34 yrs', '35-44 yrs', '45-54 yrs', '55-64 yrs', '65+ yrs'], 
+      datasets: [{ label: '% Penetración', data: [65, 58, 80, 81, 56, 75], backgroundColor: 'rgba(0,194,212,0.3)', borderColor: C.ac, borderWidth: 2 }] 
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
+
+  // 4. Velocidad de Viralización (Horas de respuesta/difusión)
   mk('c-plviral', { 
     type: 'line', 
     data: { 
-      labels: ['1 hora', '6 horas', '12 horas', '24 horas'], 
-      datasets: [{ label: 'Viralidad (%)', data: [10, 45, 80, 100], borderColor: C.da, backgroundColor: 'rgba(230,57,70,0.1)', fill: true, tension: 0.3 }] 
+      labels: ['1 Hora', '3 Horas', '6 Horas', '12 Horas', '24 Horas', '48 Horas'], 
+      datasets: [{ label: '% Difusión Crítica', data: [65, 59, 80, 81, 56, 75], borderColor: C.ac, backgroundColor: 'rgba(0,194,212,0.25)', fill: true, tension: 0.1, pointRadius: 4 }] 
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
@@ -485,7 +509,7 @@ function rCharts(t) {
   if (t === 'ter') rTer();
 }
 
-// Inicializar KPIs al cargar
+// Inicializar al cargar
 setTimeout(() => rCharts('kpis'), 150);
 </script>
 </body>
