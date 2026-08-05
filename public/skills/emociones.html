@@ -347,7 +347,8 @@ async function fetchDatosApify() {
     subtextElem.textContent = "Obteniendo menciones recientes, comentarios de usuarios y artículos de noticias...";
 
     // Llamada al backend que dispara la ejecución del Actor de Apify
-    const res = await fetch(`/api/analizar-emociones?actor=${encodeURIComponent(ACTOR)}&mes=${MES}&anio=${ANIO}`);
+    // ✅ RUTA NUEVA UNIFICADA:
+  const res = await fetch(`/api/analizar?skill=emociones&actor=${encodeURIComponent(ACTOR)}&mes=${MES}&anio=${ANIO}`);
     
     if (!res.ok) {
       throw new Error(`El servidor devolvió un error status ${res.status}`);
