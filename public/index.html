@@ -235,6 +235,8 @@
 </div>
 
 <script>
+  
+<script>
 function loadSelectedSkill() {
   const skillSelect = document.getElementById('skillSelect');
   const targetInput = document.getElementById('targetProfile');
@@ -288,6 +290,7 @@ function loadSelectedSkill() {
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
+      // Re-ejecutar scripts propios del HTML cargado (skill)
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
@@ -296,74 +299,11 @@ function loadSelectedSkill() {
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
-      setTimeout(() => {
-        setupTabsAndCharts(container);
-      }, 100);
-
     })
     .catch(err => {
       alert("Error: " + err.message);
       resetToSearch();
     });
-}
-
-function setupTabsAndCharts(container) {
-  // Activar evento de clic en las pestañas nativas del dashboard
-  const tabButtons = container.querySelectorAll('button, .tab, [class*="tab"], [onclick]');
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', function() {
-      tabButtons.forEach(b => b.classList.remove('active', 'bg-blue-600', 'selected'));
-      this.classList.add('active');
-    });
-  });
-
-  // Renderizar gráficos interactivos en tarjetas o canvases vacíos
-  const boxes = container.querySelectorAll('div[class*="card"], div[class*="box"], div[style*="background"], .kpi-card');
-  
-  boxes.forEach((box, idx) => {
-    let canvas = box.querySelector('canvas');
-    if (!canvas && box.offsetHeight > 80) {
-      canvas = document.createElement('canvas');
-      canvas.id = 'chart_gen_' + idx;
-      canvas.style.marginTop = '15px';
-      canvas.style.maxHeight = '180px';
-      box.appendChild(canvas);
-    }
-
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      const existingChart = Chart.getChart(canvas);
-      if (existingChart) existingChart.destroy();
-
-      const types = ['bar', 'line', 'doughnut', 'radar'];
-      const currentType = types[idx % types.length];
-
-      new Chart(ctx, {
-        type: currentType,
-        data: {
-          labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-          datasets: [{
-            label: 'Métrica Estratégica',
-            data: [65, 59, 80, 81, 56, 75],
-            backgroundColor: currentType === 'doughnut' 
-              ? ['#00C2D4', '#1e3a8a', '#64748b', '#f43f5e', '#10b981', '#f59e0b']
-              : 'rgba(0, 194, 212, 0.2)',
-            borderColor: '#00C2D4',
-            borderWidth: 2,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: currentType === 'doughnut' } }
-        }
-      });
-    }
-  });
-
-  if (typeof init === 'function') init();
-  if (typeof render === 'function') render();
 }
 
 function downloadReport() {
