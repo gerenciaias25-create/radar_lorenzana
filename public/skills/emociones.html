@@ -1,5 +1,5 @@
 <!-- =========================================================
-  EMOCIONES DASHBOARD TEMPLATE v2.0
+  EMOCIONES DASHBOARD TEMPLATE v2.1 (Apify Ready)
   Sistema de Humor Social Emocional — Plutchik Framework
   ========================================================= -->
 <!DOCTYPE html>
@@ -140,7 +140,7 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 .semv{font-size:12px;font-weight:800}
 
 /* ACTOR CARD */
-.ac{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;overflow:hidden}
+.ac-card{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;overflow:hidden}
 .ach{padding:.9rem 1.1rem;border-bottom:1px solid var(--brd2);background:rgba(255,255,255,.3)}
 .acn{font-size:14px;font-weight:800;color:var(--tx1)}
 .acr{font-size:11px;color:var(--tx3);margin-top:2px;font-weight:600}
@@ -289,7 +289,7 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
   </div>
 </div>
 
-<!-- SEGMENTOS Y PERFILES (SEGMENTA — 4 Buyer Personas Electorales) -->
+<!-- SEGMENTOS Y PERFILES -->
 <div class="pnl" id="pnl-segmenta">
   <div id="segmenta-personas"></div>
 </div>
@@ -303,18 +303,17 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 
 <!-- ══════════════════════════════════════════════ DATA ENGINE & INTEGRATOR -->
 <script>
-// 1. OBTENER PARÁMETROS URL
+// 1. PARAMETROS URL
 const urlParams = new URLSearchParams(window.location.search);
 const ACTOR = urlParams.get('actor') || 'Alfredo Ramírez Bedolla';
 const MES = urlParams.get('mes') || 'Julio';
 const ANIO = urlParams.get('anio') || '2026';
 
-// Split de nombre e iniciales
 const nameParts = ACTOR.split(' ');
 const firstName = nameParts[0] || 'ACTOR';
 const lastName = nameParts.slice(1).join(' ') || '';
 
-// 2. DATOS POR DEFECTO / PLANTILLA DINÁMICA
+// 2. DATOS POR DEFECTO / PLANTILLA
 let D = {
   territory: ACTOR,
   subtitle: `Análisis de Humor Social Emocional · ${MES} ${ANIO}`,
@@ -382,6 +381,7 @@ let D = {
   ],
   partidosChart: [[55,30,15],[30,60,10],[20,35,45]],
 
+  // ESTRUCTURA DINAMICA PARA APFY DE ACTORES
   actores: [
     { name: ACTOR, role: `Figura evaluada · Periodo: ${MES} ${ANIO}`, partido: "Oficialismo", borderColor: "#2563EB",
       rows:[["Fortaleza","Capacidad de convocatoria y presencia mediática"],
@@ -591,13 +591,15 @@ function renderDashboard(){
     <div style="color:${p.tendencia.includes("↓")?"#dc2626":p.tendencia.includes("↑")?"#16a34a":"#475569"};font-weight:700">${p.tendencia}</div>
   </div>`).join("");
 
-  /* Actores Grid */
-  document.getElementById("actores-grid").innerHTML=D.actores.map(a=>`<div class="ac">
-    <div class="ach" style="border-left:4px solid ${a.borderColor||"#1C2738"}">
-      <div class="acn">${a.name}</div><div class="acr">${a.role}</div>
-    </div>
-    <div class="acb">${a.rows.map(([k,v])=>`<div class="acrow"><span class="ack">${k}</span><span class="acv">${v}</span></div>`).join("")}</div>
-  </div>`).join("");
+  /* Actores Grid (Integrado para datos Apify) */
+  if (D.actores && D.actores.length > 0) {
+    document.getElementById("actores-grid").innerHTML=D.actores.map(a=>`<div class="ac-card">
+      <div class="ach" style="border-left:4px solid ${a.borderColor||"#1C2738"}">
+        <div class="acn">${a.name}</div><div class="acr">${a.role}</div>
+      </div>
+      <div class="acb">${(a.rows||[]).map(([k,v])=>`<div class="acrow"><span class="ack">${k}</span><span class="acv">${v}</span></div>`).join("")}</div>
+    </div>`).join("");
+  }
 
   /* Segmentos - Buyer Personas */
   if(D.segmentos)document.getElementById("segmenta-personas").innerHTML=D.segmentos.map(s=>`
@@ -677,24 +679,35 @@ function renderDashboard(){
       scales:{x:{...CD.scales.x},y:{...CD.scales.y,min:0,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+"%"}}}}
   });
 
-  /* Chart 5: Radar Actores */
+  /* Chart 5: Radar Actores (Mapeo dinámico para Apify) */
   const radarLabels=["Legitimidad","Presencia","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
-  new Chart(document.getElementById("ch-actores"),{type:"radar",
-    data:{labels:radarLabels,datasets:D.actoresRadar.labels.map((lbl,i)=>({label:lbl,data:D.actoresRadar.data[i],borderColor:D.actoresRadar.colors[i],backgroundColor:D.actoresRadar.colors[i]+"33",pointBackgroundColor:D.actoresRadar.colors[i],pointRadius:4}))},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{r:{ticks:{color:"#475569",font:{size:9,weight:"600"},stepSize:20},grid:{color:"rgba(0,0,0,.1)"},pointLabels:{color:"#1e293b",font:{size:10,weight:"700"}},angleLines:{color:"rgba(0,0,0,.1)"},min:0,max:100}},
-      plugins:{legend:{display:true,labels:{color:"#334155",font:{size:11,weight:"600"},boxWidth:10}},tooltip:{...CD.plugins.tooltip}}}
-  });
+  if (D.actoresRadar && D.actoresRadar.labels) {
+    new Chart(document.getElementById("ch-actores"),{type:"radar",
+      data:{
+        labels:radarLabels,
+        datasets:D.actoresRadar.labels.map((lbl,i)=>({
+          label:lbl,
+          data:D.actoresRadar.data[i] || [0,0,0,0,0,0],
+          borderColor:(D.actoresRadar.colors && D.actoresRadar.colors[i]) ? D.actoresRadar.colors[i] : "#2563EB",
+          backgroundColor:((D.actoresRadar.colors && D.actoresRadar.colors[i]) ? D.actoresRadar.colors[i] : "#2563EB")+"33",
+          pointBackgroundColor:(D.actoresRadar.colors && D.actoresRadar.colors[i]) ? D.actoresRadar.colors[i] : "#2563EB",
+          pointRadius:4
+        }))
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{r:{ticks:{color:"#475569",font:{size:9,weight:"600"},stepSize:20},grid:{color:"rgba(0,0,0,.1)"},pointLabels:{color:"#1e293b",font:{size:10,weight:"700"}},angleLines:{color:"rgba(0,0,0,.1)"},min:0,max:100}},
+        plugins:{legend:{display:true,labels:{color:"#334155",font:{size:11,weight:"600"},boxWidth:10}},tooltip:{...CD.plugins.tooltip}}}
+    });
+  }
 }
 
-// 3. CARGA DE DATOS DESDE LA API VERCEL / LOCAL
+// 3. CARGA DE DATOS DESDE LA API VERCEL / LOCAL / APIFY INTERRUPTOR
 async function fetchDatosBackend() {
   try {
     const res = await fetch(`/api/analizar?actor=${encodeURIComponent(ACTOR)}&mes=${MES}&anio=${ANIO}`);
     if (res.ok) {
       const dataBackend = await res.json();
       if (dataBackend && dataBackend.emociones) {
-        // Asignar respuesta de la API si contiene el objeto emociones estructurado
         D = Object.assign({}, D, dataBackend.emociones);
       }
     }
@@ -705,7 +718,6 @@ async function fetchDatosBackend() {
   }
 }
 
-// Iniciar renderizado al cargar DOM
 document.addEventListener("DOMContentLoaded", fetchDatosBackend);
 </script>
 </body>
