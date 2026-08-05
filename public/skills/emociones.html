@@ -177,8 +177,7 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════ HEADER -->
-
+<!-- HEADER -->
 <header class="hdr">
   <div>
     <h1 class="hdr-name" id="hdr-actor-title">CARGANDO...</h1>
@@ -199,7 +198,7 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
   <div class="tab"     onclick="ST('segmenta',this)">🧩 Segmentos y Perfiles</div>
 </div>
 
-<!-- ══════════════════════════════════════════════ CONTENT -->
+<!-- CONTENT -->
 <div class="cnt">
 
 <!-- KPIs -->
@@ -294,24 +293,26 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
   <div id="segmenta-personas"></div>
 </div>
 
-</div><!-- /cnt -->
+</div>
 
 <div class="footer">
   <span id="ft-actor">SIE - Emociones</span>
   <span>CONFIDENCIAL &middot; Uso estratégico exclusivo &middot; </span>
 </div>
 
-<!-- ══════════════════════════════════════════════ DATA ENGINE & INTEGRATOR -->
 <script>
-// 1. PARAMETROS URL
+// 1. PARAMETROS Y FALLBACKS DINAMICOS
 const urlParams = new URLSearchParams(window.location.search);
-const ACTOR = urlParams.get('actor') || 'Alfredo Ramírez Bedolla';
-const MES = urlParams.get('mes') || 'Julio';
-const ANIO = urlParams.get('anio') || '2026';
+const ACTOR = window.DYNAMIC_ACTOR || urlParams.get('actor') || localStorage.getItem('selectedPersonaje') || 'Alfredo Ramírez Bedolla';
+const MES = window.DYNAMIC_MES || urlParams.get('mes') || localStorage.getItem('selectedMes') || 'Julio';
+const ANIO = window.DYNAMIC_ANIO || urlParams.get('anio') || localStorage.getItem('selectedAnio') || '2026';
 
 const nameParts = ACTOR.split(' ');
 const firstName = nameParts[0] || 'ACTOR';
 const lastName = nameParts.slice(1).join(' ') || '';
+
+// Contenedor para referencias de gráficos
+const chartsInstances = {};
 
 // 2. DATOS POR DEFECTO / PLANTILLA
 let D = {
@@ -381,7 +382,6 @@ let D = {
   ],
   partidosChart: [[55,30,15],[30,60,10],[20,35,45]],
 
-  // ESTRUCTURA DINAMICA PARA APFY DE ACTORES
   actores: [
     { name: ACTOR, role: `Figura evaluada · Periodo: ${MES} ${ANIO}`, partido: "Oficialismo", borderColor: "#2563EB",
       rows:[["Fortaleza","Capacidad de convocatoria y presencia mediática"],
@@ -420,7 +420,7 @@ let D = {
   temasChart: [["Infraestructura y servicios",35,"#B91C1C"],["Seguridad y justicia",30,"#0E7490"],["Transparencia / Desempeño",20,"#4C1D95"],["Economía / Empleo",15,"#C2410C"]]
 };
 
-/* ── ACTUALIZAR HEADER CON DATOS ────────────────────────────────── */
+/* ACTUALIZAR HEADER */
 function updateHeader() {
   document.getElementById("hdr-actor-title").innerHTML = `${firstName} <span>${lastName}</span>`;
   document.getElementById("hdr-actor-sub").innerText = `Análisis de Percepción Emocional · Periodo: ${MES} ${ANIO}`;
@@ -428,22 +428,29 @@ function updateHeader() {
   document.getElementById("ft-actor").innerText = `SIE - Emociones · ${ACTOR} ·`;
 }
 
-/* ── CONFIGURACIÓN DE RIESGO ──────────────────────────────────────── */
+/* CONFIGURACIÓN DE RIESGO */
 const RC={CRÍTICO:{bg:"var(--red-bg)",tx:"var(--red-s)",hex:"#dc2626"},
           ALTO:   {bg:"var(--org-bg)",tx:"var(--org-s)",hex:"#ea580c"},
           MEDIO:  {bg:"var(--ylw-bg)",tx:"#ca8a04",    hex:"#ca8a04"},
           BAJO:   {bg:"var(--grn-bg)",tx:"var(--grn-s)",hex:"#16a34a"}};
 let rc = RC[D.riskLevel] || RC.ALTO;
 
-/* ── MANEJO DE TABS ──────────────────────────────────────────────── */
+/* MANEJO DE TABS Y REDIMENSIONADO DE CANVAS */
 function ST(id,el){
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('pnl-'+id).classList.add('on');
   el.classList.add('on');
+
+  // Fuerza la re-renderización de los gráficos para corregir desfases de canvas ocultos
+  setTimeout(() => {
+    Object.values(chartsInstances).forEach(chart => {
+      if (chart) chart.resize();
+    });
+  }, 50);
 }
 
-/* ── DIBUJAR RUEDA SVG DE PLUTCHIK ───────────────────────────────── */
+/* DIBUJAR RUEDA SVG DE PLUTCHIK */
 const CX=220,CY=220,R=[62,108,154,200],GAP=1.4;
 const rad=d=>d*Math.PI/180;
 const pt=(r,d)=>[CX+r*Math.cos(rad(d)),CY+r*Math.sin(rad(d))];
@@ -482,17 +489,17 @@ function toggleEm(key){
   if(!open)d.classList.add("open");
 }
 
-/* ── CONFIGURACIÓN GRÁFICOS CHART.JS ────────────────────────────── */
+/* CONFIGURACIÓN GRÁFICOS CHART.JS */
 const CD={responsive:true,maintainAspectRatio:false,
   plugins:{legend:{display:false},tooltip:{backgroundColor:"#1C2738",titleColor:"#ffffff",bodyColor:"#cbd5e1",borderColor:"#334155",borderWidth:1}},
   scales:{x:{ticks:{color:"#334155",font:{size:11,weight:"600"}},grid:{color:"rgba(0,0,0,.06)"}},
           y:{ticks:{color:"#334155",font:{size:11,weight:"600"}},grid:{color:"rgba(0,0,0,.06)"}}}};
 
-/* ── INICIALIZACIÓN Y RENDER ────────────────────────────────────── */
+/* INICIALIZACIÓN Y RENDER GENERAL */
 function renderDashboard(){
   updateHeader();
 
-  /* Rueda Plutchik Territorio Header */
+  /* Rueda Plutchik Header */
   document.getElementById("whl-territory").textContent = D.territory;
   
   /* Badges */
@@ -556,7 +563,7 @@ function renderDashboard(){
   /* Concepto Central */
   document.getElementById("concepto-box").innerHTML=`<div class="cbox-label">Concepto Central del Territorio</div><div class="cbox-name">"${D.concept}"</div><div class="cbox-text">${D.conceptDesc}</div>`;
 
-  /* Mapa Social / Problemáticas / Miedos / Orgullos */
+  /* Mapa Social */
   const makeMP=(arr,dc)=>arr.map(t=>`<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join("");
   document.getElementById("mapa-cols").innerHTML=`
     <div class="mpc"><div class="mptt" style="color:#ca8a04">⚠ Problemáticas</div>${makeMP(D.problematics,"#ca8a04")}</div>
@@ -591,7 +598,7 @@ function renderDashboard(){
     <div style="color:${p.tendencia.includes("↓")?"#dc2626":p.tendencia.includes("↑")?"#16a34a":"#475569"};font-weight:700">${p.tendencia}</div>
   </div>`).join("");
 
-  /* Actores Grid (Integrado para datos Apify) */
+  /* Actores Grid */
   if (D.actores && D.actores.length > 0) {
     document.getElementById("actores-grid").innerHTML=D.actores.map(a=>`<div class="ac-card">
       <div class="ach" style="border-left:4px solid ${a.borderColor||"#1C2738"}">
@@ -646,30 +653,31 @@ function renderDashboard(){
       </div>
     </div>`).join("");
 
-  /* ── CONSTRUCCIÓN DE CHARTS.JS ────────────────────────────────── */
-  /* Chart 1: Intensidades */
+  /* CONSTRUCCIÓN DE CHARTS.JS CON DESTRUCCIÓN Y RE-USO LIMPIO */
   const acEm=D.emotions.filter(e=>e.active);
-  new Chart(document.getElementById("ch-intens"),{type:"bar",
+  
+  if (chartsInstances.chIntens) chartsInstances.chIntens.destroy();
+  chartsInstances.chIntens = new Chart(document.getElementById("ch-intens"),{type:"bar",
     data:{labels:acEm.map(e=>e.label),datasets:[{data:acEm.map(e=>e.intensity),backgroundColor:acEm.map(e=>e.color[2]+"dd"),borderColor:acEm.map(e=>e.color[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
     options:{...CD,indexAxis:"y",plugins:{...CD.plugins,tooltip:{...CD.plugins.tooltip,callbacks:{label:c=>" "+["Inactiva","Baja","Media","Alta"][c.raw]}}},
       scales:{x:{...CD.scales.x,min:0,max:3,ticks:{...CD.scales.x.ticks,stepSize:1,callback:v=>["○○○","●○○","●●○","●●●"][v]}},y:{...CD.scales.y}}}
   });
 
-  /* Chart 2: Temas */
-  new Chart(document.getElementById("ch-temas"),{type:"doughnut",
+  if (chartsInstances.chTemas) chartsInstances.chTemas.destroy();
+  chartsInstances.chTemas = new Chart(document.getElementById("ch-temas"),{type:"doughnut",
     data:{labels:D.temasChart.map(t=>t[0]),datasets:[{data:D.temasChart.map(t=>t[1]),backgroundColor:D.temasChart.map(t=>t[2]),borderColor:"#d5d1d1",borderWidth:2}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"right",labels:{color:"#334155",font:{size:11,weight:"600"},boxWidth:12,padding:10}},tooltip:{...CD.plugins.tooltip,callbacks:{label:c=>" "+c.label+": "+c.raw+"%"}}}}
   });
 
-  /* Chart 3: Díadas */
-  new Chart(document.getElementById("ch-diadas"),{type:"bar",
+  if (chartsInstances.chDiadas) chartsInstances.chDiadas.destroy();
+  chartsInstances.chDiadas = new Chart(document.getElementById("ch-diadas"),{type:"bar",
     data:{labels:D.dyads.map(d=>d.name),datasets:[{label:"Score de riesgo",data:D.dyads.map(d=>d.score),backgroundColor:D.dyads.map(d=>riskHex[d.risk]+"dd"),borderColor:D.dyads.map(d=>riskHex[d.risk]),borderWidth:1,borderRadius:6,borderSkipped:false}]},
     options:{...CD,plugins:{...CD.plugins,legend:{display:false}},scales:{x:{...CD.scales.x},y:{...CD.scales.y,min:0,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+"/100"}}}}
   });
 
-  /* Chart 4: Partidos */
+  if (chartsInstances.chPartidos) chartsInstances.chPartidos.destroy();
   const pLabels=D.partidos.map(p=>p.nombre);
-  new Chart(document.getElementById("ch-partidos"),{type:"bar",
+  chartsInstances.chPartidos = new Chart(document.getElementById("ch-partidos"),{type:"bar",
     data:{labels:pLabels,datasets:[
       {label:"Ira/Asco",data:D.partidosChart.map(x=>x[0]),backgroundColor:"#B91C1Cdd",borderRadius:4,borderSkipped:false},
       {label:"Decepción/Tristeza",data:D.partidosChart.map(x=>x[1]),backgroundColor:"#4C1D95dd",borderRadius:4,borderSkipped:false},
@@ -679,10 +687,10 @@ function renderDashboard(){
       scales:{x:{...CD.scales.x},y:{...CD.scales.y,min:0,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+"%"}}}}
   });
 
-  /* Chart 5: Radar Actores (Mapeo dinámico para Apify) */
-  const radarLabels=["Legitimidad","Presencia","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
   if (D.actoresRadar && D.actoresRadar.labels) {
-    new Chart(document.getElementById("ch-actores"),{type:"radar",
+    if (chartsInstances.chActores) chartsInstances.chActores.destroy();
+    const radarLabels=["Legitimidad","Presencia","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
+    chartsInstances.chActores = new Chart(document.getElementById("ch-actores"),{type:"radar",
       data:{
         labels:radarLabels,
         datasets:D.actoresRadar.labels.map((lbl,i)=>({
@@ -701,7 +709,7 @@ function renderDashboard(){
   }
 }
 
-// 3. CARGA DE DATOS DESDE LA API VERCEL / LOCAL / APIFY INTERRUPTOR
+// 3. CARGA DE DATOS DESDE LA API VERCEL / LOCAL
 async function fetchDatosBackend() {
   try {
     const res = await fetch(`/api/analizar?actor=${encodeURIComponent(ACTOR)}&mes=${MES}&anio=${ANIO}`);
@@ -712,13 +720,18 @@ async function fetchDatosBackend() {
       }
     }
   } catch (err) {
-    console.log("Modo demo con datos locales activos:", err);
+    console.log("Modo standalone/demo activo:", err);
   } finally {
     renderDashboard();
   }
 }
 
-document.addEventListener("DOMContentLoaded", fetchDatosBackend);
+// Inicialización automática tolerante a inyección dinámica
+if (document.readyState === 'loading') {
+  document.addEventListener("DOMContentLoaded", fetchDatosBackend);
+} else {
+  fetchDatosBackend();
+}
 </script>
 </body>
 </html>
