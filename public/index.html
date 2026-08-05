@@ -1,321 +1,201 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RADAR INTELLIGENCE v2.0</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root {
-    --dark: #0f172a;
-    --card: #ffffff;
-    --border: #cbd5e1;
-    --text: #0f172a;
-    --muted: #64748b;
-    --ac: #00C2D4;
-    --hdrblue: #1C2738;
-    --btn-blue: #1e3a8a;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:var(--text);min-height:100vh;padding-bottom:40px}
-
-  .top-brand {
-    background: var(--hdrblue);
-    color: #00C2D4;
-    padding: 12px 32px;
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: 1.5px;
-  }
-
-  .app-viewport {
-    max-width: 1200px;
-    margin: 32px auto 0;
-    padding: 0 16px;
-  }
-
-  /* VISTA 1: BÚSQUEDA */
-  .search-container {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 32px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    border: 1px solid #e2e8f0;
-  }
-  .search-header-sub {
-    font-size: 11px;
-    font-weight: 800;
-    color: #1e3a8a;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-  }
-  .search-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 6px;
-  }
-  .search-title span { color: #1e3a8a; }
-  .search-desc {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 24px;
-  }
-
-  .filter-box {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .filter-select, .filter-input {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    color: #0f172a;
-    font-weight: 600;
-    outline: none;
-  }
-  .filter-input { flex: 1; min-width: 220px; }
-  .btn-analyze {
-    background: #1e3a8a;
-    color: #ffffff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-analyze:hover { background: #172554; }
-
-  /* VISTA 2: LOADER */
-  .loading-view {
-    display: none;
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 60px 32px;
-    text-align: center;
-    border: 1px solid #e2e8f0;
-  }
-  .spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid #e2e8f0;
-    border-top: 4px solid #00C2D4;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-  }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
-  .loading-subtitle { font-size: 13px; color: var(--muted); }
-
-  /* VISTA 3: DASHBOARD CON BOTONES SUPERIORES */
-  .dashboard-view { display: none; width: 100%; position: relative; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador de Skills</title>
   
-  .dashboard-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  .btn-action {
-    background: #1C2738;
-    border: 1px solid #334155;
-    color: #ffffff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-  }
-  .btn-action:hover {
-    background: #00C2D4;
-    color: #0f172a;
-    border-color: #00C2D4;
-  }
-
-  #skillContainer {
-    background: transparent;
-    border-radius: 8px;
-  }
-
-  /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN / DESCARGA DE PDF */
-  @media print {
-    .top-brand, .dashboard-toolbar, .search-container, .loading-view {
-      display: none !important;
+  <style>
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
     }
-    body { background: #fff !important; padding: 0 !important; }
-    .app-viewport { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
-    #skillContainer { border: none !important; }
-  }
-</style>
+  </style>
 </head>
-<body>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex flex-col font-sans antialiased relative selection:bg-indigo-500 selection:text-white">
 
-<div class="top-brand">RADAR INTELLIGENCE v2.0</div>
+  <!-- VISTA 1: FORMULARIO -->
+  <div id="view1" class="flex-1 flex items-center justify-center p-4">
+    <div class="glass-card max-w-xl w-full rounded-2xl shadow-2xl p-8 transition-all duration-300">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 mb-4 shadow-inner">
+          <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Centro de Inteligencia</h1>
+        <p class="text-slate-500 text-sm mt-1">Generación de informes estratégicos automatizados</p>
+      </div>
 
-<div class="app-viewport">
-  
-  <!-- VISTA 1: BÚSQUEDA -->
-  <div class="search-container" id="view1">
-    <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
-    <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
-    <p class="search-desc">Selecciona la Skill y ejecuta la consulta sobre el objetivo.</p>
+      <!-- Se agrega event.preventDefault() al submit para evitar que la página se recargue -->
+      <form id="searchForm" class="space-y-6" onsubmit="event.preventDefault(); loadSkill();">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+            <i class="fa-solid fa-layer-group mr-1 text-indigo-500"></i> Seleccionar Skill
+          </label>
+          <select id="skillSelect" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm" required>
+            <option value="" disabled selected>Elige un reporte a generar...</option>
+            <option value="radar.html">Radar Político y Digital (Full Charts)</option>
+          </select>
+        </div>
 
-    <div class="filter-box">
-      <select id="skillSelect" class="filter-select">
-        <option value="" disabled selected>Selecciona una Skill...</option>
-        <option value="skills/radar.html">Skill: RADAR Político</option>
-        <option value="skills/emociones.html">Skill: Humor Social / Emociones</option>
-        <option value="skills/tensiones.html">Skill: Tensiones</option>
-        <option value="skills/opositor.html">Skill: Opositor</option>
-      </select>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+            <i class="fa-solid fa-user-gear mr-1 text-indigo-500"></i> Nombre del Personaje / Perfil
+          </label>
+          <input type="text" id="targetProfile" placeholder="Ej. Delfina Gómez Álvarez" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm" required>
+        </div>
 
-      <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+              <i class="fa-solid fa-calendar mr-1 text-indigo-500"></i> Mes
+            </label>
+            <select id="monthSelect" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm">
+              <option value="Enero">Enero</option>
+              <option value="Febrero">Febrero</option>
+              <option value="Marzo">Marzo</option>
+              <option value="Abril">Abril</option>
+              <option value="Mayo">Mayo</option>
+              <option value="Junio">Junio</option>
+              <option value="Julio">Julio</option>
+              <option value="Agosto">Agosto</option>
+              <option value="Septiembre">Septiembre</option>
+              <option value="Octubre">Octubre</option>
+              <option value="Noviembre">Noviembre</option>
+              <option value="Diciembre">Diciembre</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+              <i class="fa-solid fa-calendar-days mr-1 text-indigo-500"></i> Año
+            </label>
+            <select id="yearSelect" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+        </div>
 
-      <select id="monthSelect" class="filter-select">
-        <option value="Enero">Enero</option>
-        <option value="Febrero">Febrero</option>
-        <option value="Marzo">Marzo</option>
-        <option value="Abril">Abril</option>
-        <option value="Mayo">Mayo</option>
-        <option value="Junio" selected>Junio</option>
-        <option value="Julio">Julio</option>
-        <option value="Agosto">Agosto</option>
-        <option value="Septiembre">Septiembre</option>
-        <option value="Octubre">Octubre</option>
-        <option value="Noviembre">Noviembre</option>
-        <option value="Diciembre">Diciembre</option>
-      </select>
-
-      <select id="yearSelect" class="filter-select">
-        <option value="2026" selected>2026</option>
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-        <option value="2023">2023</option>
-      </select>
-
-      <button class="btn-analyze" onclick="loadSelectedSkill()">Analizar</button>
+        <!-- Se ajusta la función a loadSkill() para coincidir con el JavaScript -->
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-indigo-500/30 transition duration-200 flex items-center justify-center space-x-2">
+          <span>Analizar</span>
+          <i class="fa-solid fa-arrow-right text-sm"></i>
+        </button>
+      </form>
     </div>
   </div>
 
   <!-- VISTA 2: LOADER -->
-  <div class="loading-view" id="view2">
-    <div class="spinner"></div>
-    <div class="loading-title">Cargando Inteligencia...</div>
-    <div class="loading-subtitle" id="loadingText">Procesando datos...</div>
+  <div id="view2" class="hidden flex-1 flex flex-col items-center justify-center p-4">
+    <div class="glass-card max-w-sm w-full rounded-2xl shadow-2xl p-8 text-center">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+      <h2 class="text-xl font-bold text-slate-800">Procesando Datos</h2>
+      <p id="loadingText" class="text-xs text-slate-500 mt-2">Inyectando variables y renderizando la Skill...</p>
+    </div>
   </div>
 
-  <!-- VISTA 3: DASHBOARD -->
-  <div class="dashboard-view" id="view3">
-    <!-- Barra con Botones de Acción -->
-    <div class="dashboard-toolbar">
-      <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte</button>
-      <button class="btn-action" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
+  <!-- VISTA 3: RESULTADO -->
+  <div id="view3" class="hidden flex-1 flex flex-col">
+    <div class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-md">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <button onclick="resetToSearch()" class="text-slate-300 hover:text-white flex items-center space-x-2 text-sm font-medium transition">
+          <i class="fa-solid fa-chevron-left"></i>
+          <span>Volver al buscador</span>
+        </button>
+        <button onclick="downloadReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow transition flex items-center space-x-2">
+          <i class="fa-solid fa-file-pdf"></i>
+          <span>Descargar Reporte</span>
+        </button>
+      </div>
     </div>
     
-    <div id="skillContainer"></div>
+    <div id="skillContainer" class="flex-1"></div>
   </div>
 
-</div>
+  <script>
+    function loadSkill() {
+      const skillSelect = document.getElementById('skillSelect');
+      const targetInput = document.getElementById('targetProfile');
 
-<script>
-  
-<script>
-function loadSelectedSkill() {
-  const skillSelect = document.getElementById('skillSelect');
-  const targetInput = document.getElementById('targetProfile');
+      const skillPath = skillSelect.value;
+      const targetName = targetInput.value.trim();
 
-  const skillPath = skillSelect.value;
-  const targetName = targetInput.value.trim();
+      if (!skillPath) { alert("Por favor selecciona una Skill."); return; }
+      if (!targetName) { alert("Por favor ingresa un nombre."); return; }
 
-  if (!skillPath) { alert("Por favor selecciona una Skill."); return; }
-  if (!targetName) { alert("Por favor ingresa un nombre."); return; }
+      const skillText = skillSelect.options[skillSelect.selectedIndex].text;
+      const month = document.getElementById('monthSelect').value;
+      const year = document.getElementById('yearSelect').value;
 
-  const skillText = skillSelect.options[skillSelect.selectedIndex].text;
-  const month = document.getElementById('monthSelect').value;
-  const year = document.getElementById('yearSelect').value;
+      localStorage.setItem('selectedPersonaje', targetName);
+      localStorage.setItem('selectedMes', month);
+      localStorage.setItem('selectedAnio', year);
 
-  localStorage.setItem('selectedPersonaje', targetName);
-  localStorage.setItem('selectedMes', month);
-  localStorage.setItem('selectedAnio', year);
+      const nameParts = targetName.split(' ');
+      const firstName = nameParts[0] || targetName;
+      const lastName = nameParts.slice(1).join(' ') || '';
 
-  const nameParts = targetName.split(' ');
-  const firstName = nameParts[0] || targetName;
-  const lastName = nameParts.slice(1).join(' ') || '';
+      const templateData = {
+        'ACTOR_NOMBRE_PRINCIPAL': firstName.toUpperCase(),
+        'ACTOR_APELLIDOS': lastName.toUpperCase(),
+        'ACTOR_CARGO': 'Servidor(a) Público(a)',
+        'ACTOR_ENTIDAD': 'Estado de México',
+        'ACTOR_PARTIDO': 'Gobernador(a)',
+        'PERIODO_EVALUADO': `${month.toUpperCase()} ${year}`
+      };
 
-  const templateData = {
-    'ACTOR_NOMBRE_PRINCIPAL': firstName.toUpperCase(),
-    'ACTOR_APELLIDOS': lastName.toUpperCase(),
-    'ACTOR_CARGO': 'Servidor(a) Público(a)',
-    'ACTOR_ENTIDAD': 'Estado de México',
-    'ACTOR_PARTIDO': 'Gobernador(a)',
-    'PERIODO_EVALUADO': `${month.toUpperCase()} ${year}`
-  };
+      document.getElementById('view1').style.display = 'none';
+      document.getElementById('view2').style.display = 'flex';
+      document.getElementById('loadingText').textContent = `Cargando ${skillText} para ${targetName}...`;
 
-  document.getElementById('view1').style.display = 'none';
-  document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Cargando ${skillText} para ${targetName}...`;
+      fetch(skillPath)
+        .then(response => {
+          if (!response.ok) throw new Error("No se pudo cargar la Skill.");
+          return response.text();
+        })
+        .then(htmlContent => {
+          let processedHtml = htmlContent;
+          for (const [key, value] of Object.entries(templateData)) {
+            const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+            processedHtml = processedHtml.replace(regex, value);
+          }
 
-  fetch(skillPath)
-    .then(response => {
-      if (!response.ok) throw new Error("No se pudo cargar la Skill.");
-      return response.text();
-    })
-    .then(htmlContent => {
-      let processedHtml = htmlContent;
-      for (const [key, value] of Object.entries(templateData)) {
-        const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-        processedHtml = processedHtml.replace(regex, value);
-      }
+          document.getElementById('view2').style.display = 'none';
+          document.getElementById('view3').style.display = 'block';
 
+          const container = document.getElementById('skillContainer');
+          container.innerHTML = processedHtml;
+
+          // Re-ejecutar scripts propios del HTML cargado (skill)
+          const scripts = Array.from(container.querySelectorAll("script"));
+          scripts.forEach(oldScript => {
+            const newScript = document.createElement("script");
+            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+          });
+        })
+        .catch(err => {
+          alert("Error: " + err.message);
+          resetToSearch();
+        });
+    }
+
+    function downloadReport() {
+      window.print();
+    }
+
+    function resetToSearch() {
+      document.getElementById('view3').style.display = 'none';
       document.getElementById('view2').style.display = 'none';
-      document.getElementById('view3').style.display = 'block';
-
-      const container = document.getElementById('skillContainer');
-      container.innerHTML = processedHtml;
-
-      // Re-ejecutar scripts propios del HTML cargado (skill)
-      const scripts = Array.from(container.querySelectorAll("script"));
-      scripts.forEach(oldScript => {
-        const newScript = document.createElement("script");
-        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-      });
-
-    })
-    .catch(err => {
-      alert("Error: " + err.message);
-      resetToSearch();
-    });
-}
-
-function downloadReport() {
-  window.print();
-}
-
-function resetToSearch() {
-  document.getElementById('view3').style.display = 'none';
-  document.getElementById('view2').style.display = 'none';
-  document.getElementById('view1').style.display = 'block';
-  document.getElementById('skillContainer').innerHTML = '';
-}
-</script>
+      document.getElementById('view1').style.display = 'flex';
+      document.getElementById('skillContainer').innerHTML = '';
+    }
+  </script>
 </body>
 </html>
