@@ -154,7 +154,6 @@
     border-radius: 8px;
   }
 
-  /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN / DESCARGA DE PDF */
   @media print {
     .top-brand, .dashboard-toolbar, .search-container, .loading-view {
       display: none !important;
@@ -223,7 +222,6 @@
 
   <!-- VISTA 3: DASHBOARD -->
   <div class="dashboard-view" id="view3">
-    <!-- Barra con Botones de Acción -->
     <div class="dashboard-toolbar">
       <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte</button>
       <button class="btn-action" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
@@ -273,7 +271,6 @@ function loadSelectedSkill() {
   fetch(skillPath)
     .then(response => {
       if (!response.ok) {
-        // Intenta cargar sin 'skills/' por si el archivo está en la raíz
         const altPath = skillPath.replace('skills/', '');
         return fetch(altPath).then(res2 => {
           if (!res2.ok) throw new Error("No se pudo encontrar el archivo en '" + skillPath + "' ni en '" + altPath + "'");
@@ -295,12 +292,22 @@ function loadSelectedSkill() {
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
-      // Re-ejecutar los scripts propios de la Skill inyectada
+      // Inyección y re-ejecución dinámica de scripts
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
         Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+        
+        let scriptCode = oldScript.innerHTML;
+        // Inyecta variables dinámicas en el contexto del Script
+        scriptCode = `
+          window.DYNAMIC_ACTOR = "${targetName}";
+          window.DYNAMIC_MES = "${month}";
+          window.DYNAMIC_ANIO = "${year}";
+          ${scriptCode}
+        `;
+        
+        newScript.appendChild(document.createTextNode(scriptCode));
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
 
