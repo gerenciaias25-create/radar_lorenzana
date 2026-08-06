@@ -34,7 +34,6 @@
     padding: 0 16px;
   }
 
-  /* VISTA 1: BÚSQUEDA */
   .search-container {
     background: #ffffff;
     border-radius: 12px;
@@ -97,7 +96,6 @@
   }
   .btn-analyze:hover { background: #172554; }
 
-  /* VISTA 2: LOADER */
   .loading-view {
     display: none;
     background: #ffffff;
@@ -119,7 +117,6 @@
   .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
   .loading-subtitle { font-size: 13px; color: var(--muted); }
 
-  /* VISTA 3: DASHBOARD CON BOTONES SUPERIORES */
   .dashboard-view { display: none; width: 100%; position: relative; }
   
   .dashboard-toolbar {
@@ -193,9 +190,9 @@
         <option value="Marzo">Marzo</option>
         <option value="Abril">Abril</option>
         <option value="Mayo">Mayo</option>
-        <option value="Junio" selected>Junio</option>
+        <option value="Junio">Junio</option>
         <option value="Julio">Julio</option>
-        <option value="Agosto">Agosto</option>
+        <option value="Agosto" selected>Agosto</option>
         <option value="Septiembre">Septiembre</option>
         <option value="Octubre">Octubre</option>
         <option value="Noviembre">Noviembre</option>
@@ -207,6 +204,8 @@
         <option value="2025">2025</option>
         <option value="2024">2024</option>
         <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
       </select>
 
       <button type="button" class="btn-analyze" onclick="loadSelectedSkill()">Analizar</button>
@@ -217,7 +216,7 @@
   <div class="loading-view" id="view2">
     <div class="spinner"></div>
     <div class="loading-title">Cargando Inteligencia...</div>
-    <div class="loading-subtitle" id="loadingText">Procesando datos...</div>
+    <div class="loading-subtitle" id="loadingText">Procesando fuentes dinámicas de Apify y sintetizando con OpenRouter...</div>
   </div>
 
   <!-- VISTA 3: DASHBOARD -->
@@ -260,13 +259,13 @@ function loadSelectedSkill() {
     'ACTOR_APELLIDOS': lastName.toUpperCase(),
     'ACTOR_CARGO': 'Servidor(a) Público(a)',
     'ACTOR_ENTIDAD': 'Estado de México',
-    'ACTOR_PARTIDO': 'Gobernador(a)',
+    'ACTOR_PARTIDO': 'Representación Institucional',
     'PERIODO_EVALUADO': `${month.toUpperCase()} ${year}`
   };
 
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Cargando ${skillText} para ${targetName}...`;
+  document.getElementById('loadingText').textContent = `Extrayendo datos masivos de Apify e IA para ${targetName}...`;
 
   fetch(skillPath)
     .then(response => {
@@ -292,14 +291,12 @@ function loadSelectedSkill() {
       const container = document.getElementById('skillContainer');
       container.innerHTML = processedHtml;
 
-      // Inyección y re-ejecución dinámica de scripts
       const scripts = Array.from(container.querySelectorAll("script"));
       scripts.forEach(oldScript => {
         const newScript = document.createElement("script");
         Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
         
         let scriptCode = oldScript.innerHTML;
-        // Inyecta variables dinámicas en el contexto del Script
         scriptCode = `
           window.DYNAMIC_ACTOR = "${targetName}";
           window.DYNAMIC_MES = "${month}";
@@ -318,9 +315,7 @@ function loadSelectedSkill() {
     });
 }
 
-function downloadReport() {
-  window.print();
-}
+function downloadReport() { window.print(); }
 
 function resetToSearch() {
   document.getElementById('view3').style.display = 'none';
