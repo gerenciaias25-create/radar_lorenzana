@@ -346,9 +346,8 @@ async function fetchDatosApify() {
     statusElem.textContent = `Ejecutando Scraper de Apify para ${ACTOR}...`;
     subtextElem.textContent = "Obteniendo menciones recientes, comentarios de usuarios y artículos de noticias...";
 
-    // Llamada al backend que dispara la ejecución del Actor de Apify
-    // ✅ RUTA NUEVA UNIFICADA:
-  const res = await fetch(`/api/analizar?skill=emociones&actor=${encodeURIComponent(ACTOR)}&mes=${MES}&anio=${ANIO}`);
+    // ✅ RUTA CORREGIDA: Apunta exactamente al backend unificado /api/analizar
+    const res = await fetch(`/api/analizar?skill=emociones&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
     
     if (!res.ok) {
       throw new Error(`El servidor devolvió un error status ${res.status}`);
@@ -356,8 +355,8 @@ async function fetchDatosApify() {
 
     const dataApify = await res.json();
     
-    if (!dataApify || !dataApify.emotions) {
-      throw new Error("Formato de datos no válido recibido desde Apify.");
+    if (!dataApify || (!dataApify.emotions && !dataApify.emociones)) {
+      throw new Error("Formato de datos no válido recibido desde el backend.");
     }
 
     D = dataApify;
@@ -367,7 +366,7 @@ async function fetchDatosApify() {
     console.error("Error al obtener datos de Apify:", err);
     statusElem.style.color = "#dc2626";
     statusElem.textContent = "No se pudieron obtener datos en tiempo real";
-    subtextElem.innerHTML = `Ocurrió un error conectando con la API de Apify:<br><b>${err.message}</b><br><br>Verifica que el servicio backend o endpoint <code>/api/analizar-emociones</code> esté configurado con las credenciales de Apify.`;
+    subtextElem.innerHTML = `Ocurrió un error conectando con la API backend:<br><b>${err.message}</b><br><br>Verifica que el servicio backend o endpoint <code>/api/analizar</code> esté activo y configurado con las credenciales necesarias.`;
   }
 }
 
@@ -382,10 +381,19 @@ function renderDashboard(){
   document.getElementById("hdr-date").innerText = `Monitoreado: ${MES} ${ANIO}`;
   document.getElementById("whl-territory").textContent = ACTOR;
 
+  // Normalización de propiedades entre inglés / español
+  const emotionsArr = D.emotions || D.emociones || [];
+  const secondaryArr = D.secondary || D.secundarias || [];
+  const problematicsArr = D.problematics || D.problematicas || [];
+  const fearsArr = D.fears || D.temores || [];
+  const pridesArr = D.prides || D.orgullos || [];
+  const quotesArr = D.quotes || D.citas || [];
+  const dyadsArr = D.dyads || D.diadas || [];
+
   // Render Rueda y Listas
   document.getElementById("wheel-wrap").innerHTML = buildWheel();
   
-  const activeEm = (D.emotions || []).filter(e => e.active);
+  const activeEm = emotionsArr.filter(e => e.active);
   document.getElementById("em-list").innerHTML = activeEm.map(em => `
     <div class="emr" onclick="toggleEm('${em.key}')">
       <div class="emh">
@@ -398,43 +406,46 @@ function renderDashboard(){
       </div>
     </div>`).join("");
 
-  document.getElementById("em-sec").innerHTML = (D.secondary || []).map(s => `
+  document.getElementById("em-sec").innerHTML = secondaryArr.map(s => `
     <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd2)">
-      <div style="width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;margin-top:4px"></div>
-      <div><div style="font-size:12px;font-weight:700;">${s.name}</div><div style="font-size:11px;color:var(--tx2);">${s.text}</div></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:${s.color || '#3b82f6'};flex-shrink:0;margin-top:4px"></div>
+      <div><div style="font-size:12px;font-weight:700;">${s.name || s.nombre}</div><div style="font-size:11px;color:var(--tx2);">${s.text || s.descripcion}</div></div>
     </div>`).join("");
 
-  document.getElementById("concepto-box").innerHTML = `<div class="cbox-label">Concepto Extraído por IA / Apify</div><div class="cbox-name">"${D.concept || 'Sin concepto'}"</div><div class="cbox-text">${D.conceptDesc || ''}</div>`;
+  document.getElementById("concepto-box").innerHTML = `<div class="cbox-label">Concepto Extraído por IA / Apify</div><div class="cbox-name">"${D.concept || D.concepto || 'Sin concepto'}"</div><div class="cbox-text">${D.conceptDesc || D.conceptoDesc || ''}</div>`;
 
   // Mapa
-  const makeMP = (arr, dc) => (arr || []).map(t => `<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join("");
+  const makeMP = (arr, dc) => (arr || []).map(t => `<div class="mpi"><div class="mpd" style="background:${dc}"></div>${typeof t === 'string' ? t : (t.text || t.descripcion)}</div>`).join("");
   document.getElementById("mapa-cols").innerHTML = `
-    <div class="mpc"><div class="mptt" style="color:#ca8a04">⚠ Problemáticas</div>${makeMP(D.problematics, "#ca8a04")}</div>
-    <div class="mpc"><div class="mptt" style="color:#dc2626">⬡ Miedos</div>${makeMP(D.fears, "#dc2626")}</div>
-    <div class="mpc"><div class="mptt" style="color:#16a34a">★ Orgullos</div>${makeMP(D.prides, "#16a34a")}</div>`;
+    <div class="mpc"><div class="mptt" style="color:#ca8a04">⚠ Problemáticas</div>${makeMP(problematicsArr, "#ca8a04")}</div>
+    <div class="mpc"><div class="mptt" style="color:#dc2626">⬡ Miedos</div>${makeMP(fearsArr, "#dc2626")}</div>
+    <div class="mpc"><div class="mptt" style="color:#16a34a">★ Orgullos</div>${makeMP(pridesArr, "#16a34a")}</div>`;
 
-  document.getElementById("quotes").innerHTML = (D.quotes || []).map(q => `<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion}</div></div>`).join("");
+  document.getElementById("quotes").innerHTML = quotesArr.map(q => `<div class="qi"><div class="qt">${q.text || q.cita}</div><div class="qm">${q.topic || 'General'} · ${q.emotion || 'Neutro'}</div></div>`).join("");
 
   // Díadas
-  document.getElementById("dyad-cards").innerHTML = (D.dyads || []).map(d => `
+  document.getElementById("dyad-cards").innerHTML = dyadsArr.map(d => `
     <div class="dyc" style="border-top-color:#ea580c">
-      <div class="dyn">${d.name}</div>
-      <div class="dyf">${d.formula}</div>
-      <div class="dyt">${d.text}</div>
+      <div class="dyn">${d.name || d.nombre}</div>
+      <div class="dyf">${d.formula || d.emotions}</div>
+      <div class="dyt">${d.text || d.description}</div>
     </div>`).join("");
 
   // Charts
   const CD = { responsive: true, maintainAspectRatio: false };
 
   if (chartsInstances.chIntens) chartsInstances.chIntens.destroy();
-  chartsInstances.chIntens = new Chart(document.getElementById("ch-intens"), {
-    type: "bar",
-    data: {
-      labels: activeEm.map(e => e.label),
-      datasets: [{ data: activeEm.map(e => e.intensity), backgroundColor: activeEm.map(e => e.color[2]) }]
-    },
-    options: CD
-  });
+  const ctxIntens = document.getElementById("ch-intens");
+  if (ctxIntens) {
+    chartsInstances.chIntens = new Chart(ctxIntens, {
+      type: "bar",
+      data: {
+        labels: activeEm.map(e => e.label),
+        datasets: [{ data: activeEm.map(e => e.intensity), backgroundColor: activeEm.map(e => e.color[2]) }]
+      },
+      options: CD
+    });
+  }
 }
 
 // Inicialización
@@ -442,21 +453,6 @@ if (document.readyState === 'loading') {
   document.addEventListener("DOMContentLoaded", fetchDatosApify);
 } else {
   fetchDatosApify();
-}
-  function renderDiadas(data) {
-  // Asegúrate de tomar diadas o dyads según lo que venga de la API
-  const listaDiadas = data.diadas || data.dyads || [];
-  const container = document.getElementById('contenedor-diadas'); // Ajusta con la ID real de tu HTML
-
-  if (!container) return;
-
-  container.innerHTML = listaDiadas.map(d => `
-    <div class="card-diada">
-      <h4>${d.name || d.nombre}</h4>
-      <span class="badge">${d.formula || d.emotions}</span>
-      <p>${d.text || d.description}</p>
-    </div>
-  `).join('');
 }
 </script>
 </body>
