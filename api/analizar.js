@@ -12,9 +12,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'El parámetro "actor" es requerido.' });
     }
 
-    const apifyToken = process.env.APIFY_TOKEN;
-    let rawItems = [];
+   // Reemplaza esta línea:
+// const apifyToken = process.env.APIFY_TOKEN;
 
+// Por esta línea (así detecta el nombre exacto que tienes en tu captura):
+const apifyToken = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
+const openrouterKey = process.env.OPENROUTER_API_KEY;
     // --- 1. BUSQUEDA FLEXIBLE EN APIFY (TIEMPO REAL) ---
     if (apifyToken) {
       try {
