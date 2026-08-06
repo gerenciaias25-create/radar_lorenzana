@@ -1,14 +1,10 @@
-<!-- =========================================================
-  EMOCIONES DASHBOARD TEMPLATE v3.0 (100% Apify & Real-Time Ready)
-  Sistema de Humor Social Emocional — Plutchik Framework
-  ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EMOCIONES — Dashboard Político en Tiempo Real</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#ffffff;
@@ -26,14 +22,12 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
 
-/* HEADER */
 .hdr { background: var(--hdrblue); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 18px 24px; position: sticky; top: 0; backdrop-filter: blur(12px); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
 .hdr-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1.2; text-transform: uppercase; }
 .hdr-name span { color: var(--ac); }
 .hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; font-weight: 500; }
 .hdr-date-badge{font-size:12px;background:rgba(255,255,255,.1);color:#f1f5f9;padding:6px 14px;border-radius:20px;font-weight:600;letter-spacing:.02em;border:1px solid rgba(255,255,255,.2)}
 
-/* LOADER DINÁMICO DE APIFY */
 .apify-loader {
   display: flex;
   flex-direction: column;
@@ -55,31 +49,22 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 .apify-status-text { font-size: 16px; font-weight: 700; color: var(--tx1); margin-bottom: 8px; }
 .apify-subtext { font-size: 13px; color: var(--tx3); max-width: 500px; line-height: 1.5; }
 
-/* TABS */
 .tabs{display:none;overflow-x:auto;border-bottom:2px solid #e2e8f0;padding:0 2rem;background:#ffffff}
 .tab{font-size:12px;font-weight:700;letter-spacing:.02em;padding:.8rem 1.2rem;color:var(--tx3);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .18s}
 .tab:hover{color:var(--tx1);background:#f8fafc}
 .tab.on{color:var(--blue);border-bottom-color:var(--blue)}
 
-/* CONTENT */
 .cnt{padding:1.4rem 2rem;background:var(--bg)}
 .pnl{display:none}
 .pnl.on{display:block}
 
-/* GRIDS & CARDS */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
 .gauto{display:grid;grid-template-columns:430px 1fr;gap:1.2rem;align-items:start}
 
 .card{background:var(--bg-card);border:1px solid var(--brd2);border-radius:10px;padding:1.1rem 1.2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-.card2{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1.1rem 1.2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-.cv{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.55rem}
-.cval{font-size:2rem;font-weight:800;line-height:1;color:var(--tx1)}
-.csub{font-size:11px;color:var(--tx2);margin-top:.3rem}
 .sl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tx1);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--brd2)}
 
-/* EMOTION ROWS */
 .emr{padding:9px 0;border-bottom:1px solid var(--brd2);cursor:pointer;transition:background .12s;border-radius:4px}
 .emr:hover{background:rgba(0,0,0,.03)}
 .emh{display:flex;align-items:center;gap:7px}
@@ -88,14 +73,11 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 .edk{font-size:10.5px;font-weight:700;color:var(--tx1);margin-bottom:3px}
 .edv{font-size:11px;color:var(--tx2);line-height:1.6}
 
-/* DYAD CARDS */
-.dyc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1rem 1.1rem;border-top:4px solid}
+.dyc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1rem 1.1rem;border-top:4px solid #ea580c}
 .dyn{font-size:14px;font-weight:800;margin-bottom:3px}
 .dyf{font-size:11px;color:var(--tx3);font-style:italic;margin-bottom:7px}
 .dyt{font-size:12px;color:var(--tx2);line-height:1.6}
-.dybadge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;float:right;margin-top:-2px}
 
-/* MAPA & QUOTES */
 .mpc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:.9rem 1rem}
 .mptt{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
 .mpi{font-size:12px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--brd2);display:flex;align-items:flex-start;gap:6px}
@@ -107,38 +89,6 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 .qt::after{content:'"';color:var(--blue);font-weight:700}
 .qm{font-size:10.5px;color:var(--tx3);margin-top:3px;font-weight:600}
 
-/* BUYER PERSONA */
-.bp-card{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:12px;overflow:hidden;margin-bottom:1rem}
-.bp-head{padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;color:#fff}
-.bp-tipo{font-size:10px;font-weight:800;letter-spacing:.1em;opacity:.9}
-.bp-arquetipo{font-size:18px;font-weight:800}
-.bp-meta{text-align:right;font-size:11px}
-.bp-peso{font-size:20px;font-weight:800}
-.bp-persuab{font-size:10px;font-weight:700;padding:2px 9px;border-radius:5px;background:rgba(255,255,255,.25);margin-top:3px;display:inline-block}
-.bp-quote{padding:.85rem 1.2rem;font-size:13px;font-style:italic;color:var(--tx1);border-left:4px solid;background:rgba(255,255,255,.4)}
-.bp-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--brd2)}
-.bp-col{padding:1rem 1.1rem;border-right:1px solid var(--brd2)}
-.bp-col-tt{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:.6rem}
-.bp-row{font-size:11.5px;color:var(--tx2);padding:4px 0;line-height:1.55}
-.bp-tags{display:flex;flex-wrap:wrap;gap:5px;margin:.3rem 0}
-.bp-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.08);color:var(--tx1);font-weight:600}
-.bp-foot{padding:.7rem 1.2rem;border-top:1px solid var(--brd2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;font-size:11px;color:var(--tx3);background:rgba(0,0,0,.02)}
-
-/* SEMAFORO & ACTOR */
-.sem{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd2)}
-.semd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.seml{font-size:12px;color:var(--tx2);flex:1;font-weight:500}
-.semv{font-size:12px;font-weight:800}
-
-.ac-card{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;overflow:hidden}
-.ach{padding:.9rem 1.1rem;border-bottom:1px solid var(--brd2);background:rgba(255,255,255,.3)}
-.acn{font-size:14px;font-weight:800;color:var(--tx1)}
-.acr{font-size:11px;color:var(--tx3);margin-top:2px;font-weight:600}
-.acb{padding:.9rem 1.1rem}
-.acrow{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd2);font-size:12px}
-.ack{color:var(--tx3);font-size:11px;font-weight:700}
-.acv{color:var(--tx1);font-weight:600;text-align:right;max-width:65%}
-
 .cbox{background:linear-gradient(135deg,rgba(28,39,56,.08),rgba(59,130,246,.08));border:1px solid var(--brd2);border-radius:12px;padding:1.2rem 1.4rem;border-left:5px solid var(--blue)}
 .cbox-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:.35rem}
 .cbox-name{font-size:21px;font-weight:800;color:var(--tx1);margin-bottom:.45rem}
@@ -146,18 +96,10 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 
 .cw{position:relative}
 .footer { background: #1C2738; border-top: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 40px; border-radius: 4px; }
-
-@media(max-width:780px){
-  .gauto,.g2,.g3,.g4,.bp-cols{grid-template-columns:1fr}
-  .hdr-name{font-size:1.4rem}
-  .cnt{padding:1rem}
-  .tabs{padding:0 1rem}
-}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header class="hdr">
   <div>
     <h1 class="hdr-name" id="hdr-actor-title">CONSULTANDO APIFY...</h1>
@@ -168,27 +110,20 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
   </div>
 </header>
 
-<!-- PANTALLA DE CARGA APIFY -->
 <div class="apify-loader" id="apifyLoader">
   <div class="spinner-apify"></div>
-  <div class="apify-status-text" id="apifyStatusText">Iniciando Scrapers de Apify...</div>
+  <div class="apify-status-text" id="apifyStatusText">Iniciando Scrapers de Apify & OpenRouter...</div>
   <div class="apify-subtext" id="apifySubtext">Recopilando publicaciones, interacciones y comentarios públicos para analizar el mapa emocional de Plutchik.</div>
 </div>
 
-<!-- TABS -->
 <div class="tabs" id="mainTabs">
   <div class="tab on"  onclick="ST('flor',this)">🌸 Flor de Emociones</div>
   <div class="tab"     onclick="ST('mapa',this)">🗺 Mapa Social</div>
   <div class="tab"     onclick="ST('diadas',this)">⚡ Díadas</div>
-  <div class="tab"     onclick="ST('identidad',this)">🏛 Identidad Política</div>
-  <div class="tab"     onclick="ST('actores',this)">👤 Actores</div>
-  <div class="tab"     onclick="ST('segmenta',this)">🧩 Segmentos y Perfiles</div>
 </div>
 
-<!-- CONTENT -->
 <div class="cnt" id="mainContent" style="display:none;">
 
-<!-- FLOR -->
 <div class="pnl on" id="pnl-flor">
   <div class="gauto" style="margin-bottom:1rem">
     <div>
@@ -214,80 +149,33 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
   </div>
 </div>
 
-<!-- MAPA -->
 <div class="pnl" id="pnl-mapa">
   <div class="g3" style="margin-bottom:1rem" id="mapa-cols"></div>
   <div class="g2" style="margin-bottom:1rem">
     <div class="card"><div class="sl">Frases Ciudadanas Extraídas</div><div id="quotes"></div></div>
-    <div class="card">
-      <div class="sl">Emociones por Temática</div>
-      <div class="cw" style="height:260px"><canvas id="ch-temas"></canvas></div>
-    </div>
   </div>
-  <div class="card"><div class="sl">Semáforo Emocional del Territorio</div><div class="g3" id="semaforo"></div></div>
 </div>
 
-<!-- DÍADAS -->
 <div class="pnl" id="pnl-diadas">
   <div class="g3" style="margin-bottom:1rem" id="dyad-cards"></div>
-  <div class="g2">
-    <div class="card">
-      <div class="sl">Score de Riesgo por Díada</div>
-      <div class="cw" style="height:220px"><canvas id="ch-diadas"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="sl">Interpretación Estratégica</div>
-      <div id="dyad-interp" style="font-size:12.5px;color:var(--tx2);line-height:1.75;margin-top:.3rem"></div>
-    </div>
-  </div>
-</div>
-
-<!-- IDENTIDAD -->
-<div class="pnl" id="pnl-identidad">
-  <div class="cbox" style="margin-bottom:1rem" id="id-pregunta"></div>
-  <div class="g2" style="margin-bottom:1rem">
-    <div class="card"><div class="sl">Percepción del Gobierno Municipal</div><div id="gov-sem"></div></div>
-    <div class="card">
-      <div class="sl">Carga Emocional por Partido</div>
-      <div class="cw" style="height:220px"><canvas id="ch-partidos"></canvas></div>
-    </div>
-  </div>
-  <div class="card"><div class="sl">Percepción Ciudadana por Partido</div><div id="partidos-tbl"></div></div>
-</div>
-
-<!-- ACTORES -->
-<div class="pnl" id="pnl-actores">
-  <div class="g2" style="margin-bottom:1rem" id="actores-grid"></div>
-  <div class="card">
-    <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
-    <div class="cw" style="height:280px"><canvas id="ch-actores"></canvas></div>
-  </div>
-</div>
-
-<!-- SEGMENTOS Y PERFILES -->
-<div class="pnl" id="pnl-segmenta">
-  <div id="segmenta-personas"></div>
 </div>
 
 </div>
 
 <div class="footer">
   <span id="ft-actor">SIE - Emociones en Tiempo Real (Apify)</span>
-  <span>CONFIDENCIAL &middot; Extracción activa vía Apify</span>
+  <span>CONFIDENCIAL &middot; Extracción activa vía Apify y OpenRouter</span>
 </div>
 
 <script>
-// 1. OBTENCIÓN DINÁMICA DE PARÁMETROS
 const urlParams = new URLSearchParams(window.location.search);
 const ACTOR = window.DYNAMIC_ACTOR || urlParams.get('actor') || localStorage.getItem('selectedPersonaje');
 const MES = window.DYNAMIC_MES || urlParams.get('mes') || localStorage.getItem('selectedMes') || 'Agosto';
 const ANIO = window.DYNAMIC_ANIO || urlParams.get('anio') || localStorage.getItem('selectedAnio') || '2026';
 
-// Variable donde se guardarán los datos extraídos de Apify
 let D = null;
 const chartsInstances = {};
 
-// Ruleta de Plutchik SVG
 const CX=220,CY=220,R=[62,108,154,200],GAP=1.4;
 const rad=d=>d*Math.PI/180;
 const pt=(r,d)=>[CX+r*Math.cos(rad(d)),CY+r*Math.sin(rad(d))];
@@ -331,42 +219,28 @@ function toggleEm(key){
   if(!open)d.classList.add("open");
 }
 
-/* CARGA EN TIEMPO REAL VÍA API / APIFY ACTORS */
 async function fetchDatosApify() {
   const statusElem = document.getElementById("apifyStatusText");
   const subtextElem = document.getElementById("apifySubtext");
 
   if (!ACTOR) {
     statusElem.textContent = "Error: Ningún actor seleccionado";
-    subtextElem.textContent = "Por favor regresa a la pantalla de búsqueda y escribe el nombre de un personaje político.";
     return;
   }
 
   try {
-    statusElem.textContent = `Ejecutando Scraper de Apify para ${ACTOR}...`;
-    subtextElem.textContent = "Obteniendo menciones recientes, comentarios de usuarios y artículos de noticias...";
+    statusElem.textContent = `Ejecutando Scraper e IA para ${ACTOR}...`;
 
-    // ✅ RUTA CORREGIDA: Apunta exactamente al backend unificado /api/analizar
     const res = await fetch(`/api/analizar?skill=emociones&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
-    
-    if (!res.ok) {
-      throw new Error(`El servidor devolvió un error status ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Status ${res.status}`);
 
-    const dataApify = await res.json();
-    
-    if (!dataApify || (!dataApify.emotions && !dataApify.emociones)) {
-      throw new Error("Formato de datos no válido recibido desde el backend.");
-    }
-
-    D = dataApify;
+    D = await res.json();
     renderDashboard();
 
   } catch (err) {
-    console.error("Error al obtener datos de Apify:", err);
+    console.error(err);
     statusElem.style.color = "#dc2626";
-    statusElem.textContent = "No se pudieron obtener datos en tiempo real";
-    subtextElem.innerHTML = `Ocurrió un error conectando con la API backend:<br><b>${err.message}</b><br><br>Verifica que el servicio backend o endpoint <code>/api/analizar</code> esté activo y configurado con las credenciales necesarias.`;
+    statusElem.textContent = "Error al conectar con la API de Análisis";
   }
 }
 
@@ -377,20 +251,18 @@ function renderDashboard(){
 
   const nameParts = ACTOR.split(' ');
   document.getElementById("hdr-actor-title").innerHTML = `${nameParts[0]} <span>${nameParts.slice(1).join(' ')}</span>`;
-  document.getElementById("hdr-actor-sub").innerText = `Extracción en Tiempo Real (Apify) · ${MES} ${ANIO}`;
-  document.getElementById("hdr-date").innerText = `Monitoreado: ${MES} ${ANIO}`;
+  document.getElementById("hdr-actor-sub").innerText = `Análisis Extenido vía Apify & OpenRouter · ${MES} ${ANIO}`;
+  document.getElementById("hdr-date").innerText = `${MES} ${ANIO}`;
   document.getElementById("whl-territory").textContent = ACTOR;
 
-  // Normalización de propiedades entre inglés / español
-  const emotionsArr = D.emotions || D.emociones || [];
-  const secondaryArr = D.secondary || D.secundarias || [];
-  const problematicsArr = D.problematics || D.problematicas || [];
-  const fearsArr = D.fears || D.temores || [];
-  const pridesArr = D.prides || D.orgullos || [];
-  const quotesArr = D.quotes || D.citas || [];
-  const dyadsArr = D.dyads || D.diadas || [];
+  const emotionsArr = D.emotions || [];
+  const secondaryArr = D.secondary || [];
+  const problematicsArr = D.problematics || [];
+  const fearsArr = D.fears || [];
+  const pridesArr = D.prides || [];
+  const quotesArr = D.quotes || [];
+  const dyadsArr = D.dyads || [];
 
-  // Render Rueda y Listas
   document.getElementById("wheel-wrap").innerHTML = buildWheel();
   
   const activeEm = emotionsArr.filter(e => e.active);
@@ -412,9 +284,8 @@ function renderDashboard(){
       <div><div style="font-size:12px;font-weight:700;">${s.name || s.nombre}</div><div style="font-size:11px;color:var(--tx2);">${s.text || s.descripcion}</div></div>
     </div>`).join("");
 
-  document.getElementById("concepto-box").innerHTML = `<div class="cbox-label">Concepto Extraído por IA / Apify</div><div class="cbox-name">"${D.concept || D.concepto || 'Sin concepto'}"</div><div class="cbox-text">${D.conceptDesc || D.conceptoDesc || ''}</div>`;
+  document.getElementById("concepto-box").innerHTML = `<div class="cbox-label">Diagnóstico de Inteligencia</div><div class="cbox-name">"${D.concept || 'Sin concepto'}"</div><div class="cbox-text">${D.conceptDesc || ''}</div>`;
 
-  // Mapa
   const makeMP = (arr, dc) => (arr || []).map(t => `<div class="mpi"><div class="mpd" style="background:${dc}"></div>${typeof t === 'string' ? t : (t.text || t.descripcion)}</div>`).join("");
   document.getElementById("mapa-cols").innerHTML = `
     <div class="mpc"><div class="mptt" style="color:#ca8a04">⚠ Problemáticas</div>${makeMP(problematicsArr, "#ca8a04")}</div>
@@ -423,16 +294,12 @@ function renderDashboard(){
 
   document.getElementById("quotes").innerHTML = quotesArr.map(q => `<div class="qi"><div class="qt">${q.text || q.cita}</div><div class="qm">${q.topic || 'General'} · ${q.emotion || 'Neutro'}</div></div>`).join("");
 
-  // Díadas
   document.getElementById("dyad-cards").innerHTML = dyadsArr.map(d => `
-    <div class="dyc" style="border-top-color:#ea580c">
+    <div class="dyc">
       <div class="dyn">${d.name || d.nombre}</div>
       <div class="dyf">${d.formula || d.emotions}</div>
       <div class="dyt">${d.text || d.description}</div>
     </div>`).join("");
-
-  // Charts
-  const CD = { responsive: true, maintainAspectRatio: false };
 
   if (chartsInstances.chIntens) chartsInstances.chIntens.destroy();
   const ctxIntens = document.getElementById("ch-intens");
@@ -443,12 +310,11 @@ function renderDashboard(){
         labels: activeEm.map(e => e.label),
         datasets: [{ data: activeEm.map(e => e.intensity), backgroundColor: activeEm.map(e => e.color[2]) }]
       },
-      options: CD
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 }
 
-// Inicialización
 if (document.readyState === 'loading') {
   document.addEventListener("DOMContentLoaded", fetchDatosApify);
 } else {
