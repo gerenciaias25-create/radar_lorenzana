@@ -12,19 +12,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'El parámetro "actor" es requerido.' });
     }
 
-   // Reemplaza esta línea:
-// const apifyToken = process.env.APIFY_TOKEN;
+    // Declaración correcta de variables de entorno y datos
+    const apifyToken = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
+    const openrouterKey = process.env.OPENROUTER_API_KEY;
+    let rawItems = []; // Se declara la variable para evitar el ReferenceError
 
-// Por esta línea (así detecta el nombre exacto que tienes en tu captura):
-const apifyToken = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
-const openrouterKey = process.env.OPENROUTER_API_KEY;
     // --- 1. BUSQUEDA FLEXIBLE EN APIFY (TIEMPO REAL) ---
     if (apifyToken) {
       try {
         const actorId = 'apify~google-search-scraper';
         const apifyUrl = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${apifyToken}&timeout=30`;
 
-        // Búsqueda más amplia para garantizar resultados reales en Google
         const apifyResponse = await fetch(apifyUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -50,7 +48,6 @@ const openrouterKey = process.env.OPENROUTER_API_KEY;
       .map(i => i.snippet || i.description || i.title)
       .filter(t => t && typeof t === 'string' && t.length > 15);
 
-    // Fragmentos dinámicos reales extraídos (o frases contextuales basadas en el actor si Apify da 0 resultados)
     const prob1 = extractedTexts[0] || `Análisis de la presencia digital y estrategia mediática de ${actor}.`;
     const prob2 = extractedTexts[1] || `Cobertura de declaraciones y posicionamiento político de ${actor}.`;
     const prob3 = extractedTexts[2] || `Interacción y debate social en redes sobre las iniciativas de ${actor}.`;
@@ -64,7 +61,7 @@ const openrouterKey = process.env.OPENROUTER_API_KEY;
     const pride1 = extractedTexts[7] || `Respaldo de sectores clave y presencia constante en medios.`;
     const pride2 = extractedTexts[8] || `Posicionamiento sostenido en la agenda institucional.`;
 
-    // --- 3. CONSTRUCCIÓN GARANTIZADA DE LA RUEDA DE PLUTCHIK ---
+    // --- 3. CONSTRUCCIÓN DE LA RUEDA DE PLUTCHIK ---
     const emotionsData = [
       { key: "joy", label: "Alegría", active: true, intensity: 2, color: ["#fef08a", "#fde047", "#eab308"], deg: 0, triggers: ["Aceptación pública", "Respaldos clave"] },
       { key: "trust", label: "Confianza", active: true, intensity: 3, color: ["#bbf7d0", "#86efac", "#22c55e"], deg: 45, triggers: ["Estabilidad institucional", "Cohesión de equipo"] },
@@ -108,7 +105,7 @@ const openrouterKey = process.env.OPENROUTER_API_KEY;
       }
     ];
 
-    // --- 4. RESPUESTA COMPLETA Y SEGURA ---
+    // --- 4. RESPUESTA COMPLETA ---
     const responseData = {
       concept: `Humor Social: ${actor}`,
       conceptDesc: extractedTexts.length > 0
@@ -118,7 +115,6 @@ const openrouterKey = process.env.OPENROUTER_API_KEY;
       emotions: emotionsData,
       secondary: secondaryData,
 
-      // Listas duales para compatibilidad total con emociones.html
       problematics: [prob1, prob2, prob3],
       problemativas: [prob1, prob2, prob3],
 
