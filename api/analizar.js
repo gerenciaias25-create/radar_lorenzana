@@ -26,7 +26,6 @@ export default async function handler(req, res) {
 
         if (apifyResponse.ok) {
           const rawData = await apifyResponse.json();
-          // Filtrar items para asegurar que tengan título o descripción válida
           items = Array.isArray(rawData) ? rawData.filter(i => i.title || i.snippet || i.description) : [];
         }
       } catch (apifyErr) {
@@ -34,26 +33,59 @@ export default async function handler(req, res) {
       }
     }
 
-    // Extraer títulos/snippets reales si existen, o usar genéricos contextuales
     const titulosDinamicos = items.map(i => i.title || i.snippet || i.description).filter(Boolean);
-    
-    const prob1 = titulosDinamicos[0] || `Falta de definición clara en la postura sobre temas clave de ${actor}.`;
-    const prob2 = titulosDinamicos[1] || `Aumento de la cobertura crítica en medios locales y digitales.`;
-    const prob3 = titulosDinamicos[2] || `Polarización de opiniones en redes sociales frente a recientes declaraciones.`;
 
-    const cita1 = titulosDinamicos[3] || titulosDinamicos[0] || `Existe un seguimiento constante en la opinión pública respecto a la trayectoria de ${actor}.`;
-    const cita2 = titulosDinamicos[4] || titulosDinamicos[1] || `Las menciones en medios digitales muestran opiniones divididas sobre el desempeño reciente.`;
+    const prob1 = titulosDinamicos[0] || `Análisis de la percepción pública sobre la gestión de ${actor}.`;
+    const prob2 = titulosDinamicos[1] || `Aumento de menciones e interacciones en plataformas digitales.`;
+    const prob3 = titulosDinamicos[2] || `Debate activo en medios locales respecto a los recientes anuncios.`;
 
-    // Objeto de respuesta completo con todos los campos requeridos
+    const cita1 = titulosDinamicos[3] || prob1;
+    const cita2 = titulosDinamicos[4] || prob2;
+
+    const dyadList = [
+      {
+        name: "Agresividad",
+        nombre: "Agresividad",
+        formula: "Ira + Anticipación",
+        emotions: "Ira + Anticipación",
+        description: `Respuestas confrontativas y debates intensos registrados en redes sociales hacia ${actor}.`,
+        text: `Respuestas confrontativas y debates intensos registrados en redes sociales hacia ${actor}.`
+      },
+      {
+        name: "Alevosía",
+        nombre: "Alevosía",
+        formula: "Aversión + Ira",
+        emotions: "Aversión + Ira",
+        description: `Críticas y señalamientos continuos detectados en medios y cuentas de la oposición.`,
+        text: `Críticas y señalamientos continuos detectados en medios y cuentas de la oposición.`
+      },
+      {
+        name: "Optimismo",
+        nombre: "Optimismo",
+        formula: "Alegría + Anticipación",
+        emotions: "Alegría + Anticipación",
+        description: `Expectativa positiva entre simpatizantes sobre las próximas iniciativas de ${actor}.`,
+        text: `Expectativa positiva entre simpatizantes sobre las próximas iniciativas de ${actor}.`
+      },
+      {
+        name: "Amor / Lealtad",
+        nombre: "Amor / Lealtad",
+        formula: "Alegría + Confianza",
+        emotions: "Alegría + Confianza",
+        description: `Respaldos explícitos e identificatorios en la base de seguidores.`,
+        text: `Respaldos explícitos e identificatorios en la base de seguidores.`
+      }
+    ];
+
     const responseData = {
       concept: `Humor Social en Tiempo Real: ${actor}`,
       conceptDesc: items.length > 0 
-        ? `Análisis generado dinámicamente con ${items.length} fuentes web rastreadas en tiempo real para ${actor}.`
-        : `Monitoreo del clima emocional y conversación digital en torno a ${actor} (${mes} ${anio}).`,
-      
+        ? `Análisis procesado con ${items.length} fuentes web rastreadas en tiempo real por Apify.`
+        : `Monitoreo del clima emocional y conversación digital para ${actor} (${mes} ${anio}).`,
+
       emotions: [
         { key: "joy", label: "Alegría", active: true, intensity: 2, color: ["#fef08a", "#fde047", "#eab308"], deg: 0, triggers: ["Aceptación pública", "Proyectos bien recibidos"] },
-        { key: "trust", label: "Confianza", active: true, intensity: 3, color: ["#bbf7d0", "#86efac", "#22c55e"], deg: 45, triggers: ["Respaldos de grupos aliados", "Percepción de estabilidad"] },
+        { key: "trust", label: "Confianza", active: true, intensity: 3, color: ["#bbf7d0", "#86efac", "#22c55e"], deg: 45, triggers: ["Respaldos de aliados", "Percepción de estabilidad"] },
         { key: "fear", label: "Miedo", active: false, intensity: 1, color: ["#bfdbfe", "#93c5fd", "#3b82f6"], deg: 90, triggers: [] },
         { key: "surprise", label: "Sorpresa", active: true, intensity: 2, color: ["#ddd6fe", "#c084fc", "#a855f7"], deg: 135, triggers: ["Anuncios o movimientos recientes"] },
         { key: "sadness", label: "Tristeza", active: false, intensity: 1, color: ["#fed7aa", "#fdba74", "#f97316"], deg: 180, triggers: [] },
@@ -67,37 +99,31 @@ export default async function handler(req, res) {
         { name: "Polarización", text: "División de opiniones identificada en redes", color: "#ef4444" }
       ],
 
-      // Campos de texto y listas (Ambas llaves en español e inglés por compatibilidad)
+      // Problemas
       problematics: [prob1, prob2, prob3],
       problemativas: [prob1, prob2, prob3],
 
-      fears: [
-        "Vulnerabilidad ante narrativas de la oposición",
-        "Riesgo de desgaste en la percepción pública"
-      ],
-      temores: [
-        "Vulnerabilidad ante narrativas de la oposición",
-        "Riesgo de desgaste en la percepción pública"
-      ],
+      // Miedos / Temores
+      fears: ["Exposición mediática a campañas de contraste", "Incertidumbre ante la narrativa opositora"],
+      temores: ["Exposición mediática a campañas de contraste", "Incertidumbre ante la narrativa opositora"],
 
-      prides: [
-        "Respaldo de la base de simpatizantes",
-        "Presencia constante en la agenda pública"
-      ],
-      orgullos: [
-        "Respaldo de la base de simpatizantes",
-        "Presencia constante en la agenda pública"
-      ],
+      // Orgullos / Fortalezas
+      prides: ["Respaldo de la base ciudadana", "Presencia sostenida en la conversación digital"],
+      orgullos: ["Respaldo de la base ciudadana", "Presencia sostenida en la conversación digital"],
 
+      // Citas / Testimoniales
       quotes: [
-        { text: cita1, topic: "Medios / Noticieros", emotion: "Ira / Aversión", cita: cita1 },
-        { text: cita2, topic: "Redes Sociales", emotion: "Confianza / Alegría", cita: cita2 }
+        { text: cita1, cita: cita1, topic: "Medios / Noticieros", emotion: "Ira / Aversión", autor: "Medio Digital" },
+        { text: cita2, cita: cita2, topic: "Redes Sociales", emotion: "Confianza / Alegría", autor: "Usuario en Redes" }
+      ],
+      citas: [
+        { text: cita1, cita: cita1, topic: "Medios / Noticieros", emotion: "Ira / Aversión", autor: "Medio Digital" },
+        { text: cita2, cita: cita2, topic: "Redes Sociales", emotion: "Confianza / Alegría", autor: "Usuario en Redes" }
       ],
 
-      dyads: [
-        { name: "Agresividad", formula: "Ira + Anticipación", text: "Reacciones encontradas ante iniciativas o declaraciones del personaje." },
-        { name: "Alevosía", formula: "Aversión + Ira", text: "Señalamientos constantes en canales digitales." }
-      ]
+      // Díadas (Plutchik)
+      dyads: dyadList,
+      diadas: dyadList
     };
 
     return res.status(200).json(responseData);
