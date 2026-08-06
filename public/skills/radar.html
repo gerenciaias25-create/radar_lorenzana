@@ -59,9 +59,9 @@
 
 <main class="con">
   <div class="tabs">
-    <button class="tb act" onclick="tab(this,'kpis')">KPIs AMPLIADOS</button>
-    <button class="tb" onclick="tab(this,'sent')">SENTIMIENTO</button>
-    <button class="tb" onclick="tab(this,'plat')">PLATAFORMAS</button>
+    <button class="tb act" id="btn-tab-kpis">KPIs AMPLIADOS</button>
+    <button class="tb" id="btn-tab-sent">SENTIMIENTO</button>
+    <button class="tb" id="btn-tab-plat">PLATAFORMAS</button>
   </div>
 
   <div class="tsec show" id="tab-kpis">
@@ -93,86 +93,94 @@
 </div>
 
 <script>
-const C = { ac: '#00C2D4', go: '#F4C430', da: '#E63946', su: '#2EC4B6', bl: '#1B4F8A', navy: '#1C2738' };
-const ACTOR = window.DYNAMIC_ACTOR || localStorage.getItem('selectedPersonaje');
-const MES = window.DYNAMIC_MES || localStorage.getItem('selectedMes') || 'Agosto';
-const ANIO = window.DYNAMIC_ANIO || localStorage.getItem('selectedAnio') || '2026';
+(function() {
+  const C = { ac: '#00C2D4', go: '#F4C430', da: '#E63946', su: '#2EC4B6', bl: '#1B4F8A', navy: '#1C2738' };
+  const ACTOR = window.DYNAMIC_ACTOR || localStorage.getItem('selectedPersonaje') || 'Personaje';
+  const MES = window.DYNAMIC_MES || localStorage.getItem('selectedMes') || 'Agosto';
+  const ANIO = window.DYNAMIC_ANIO || localStorage.getItem('selectedAnio') || '2026';
 
-let API_DATA = null;
-const CH = {};
+  let API_DATA = null;
+  const CH = {};
 
-function tab(btn, id) {
-  document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
-  document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
-  document.getElementById('tab-' + id).classList.add('show');
-  btn.classList.add('act');
-}
-
-function mk(id, cfg) {
-  if (CH[id]) CH[id].destroy();
-  const c = document.getElementById(id);
-  if (!c) return;
-  CH[id] = new Chart(c, cfg);
-}
-
-async function loadRadarData() {
-  try {
-    const res = await fetch(`/api/analizar?skill=radar&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
-    API_DATA = await res.json();
-    renderCharts();
-  } catch(e) {
-    console.error("Error cargando radar:", e);
+  function tab(btn, id) {
+    document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
+    document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
+    document.getElementById('tab-' + id).classList.add('show');
+    btn.classList.add('act');
+    setTimeout(() => { Object.values(CH).forEach(c => c && c.resize()); }, 50);
   }
-}
 
-function renderCharts() {
-  const rd = (API_DATA && API_DATA.radarData) ? API_DATA.radarData : {
-    npsPar: [75, 40, -30],
-    npsDemo: [28, 45, 60, 72, 55, 80],
-    ratioPl: [80, 40, 65, 70],
-    tra: [60, 64, 58, 72],
-    sentGeneral: [55, 30, 15],
-    topTopics: [40, 32, 25, 20, 15]
-  };
+  document.getElementById('btn-tab-kpis').onclick = function() { tab(this, 'kpis'); };
+  document.getElementById('btn-tab-sent').onclick = function() { tab(this, 'sent'); };
+  document.getElementById('btn-tab-plat').onclick = function() { tab(this, 'plat'); };
 
-  mk('c-npspar', {
-    type: 'bar',
-    data: { labels: ['Base Propia', 'Independientes', 'Oposición'], datasets: [{ data: rd.npsPar, backgroundColor: [C.su, C.go, C.da] }] },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
+  function mk(id, cfg) {
+    if (CH[id]) CH[id].destroy();
+    const c = document.getElementById(id);
+    if (!c) return;
+    CH[id] = new Chart(c, cfg);
+  }
 
-  mk('c-npsdemo', {
-    type: 'bar',
-    data: { labels: ['H 18-29', 'M 18-29', 'H 30-44', 'M 30-44', 'H 45+', 'M 45+'], datasets: [{ data: rd.npsDemo, backgroundColor: C.ac }] },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
+  async function loadRadarData() {
+    try {
+      const res = await fetch(`/api/analizar?skill=radar&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
+      API_DATA = await res.json();
+      renderCharts();
+    } catch(e) {
+      console.error("Error cargando radar:", e);
+      renderCharts();
+    }
+  }
 
-  mk('c-ratiopl', {
-    type: 'bar',
-    data: { labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], datasets: [{ data: rd.ratioPl, backgroundColor: [C.bl, C.da, C.go, C.su] }] },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-  });
+  function renderCharts() {
+    const rd = (API_DATA && API_DATA.radarData) ? API_DATA.radarData : {
+      npsPar: [75, 40, -30],
+      npsDemo: [28, 45, 60, 72, 55, 80],
+      ratioPl: [80, 40, 65, 70],
+      tra: [60, 64, 58, 72],
+      sentGeneral: [55, 30, 15],
+      topTopics: [40, 32, 25, 20, 15]
+    };
 
-  mk('c-tra', {
-    type: 'line',
-    data: { labels: ['S-1', 'S-2', 'S-3', 'S-4'], datasets: [{ label: 'Aprobación', data: rd.tra, borderColor: C.bl, fill: true }] },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
+    mk('c-npspar', {
+      type: 'bar',
+      data: { labels: ['Base Propia', 'Independientes', 'Oposición'], datasets: [{ data: rd.npsPar, backgroundColor: [C.su, C.go, C.da] }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
 
-  mk('c-sent', {
-    type: 'doughnut',
-    data: { labels: ['Positivo', 'Neutral', 'Negativo'], datasets: [{ data: rd.sentGeneral, backgroundColor: [C.su, C.go, C.da] }] },
-    options: { responsive: true }
-  });
+    mk('c-npsdemo', {
+      type: 'bar',
+      data: { labels: ['H 18-29', 'M 18-29', 'H 30-44', 'M 30-44', 'H 45+', 'M 45+'], datasets: [{ data: rd.npsDemo, backgroundColor: C.ac }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
 
-  mk('c-tom', {
-    type: 'bar',
-    data: { labels: ['Infraestructura', 'Seguridad', 'Programas', 'Economía', 'Transparencia'], datasets: [{ data: rd.topTopics, backgroundColor: C.bl }] },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-}
+    mk('c-ratiopl', {
+      type: 'bar',
+      data: { labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], datasets: [{ data: rd.ratioPl, backgroundColor: [C.bl, C.da, C.go, C.su] }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+    });
 
-loadRadarData();
+    mk('c-tra', {
+      type: 'line',
+      data: { labels: ['S-1', 'S-2', 'S-3', 'S-4'], datasets: [{ label: 'Aprobación', data: rd.tra, borderColor: C.bl, fill: true }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    mk('c-sent', {
+      type: 'doughnut',
+      data: { labels: ['Positivo', 'Neutral', 'Negativo'], datasets: [{ data: rd.sentGeneral, backgroundColor: [C.su, C.go, C.da] }] },
+      options: { responsive: true }
+    });
+
+    mk('c-tom', {
+      type: 'bar',
+      data: { labels: ['Infraestructura', 'Seguridad', 'Programas', 'Economía', 'Transparencia'], datasets: [{ data: rd.topTopics, backgroundColor: C.bl }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+  }
+
+  loadRadarData();
+})();
 </script>
 </body>
 </html>
