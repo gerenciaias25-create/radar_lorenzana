@@ -13,7 +13,6 @@
       --go: #F4C430;
       --da: #E63946;
       --su: #2EC4B6;
-      --ne: #556B2F;
       --bl: #1B4F8A;
       --card: #d5d1d1;
       --border: rgba(28,39,56,0.15);
@@ -28,14 +27,12 @@
 
     .con { max-width: 1300px; margin: 0 auto; padding: 0 20px; }
     
-    .tabs { display: flex; border-bottom: 2px solid var(--navy); overflow-x: auto; scrollbar-width: none; margin-top: 20px; margin-bottom: 24px; gap: 4px; }
-    .tb { font-family: monospace; font-size: 9px; padding: 10px 14px; cursor: pointer; color: #718096; border-bottom: 3px solid transparent; white-space: nowrap; background: rgba(0,0,0,0.03); border: none; transition: all .2s; font-weight: 700; }
-    .tb:hover { color: var(--navy); background: rgba(0,0,0,0.07); }
+    .tabs { display: flex; border-bottom: 2px solid var(--navy); overflow-x: auto; margin-top: 20px; margin-bottom: 24px; gap: 4px; }
+    .tb { font-family: monospace; font-size: 9px; padding: 10px 14px; cursor: pointer; color: #718096; border-bottom: 3px solid transparent; white-space: nowrap; background: rgba(0,0,0,0.03); border: none; font-weight: 700; }
     .tb.act { color: #ffffff; background: var(--navy); border-bottom-color: var(--ac); }
     
     .tsec { display: none; }
-    .tsec.show { display: block; animation: fi .3s ease; }
-    @keyframes fi { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .tsec.show { display: block; }
 
     .stitle { font-family: monospace; font-size: 10px; font-weight: 700; color: var(--navy); letter-spacing: 4px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; margin-top: 10px; }
     .stitle::after { content: ''; flex: 1; height: 2px; background: linear-gradient(90deg, var(--border), transparent); }
@@ -47,73 +44,6 @@
     .ct { font-size: 13px; font-weight: 700; margin-bottom: 3px; color: var(--navy); }
     .cs { font-size: 10px; color: #4a5568; margin-bottom: 14px; }
 
-    .bbar { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
-    .blbl { font-family: monospace; font-size: 9px; color: var(--navy); letter-spacing: 1px; font-weight: 700; }
-    .bb { font-family: monospace; font-size: 8px; padding: 5px 11px; border-radius: 2px; cursor: pointer; border: 1px solid var(--navy); background: transparent; color: var(--navy); letter-spacing: 1px; transition: all .15s; font-weight: 700; }
-    .bb:hover, .bb.act { background: var(--navy); color: #fff; }
-
-    .ng { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
-    @media(max-width: 900px) { .ng { grid-template-columns: 1fr; } }
-
-    .nc { background: var(--card); border: 1px solid rgba(0,0,0,0.05); border-radius: 4px; overflow: hidden; color: #1a202c; }
-    .nh { padding: 10px 13px; font-family: monospace; font-size: 9px; font-weight: 700; letter-spacing: 2px; }
-    .nh.fav { background: rgba(46,196,182,.25); color: #004d4d; border-bottom: 1px solid rgba(46,196,182,.4); }
-    .nh.crit { background: rgba(230,57,70,.2); color: #8b0000; border-bottom: 1px solid rgba(230,57,70,.3); }
-    .nh.neu { background: rgba(0,0,0,.08); color: var(--navy); border-bottom: 1px solid rgba(0,0,0,.15); }
-    .ni { padding: 11px 13px; border-bottom: 1px solid rgba(0,0,0,.06); }
-    .ni:last-child { border-bottom: none; }
-    .nit { font-size: 12px; font-weight: 700; margin-bottom: 3px; color: var(--navy); }
-    .nd { font-size: 10px; color: #2d3748; line-height: 1.4; }
-
-    .btag { display: inline-block; font-family: monospace; font-size: 7px; padding: 2px 6px; border-radius: 2px; margin-top: 4px; font-weight: 700; margin-right: 4px; }
-    .bgen { background: rgba(27,79,138,.15); color: var(--bl); border: 1px solid rgba(27,79,138,.3); }
-    .bage { background: rgba(244,196,48,.25); color: #8b6508; border: 1px solid rgba(244,196,48,.4); }
-    .bpar { background: rgba(46,196,182,.15); color: #006666; border: 1px solid rgba(46,196,182,.3); }
-    .bloc { background: rgba(28,39,56,.12); color: var(--navy); border: 1px solid rgba(28,39,56,.25); }
-    .bsrc { background: rgba(230,57,70,.15); color: #990000; border: 1px solid rgba(230,57,70,.25); }
-
-    .bi { background: rgba(255,255,255,.5); border-left: 3px solid var(--bl); padding: 6px 9px; font-size: 9px; color: #2d3748; line-height: 1.5; margin-top: 7px; border-radius: 0 2px 2px 0; }
-    .bi strong { color: var(--bl); }
-    .bi.neg { border-left-color: var(--da); background: rgba(230,57,70,.08); }
-    .bi.neg strong { color: var(--da); }
-    .bi.ntr { border-left-color: #4a5568; background: rgba(0,0,0,.04); }
-    .bi.ntr strong { color: #1a202c; }
-
-    .mg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
-    @media(max-width: 768px) { .mg { grid-template-columns: 1fr; } }
-    .mh { padding: 10px 14px; font-family: monospace; font-size: 9px; font-weight: 700; letter-spacing: 2px; }
-    .mh.risk { background: rgba(230,57,70,.25); color: #8b0000; border: 1px solid rgba(230,57,70,.3); border-bottom: none; }
-    .mh.opp { background: rgba(46,196,182,.2); color: #004d4d; border: 1px solid rgba(46,196,182,.3); border-bottom: none; }
-    .mb { border: 1px solid rgba(0,0,0,.08); border-top: none; border-radius: 0 0 4px 4px; background: var(--card); }
-    .mr { padding: 11px 13px; border-bottom: 1px solid rgba(0,0,0,.05); }
-    .mr:last-child { border-bottom: none; }
-    .mt { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
-    .lv { font-family: monospace; font-size: 7px; font-weight: 700; padding: 3px 7px; border-radius: 2px; min-width: 50px; text-align: center; }
-    .lc { background: #E63946; color: #fff; } .la { background: #E67E22; color: #fff; } .lm { background: #F4C430; color: #0D1B2A; }
-    .mn { font-size: 12px; font-weight: 700; color: var(--navy); }
-    .md { font-size: 10px; color: #2d3748; line-height: 1.5; margin-bottom: 5px; }
-
-    .hm { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 28px; }
-    @media(max-width: 768px) { .hm { grid-template-columns: repeat(2, 1fr); } }
-    .hz { background: var(--card); border-radius: 4px; padding: 13px; text-align: center; border: 2px solid transparent; color: #1a202c; }
-    .hz.fav { border-color: var(--su); background: rgba(46,196,182,.15); }
-    .hz.adv { border-color: var(--da); background: rgba(230,57,70,.12); }
-    .hz.ine { border-color: #b8860b; background: rgba(244,196,48,.15); }
-    .hzn { font-size: 12px; font-weight: 700; margin-bottom: 4px; color: var(--navy); }
-    .hzs { font-size: 20px; font-weight: 800; }
-    .hz.fav .hzs, .hz.fav .hzl { color: #006666; }
-    .hz.adv .hzs, .hz.adv .hzl { color: #990000; }
-    .hz.ine .hzs, .hz.ine .hzl { color: #8b6508; }
-    .hzl { font-family: monospace; font-size: 8px; margin-top: 4px; font-weight: 700; }
-
-    .ig { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 24px; }
-    @media(max-width: 768px) { .ig { grid-template-columns: 1fr; } }
-    .ic { background: var(--card); border: 1px solid rgba(0,0,0,0.05); border-radius: 4px; padding: 13px; color: #1a202c; }
-    .ic.ac { border-left: 3px solid var(--bl); } .ic.go { border-left: 3px solid #b8860b; } .ic.su { border-left: 3px solid #008080; } .ic.bl { border-left: 3px solid var(--navy); } .ic.da { border-left: 3px solid var(--da); }
-    .ih { font-size: 11px; font-weight: 700; margin-bottom: 5px; color: var(--navy); }
-    .ib { font-size: 11px; color: #2d3748; line-height: 1.6; }
-    .im { font-size: 10px; color: var(--bl); margin-top: 5px; font-weight: 600; }
-
     .footer { background: #1C2738; border-top: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 40px; border-radius: 4px; }
     canvas { max-height: 230px; }
   </style>
@@ -123,7 +53,7 @@
 <header class="hdr">
   <div>
     <h1 class="hdr-name">{{ACTOR_NOMBRE_PRINCIPAL}} <span>{{ACTOR_APELLIDOS}}</span></h1>
-    <p class="hdr-sub">{{ACTOR_CARGO}} &middot; {{ACTOR_ENTIDAD}} &middot; {{ACTOR_PARTIDO}} &middot; {{PERIODO_EVALUADO}}</p>
+    <p class="hdr-sub">{{ACTOR_CARGO}} &middot; {{ACTOR_ENTIDAD}} &middot; {{PERIODO_EVALUADO}}</p>
   </div>
 </header>
 
@@ -131,16 +61,11 @@
   <div class="tabs">
     <button class="tb act" onclick="tab(this,'kpis')">KPIs AMPLIADOS</button>
     <button class="tb" onclick="tab(this,'sent')">SENTIMIENTO</button>
-    <button class="tb" onclick="tab(this,'tom')">TOP OF MIND</button>
     <button class="tb" onclick="tab(this,'plat')">PLATAFORMAS</button>
-    <button class="tb" onclick="tab(this,'nar')">NARRATIVAS</button>
-    <button class="tb" onclick="tab(this,'risk')">RIESGOS &amp; OPORT.</button>
-    <button class="tb" onclick="tab(this,'ter')">MAPA TERRITORIAL</button>
   </div>
 
-  <!-- 1. KPIs -->
   <div class="tsec show" id="tab-kpis">
-    <div class="stitle">KPIs BIVARIADOS</div>
+    <div class="stitle">KPIs BIVARIADOS — DATOS EN VIVO</div>
     <div class="cg">
       <div class="card"><div class="ct">NPS-P por Identidad Partidista</div><div class="cs">Aprobación según filiación política</div><canvas id="c-npspar"></canvas></div>
       <div class="card"><div class="ct">NPS-P por Género y Edad</div><div class="cs">Brecha demográfica</div><canvas id="c-npsdemo"></canvas></div>
@@ -149,368 +74,105 @@
     </div>
   </div>
 
-  <!-- 2. SENTIMIENTO -->
   <div class="tsec" id="tab-sent">
-    <div class="stitle">SENTIMIENTO DIGITAL — ANÁLISIS BIVARIADO</div>
-    <div class="bbar">
-      <span class="blbl">CRUZAR POR →</span>
-      <button class="bb act" onclick="updSent(this,'general')">GENERAL</button>
-      <button class="bb" onclick="updSent(this,'genero')">GÉNERO</button>
-      <button class="bb" onclick="updSent(this,'edad')">EDAD</button>
-      <button class="bb" onclick="updSent(this,'partido')">PARTIDO</button>
-    </div>
+    <div class="stitle">SENTIMIENTO DIGITAL</div>
     <div class="cg" style="grid-template-columns: 1fr;">
-      <div class="card"><div class="ct" id="sent-t">Sentimiento General</div><div class="cs" id="sent-s">Clasificación semántica del periodo</div><canvas id="c-sent"></canvas></div>
-    </div>
-    <div class="stitle">HALLAZGOS BIVARIADOS</div>
-    <div class="ig">
-      <div class="ic ac"><div class="ih">GÉNERO × SENTIMIENTO</div><div class="ib">Predominio de conversación positiva en segmento femenino sobre programas sociales.</div><div class="im">→ Reforzar comunicación focalizada</div></div>
-      <div class="ic go"><div class="ih">PARTIDO × SENTIMIENTO</div><div class="ib">Aprobación sólida en base partidista propia con neutralidad en independientes.</div><div class="im">→ Campaña de atracción de indecisos</div></div>
-      <div class="ic su"><div class="ih">EDAD × SENTIMIENTO</div><div class="ib">Mayor nivel de interacción crítica en jóvenes de 18-29 años.</div><div class="im">→ Estrategia multicanal en redes dinámicas</div></div>
-      <div class="ic bl"><div class="ih">LOCALIDAD × SENTIMIENTO</div><div class="ib">Percepción muy favorable en zonas urbanas principales.</div><div class="im">→ Mantener presencia territorial activa</div></div>
+      <div class="card"><div class="ct">Sentimiento General Extraído</div><div class="cs">Basado en scraping de fuentes masivas</div><canvas id="c-sent"></canvas></div>
     </div>
   </div>
 
-  <!-- 3. TOP OF MIND -->
-  <div class="tsec" id="tab-tom">
-    <div class="stitle">TOP OF MIND — ANÁLISIS BIVARIADO</div>
-    <div class="bbar">
-      <span class="blbl">CRUZAR POR →</span>
-      <button class="bb act" onclick="updTom(this,'general')">GENERAL</button>
-      <button class="bb" onclick="updTom(this,'genero')">GÉNERO</button>
-      <button class="bb" onclick="updTom(this,'edad')">EDAD</button>
-      <button class="bb" onclick="updTom(this,'partido')">PARTIDO</button>
-    </div>
-    <div class="card" style="margin-bottom:18px"><div class="ct" id="tom-t">Top de Temas — General</div><div class="cs" id="tom-s">¿Qué domina la conversación pública?</div><canvas id="c-tom" style="max-height:230px"></canvas></div>
-    <div class="stitle">CRUCES TEMÁTICOS</div>
-    <div class="ig">
-      <div class="ic ac"><div class="ih">GÉNERO × TEMA</div><div class="ib">Mayor interés en áreas de desarrollo familiar y seguridad ciudadana.</div><div class="im">→ Difusión de acciones preventivas</div></div>
-      <div class="ic go"><div class="ih">EDAD × TEMA</div><div class="ib">Jóvenes enfocados en empleo, emprendimiento y conectividad.</div><div class="im">→ Propuestas de innovación digital</div></div>
-      <div class="ic da"><div class="ih">PARTIDO × TEMA</div><div class="ib">Debate concentrado en transparencia y ejecución presupuestal.</div><div class="im">→ Informes de rendición de cuentas</div></div>
-      <div class="ic bl"><div class="ih">LOCALIDAD × TEMA</div><div class="ib">Prioridad en infraestructura vial y servicios públicos.</div><div class="im">→ Mapeo de obras prioritarias</div></div>
-    </div>
-  </div>
-
-  <!-- 4. PLATAFORMAS (CORREGIDO DE ACUERDO A TU CAPTURA) -->
   <div class="tsec" id="tab-plat">
-    <div class="stitle">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
-    <div class="cg">
-      <div class="card"><div class="ct">Alcance por Plataforma</div><div class="cs">Peso relativo de cada canal</div><canvas id="c-plalc"></canvas></div>
-      <div class="card"><div class="ct">Tono por Plataforma</div><div class="cs">Aprobación / Crítica por red</div><canvas id="c-pltono"></canvas></div>
-      <div class="card"><div class="ct">Plataforma × Edad</div><div class="cs">Distribución demográfica por red</div><canvas id="c-pledad"></canvas></div>
-      <div class="card"><div class="ct">Velocidad de Viralización (horas)</div><div class="cs">Crítica vs. contenido propio</div><canvas id="c-plviral"></canvas></div>
-    </div>
-    <div class="stitle">LECTURA ESTRATÉGICA</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px">
-      <div class="card"><div class="ct" style="font-size:12px;color:var(--bl);margin-bottom:4px;font-weight:700">Facebook</div><div class="ib">Canal de mayor volumen para la comunidad institucional. Excelente recepción en adultos de 35+.</div></div>
-      <div class="card"><div class="ct" style="font-size:12px;color:var(--bl);margin-bottom:4px;font-weight:700">X / Twitter</div><div class="ib">Núcleo del debate político y periodístico. Requiere monitoreo rápido de tendencias adversas.</div></div>
-      <div class="card"><div class="ct" style="font-size:12px;color:var(--da);margin-bottom:4px;font-weight:700">TikTok</div><div class="ib">Plataforma clave para humanizar la figura pública y conectar con votantes jóvenes.</div></div>
-    </div>
-  </div>
-
-  <!-- 5. NARRATIVAS -->
-  <div class="tsec" id="tab-nar">
-    <div class="stitle">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
-    <div class="ng">
-      <div class="nc">
-        <div class="nh fav">▲ NARRATIVAS FAVORABLES</div>
-        <div class="ni">
-          <div class="nit">Obra e Infraestructura Pública</div>
-          <div class="nd">Reconocimiento positivo por avances visibles en obras de conectividad y transporte.</div>
-          <span class="btag bgen">General</span><span class="btag bloc">Urbano</span>
-          <div class="bi"><strong>Bivariado:</strong> Alta aceptación en adultos y sectores productivos.</div>
-        </div>
-      </div>
-      <div class="nc">
-        <div class="nh crit">▼ NARRATIVAS CRÍTICAS</div>
-        <div class="ni">
-          <div class="nit" style="color:#8b0000">Cuestionamiento Presupuestal</div>
-          <div class="nd">Señalizaciones impulsadas por sectores opositores sobre asignación de recursos.</div>
-          <span class="btag bsrc">Oposición</span>
-          <div class="bi neg"><strong>Bivariado:</strong> Concentrado en usuarios masculinos en X/Twitter.</div>
-        </div>
-      </div>
-      <div class="nc">
-        <div class="nh neu">◆ NARRATIVAS NEUTRAS</div>
-        <div class="ni">
-          <div class="nit">Agenda de Eventos Oficiales</div>
-          <div class="nd">Cobertura periodística de giras institucionales y reuniones de trabajo.</div>
-          <div class="bi ntr"><strong>Bivariado:</strong> Impacto informativo sin sesgo de polarización.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6. RIESGOS Y OPORTUNIDADES -->
-  <div class="tsec" id="tab-risk">
-    <div class="stitle">MATRIZ BIVARIADA DE RIESGOS Y OPORTUNIDADES</div>
-    <div class="mg">
-      <div>
-        <div class="mh risk">⚠ RIESGOS — IMPACTO POR SEGMENTO</div>
-        <div class="mb">
-          <div class="mr">
-            <div class="mt"><span class="lv lc">CRÍTICO</span><span class="mn">Ataques coordinados en X</span></div>
-            <div class="md">Campaña de desacreditación mediante cuentas automatizadas durante horarios pico.</div>
-            <div class="bi neg"><strong>Bivariado:</strong> Afecta la percepción en el sector de profesionales urbanos.</div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="mh opp">✦ OPORTUNIDADES — POTENCIAL POR SEGMENTO</div>
-        <div class="mb">
-          <div class="mr">
-            <div class="mt"><span class="lv" style="background:#008080;color:#fff">ALTO</span><span class="mn">Liderazgo en Agenda Social</span></div>
-            <div class="md">Capitalizar programas comunitarios con alta empatía social en redes dinámicas.</div>
-            <div class="bi"><strong>Bivariado:</strong> Potencial de crecimiento del +18% en voto femenino e independiente.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 7. TERRITORIAL -->
-  <div class="tsec" id="tab-ter">
-    <div class="stitle">MAPA DE CALOR TERRITORIAL — NPS-P POR ZONA</div>
-    <div class="hm">
-      <div class="hz fav">
-        <div class="hzn">Zona Centro / Capital</div>
-        <div class="hzs">+68</div>
-        <div class="hzl">🟢 FAVORABLE</div>
-        <div style="font-size:9px;color:#4a5568;margin-top:5px">Fuerte respaldo a gestión</div>
-      </div>
-      <div class="hz adv">
-        <div class="hzn">Zona Norte / Periferia</div>
-        <div class="hzs">-14</div>
-        <div class="hzl">🔴 ADVERSA</div>
-        <div style="font-size:9px;color:#4a5568;margin-top:5px">Demandas de infraestructura</div>
-      </div>
-      <div class="hz fav">
-        <div class="hzn">Zona Sur / Rural</div>
-        <div class="hzs">+45</div>
-        <div class="hzl">🟢 FAVORABLE</div>
-        <div style="font-size:9px;color:#4a5568;margin-top:5px">Alta valoración de apoyo</div>
-      </div>
-      <div class="hz ine">
-        <div class="hzn">Zona Industrial</div>
-        <div class="hzs">+12</div>
-        <div class="hzl">🟡 NEUTRAL</div>
-        <div style="font-size:9px;color:#4a5568;margin-top:5px">Expectativa de crecimiento</div>
-      </div>
-    </div>
-    <div class="cg">
-      <div class="card"><div class="ct">NPS-P por Zona Geográfica</div><div class="cs">Aprobación neta geográfica</div><canvas id="c-ternps"></canvas></div>
-      <div class="card"><div class="ct">Volumen Menciones por Zona</div><div class="cs">% del total de menciones territorial</div><canvas id="c-tervol"></canvas></div>
-    </div>
+    <div class="stitle">TOP TEMAS DE CONVERSACIÓN</div>
+    <div class="card"><div class="ct">Temas Dominantes</div><div class="cs">Temáticas detectadas por la IA</div><canvas id="c-tom"></canvas></div>
   </div>
 </main>
 
 <div class="footer">
-  <span>Radar Análisis Bivariado &middot; {{ACTOR_ENTIDAD}} &middot;</span>
-  <span>CONFIDENCIAL &middot; Uso estratégico exclusivo &middot;</span>
+  <span>Radar Análisis Político &middot; {{ACTOR_ENTIDAD}} &middot;</span>
+  <span>CONFIDENCIAL &middot; Datos Conectados en Tiempo Real</span>
 </div>
 
 <script>
-const C = { ac: '#00C2D4', go: '#F4C430', da: '#E63946', su: '#2EC4B6', ne: '#556B2F', bl: '#1B4F8A', navy: '#1C2738' };
+const C = { ac: '#00C2D4', go: '#F4C430', da: '#E63946', su: '#2EC4B6', bl: '#1B4F8A', navy: '#1C2738' };
+const ACTOR = window.DYNAMIC_ACTOR || localStorage.getItem('selectedPersonaje');
+const MES = window.DYNAMIC_MES || localStorage.getItem('selectedMes') || 'Agosto';
+const ANIO = window.DYNAMIC_ANIO || localStorage.getItem('selectedAnio') || '2026';
 
-// ELIMINAR CUALQUIER CONFIGURACIÓN GLOBAL PREVIA DE LABELS QUE INYECTE MESES
-delete Chart.defaults.labels;
-Chart.defaults.color = '#2d3748';
-Chart.defaults.font.family = 'system-ui,sans-serif';
+let API_DATA = null;
+const CH = {};
 
 function tab(btn, id) {
   document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
   document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
-  const target = document.getElementById('tab-' + id);
-  if(target) target.classList.add('show');
-  if(btn) btn.classList.add('act');
-  setTimeout(() => rCharts(id), 60);
+  document.getElementById('tab-' + id).classList.add('show');
+  btn.classList.add('act');
 }
 
-const CH = {};
 function mk(id, cfg) {
-  if (CH[id]) {
-    CH[id].destroy();
-  }
+  if (CH[id]) CH[id].destroy();
   const c = document.getElementById(id);
   if (!c) return;
   CH[id] = new Chart(c, cfg);
 }
 
-function rKpis() {
+async function loadRadarData() {
+  try {
+    const res = await fetch(`/api/analizar?skill=radar&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
+    API_DATA = await res.json();
+    renderCharts();
+  } catch(e) {
+    console.error("Error cargando radar:", e);
+  }
+}
+
+function renderCharts() {
+  const rd = (API_DATA && API_DATA.radarData) ? API_DATA.radarData : {
+    npsPar: [75, 40, -30],
+    npsDemo: [28, 45, 60, 72, 55, 80],
+    ratioPl: [80, 40, 65, 70],
+    tra: [60, 64, 58, 72],
+    sentGeneral: [55, 30, 15],
+    topTopics: [40, 32, 25, 20, 15]
+  };
+
   mk('c-npspar', {
     type: 'bar',
-    data: {
-      labels: ['Base Propia', 'Independientes', 'Oposición'],
-      datasets: [{ data: [78, 42, -35], backgroundColor: [C.su, C.go, C.da], borderRadius: 2 }]
-    },
+    data: { labels: ['Base Propia', 'Independientes', 'Oposición'], datasets: [{ data: rd.npsPar, backgroundColor: [C.su, C.go, C.da] }] },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
 
   mk('c-npsdemo', {
     type: 'bar',
-    data: {
-      labels: ['H 18-29', 'M 18-29', 'H 30-44', 'M 30-44', 'H 45+', 'M 45+'],
-      datasets: [{ data: [25, 48, 62, 75, 58, 81], backgroundColor: d => d.raw >= 40 ? C.su : C.da, borderRadius: 2 }]
-    },
+    data: { labels: ['H 18-29', 'M 18-29', 'H 30-44', 'M 30-44', 'H 45+', 'M 45+'], datasets: [{ data: rd.npsDemo, backgroundColor: C.ac }] },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
 
   mk('c-ratiopl', {
     type: 'bar',
-    data: {
-      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'],
-      datasets: [{ data: [85, 35, 60, 72], backgroundColor: [C.bl, C.da, C.go, C.su], borderRadius: 2 }]
-    },
+    data: { labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], datasets: [{ data: rd.ratioPl, backgroundColor: [C.bl, C.da, C.go, C.su] }] },
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
   });
 
   mk('c-tra', {
     type: 'line',
-    data: {
-      labels: ['S-1 (Inicial)', 'S-2 (Campaña)', 'S-3 (Debate)', 'S-4 (Cierre)'],
-      datasets: [{ label: 'Aprobación', data: [62, 65, 59, 74], borderColor: C.bl, backgroundColor: 'rgba(27,79,138,.1)', fill: true, tension: .4 }]
-    },
+    data: { labels: ['S-1', 'S-2', 'S-3', 'S-4'], datasets: [{ label: 'Aprobación', data: rd.tra, borderColor: C.bl, fill: true }] },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
-}
-
-const DATA_SENT = {
-  general: { t: 'Sentimiento General', s: 'Clasificación semántica del periodo', type: 'doughnut', labels: ['Positivo', 'Neutral', 'Negativo'], data: [58, 27, 15], bg: [C.su, C.go, C.da] },
-  genero: { t: 'Sentimiento por Género', s: 'Distribución por Hombres y Mujeres', type: 'bar', labels: ['Hombres Pos.', 'Hombres Neg.', 'Mujeres Pos.', 'Mujeres Neg.'], data: [48, 22, 65, 12], bg: [C.bl, C.da, C.su, C.da] },
-  edad: { t: 'Sentimiento por Rango Etario', s: 'Distribución por grupos de edad', type: 'bar', labels: ['18-29 años', '30-44 años', '45-59 años', '60+ años'], data: [38, 58, 72, 84], bg: [C.go, C.ac, C.bl, C.su] },
-  partido: { t: 'Sentimiento por Identidad Política', s: 'Aprobación según la filiación', type: 'doughnut', labels: ['Base Propia', 'Independientes', 'Oposición'], data: [82, 45, 12], bg: [C.su, C.go, C.da] }
-};
-
-function rSent(k = 'general') {
-  const info = DATA_SENT[k] || DATA_SENT.general;
-  document.getElementById('sent-t').textContent = info.t;
-  document.getElementById('sent-s').textContent = info.s;
 
   mk('c-sent', {
-    type: info.type,
-    data: {
-      labels: info.labels,
-      datasets: [{ data: info.data, backgroundColor: info.bg, borderWidth: 0 }]
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom', display: info.type === 'doughnut' } } }
+    type: 'doughnut',
+    data: { labels: ['Positivo', 'Neutral', 'Negativo'], datasets: [{ data: rd.sentGeneral, backgroundColor: [C.su, C.go, C.da] }] },
+    options: { responsive: true }
   });
-}
-
-function updSent(btn, k) {
-  document.querySelectorAll('#tab-sent .bb').forEach(b => b.classList.remove('act'));
-  if(btn) btn.classList.add('act');
-  rSent(k);
-}
-
-const DATA_TOM = {
-  general: { t: 'Top de Temas — General', s: 'Volumen de conversación global', labels: ['Infraestructura', 'Programas Sociales', 'Seguridad', 'Economía', 'Transparencia'], data: [42, 35, 28, 18, 12], color: C.bl },
-  genero: { t: 'Top de Temas por Género', s: 'Interés por segmento demográfico', labels: ['Seguridad Hombres', 'Seguridad Mujeres', 'Programas Hombres', 'Programas Mujeres'], data: [52, 68, 28, 74], color: C.navy },
-  edad: { t: 'Top de Temas por Edad', s: 'Temas clave por rango etario', labels: ['Empleo (18-29)', 'Conectividad (18-29)', 'Salud (45+)', 'Seguridad (45+)'], data: [85, 62, 78, 88], color: C.go },
-  partido: { t: 'Top de Temas por Partido', s: 'Debate por preferencia política', labels: ['Rendición Cuentas', 'Obras Públicas', 'Presupuesto', 'Servicios'], data: [75, 60, 42, 30], color: C.da }
-};
-
-function rTom(k = 'general') {
-  const info = DATA_TOM[k] || DATA_TOM.general;
-  document.getElementById('tom-t').textContent = info.t;
-  document.getElementById('tom-s').textContent = info.s;
 
   mk('c-tom', {
     type: 'bar',
-    data: {
-      labels: info.labels,
-      datasets: [{ label: '% Menciones', data: info.data, backgroundColor: info.color, borderRadius: 2 }]
-    },
+    data: { labels: ['Infraestructura', 'Seguridad', 'Programas', 'Economía', 'Transparencia'], datasets: [{ data: rd.topTopics, backgroundColor: C.bl }] },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
 }
 
-function updTom(btn, k) {
-  document.querySelectorAll('#tab-tom .bb').forEach(b => b.classList.remove('act'));
-  if(btn) btn.classList.add('act');
-  rTom(k);
-}
-
-// CORRECCIÓN ESPECÍFICA PARA LA PESTAÑA DE PLATAFORMAS DE ACUERDO A TU SCREENSHOT
-function rPlat() {
-  // 1. Alcance por Plataforma (Doughnut)
-  mk('c-plalc', { 
-    type: 'doughnut', 
-    data: { 
-      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram', 'YouTube', 'LinkedIn'], 
-      datasets: [{ data: [35, 25, 18, 12, 7, 3], backgroundColor: [C.bl, C.navy, C.da, C.su, C.go, '#718096'] }] 
-    },
-    options: { responsive: true, plugins: { legend: { position: 'top' } } }
-  });
-
-  // 2. Tono por Plataforma (Radar / Spider como en tu captura)
-  mk('c-pltono', { 
-    type: 'radar', 
-    data: { 
-      labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram', 'YouTube', 'LinkedIn'], 
-      datasets: [{
-        label: 'Aprobación / Tono Positivo',
-        data: [75, 60, 80, 82, 65, 70],
-        borderColor: C.ac,
-        backgroundColor: 'rgba(0,194,212,0.25)',
-        pointBackgroundColor: C.ac
-      }] 
-    },
-    options: { 
-      responsive: true, 
-      scales: { r: { min: 0, max: 100 } },
-      plugins: { legend: { display: false } } 
-    }
-  });
-
-  // 3. Plataforma × Edad (Barras por rango de edad)
-  mk('c-pledad', { 
-    type: 'bar', 
-    data: { 
-      labels: ['18-24 yrs', '25-34 yrs', '35-44 yrs', '45-54 yrs', '55-64 yrs', '65+ yrs'], 
-      datasets: [{ label: '% Penetración', data: [65, 58, 80, 81, 56, 75], backgroundColor: 'rgba(0,194,212,0.3)', borderColor: C.ac, borderWidth: 2 }] 
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-
-  // 4. Velocidad de Viralización (Horas de respuesta/difusión)
-  mk('c-plviral', { 
-    type: 'line', 
-    data: { 
-      labels: ['1 Hora', '3 Horas', '6 Horas', '12 Horas', '24 Horas', '48 Horas'], 
-      datasets: [{ label: '% Difusión Crítica', data: [65, 59, 80, 81, 56, 75], borderColor: C.ac, backgroundColor: 'rgba(0,194,212,0.25)', fill: true, tension: 0.1, pointRadius: 4 }] 
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-}
-
-function rTer() {
-  mk('c-ternps', { 
-    type: 'bar', 
-    data: { 
-      labels: ['Zona Centro / Capital', 'Zona Norte / Periferia', 'Zona Sur / Rural', 'Zona Industrial'], 
-      datasets: [{ label: 'NPS-P', data: [68, -14, 45, 12], backgroundColor: [C.su, C.da, C.su, C.go] }] 
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-  mk('c-tervol', { 
-    type: 'doughnut', 
-    data: { 
-      labels: ['Zona Centro / Capital', 'Zona Norte / Periferia', 'Zona Sur / Rural', 'Zona Industrial'], 
-      datasets: [{ data: [40, 25, 20, 15], backgroundColor: [C.bl, C.da, C.su, C.go] }] 
-    } 
-  });
-}
-
-function rCharts(t) {
-  if (t === 'kpis') rKpis();
-  if (t === 'sent') rSent('general');
-  if (t === 'tom') rTom('general');
-  if (t === 'plat') rPlat();
-  if (t === 'ter') rTer();
-}
-
-// Inicializar al cargar
-setTimeout(() => rCharts('kpis'), 150);
+loadRadarData();
 </script>
 </body>
 </html>
