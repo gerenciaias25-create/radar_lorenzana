@@ -443,6 +443,21 @@ if (document.readyState === 'loading') {
 } else {
   fetchDatosApify();
 }
+  function renderDiadas(data) {
+  // Asegúrate de tomar diadas o dyads según lo que venga de la API
+  const listaDiadas = data.diadas || data.dyads || [];
+  const container = document.getElementById('contenedor-diadas'); // Ajusta con la ID real de tu HTML
+
+  if (!container) return;
+
+  container.innerHTML = listaDiadas.map(d => `
+    <div class="card-diada">
+      <h4>${d.name || d.nombre}</h4>
+      <span class="badge">${d.formula || d.emotions}</span>
+      <p>${d.text || d.description}</p>
+    </div>
+  `).join('');
+}
 </script>
 </body>
 </html>
