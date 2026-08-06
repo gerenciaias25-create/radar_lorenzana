@@ -117,9 +117,9 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 </div>
 
 <div class="tabs" id="mainTabs">
-  <div class="tab on"  onclick="ST('flor',this)">🌸 Flor de Emociones</div>
-  <div class="tab"     onclick="ST('mapa',this)">🗺 Mapa Social</div>
-  <div class="tab"     onclick="ST('diadas',this)">⚡ Díadas</div>
+  <div class="tab on"  id="tab-btn-flor">🌸 Flor de Emociones</div>
+  <div class="tab"     id="tab-btn-mapa">🗺 Mapa Social</div>
+  <div class="tab"     id="tab-btn-diadas">⚡ Díadas</div>
 </div>
 
 <div class="cnt" id="mainContent" style="display:none;">
@@ -163,163 +163,172 @@ body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSys
 </div>
 
 <div class="footer">
-  <span id="ft-actor">SIE - Emociones en Tiempo Real (Apify)</span>
+  <span>SIE - Emociones en Tiempo Real (Apify)</span>
   <span>CONFIDENCIAL &middot; Extracción activa vía Apify y OpenRouter</span>
 </div>
 
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-const ACTOR = window.DYNAMIC_ACTOR || urlParams.get('actor') || localStorage.getItem('selectedPersonaje');
-const MES = window.DYNAMIC_MES || urlParams.get('mes') || localStorage.getItem('selectedMes') || 'Agosto';
-const ANIO = window.DYNAMIC_ANIO || urlParams.get('anio') || localStorage.getItem('selectedAnio') || '2026';
+(function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const ACTOR = window.DYNAMIC_ACTOR || urlParams.get('actor') || localStorage.getItem('selectedPersonaje') || 'Personaje';
+  const MES = window.DYNAMIC_MES || urlParams.get('mes') || localStorage.getItem('selectedMes') || 'Agosto';
+  const ANIO = window.DYNAMIC_ANIO || urlParams.get('anio') || localStorage.getItem('selectedAnio') || '2026';
 
-let D = null;
-const chartsInstances = {};
+  let D = null;
+  const chartsInstances = {};
 
-const CX=220,CY=220,R=[62,108,154,200],GAP=1.4;
-const rad=d=>d*Math.PI/180;
-const pt=(r,d)=>[CX+r*Math.cos(rad(d)),CY+r*Math.sin(rad(d))];
-function arc(r1,r2,s,e){
-  const a=s+GAP,b=e-GAP;
-  const[x1,y1]=pt(r1,a),[x2,y2]=pt(r2,a),[x3,y3]=pt(r2,b),[x4,y4]=pt(r1,b);
-  return`M${x1.toFixed(2)},${y1.toFixed(2)}L${x2.toFixed(2)},${y2.toFixed(2)}A${r2},${r2} 0 0,1 ${x3.toFixed(2)},${y3.toFixed(2)}L${x4.toFixed(2)},${y4.toFixed(2)}A${r1},${r1} 0 0,0 ${x1.toFixed(2)},${y1.toFixed(2)}Z`;
-}
-const IN=["#cbd5e1","#94a3b8","#64748b"];
+  const CX=220, CY=220, R=[62,108,154,200], GAP=1.4;
+  const rad = d => d * Math.PI / 180;
+  const pt = (r, d) => [CX + r * Math.cos(rad(d)), CY + r * Math.sin(rad(d))];
+  function arc(r1, r2, s, e) {
+    const a = s + GAP, b = e - GAP;
+    const [x1, y1] = pt(r1, a), [x2, y2] = pt(r2, a), [x3, y3] = pt(r2, b), [x4, y4] = pt(r1, b);
+    return `M${x1.toFixed(2)},${y1.toFixed(2)}L${x2.toFixed(2)},${y2.toFixed(2)}A${r2},${r2} 0 0,1 ${x3.toFixed(2)},${y3.toFixed(2)}L${x4.toFixed(2)},${y4.toFixed(2)}A${r1},${r1} 0 0,0 ${x1.toFixed(2)},${y1.toFixed(2)}Z`;
+  }
+  const IN = ["#cbd5e1", "#94a3b8", "#64748b"];
 
-function ST(id,el){
-  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.getElementById('pnl-'+id).classList.add('on');
-  el.classList.add('on');
-  setTimeout(() => { Object.values(chartsInstances).forEach(c => c && c.resize()); }, 50);
-}
+  function ST(id, el) {
+    document.querySelectorAll('.pnl').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.getElementById('pnl-' + id).classList.add('on');
+    el.classList.add('on');
+    setTimeout(() => { Object.values(chartsInstances).forEach(c => c && c.resize()); }, 50);
+  }
 
-function buildWheel(){
-  if(!D || !D.emotions) return '';
-  let p="";
-  D.emotions.forEach(em=>{
-    const{active:ac,intensity:iv,color,deg,key,label}=em;
-    [1,2,3].forEach(i=>{
-      const fill=ac&&iv>=i?color[i-1]:IN[i-1];
-      p+=`<path d="${arc(R[i-1],R[i],deg,deg+45)}" fill="${fill}" stroke="#ffffff" stroke-width="2" ${ac?`onclick="toggleEm('${key}')" style="cursor:pointer"`:''}/>`;
+  document.getElementById('tab-btn-flor').onclick = function() { ST('flor', this); };
+  document.getElementById('tab-btn-mapa').onclick = function() { ST('mapa', this); };
+  document.getElementById('tab-btn-diadas').onclick = function() { ST('diadas', this); };
+
+  function buildWheel() {
+    if (!D || !D.emotions) return '';
+    let p = "";
+    D.emotions.forEach(em => {
+      const { active: ac, intensity: iv, color, deg, key, label } = em;
+      [1, 2, 3].forEach(i => {
+        const fill = ac && iv >= i ? color[i - 1] : IN[i - 1];
+        p += `<path d="${arc(R[i - 1], R[i], deg, deg + 45)}" fill="${fill}" stroke="#ffffff" stroke-width="2" ${ac ? `data-key="${key}" class="petal-clickable" style="cursor:pointer"` : ''}/>`;
+      });
+      const md = deg + 22.5, lr = R[3] + 23;
+      const [lx, ly] = pt(lr, md);
+      const an = Math.cos(rad(md)) > .12 ? "start" : Math.cos(rad(md)) < -.12 ? "end" : "middle";
+      p += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${an}" dominant-baseline="middle" font-size="11" fill="${ac ? "#0f172a" : "#64748b"}" font-weight="${ac ? "700" : "500"}">${label}</text>`;
     });
-    const md=deg+22.5,lr=R[3]+23;
-    const[lx,ly]=pt(lr,md);
-    const an=Math.cos(rad(md))>.12?"start":Math.cos(rad(md))<-.12?"end":"middle";
-    p+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${an}" dominant-baseline="middle" font-size="11" fill="${ac?"#0f172a":"#64748b"}" font-weight="${ac?"700":"500"}">${label}</text>`;
-  });
-  return`<svg width="440" height="440" viewBox="0 0 440 440">${p}<circle cx="${CX}" cy="${CY}" r="${R[0]-4}" fill="#d5d1d1" stroke="#b5b0b0" stroke-width="1.5"/><text x="${CX}" y="${CY-7}" text-anchor="middle" font-size="9.5" fill="#334155" font-weight="800">HUMOR</text><text x="${CX}" y="${CY+7}" text-anchor="middle" font-size="9.5" fill="#334155" font-weight="800">SOCIAL</text></svg>`;
-}
-
-function toggleEm(key){
-  const d=document.getElementById("emd-"+key);
-  if(!d)return;
-  const open=d.classList.contains("open");
-  document.querySelectorAll(".emd-box").forEach(x=>x.classList.remove("open"));
-  if(!open)d.classList.add("open");
-}
-
-async function fetchDatosApify() {
-  const statusElem = document.getElementById("apifyStatusText");
-  const subtextElem = document.getElementById("apifySubtext");
-
-  if (!ACTOR) {
-    statusElem.textContent = "Error: Ningún actor seleccionado";
-    return;
+    return `<svg width="440" height="440" viewBox="0 0 440 440">${p}<circle cx="${CX}" cy="${CY}" r="${R[0] - 4}" fill="#d5d1d1" stroke="#b5b0b0" stroke-width="1.5"/><text x="${CX}" y="${CY - 7}" text-anchor="middle" font-size="9.5" fill="#334155" font-weight="800">HUMOR</text><text x="${CX}" y="${CY + 7}" text-anchor="middle" font-size="9.5" fill="#334155" font-weight="800">SOCIAL</text></svg>`;
   }
 
-  try {
-    statusElem.textContent = `Ejecutando Scraper e IA para ${ACTOR}...`;
-
-    const res = await fetch(`/api/analizar?skill=emociones&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
-    if (!res.ok) throw new Error(`Status ${res.status}`);
-
-    D = await res.json();
-    renderDashboard();
-
-  } catch (err) {
-    console.error(err);
-    statusElem.style.color = "#dc2626";
-    statusElem.textContent = "Error al conectar con la API de Análisis";
+  function toggleEm(key) {
+    const d = document.getElementById("emd-" + key);
+    if (!d) return;
+    const open = d.classList.contains("open");
+    document.querySelectorAll(".emd-box").forEach(x => x.classList.remove("open"));
+    if (!open) d.classList.add("open");
   }
-}
 
-function renderDashboard(){
-  document.getElementById("apifyLoader").style.display = "none";
-  document.getElementById("mainTabs").style.display = "flex";
-  document.getElementById("mainContent").style.display = "block";
+  async function fetchDatosApify() {
+    const statusElem = document.getElementById("apifyStatusText");
 
-  const nameParts = ACTOR.split(' ');
-  document.getElementById("hdr-actor-title").innerHTML = `${nameParts[0]} <span>${nameParts.slice(1).join(' ')}</span>`;
-  document.getElementById("hdr-actor-sub").innerText = `Análisis Extenido vía Apify & OpenRouter · ${MES} ${ANIO}`;
-  document.getElementById("hdr-date").innerText = `${MES} ${ANIO}`;
-  document.getElementById("whl-territory").textContent = ACTOR;
+    try {
+      statusElem.textContent = `Ejecutando Scraper e IA para ${ACTOR}...`;
+      const res = await fetch(`/api/analizar?skill=emociones&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
+      if (!res.ok) throw new Error(`Status ${res.status}`);
 
-  const emotionsArr = D.emotions || [];
-  const secondaryArr = D.secondary || [];
-  const problematicsArr = D.problematics || [];
-  const fearsArr = D.fears || [];
-  const pridesArr = D.prides || [];
-  const quotesArr = D.quotes || [];
-  const dyadsArr = D.dyads || [];
+      D = await res.json();
+      renderDashboard();
 
-  document.getElementById("wheel-wrap").innerHTML = buildWheel();
-  
-  const activeEm = emotionsArr.filter(e => e.active);
-  document.getElementById("em-list").innerHTML = activeEm.map(em => `
-    <div class="emr" onclick="toggleEm('${em.key}')">
-      <div class="emh">
-        <div style="width:10px;height:10px;border-radius:50%;background:${em.color[2]};flex-shrink:0"></div>
-        <span style="font-size:13px;font-weight:700;">${em.label}</span>
-      </div>
-      <div class="emd-box" id="emd-${em.key}">
-        <div class="edk">Detonantes detectados por Apify:</div>
-        <div class="edv">${(em.triggers || []).join(" · ")}</div>
-      </div>
-    </div>`).join("");
+    } catch (err) {
+      console.error(err);
+      statusElem.style.color = "#dc2626";
+      statusElem.textContent = "Error al conectar con la API de Análisis";
+    }
+  }
 
-  document.getElementById("em-sec").innerHTML = secondaryArr.map(s => `
-    <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd2)">
-      <div style="width:7px;height:7px;border-radius:50%;background:${s.color || '#3b82f6'};flex-shrink:0;margin-top:4px"></div>
-      <div><div style="font-size:12px;font-weight:700;">${s.name || s.nombre}</div><div style="font-size:11px;color:var(--tx2);">${s.text || s.descripcion}</div></div>
-    </div>`).join("");
+  function renderDashboard() {
+    document.getElementById("apifyLoader").style.display = "none";
+    document.getElementById("mainTabs").style.display = "flex";
+    document.getElementById("mainContent").style.display = "block";
 
-  document.getElementById("concepto-box").innerHTML = `<div class="cbox-label">Diagnóstico de Inteligencia</div><div class="cbox-name">"${D.concept || 'Sin concepto'}"</div><div class="cbox-text">${D.conceptDesc || ''}</div>`;
+    const nameParts = ACTOR.split(' ');
+    document.getElementById("hdr-actor-title").innerHTML = `${nameParts[0]} <span>${nameParts.slice(1).join(' ')}</span>`;
+    document.getElementById("hdr-actor-sub").innerText = `Análisis Extendido vía Apify & OpenRouter · ${MES} ${ANIO}`;
+    document.getElementById("hdr-date").innerText = `${MES} ${ANIO}`;
+    document.getElementById("whl-territory").textContent = ACTOR;
 
-  const makeMP = (arr, dc) => (arr || []).map(t => `<div class="mpi"><div class="mpd" style="background:${dc}"></div>${typeof t === 'string' ? t : (t.text || t.descripcion)}</div>`).join("");
-  document.getElementById("mapa-cols").innerHTML = `
-    <div class="mpc"><div class="mptt" style="color:#ca8a04">⚠ Problemáticas</div>${makeMP(problematicsArr, "#ca8a04")}</div>
-    <div class="mpc"><div class="mptt" style="color:#dc2626">⬡ Miedos</div>${makeMP(fearsArr, "#dc2626")}</div>
-    <div class="mpc"><div class="mptt" style="color:#16a34a">★ Orgullos</div>${makeMP(pridesArr, "#16a34a")}</div>`;
+    const emotionsArr = D.emotions || [];
+    const secondaryArr = D.secondary || [];
+    const problematicsArr = D.problematics || D.problematicas || [];
+    const fearsArr = D.fears || D.temores || [];
+    const pridesArr = D.prides || D.orgullos || [];
+    const quotesArr = D.quotes || D.citas || [];
+    const dyadsArr = D.dyads || D.diadas || [];
 
-  document.getElementById("quotes").innerHTML = quotesArr.map(q => `<div class="qi"><div class="qt">${q.text || q.cita}</div><div class="qm">${q.topic || 'General'} · ${q.emotion || 'Neutro'}</div></div>`).join("");
+    document.getElementById("wheel-wrap").innerHTML = buildWheel();
 
-  document.getElementById("dyad-cards").innerHTML = dyadsArr.map(d => `
-    <div class="dyc">
-      <div class="dyn">${d.name || d.nombre}</div>
-      <div class="dyf">${d.formula || d.emotions}</div>
-      <div class="dyt">${d.text || d.description}</div>
-    </div>`).join("");
-
-  if (chartsInstances.chIntens) chartsInstances.chIntens.destroy();
-  const ctxIntens = document.getElementById("ch-intens");
-  if (ctxIntens) {
-    chartsInstances.chIntens = new Chart(ctxIntens, {
-      type: "bar",
-      data: {
-        labels: activeEm.map(e => e.label),
-        datasets: [{ data: activeEm.map(e => e.intensity), backgroundColor: activeEm.map(e => e.color[2]) }]
-      },
-      options: { responsive: true, maintainAspectRatio: false }
+    document.querySelectorAll('.petal-clickable').forEach(el => {
+      el.addEventListener('click', function() {
+        const k = this.getAttribute('data-key');
+        if(k) toggleEm(k);
+      });
     });
-  }
-}
+    
+    const activeEm = emotionsArr.filter(e => e.active);
+    document.getElementById("em-list").innerHTML = activeEm.map(em => `
+      <div class="emr" data-emkey="${em.key}">
+        <div class="emh">
+          <div style="width:10px;height:10px;border-radius:50%;background:${em.color[2]};flex-shrink:0"></div>
+          <span style="font-size:13px;font-weight:700;">${em.label}</span>
+        </div>
+        <div class="emd-box" id="emd-${em.key}">
+          <div class="edk">Detonantes detectados por Apify:</div>
+          <div class="edv">${(em.triggers || []).join(" · ")}</div>
+        </div>
+      </div>`).join("");
 
-if (document.readyState === 'loading') {
-  document.addEventListener("DOMContentLoaded", fetchDatosApify);
-} else {
+    document.querySelectorAll('.emr').forEach(el => {
+      el.addEventListener('click', function() {
+        const k = this.getAttribute('data-emkey');
+        if(k) toggleEm(k);
+      });
+    });
+
+    document.getElementById("em-sec").innerHTML = secondaryArr.map(s => `
+      <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd2)">
+        <div style="width:7px;height:7px;border-radius:50%;background:${s.color || '#3b82f6'};flex-shrink:0;margin-top:4px"></div>
+        <div><div style="font-size:12px;font-weight:700;">${s.name || s.nombre}</div><div style="font-size:11px;color:var(--tx2);">${s.text || s.descripcion}</div></div>
+      </div>`).join("");
+
+    document.getElementById("concepto-box").innerHTML = `<div class="cbox-label">Diagnóstico de Inteligencia</div><div class="cbox-name">"${D.concept || 'Sin concepto'}"</div><div class="cbox-text">${D.conceptDesc || ''}</div>`;
+
+    const makeMP = (arr, dc) => (arr || []).map(t => `<div class="mpi"><div class="mpd" style="background:${dc}"></div>${typeof t === 'string' ? t : (t.text || t.descripcion)}</div>`).join("");
+    document.getElementById("mapa-cols").innerHTML = `
+      <div class="mpc"><div class="mptt" style="color:#ca8a04">⚠ Problemáticas</div>${makeMP(problematicsArr, "#ca8a04")}</div>
+      <div class="mpc"><div class="mptt" style="color:#dc2626">⬡ Miedos</div>${makeMP(fearsArr, "#dc2626")}</div>
+      <div class="mpc"><div class="mptt" style="color:#16a34a">★ Orgullos</div>${makeMP(pridesArr, "#16a34a")}</div>`;
+
+    document.getElementById("quotes").innerHTML = quotesArr.map(q => `<div class="qi"><div class="qt">${q.text || q.cita}</div><div class="qm">${q.topic || 'General'} · ${q.emotion || 'Neutro'}</div></div>`).join("");
+
+    document.getElementById("dyad-cards").innerHTML = dyadsArr.map(d => `
+      <div class="dyc">
+        <div class="dyn">${d.name || d.nombre}</div>
+        <div class="dyf">${d.formula || d.emotions}</div>
+        <div class="dyt">${d.text || d.description}</div>
+      </div>`).join("");
+
+    if (chartsInstances.chIntens) chartsInstances.chIntens.destroy();
+    const ctxIntens = document.getElementById("ch-intens");
+    if (ctxIntens) {
+      chartsInstances.chIntens = new Chart(ctxIntens, {
+        type: "bar",
+        data: {
+          labels: activeEm.map(e => e.label),
+          datasets: [{ data: activeEm.map(e => e.intensity), backgroundColor: activeEm.map(e => e.color[2]) }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+  }
+
   fetchDatosApify();
-}
+})();
 </script>
 </body>
 </html>
