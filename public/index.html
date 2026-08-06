@@ -242,9 +242,12 @@ function loadSelectedSkill() {
   if (!skillPath) { alert("Por favor selecciona una Skill."); return; }
   if (!targetName) { alert("Por favor ingresa un nombre."); return; }
 
-  const skillText = skillSelect.options[skillSelect.selectedIndex].text;
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
+
+  window.DYNAMIC_ACTOR = targetName;
+  window.DYNAMIC_MES = month;
+  window.DYNAMIC_ANIO = year;
 
   localStorage.setItem('selectedPersonaje', targetName);
   localStorage.setItem('selectedMes', month);
@@ -272,7 +275,7 @@ function loadSelectedSkill() {
       if (!response.ok) {
         const altPath = skillPath.replace('skills/', '');
         return fetch(altPath).then(res2 => {
-          if (!res2.ok) throw new Error("No se pudo encontrar el archivo en '" + skillPath + "' ni en '" + altPath + "'");
+          if (!res2.ok) throw new Error("No se pudo encontrar el archivo.");
           return res2.text();
         });
       }
@@ -297,13 +300,6 @@ function loadSelectedSkill() {
         Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
         
         let scriptCode = oldScript.innerHTML;
-        scriptCode = `
-          window.DYNAMIC_ACTOR = "${targetName}";
-          window.DYNAMIC_MES = "${month}";
-          window.DYNAMIC_ANIO = "${year}";
-          ${scriptCode}
-        `;
-        
         newScript.appendChild(document.createTextNode(scriptCode));
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
