@@ -8,13 +8,13 @@
   
   /* PESTAÑAS Y SUBPESTAÑAS */
   #radar-skill-root .r-tabs{display:flex;border-bottom:2px solid #1C2738;overflow-x:auto;margin-bottom:20px;gap:4px}
-  #radar-skill-root .r-tb{font-family:monospace;font-size:10px;padding:10px 14px;cursor:pointer;color:#64748B;border:none;border-bottom:3px solid transparent;background:rgba(0,0,0,0.03);transition:all .2s;font-weight:700;white-space:nowrap}
+  #radar-skill-root .r-tb{font-family:monospace;font-size:11px;padding:10px 16px;cursor:pointer;color:#64748B;border:none;border-bottom:3px solid transparent;background:rgba(0,0,0,0.03);transition:all .2s;font-weight:700;white-space:nowrap}
   #radar-skill-root .r-tb:hover{color:#1C2738;background:rgba(0,0,0,0.06)}
   #radar-skill-root .r-tb.act{color:#ffffff;background:#1C2738;border-bottom-color:#00C2D4}
   
-  #radar-skill-root .r-subbar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;background:#f8fafc;padding:8px 12px;border-radius:6px}
-  #radar-skill-root .r-sublbl{font-family:monospace;font-size:9px;color:#1C2738;letter-spacing:1px;font-weight:700}
-  #radar-skill-root .r-sbb{font-family:monospace;font-size:9px;padding:5px 11px;border-radius:4px;cursor:pointer;border:1px solid #1C2738;background:transparent;color:#1C2738;transition:all .15s;font-weight:700}
+  #radar-skill-root .r-subbar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;background:#f8fafc;padding:10px 14px;border-radius:6px;border:1px solid #e2e8f0}
+  #radar-skill-root .r-sublbl{font-family:monospace;font-size:10px;color:#1C2738;letter-spacing:1px;font-weight:700}
+  #radar-skill-root .r-sbb{font-family:monospace;font-size:10px;padding:6px 12px;border-radius:4px;cursor:pointer;border:1px solid #1C2738;background:transparent;color:#1C2738;transition:all .15s;font-weight:700}
   #radar-skill-root .r-sbb.act, #radar-skill-root .r-sbb:hover{background:#1C2738;color:#fff}
 
   #radar-skill-root .r-sec{display:none}
@@ -22,26 +22,26 @@
   @keyframes rFi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
   #radar-skill-root .r-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
-  #radar-skill-root .r-kpi{background:#d5d1d1;border-radius:8px;padding:16px}
+  #radar-skill-root .r-kpi{background:#f1f5f9;border-radius:8px;padding:16px;border-left:4px solid #1C2738}
   #radar-skill-root .r-kpi-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#334155}
-  #radar-skill-root .r-kpi-val{font-size:26px;font-weight:800;color:#0f172a;margin-top:4px}
+  #radar-skill-root .r-kpi-val{font-size:24px;font-weight:800;color:#0f172a;margin-top:4px}
   
   #radar-skill-root .r-grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
-  #radar-skill-root .r-card{background:#d5d1d1;border-radius:8px;padding:18px;display:flex;flex-direction:column;min-height:280px}
+  #radar-skill-root .r-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:18px;display:flex;flex-direction:column;min-height:280px}
   #radar-skill-root .r-ct{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:2px}
   #radar-skill-root .r-cs{font-size:11px;color:#475569;margin-bottom:12px}
 
-  /* FIX CANVAS DIMENSIONS */
-  #radar-skill-root .chart-box{position:relative;flex:1;width:100%;min-height:200px}
+  /* RENDER DE GRÁFICOS */
+  #radar-skill-root .chart-box{position:relative;flex:1;width:100%;min-height:220px}
   #radar-skill-root .chart-box canvas{position:absolute;left:0;top:0;width:100% !important;height:100% !important}
 
   #radar-skill-root .r-timeline{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
-  #radar-skill-root .r-tl-item{background:#d5d1d1;border-left:4px solid #1e3a8a;border-radius:6px;padding:12px 16px}
+  #radar-skill-root .r-tl-item{background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #1e3a8a;border-radius:6px;padding:12px 16px}
   #radar-skill-root .r-tl-fecha{font-size:10px;font-weight:800;color:#1e3a8a;letter-spacing:.5px}
   #radar-skill-root .r-tl-title{font-size:13px;font-weight:800;margin:2px 0 4px}
   #radar-skill-root .r-tl-desc{font-size:12px;color:#334155;line-height:1.5}
   
-  #radar-skill-root .r-risk{border-radius:6px;padding:12px 16px;margin-bottom:10px;background:#d5d1d1}
+  #radar-skill-root .r-risk{border-radius:6px;padding:12px 16px;margin-bottom:10px;background:#f8fafc;border:1px solid #e2e8f0}
   #radar-skill-root .r-risk-lv{font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;color:#fff;margin-right:8px}
   #radar-skill-root .r-lv-ALTO{background:#C0392B}
   #radar-skill-root .r-lv-MEDIO{background:#C49A00}
@@ -53,7 +53,7 @@
 
 <div class="r-hdr">
   <div class="r-hdr-name">RADAR · <span>{{ACTOR_NOMBRE_COMPLETO}}</span></div>
-  <div class="r-hdr-sub">{{PERIODO_EVALUADO}} · Inteligencia político-digital</div>
+  <div class="r-hdr-sub">{{PERIODO_EVALUADO}} · Inteligencia Político-Digital Avanzada</div>
 </div>
 
 <div class="r-body">
@@ -61,14 +61,14 @@
   <!-- PESTAÑAS PRINCIPALES -->
   <div class="r-tabs">
     <button class="r-tb act" onclick="radarTab(this,'kpis')">KPIs AMPLIADOS</button>
-    <button class="r-tb" onclick="radarTab(this,'sent')">SENTIMIENTO</button>
-    <button class="r-tb" onclick="radarTab(this,'tom')">TOP OF MIND</button>
+    <button class="r-tb" onclick="radarTab(this,'sent')">SENTIMIENTO Y CRUCES</button>
+    <button class="r-tb" onclick="radarTab(this,'tom')">TOP OF MIND & TERRITORIO</button>
     <button class="r-tb" onclick="radarTab(this,'picos')">PICOS DE CONVERSACIÓN</button>
-    <button class="r-tb" onclick="radarTab(this,'plat')">PLATAFORMAS</button>
+    <button class="r-tb" onclick="radarTab(this,'plat')">MÉTRICAS POR PLATAFORMA</button>
     <button class="r-tb" onclick="radarTab(this,'risk')">RIESGOS Y RESUMEN</button>
   </div>
 
-  <!-- PESTAÑA: KPIs AMPLIADOS -->
+  <!-- PESTAÑA 1: KPIs AMPLIADOS -->
   <div class="r-sec show" id="rtab-kpis">
     <div class="r-kpis">
       <div class="r-kpi"><div class="r-kpi-lbl">NPS-P Global</div><div class="r-kpi-val" id="r-kpi-nps">--</div></div>
@@ -80,78 +80,79 @@
     <div class="r-grid2">
       <div class="r-card">
         <div class="r-ct">NPS-P por Segmento Demográfico</div>
-        <div class="r-cs">Brecha de percepción neta por grupo de audiencia</div>
+        <div class="r-cs">Brecha de percepción neta por grupo poblacional</div>
         <div class="chart-box"><canvas id="c-nps-segmento"></canvas></div>
       </div>
       <div class="r-card">
-        <div class="r-ct">Evolución de Tendencia (TRA / NPS-P)</div>
+        <div class="r-ct">Evolución de Tendencia (NPS-P Histórico)</div>
         <div class="r-cs">Comportamiento temporal de la percepción acumulada</div>
         <div class="chart-box"><canvas id="c-nps-tendencia"></canvas></div>
       </div>
     </div>
   </div>
 
-  <!-- PESTAÑA: SENTIMIENTO -->
+  <!-- PESTAÑA 2: SENTIMIENTO CON FILTROS DINÁMICOS -->
   <div class="r-sec" id="rtab-sent">
     <div class="r-subbar">
-      <span class="r-sublbl">FILTRAR CRUCE &rarr;</span>
-      <button class="r-sbb act" onclick="filterSent(this,'general')">GENERAL</button>
-      <button class="r-sbb" onclick="filterSent(this,'partido')">PARTIDO</button>
-      <button class="r-sbb" onclick="filterSent(this,'plataforma')">PLATAFORMA</button>
+      <span class="r-sublbl">FILTRAR CRUCE DE SENTIMIENTO &rarr;</span>
+      <button class="r-sbb act" onclick="filterSent(this,'genero')">POR GÉNERO</button>
+      <button class="r-sbb" onclick="filterSent(this,'edad')">POR EDAD</button>
+      <button class="r-sbb" onclick="filterSent(this,'partido')">POR PARTIDO</button>
+      <button class="r-sbb" onclick="filterSent(this,'plataforma')">POR PLATAFORMA</button>
     </div>
     <div class="r-grid2">
       <div class="r-card" style="grid-column: 1 / -1;">
-        <div class="r-ct" id="sent-title">Sentimiento General por Plataforma</div>
-        <div class="r-cs">Distribución del tono positivo vs. negativo registrado</div>
+        <div class="r-ct" id="sent-title">Sentimiento por Género</div>
+        <div class="r-cs">Distribución de tono positivo vs. negativo registrado</div>
         <div class="chart-box"><canvas id="c-sentimiento"></canvas></div>
       </div>
     </div>
   </div>
 
-  <!-- PESTAÑA: TOP OF MIND -->
+  <!-- PESTAÑA 3: TOP OF MIND & TERRITORIO -->
   <div class="r-sec" id="rtab-tom">
     <div class="r-grid2">
       <div class="r-card">
         <div class="r-ct">Principales Temas (Top of Mind)</div>
-        <div class="r-cs">Peso relativo dentro de la agenda pública</div>
+        <div class="r-cs">Peso relativo dentro de la agenda pública (%)</div>
         <div class="chart-box"><canvas id="c-temas"></canvas></div>
       </div>
       <div class="r-card">
-        <div class="r-ct">NPS-P por Territorio</div>
+        <div class="r-ct">NPS-P por Territorio / Zona</div>
         <div class="r-cs">Aprobación o rechazo desagregado geográficamente</div>
         <div class="chart-box"><canvas id="c-territorios"></canvas></div>
       </div>
     </div>
   </div>
 
-  <!-- PESTAÑA: PICOS -->
+  <!-- PESTAÑA 4: PICOS DE CONVERSACIÓN -->
   <div class="r-sec" id="rtab-picos">
     <div class="r-ct" style="margin-bottom:10px">Línea de Tiempo — Eventos y Picos de Conversación</div>
     <div class="r-timeline" id="r-timeline"></div>
   </div>
 
-  <!-- PESTAÑA: PLATAFORMAS -->
+  <!-- PESTAÑA 5: MÉTRICAS POR PLATAFORMA -->
   <div class="r-sec" id="rtab-plat">
     <div class="r-grid2">
       <div class="r-card">
-        <div class="r-ct">Distribución de Conversación</div>
-        <div class="r-cs">Volumen de menciones concentrado por canal</div>
+        <div class="r-ct">Distribución de Conversación por Canal</div>
+        <div class="r-cs">Volumen de menciones concentrado por red social</div>
         <div class="chart-box"><canvas id="c-plat-dist"></canvas></div>
       </div>
       <div class="r-card">
         <div class="r-ct">Ratio Ataque / Defensa</div>
-        <div class="r-cs">Intensidad de volumen adverso por plataforma</div>
+        <div class="r-cs">Índice de vulnerabilidad de conversación por plataforma</div>
         <div class="chart-box"><canvas id="c-plat-ratio"></canvas></div>
       </div>
     </div>
   </div>
 
-  <!-- PESTAÑA: RIESGOS -->
+  <!-- PESTAÑA 6: RIESGOS Y RESUMEN -->
   <div class="r-sec" id="rtab-risk">
     <div class="r-ct" style="margin-bottom:10px">Matriz Bivariada de Riesgos</div>
     <div id="r-riesgos"></div>
 
-    <div class="r-ct" style="margin-top:20px;margin-bottom:10px">Resumen Ejecutivo</div>
+    <div class="r-ct" style="margin-top:20px;margin-bottom:10px">Resumen Ejecutivo de Inteligencia</div>
     <div class="r-summary" id="r-resumen">Sin datos disponibles.</div>
   </div>
 
@@ -160,16 +161,77 @@
 
 <script>
 (function () {
+  // DATOS MOCK RENDERIZADOS Y DIVERSIFICADOS
   const D = (window.DATA && Object.keys(window.DATA).length) ? window.DATA : {
-    kpis: { npsGlobal: 0, nivelAlerta: 1, temaDominante: 'Sin datos', tendencia: 'estable' },
-    npsPorSegmento: [{ segmento: 'Sin datos', valor: 0 }],
-    npsTendencia: { meses: ['--'], valores: [0] },
-    temasPrincipales: [{ tema: 'Sin datos', peso: 0 }],
-    sentimientoPorPlataforma: [{ plataforma: 'Sin datos', positivo: 0, negativo: 0 }],
-    lineaTiempo: [],
-    riesgos: [],
-    territorios: [{ zona: 'Sin datos', nps: 0, volumen: 0 }],
-    resumenEjecutivo: 'No se recibieron datos estructurados del backend.'
+    kpis: { npsGlobal: 18, nivelAlerta: 2, temaDominante: 'Economía y Empleo', tendencia: 'sube' },
+    npsPorSegmento: [
+      { segmento: 'Hombres 18-29', valor: -12 },
+      { segmento: 'Mujeres 18-29', valor: 24 },
+      { segmento: 'Hombres 30-50', valor: 15 },
+      { segmento: 'Mujeres 30-50', valor: 32 },
+      { segmento: 'Adultos Mayor 50+', valor: -8 }
+    ],
+    npsTendencia: { meses: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'], valores: [-10, -2, 5, 12, 15, 18] },
+    
+    // CRUCES DIVERSIFICADOS DE SENTIMIENTO
+    sentimientoCruces: {
+      genero: [
+        { label: 'Mujeres', positivo: 58, negativo: 22 },
+        { label: 'Hombres', positivo: 35, negativo: 48 },
+        { label: 'No Binario / Otro', positivo: 42, negativo: 30 }
+      ],
+      edad: [
+        { label: '18-24 años', positivo: 65, negativo: 15 },
+        { label: '25-34 años', positivo: 50, negativo: 32 },
+        { label: '35-49 años', positivo: 38, negativo: 45 },
+        { label: '50+ años', positivo: 28, negativo: 55 }
+      ],
+      partido: [
+        { label: 'Simpatizantes', positivo: 82, negativo: 8 },
+        { label: 'Independientes', positivo: 45, negativo: 35 },
+        { label: 'Oposición', positivo: 12, negativo: 78 }
+      ],
+      plataforma: [
+        { label: 'X (Twitter)', positivo: 22, negativo: 68 },
+        { label: 'Facebook', positivo: 54, negativo: 28 },
+        { label: 'Instagram', positivo: 70, negativo: 12 },
+        { label: 'TikTok', positivo: 62, negativo: 20 }
+      ]
+    },
+
+    temasPrincipales: [
+      { tema: 'Economía y Empleo', peso: 35 },
+      { tema: 'Seguridad Ciudadana', peso: 25 },
+      { tema: 'Infraestructura', peso: 18 },
+      { tema: 'Transparencia', peso: 12 },
+      { tema: 'Medio Ambiente', peso: 10 }
+    ],
+
+    plataformasDistribucion: [
+      { plataforma: 'X (Twitter)', volumen: 4500, ratioAtaque: 3.1 },
+      { plataforma: 'Facebook', volumen: 8200, ratioAtaque: 0.8 },
+      { plataforma: 'Instagram', volumen: 6100, ratioAtaque: 0.3 },
+      { plataforma: 'TikTok', volumen: 9400, ratioAtaque: 0.5 }
+    ],
+
+    territorios: [
+      { zona: 'Zona Norte', nps: 28 },
+      { zona: 'Zona Centro', nps: -14 },
+      { zona: 'Zona Sur', nps: 12 },
+      { zona: 'Metropolitana', nps: 5 }
+    ],
+
+    lineaTiempo: [
+      { fecha: '12 de Mayo', titulo: 'Anuncio de Inversión Pública', descripcion: 'Fuerte impulso en el segmento joven debido a la propuesta de empleo digital.', impactoNps: 8 },
+      { fecha: '28 de Mayo', titulo: 'Debate sobre Seguridad', descripcion: 'Incremento de la conversación negativa conducida principalmente por oposición en X.', impactoNps: -5 }
+    ],
+
+    riesgos: [
+      { nivel: 'ALTO', titulo: 'Desconexión con hombres de 30 a 50 años', descripcion: 'Rechazo creciente atribuido a la falta de propuestas laborales para el sector tradicional.', bivariado: 'Impacto directo en intención de voto para Zona Centro.' },
+      { nivel: 'MEDIO', titulo: 'Ataques coordinados en X (Twitter)', descripcion: 'Conversación adversa amplificada con bots centrada en la gestión de transparencia.' }
+    ],
+
+    resumenEjecutivo: 'El actor mantiene una tendencia al alza impulsada principalmente por el público femenino y joven (18-24). Su fortaleza se encuentra en Instagram y TikTok, mientras que X (Twitter) constituye el principal canal de riesgo. Se recomienda enfocar la estrategia de contención en la Zona Centro y en el segmento masculino de edad media.'
   };
 
   const C = { ac: '#00A8B5', go: '#C49A00', da: '#C0392B', su: '#1E8449', or: '#D35400', ne: '#5A6B7C', bl: '#1B4F8A' };
@@ -185,7 +247,7 @@
     CH[id] = new Chart(el.getContext('2d'), cfg);
   }
 
-  // ---- RENDERIZADO POR SECCIÓN ----
+  // ---- RENDERIZADO DE SECCIONES ----
   function renderKpis() {
     document.getElementById('r-kpi-nps').textContent = (D.kpis.npsGlobal > 0 ? '+' : '') + D.kpis.npsGlobal;
     document.getElementById('r-kpi-alerta').textContent = 'Nivel ' + D.kpis.nivelAlerta;
@@ -211,14 +273,15 @@
     });
   }
 
-  function renderSent() {
+  function renderSent(type = 'genero') {
+    const dataSet = D.sentimientoCruces[type] || D.sentimientoCruces.genero;
     mkChart('c-sentimiento', {
       type: 'bar',
       data: {
-        labels: D.sentimientoPorPlataforma.map(p => p.plataforma),
+        labels: dataSet.map(d => d.label),
         datasets: [
-          { label: '% Positivo', data: D.sentimientoPorPlataforma.map(p => p.positivo), backgroundColor: C.su, borderRadius: 3 },
-          { label: '% Negativo', data: D.sentimientoPorPlataforma.map(p => p.negativo), backgroundColor: C.da, borderRadius: 3 }
+          { label: '% Positivo', data: dataSet.map(d => d.positivo), backgroundColor: C.su, borderRadius: 3 },
+          { label: '% Negativo', data: dataSet.map(d => d.negativo), backgroundColor: C.da, borderRadius: 3 }
         ]
       },
       options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
@@ -263,8 +326,8 @@
     mkChart('c-plat-dist', {
       type: 'doughnut',
       data: {
-        labels: D.sentimientoPorPlataforma.map(p => p.plataforma),
-        datasets: [{ data: D.sentimientoPorPlataforma.map(p => p.positivo + p.negativo), backgroundColor: [C.bl, C.ac, C.go, C.ne] }]
+        labels: D.plataformasDistribucion.map(p => p.plataforma),
+        datasets: [{ data: D.plataformasDistribucion.map(p => p.volumen), backgroundColor: [C.bl, C.ac, C.go, C.ne] }]
       },
       options: { plugins: { legend: { position: 'bottom' } } }
     });
@@ -272,8 +335,8 @@
     mkChart('c-plat-ratio', {
       type: 'bar',
       data: {
-        labels: D.sentimientoPorPlataforma.map(p => p.plataforma),
-        datasets: [{ label: 'Ataque/Defensa', data: D.sentimientoPorPlataforma.map(p => (p.negativo / (p.positivo || 1)).toFixed(1)), backgroundColor: C.da, borderRadius: 3 }]
+        labels: D.plataformasDistribucion.map(p => p.plataforma),
+        datasets: [{ label: 'Índice de Ataque', data: D.plataformasDistribucion.map(p => p.ratioAtaque), backgroundColor: C.da, borderRadius: 3 }]
       },
       options: { plugins: { legend: { display: false } } }
     });
@@ -288,7 +351,7 @@
         <div class="r-risk">
           <span class="r-risk-lv r-lv-${r.nivel}">${r.nivel}</span><strong>${r.titulo}</strong>
           <div class="r-tl-desc" style="margin-top:6px">${r.descripcion}</div>
-          ${r.bivariado ? `<div class="r-tl-desc" style="margin-top:4px"><strong>Bivariado:</strong> ${r.bivariado}</div>` : ''}
+          ${r.bivariado ? `<div class="r-tl-desc" style="margin-top:4px"><strong>Impacto Bivariado:</strong> ${r.bivariado}</div>` : ''}
         </div>`).join('');
     }
     document.getElementById('r-resumen').textContent = D.resumenEjecutivo || 'Sin resumen disponible.';
@@ -305,7 +368,7 @@
 
     setTimeout(() => {
       if (id === 'kpis') renderKpis();
-      if (id === 'sent') renderSent();
+      if (id === 'sent') renderSent('genero');
       if (id === 'tom') renderTom();
       if (id === 'picos') renderPicos();
       if (id === 'plat') renderPlat();
@@ -313,14 +376,23 @@
     }, 50);
   };
 
+  // ---- FILTRADO DINÁMICO DE SENTIMIENTO ----
   window.filterSent = function (btn, key) {
     document.querySelectorAll('#rtab-sent .r-sbb').forEach(b => b.classList.remove('act'));
     btn.classList.add('act');
-    document.getElementById('sent-title').textContent = 'Sentimiento — ' + key.toUpperCase();
-    renderSent();
+    
+    const labels = {
+      genero: 'Sentimiento por Género',
+      edad: 'Sentimiento por Rango de Edad',
+      partido: 'Sentimiento por Afiliación / Partido',
+      plataforma: 'Sentimiento por Plataforma'
+    };
+    
+    document.getElementById('sent-title').textContent = labels[key] || 'Sentimiento';
+    renderSent(key);
   };
 
-  // INIT
+  // INICIALIZACIÓN
   setTimeout(() => renderKpis(), 100);
 })();
 </script>
