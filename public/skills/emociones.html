@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Análisis Emocional Politico</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>RADAR INTELLIGENCE v2.0</title>
+  <!-- Chart.js de CDN confiable -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg: #f8fafc;
@@ -21,7 +22,13 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--tx1); padding: 1.5rem; }
 
-    /* Layout & Cards */
+    /* Barra Superior */
+    .top-bar { background: #0f172a; color: #38bdf8; padding: 1rem; border-radius: 6px; font-weight: 800; font-size: 1.2rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .actions { display: flex; gap: 0.5rem; }
+    .btn { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; }
+    .btn:hover { background: #334155; }
+
+    /* Header & Tabs */
     .hdr { margin-bottom: 1.5rem; }
     .hdr-name { font-size: 1.5rem; font-weight: 800; color: var(--tx1); }
     .hdr-sub { font-size: 0.875rem; color: var(--tx3); margin-top: 0.25rem; }
@@ -33,12 +40,14 @@
     .pnl { display: none; }
     .pnl.on { display: block; }
 
+    /* Grids */
     .g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
     .g3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
     .g4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
     .gauto { display: grid; grid-template-columns: 380px 1fr; gap: 1rem; }
     @media (max-width: 850px) { .gauto { grid-template-columns: 1fr; } }
 
+    /* Tarjetas */
     .card { background: var(--card-bg); border: 1px solid var(--brd); border-radius: 8px; padding: 1rem; }
     .card2 { background: var(--card-bg); border: 1px solid var(--brd); border-radius: 8px; padding: 1rem; text-align: center; }
     
@@ -47,11 +56,9 @@
     .cval { font-size: 1.75rem; font-weight: 800; margin: 0.25rem 0; }
     .csub { font-size: 0.75rem; color: var(--tx3); }
 
-    /* SVG Rueda */
     .pulse { animation: pulse-anim 2s infinite; }
     @keyframes pulse-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    /* Elementos interactivos */
     .emr { border-bottom: 1px solid var(--brd); padding: 0.5rem 0; cursor: pointer; }
     .emh { display: flex; align-items: center; gap: 0.5rem; }
     .emd-box { display: none; margin-top: 0.5rem; padding: 0.5rem; background: var(--bg); border-radius: 4px; font-size: 0.8rem; }
@@ -59,7 +66,6 @@
     .edk { font-weight: 700; color: var(--tx2); margin-top: 0.25rem; }
     .edv { color: var(--tx3); line-height: 1.4; }
 
-    /* Paneles Específicos */
     .cbox { background: #f1f5f9; border-left: 4px solid var(--prm); padding: 1rem; border-radius: 0 8px 8px 0; }
     .cbox-label { font-size: 0.75rem; font-weight: 700; color: var(--prm); text-transform: uppercase; }
     .cbox-name { font-size: 1.1rem; font-weight: 800; color: var(--tx1); margin: 0.25rem 0; }
@@ -102,12 +108,20 @@
 </head>
 <body>
 
-  <!-- CONTENEDOR RAIZ DONDE SE INYECTARA LA SKILL -->
-  <div id="dashboard-root"></div>
+  <div class="top-bar">
+    <div>RADAR INTELLIGENCE v2.0</div>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">📥 Descargar Reporte</button>
+      <button class="btn" onclick="location.reload()">🔍 Nueva Búsqueda</button>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div id="radar-dashboard-root"></div>
 
   <script>
     /**
-     * SKILL ENGINE: EmotionDashboardEngine
+     * ENGINE SKILL
      */
     class EmotionDashboardEngine {
       constructor(data, containerId) {
@@ -166,7 +180,7 @@
           
           svg += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle" 
                     fill="${em.active ? em.color[2] : '#94a3b8'}" font-size="9" 
-                    font-weight="${em.active ? 700 : 400}" font-family="-apple-system,sans-serif">
+                    font-weight="${em.active ? 700 : 400}">
                     ${em.label.split("/")[0].trim()}
                   </text>`;
         });
@@ -401,80 +415,89 @@
       initCharts() {
         const acEm = this.D.emotions.filter(e => e.active);
         
-        this.charts.intens = new Chart(document.getElementById("ch-intens"), {
-          type: "bar",
-          data: {
-            labels: acEm.map(e => e.label),
-            datasets: [{
-              data: acEm.map(e => e.intensity),
-              backgroundColor: acEm.map(e => e.color[2] + "cc"),
-              borderColor: acEm.map(e => e.color[2]),
-              borderWidth: 1, borderRadius: 5, borderSkipped: false
-            }]
-          },
-          options: {
-            ...this.CD, indexAxis: "y",
-            plugins: { ...this.CD.plugins, tooltip: { ...this.CD.plugins.tooltip, callbacks: { label: c => " " + ["Inactiva", "Baja", "Media", "Alta"][c.raw] } } },
-            scales: { x: { ...this.CD.scales.x, min: 0, max: 3, ticks: { ...this.CD.scales.x.ticks, stepSize: 1, callback: v => ["○○○", "●○○", "●●○", "●●●"][v] } }, y: { ...this.CD.scales.y } }
-          }
-        });
+        if(document.getElementById("ch-intens")) {
+          this.charts.intens = new Chart(document.getElementById("ch-intens"), {
+            type: "bar",
+            data: {
+              labels: acEm.map(e => e.label),
+              datasets: [{
+                data: acEm.map(e => e.intensity),
+                backgroundColor: acEm.map(e => e.color[2] + "cc"),
+                borderColor: acEm.map(e => e.color[2]),
+                borderWidth: 1, borderRadius: 5
+              }]
+            },
+            options: {
+              ...this.CD, indexAxis: "y",
+              scales: { x: { ...this.CD.scales.x, min: 0, max: 3, ticks: { stepSize: 1, callback: v => ["○○○", "●○○", "●●○", "●●●"][v] } }, y: { ...this.CD.scales.y } }
+            }
+          });
+        }
 
-        this.charts.temas = new Chart(document.getElementById("ch-temas"), {
-          type: "doughnut",
-          data: {
-            labels: this.D.temasChart.map(t => t[0]),
-            datasets: [{ data: this.D.temasChart.map(t => t[1]), backgroundColor: this.D.temasChart.map(t => t[2]), borderColor: "#d5d1d1", borderWidth: 2 }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: "right", labels: { color: "#334155", font: { size: 11 }, boxWidth: 12, padding: 10 } } } }
-        });
+        if(document.getElementById("ch-temas")) {
+          this.charts.temas = new Chart(document.getElementById("ch-temas"), {
+            type: "doughnut",
+            data: {
+              labels: this.D.temasChart.map(t => t[0]),
+              datasets: [{ data: this.D.temasChart.map(t => t[1]), backgroundColor: this.D.temasChart.map(t => t[2]) }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
 
         const riskHex = { CRÍTICO: "#ef4444", ALTO: "#f97316", MEDIO: "#b45309" };
-        this.charts.diadas = new Chart(document.getElementById("ch-diadas"), {
-          type: "bar",
-          data: {
-            labels: this.D.dyads.map(d => d.name),
-            datasets: [{ label: "Score de riesgo", data: this.D.dyads.map(d => d.score), backgroundColor: this.D.dyads.map(d => riskHex[d.risk] + "cc"), borderColor: this.D.dyads.map(d => riskHex[d.risk]), borderWidth: 1, borderRadius: 6 }]
-          },
-          options: { ...this.CD, scales: { x: { ...this.CD.scales.x }, y: { ...this.CD.scales.y, min: 0, max: 100, ticks: { ...this.CD.scales.y.ticks, callback: v => v + "/100" } } } }
-        });
+        if(document.getElementById("ch-diadas")) {
+          this.charts.diadas = new Chart(document.getElementById("ch-diadas"), {
+            type: "bar",
+            data: {
+              labels: this.D.dyads.map(d => d.name),
+              datasets: [{ label: "Score", data: this.D.dyads.map(d => d.score), backgroundColor: this.D.dyads.map(d => riskHex[d.risk] + "cc") }]
+            },
+            options: { ...this.CD }
+          });
+        }
 
-        this.charts.partidos = new Chart(document.getElementById("ch-partidos"), {
-          type: "bar",
-          data: {
-            labels: this.D.partidos.map(p => p.nombre),
-            datasets: [
-              { label: "Ira/Asco", data: this.D.partidosChart.map(x => x[0]), backgroundColor: "#B91C1Caa", borderRadius: 4 },
-              { label: "Decep/Tristeza", data: this.D.partidosChart.map(x => x[1]), backgroundColor: "#4C1D95aa", borderRadius: 4 },
-              { label: "Interés disp.", data: this.D.partidosChart.map(x => x[2]), backgroundColor: "#059669aa", borderRadius: 4 }
-            ]
-          },
-          options: { ...this.CD, plugins: { ...this.CD.plugins, legend: { display: true } }, scales: { x: { ...this.CD.scales.x }, y: { ...this.CD.scales.y, min: 0, max: 100 } } }
-        });
+        if(document.getElementById("ch-partidos")) {
+          this.charts.partidos = new Chart(document.getElementById("ch-partidos"), {
+            type: "bar",
+            data: {
+              labels: this.D.partidos.map(p => p.nombre),
+              datasets: [
+                { label: "Ira/Asco", data: this.D.partidosChart.map(x => x[0]), backgroundColor: "#B91C1Caa" },
+                { label: "Decep/Tristeza", data: this.D.partidosChart.map(x => x[1]), backgroundColor: "#4C1D95aa" },
+                { label: "Interés", data: this.D.partidosChart.map(x => x[2]), backgroundColor: "#059669aa" }
+              ]
+            },
+            options: { ...this.CD }
+          });
+        }
 
-        this.charts.actores = new Chart(document.getElementById("ch-actores"), {
-          type: "radar",
-          data: {
-            labels: ["Legitimidad", "Presencia", "Capital Positivo", "Riesgo Castigo", "Cap. Gestión", "Credibilidad"],
-            datasets: this.D.actoresRadar.labels.map((lbl, i) => ({
-              label: lbl,
-              data: this.D.actoresRadar.data[i],
-              borderColor: this.D.actoresRadar.colors[i],
-              backgroundColor: this.D.actoresRadar.colors[i] + "22",
-              pointBackgroundColor: this.D.actoresRadar.colors[i],
-              pointRadius: 4
-            }))
-          },
-          options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100 } } }
-        });
+        if(document.getElementById("ch-actores")) {
+          this.charts.actores = new Chart(document.getElementById("ch-actores"), {
+            type: "radar",
+            data: {
+              labels: ["Legitimidad", "Presencia", "Capital Positivo", "Riesgo Castigo", "Cap. Gestión", "Credibilidad"],
+              datasets: this.D.actoresRadar.labels.map((lbl, i) => ({
+                label: lbl,
+                data: this.D.actoresRadar.data[i],
+                borderColor: this.D.actoresRadar.colors[i],
+                backgroundColor: this.D.actoresRadar.colors[i] + "22"
+              }))
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
 
-        this.charts.prior = new Chart(document.getElementById("ch-prior"), {
-          type: "bar",
-          data: {
-            labels: this.D.gestionPrioridad.map(x => x[0]),
-            datasets: [{ data: this.D.gestionPrioridad.map(x => x[1]), backgroundColor: this.D.gestionPrioridad.map(x => x[2] + "cc"), borderColor: this.D.gestionPrioridad.map(x => x[2]), borderWidth: 1, borderRadius: 5 }]
-          },
-          options: { ...this.CD, indexAxis: "y", scales: { x: { ...this.CD.scales.x, min: 0, max: 100 }, y: { ...this.CD.scales.y } } }
-        });
+        if(document.getElementById("ch-prior")) {
+          this.charts.prior = new Chart(document.getElementById("ch-prior"), {
+            type: "bar",
+            data: {
+              labels: this.D.gestionPrioridad.map(x => x[0]),
+              datasets: [{ data: this.D.gestionPrioridad.map(x => x[1]), backgroundColor: this.D.gestionPrioridad.map(x => x[2] + "cc") }]
+            },
+            options: { ...this.CD, indexAxis: "y" }
+          });
+        }
       }
 
       switchTab(tabId, el) {
@@ -491,85 +514,56 @@
 
       init() {
         this.renderLayout();
-        this.initCharts();
         window.EmotionSkillInstance = this;
+        setTimeout(() => this.initCharts(), 50);
       }
     }
 
-    // DATASET DE EJEMPLO (ESTRUCTURA TOTALMENTE ADAPTABLE A CUALQUIER ENTIDAD)
-    const dataSetPolitico = {
-      territory: "Distrito Electoral Modelo",
-      subtitle: "Estudio de Clima Emocional Político · Evaluación de Territorio",
+    // DATASET DE MUESTRA
+    const radarData = {
+      territory: "Análisis de Territorio",
+      subtitle: "Dashboard de Análisis Emocional y Político",
       date: "2026",
       riskLevel: "ALTO",
       iveScore: 78,
-      concept: "Desconexión con la Gestión Pública",
-      conceptDesc: "Predominio de frustración en temas clave de infraestructura y seguridad con baja efectividad percibida en la respuesta institucional.",
+      concept: "Desconexión Ciudadana",
+      conceptDesc: "Frustración en temas clave de infraestructura y seguridad.",
       emotions: [
-        { deg: -90, label: "Alegría / Gozo", active: false, intensity: 0, color: ["#fef9c3", "#fde047", "#eab308"] },
-        { deg: -45, label: "Confianza / Aceptación", active: true, intensity: 1, color: ["#dcfce7", "#86efac", "#22c55e"], triggers: ["Aceptación inicial a propuestas de renovación"], consequences: ["Base moderada de apertura al diálogo"] },
-        { deg: 0, label: "Miedo / Temor", active: true, intensity: 3, color: ["#fee2e2", "#fca5a5", "#ef4444"], triggers: ["Inseguridad nocturna", "Incertidumbre económica local"], consequences: ["Aumento de exigencias drásticas de control"] },
-        { deg: 45, label: "Sorpresa / Asombro", active: false, intensity: 0, color: ["#e0f2fe", "#7dd3fc", "#0284c7"] },
-        { deg: 90, label: "Tristeza / Pena", active: true, intensity: 2, color: ["#f3e8ff", "#c084fc", "#9333ea"], triggers: ["Deterioro de espacios públicos"], consequences: ["Desafección comunitaria e inacción"] },
-        { deg: 135, label: "Asco / Aversión", active: true, intensity: 3, color: ["#ffedd5", "#fdba74", "#ea580c"], triggers: ["Corrupción percibida", "Impunidad"], consequences: ["Rechazo generalizado a discursos tradicionales"] },
-        { deg: 180, label: "Ira / Rabia", active: true, intensity: 3, color: ["#ffe4e6", "#fda4af", "#e11d48"], triggers: ["Promesas no cumplidas", "Falta de servicios"], consequences: ["Protesta activa y voto de castigo"] },
-        { deg: -135, label: "Anticipación / Interés", active: true, intensity: 2, color: ["#fef3c7", "#fcd34d", "#d97706"], triggers: ["Nuevos liderazgos independientes"], consequences: ["Búsqueda activa de alternativas"] }
+        { deg: -90, label: "Alegría", active: false, intensity: 0, color: ["#fef9c3", "#fde047", "#eab308"] },
+        { deg: -45, label: "Confianza", active: true, intensity: 1, color: ["#dcfce7", "#86efac", "#22c55e"], triggers: ["Recepción positiva a propuestas"], consequences: ["Manejo moderado de diálogo"] },
+        { deg: 0, label: "Miedo", active: true, intensity: 3, color: ["#fee2e2", "#fca5a5", "#ef4444"], triggers: ["Inseguridad pública"], consequences: ["Mayor demanda de control"] },
+        { deg: 45, label: "Sorpresa", active: false, intensity: 0, color: ["#e0f2fe", "#7dd3fc", "#0284c7"] },
+        { deg: 90, label: "Tristeza", active: true, intensity: 2, color: ["#f3e8ff", "#c084fc", "#9333ea"], triggers: ["Abandono urbano"], consequences: ["Desafección"] },
+        { deg: 135, label: "Asco", active: true, intensity: 3, color: ["#ffedd5", "#fdba74", "#ea580c"], triggers: ["Corrupción"], consequences: ["Rechazo institucional"] },
+        { deg: 180, label: "Ira", active: true, intensity: 3, color: ["#ffe4e6", "#fda4af", "#e11d48"], triggers: ["Promesas incumplidas"], consequences: ["Protesta / Voto de castigo"] },
+        { deg: -135, label: "Anticipación", active: true, intensity: 2, color: ["#fef3c7", "#fcd34d", "#d97706"], triggers: ["Expectativa de recambio"], consequences: ["Atención en nuevos liderazgos"] }
       ],
-      secondary: [
-        { name: "Desprecio (Ira + Asco)", color: "#b91c1c", text: "Alto riesgo de sanción electoral hacia figuras vinculadas al actual status quo." },
-        { name: "Ansiedad (Miedo + Anticipación)", color: "#c2410c", text: "Preocupación generalizada sobre la estabilidad a mediano plazo." }
-      ],
-      dyads: [
-        { name: "Desprecio", risk: "CRÍTICO", type: "Primaria", formula: "Ira + Asco", score: 88, text: "Máxima animadversión hacia la gestión actual." },
-        { name: "Ansiedad", risk: "ALTO", type: "Primaria", formula: "Miedo + Anticipación", score: 72, text: "Expectativa de cambio con desconfianza en la ejecución." }
-      ],
-      dyadInterp: "La combinación de Ira y Asco genera un ambiente adverso para discursos oficiales. Se requiere virar la agenda hacia soluciones palpables.",
-      problematics: ["Deficiencia en transporte", "Inseguridad en vías principales", "Falta de mantenimiento urbano"],
-      fears: ["Pérdida de patrimonio", "Escalación de violencia local"],
-      prides: ["Identidad cultural local", "Organización comunitaria"],
-      quotes: [
-        { text: "Llevamos años escuchando lo mismo y las cosas siguen igual.", topic: "Gestión", emotion: "Asco", territory: "Zona Centro" },
-        { text: "Necesitamos a alguien que verdaderamente resuelva la seguridad.", topic: "Seguridad", emotion: "Ira", territory: "Zona Norte" }
-      ],
-      semaforo: [
-        { label: "Ánimo de Cambio", val: "78%", color: "#ef4444" },
-        { label: "Aprobación Local", val: "32%", color: "#f97316" },
-        { label: "Confianza Institucional", val: "24%", color: "#b91c1c" }
-      ],
-      preguntaPolitica: "¿Sostenibilidad o Cambio Radical?",
-      preguntaDesc: "El electorado se debate entre la búsqueda de estabilidad y el deseo de ruptura con el modelo actual.",
-      govSemaforo: [
-        { label: "Efectividad percibida", val: "Baja", color: "#ef4444" },
-        { label: "Cercanía con el ciudadano", val: "Insuficiente", color: "#f97316" }
-      ],
-      partidos: [
-        { nombre: "Opción A (Oficialismo)", emocion: "Asco / Frustración", capital: "Bajo", tendencia: "↓ Declive" },
-        { nombre: "Opción B (Oposición)", emocion: "Interés prudente", capital: "Medio", tendencia: "↑ Crecimiento" }
-      ],
-      partidosChart: [[65, 20, 15], [20, 30, 50]],
-      actores: [
-        { name: "Figura Pública A", role: "Representante Oficial", borderColor: "#ef4444", rows: [["Aprobación", "28%"], ["Efectividad", "Baja"]] },
-        { name: "Figura Pública B", role: "Líder Social", borderColor: "#22c55e", rows: [["Aprobación", "54%"], ["Efectividad", "Media-Alta"]] }
-      ],
-      actoresRadar: {
-        labels: ["Figura Pública A", "Figura Pública B"],
-        data: [[30, 80, 20, 85, 30, 25], [70, 60, 65, 20, 60, 75]],
-        colors: ["#ef4444", "#22c55e"]
-      },
-      alertaEstrategica: "Riesgo Severo de Voto de Castigo",
-      alertaDesc: "El volumen de descontento exige cambios visibles inmediatos en la narrativa de comunicación y propuestas concretas.",
-      recs: [
-        { label: "PRIORITARIO", bg: "#fee2e2", tx: "#991b1b", text: "Centrar la narrativa en la resolución de problemas de seguridad inmediata." },
-        { label: "ESTRATÉGICO", bg: "#fef3c7", tx: "#92400e", text: "Desvincular la comunicación de promesas abstractas o vacías." }
-      ],
-      evitar: ["Alegar logros no percibidos directamente por la ciudadanía.", "Uso de lenguaje burocrático o distante."],
-      gestionPrioridad: [["Inseguridad", 90, "#ef4444"], ["Infraestructura", 70, "#f97316"], ["Transparencia", 60, "#d97706"]],
-      temasChart: [["Inseguridad", 50, "#ef4444"], ["Servicios", 30, "#f97316"], ["Economía", 20, "#eab308"]]
+      secondary: [{ name: "Desprecio", color: "#b91c1c", text: "Alto riesgo de sanción electoral." }],
+      dyads: [{ name: "Desprecio", risk: "CRÍTICO", type: "Primaria", formula: "Ira + Asco", score: 88, text: "Rechazo a la gestión actual." }],
+      dyadInterp: "Se requiere intervención directa en comunicación de crisis.",
+      problematics: ["Inseguridad", "Mantenimiento Urbano"],
+      fears: ["Escalación de violencia"],
+      prides: ["Identidad local"],
+      quotes: [{ text: "Las cosas no cambian.", topic: "Gestión", emotion: "Asco", territory: "General" }],
+      semaforo: [{ label: "Descontento", val: "78%", color: "#ef4444" }],
+      preguntaPolitica: "¿Continuidad o Cambio?",
+      preguntaDesc: "Disyuntiva del electorado local.",
+      govSemaforo: [{ label: "Efectividad", val: "Baja", color: "#ef4444" }],
+      partidos: [{ nombre: "Oficialismo", emocion: "Rechazo", capital: "Bajo", tendencia: "↓ Declive" }],
+      partidosChart: [[60, 20, 20]],
+      actores: [{ name: "Líder 1", role: "Vocero", borderColor: "#3b82f6", rows: [["Aprobación", "30%"]] }],
+      actoresRadar: { labels: ["Líder 1"], data: [[40, 50, 30, 80, 40, 30]], colors: ["#3b82f6"] },
+      alertaEstrategica: "Riesgo Eleccionario",
+      alertaDesc: "Atender demandas críticas.",
+      recs: [{ label: "Urgente", bg: "#fee2e2", tx: "#991b1b", text: "Focalizar en seguridad." }],
+      evitar: ["Discursos vacíos"],
+      gestionPrioridad: [["Seguridad", 90, "#ef4444"]],
+      temasChart: [["Inseguridad", 70, "#ef4444"]]
     };
 
-    // Inicializar Skill con los datos configurados
-    document.addEventListener("DOMContentLoaded", () => {
-      const dashboard = new EmotionDashboardEngine(dataSetPolitico, "dashboard-root");
+    // EJECUCIÓN SEGURA TRAS CARGA COMPLETA
+    window.addEventListener("DOMContentLoaded", () => {
+      const dashboard = new EmotionDashboardEngine(radarData, "radar-dashboard-root");
       dashboard.init();
     });
   </script>
