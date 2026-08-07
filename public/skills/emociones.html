@@ -1,616 +1,577 @@
-<!-- =========================================================
-  EMOCIONES DASHBOARD — Naucalpan de Juárez
-  Sistema de Humor Social Emocional — Plutchik Framework v3.0
-  Estudio: Mayo–Junio 2026 | Construimos Poder
-  ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EMOCIONES — Naucalpan de Juárez 2026</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
-:root{
-  --bg:#ffffff;
-  --bg-card:#d5d1d1;
-  --bg-card2:#d5d1d1;
-  --bg-hdr:#1C2738;
-  --brd:#b8b4b4;--brd2:#b8b4b4;
-  --tx1:#1e293b;
-  --tx2:#334155;--tx3:#475569;
-  --blue:#3b82f6;--blue2:#1d4ed8;
-  --red:#ef4444;--red-s:#991b1b;--red-bg:rgba(239,68,68,.15);
-  --org:#f97316;--org-s:#9a3412;--org-bg:rgba(249,115,22,.15);
-  --ylw:#eab308;--ylw-bg:rgba(234,179,8,.15);
-  --grn:#22c55e;--grn-s:#166534;--grn-bg:rgba(34,197,94,.15);
-  --pur:#a855f7;--pur-bg:rgba(168,85,247,.15);
-  --tel:#06b6d4;--tel-bg:rgba(6,182,212,.15);
-  --ac: #00C2D4;
-  --hdrblue: #1C2738;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Análisis Emocional Politico</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --tx1: #0f172a;
+      --tx2: #334155;
+      --tx3: #64748b;
+      --brd: #e2e8f0;
+      --prm: #1d4ed8;
+      --red: #ef4444;
+      --red-s: #991b1b;
+    }
 
-.hdr { background: var(--hdrblue); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 18px 24px; position: sticky; top: 0; backdrop-filter: blur(12px); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-.hdr-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1.2; }
-.hdr-name span { color: var(--ac); }
-.hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; font-weight: 500; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--tx1); padding: 1.5rem; }
 
-.tabs{display:flex;overflow-x:auto;border-bottom:1px solid #cbd5e1;padding:0 2rem;background:#f8fafc}
-.tab{font-size:11.5px;font-weight:600;letter-spacing:.04em;padding:.85rem 1.1rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .18s}
-.tab:hover{color:#0f172a;background:rgba(0,0,0,.03)}
-.tab.on{color:var(--bg-hdr);border-bottom-color:var(--bg-hdr)}
-.cnt{padding:1.4rem 2rem}
-.pnl{display:none}.pnl.on{display:block}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
-.gauto{display:grid;grid-template-columns:430px 1fr;gap:1.2rem;align-items:start}
-.card{background:var(--bg-card);border:1px solid var(--brd);border-radius:10px;padding:1.1rem 1.2rem}
-.card2{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1.1rem 1.2rem}
-.cv{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.55rem}
-.cval{font-size:2rem;font-weight:800;line-height:1;color:var(--tx1)}
-.csub{font-size:11px;color:var(--tx2);margin-top:.3rem}
-.sl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--brd)}
-.emr{padding:9px 0;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .12s;border-radius:4px}
-.emr:hover{background:rgba(0,0,0,.025)}
-.emr:last-child{border-bottom:none}
-.emh{display:flex;align-items:center;gap:7px}
-.emd-box{display:none;margin-top:8px;margin-left:17px;background:rgba(0,0,0,.04);border-radius:6px;padding:8px 10px}
-.emd-box.open{display:block}
-.edk{font-size:10.5px;font-weight:700;color:var(--tx2);margin-bottom:3px}
-.edv{font-size:11px;color:var(--tx1);line-height:1.6}
-.dyc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1rem 1.1rem;border-top:3px solid}
-.dyn{font-size:14px;font-weight:800;margin-bottom:3px}
-.dyf{font-size:11px;color:var(--tx3);font-style:italic;margin-bottom:7px}
-.dyt{font-size:12px;color:var(--tx2);line-height:1.6}
-.dybadge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;float:right;margin-top:-2px}
-.mpc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:.9rem 1rem}
-.mptt{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-.mpi{font-size:12px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;gap:6px}
-.mpi:last-child{border-bottom:none}
-.mpd{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
-.qi{padding:9px 0;border-bottom:1px solid var(--brd)}
-.qi:last-child{border-bottom:none}
-.qt{font-size:12.5px;font-style:italic;color:var(--tx1);line-height:1.55}
-.qt::before{content:'"';color:var(--blue2);font-style:normal;font-weight:700}
-.qt::after{content:'"';color:var(--blue2);font-style:normal;font-weight:700}
-.qm{font-size:10.5px;color:var(--tx3);margin-top:3px}
-.ri{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--brd)}
-.ri:last-child{border-bottom:none}
-.rb{font-size:10px;padding:3px 7px;border-radius:5px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:1px}
-.rt{font-size:12px;color:var(--tx2);line-height:1.6}
-.sem{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)}
-.sem:last-child{border-bottom:none}
-.semd{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.seml{font-size:12px;color:var(--tx2);flex:1}
-.semv{font-size:12px;font-weight:700}
-.ac{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;overflow:hidden}
-.ach{padding:.9rem 1.1rem;border-bottom:1px solid var(--brd);background:rgba(0,0,0,.03)}
-.acn{font-size:14px;font-weight:800;color:var(--tx1)}
-.acr{font-size:11px;color:var(--tx2);margin-top:2px}
-.acb{padding:.9rem 1.1rem}
-.acrow{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--brd);font-size:12px}
-.acrow:last-child{border-bottom:none}
-.ack{color:var(--tx3);font-size:11px}
-.acv{color:var(--tx1);font-weight:600;text-align:right;max-width:65%}
-.cbox{background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(6,182,212,.05));border:1px solid rgba(37,99,235,.2);border-radius:12px;padding:1.2rem 1.4rem;border-left:4px solid var(--blue)}
-.cbox-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);margin-bottom:.35rem}
-.cbox-name{font-size:21px;font-weight:800;color:var(--tx1);margin-bottom:.45rem}
-.cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72}
-.cw{position:relative}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
-.footer { background: #1C2738; border-top: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 40px; border-radius: 4px; }
+    /* Layout & Cards */
+    .hdr { margin-bottom: 1.5rem; }
+    .hdr-name { font-size: 1.5rem; font-weight: 800; color: var(--tx1); }
+    .hdr-sub { font-size: 0.875rem; color: var(--tx3); margin-top: 0.25rem; }
+
+    .tabs { display: flex; gap: 0.5rem; border-bottom: 2px solid var(--brd); margin-bottom: 1.5rem; overflow-x: auto; }
+    .tab { padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600; color: var(--tx3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; }
+    .tab.on { color: var(--prm); border-bottom-color: var(--prm); }
+
+    .pnl { display: none; }
+    .pnl.on { display: block; }
+
+    .g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+    .g3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .g4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+    .gauto { display: grid; grid-template-columns: 380px 1fr; gap: 1rem; }
+    @media (max-width: 850px) { .gauto { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card-bg); border: 1px solid var(--brd); border-radius: 8px; padding: 1rem; }
+    .card2 { background: var(--card-bg); border: 1px solid var(--brd); border-radius: 8px; padding: 1rem; text-align: center; }
     
-@media(max-width:780px){
-  .gauto,.g2,.g3,.g4{grid-template-columns:1fr}
-  .hdr-title{font-size:1.4rem}
-  .cnt{padding:1rem}
-  .hdr{padding:1rem}
-  .tabs{padding:0 1rem}
-}
-</style>
+    .sl { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--tx3); margin-bottom: 0.75rem; letter-spacing: 0.5px; }
+    .cv { font-size: 0.75rem; color: var(--tx3); text-transform: uppercase; font-weight: 600; }
+    .cval { font-size: 1.75rem; font-weight: 800; margin: 0.25rem 0; }
+    .csub { font-size: 0.75rem; color: var(--tx3); }
+
+    /* SVG Rueda */
+    .pulse { animation: pulse-anim 2s infinite; }
+    @keyframes pulse-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Elementos interactivos */
+    .emr { border-bottom: 1px solid var(--brd); padding: 0.5rem 0; cursor: pointer; }
+    .emh { display: flex; align-items: center; gap: 0.5rem; }
+    .emd-box { display: none; margin-top: 0.5rem; padding: 0.5rem; background: var(--bg); border-radius: 4px; font-size: 0.8rem; }
+    .emd-box.open { display: block; }
+    .edk { font-weight: 700; color: var(--tx2); margin-top: 0.25rem; }
+    .edv { color: var(--tx3); line-height: 1.4; }
+
+    /* Paneles Específicos */
+    .cbox { background: #f1f5f9; border-left: 4px solid var(--prm); padding: 1rem; border-radius: 0 8px 8px 0; }
+    .cbox-label { font-size: 0.75rem; font-weight: 700; color: var(--prm); text-transform: uppercase; }
+    .cbox-name { font-size: 1.1rem; font-weight: 800; color: var(--tx1); margin: 0.25rem 0; }
+    .cbox-text { font-size: 0.85rem; color: var(--tx2); line-height: 1.5; }
+
+    .dyc { background: var(--card-bg); border: 1px solid var(--brd); border-top-width: 4px; border-radius: 8px; padding: 1rem; position: relative; }
+    .dybadge { position: absolute; top: 1rem; right: 1rem; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+    .dyn { font-size: 1rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .dyf { font-size: 0.75rem; color: var(--tx3); margin-bottom: 0.5rem; }
+    .dyt { font-size: 0.8rem; color: var(--tx2); line-height: 1.4; }
+
+    .ac { background: var(--card-bg); border: 1px solid var(--brd); border-radius: 8px; overflow: hidden; }
+    .ach { padding: 0.75rem 1rem; background: #f8fafc; border-bottom: 1px solid var(--brd); }
+    .acn { font-size: 0.95rem; font-weight: 800; }
+    .acr { font-size: 0.75rem; color: var(--tx3); }
+    .acb { padding: 0.75rem 1rem; }
+    .acrow { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.35rem 0; border-bottom: 1px dashed var(--brd); }
+    .acrow:last-child { border-bottom: none; }
+    .ack { color: var(--tx3); }
+    .acv { font-weight: 600; color: var(--tx1); }
+
+    .mpc { background: var(--card-bg); border: 1px solid var(--brd); border-radius: 8px; padding: 1rem; }
+    .mptt { font-size: 0.85rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .mpi { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.8rem; color: var(--tx2); margin-bottom: 0.4rem; }
+    .mpd { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+    .sem { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--brd); font-size: 0.8rem; }
+    .semd { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; display: inline-block; }
+    .seml { flex: 1; color: var(--tx2); }
+    .semv { font-weight: 700; }
+
+    .qi { background: #f8fafc; border-left: 3px solid var(--prm); padding: 0.6rem 0.8rem; border-radius: 0 4px 4px 0; margin-bottom: 0.5rem; }
+    .qt { font-size: 0.8rem; font-style: italic; color: var(--tx2); }
+    .qm { font-size: 0.7rem; color: var(--tx3); margin-top: 0.25rem; font-weight: 600; }
+
+    .ri { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--brd); font-size: 0.8rem; }
+    .rb { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+    .rt { color: var(--tx2); line-height: 1.4; }
+  </style>
 </head>
 <body>
-<header class="hdr">
-  <div>
-    <h1 class="hdr-name">NAUCALPAN<span> DE JUARÉZ</span></h1>
-    <p class="hdr-sub">Isaac Montoya Márquez · Presidente Municipal · Morena · 2025–2027</p>
-  </div>
-</header>
 
-<div class="tabs">
-  <div class="tab on" onclick="ST('flor',this)">🌸 Flor de Emociones</div>
-  <div class="tab"    onclick="ST('mapa',this)">🗺 Mapa Social</div>
-  <div class="tab"    onclick="ST('diadas',this)">⚡ Díadas</div>
-  <div class="tab"    onclick="ST('identidad',this)">🏛 Identidad Política</div>
-  <div class="tab"    onclick="ST('actores',this)">👤 Actores</div>
-  <div class="tab"    onclick="ST('recs',this)">🎯 Recomendaciones</div>
-</div>
+  <!-- CONTENEDOR RAIZ DONDE SE INYECTARA LA SKILL -->
+  <div id="dashboard-root"></div>
 
-<div class="cnt">
+  <script>
+    /**
+     * SKILL ENGINE: EmotionDashboardEngine
+     */
+    class EmotionDashboardEngine {
+      constructor(data, containerId) {
+        this.D = data;
+        this.container = document.getElementById(containerId);
+        this.charts = {};
+        
+        this.CD = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#ffffff",
+              titleColor: "#1e293b",
+              bodyColor: "#475569",
+              borderColor: "#cbd5e1",
+              borderWidth: 1,
+              padding: 10
+            }
+          },
+          scales: {
+            x: { grid: { color: "rgba(0,0,0,.05)" }, ticks: { color: "#475569", font: { size: 10 } } },
+            y: { grid: { color: "rgba(0,0,0,.05)" }, ticks: { color: "#475569", font: { size: 10 } } }
+          }
+        };
+      }
 
-<!-- KPIs Generales Visibles -->
-<div class="g4" style="margin-bottom:1rem;" id="kpis"></div>
+      buildWheelSVG(emotions) {
+        const S = 380, cx = S / 2, cy = S / 2, rings = [72, 112, 150];
+        let svg = `<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">`;
+        
+        emotions.forEach((em, i) => {
+          const a0 = (em.deg - 22.5) * Math.PI / 180;
+          const a1 = (em.deg + 22.5) * Math.PI / 180;
+          
+          [0, 1, 2].forEach(r => {
+            const r0 = rings[r], r1 = rings[r + 1] || rings[r] + 38;
+            const x1 = cx + r0 * Math.cos(a0), y1 = cy + r0 * Math.sin(a0);
+            const x2 = cx + r1 * Math.cos(a0), y2 = cy + r1 * Math.sin(a0);
+            const x3 = cx + r1 * Math.cos(a1), y3 = cy + r1 * Math.sin(a1);
+            const x4 = cx + r0 * Math.cos(a1), y4 = cy + r0 * Math.sin(a1);
+            
+            const fill = em.active && em.intensity > r ? em.color[r] : "#e2e8f0";
+            const pulse = em.active && em.intensity === 3 && r === 2 ? ' class="pulse"' : '';
+            
+            svg += `<path${pulse} d="M${x1},${y1} L${x2},${y2} A${r1},${r1} 0 0,1 ${x3},${y3} L${x4},${y4} A${r0},${r0} 0 0,0 ${x1},${y1}" 
+                      fill="${fill}" stroke="#ffffff" stroke-width="1.5" 
+                      style="cursor:${em.active ? 'pointer' : 'default'}" 
+                      onclick="window.EmotionSkillInstance.toggleEm(${i})"/>`;
+          });
+          
+          const lx = cx + (rings[2] + 22) * Math.cos(em.deg * Math.PI / 180);
+          const ly = cy + (rings[2] + 22) * Math.sin(em.deg * Math.PI / 180);
+          const anchor = Math.abs(em.deg) > 90 ? "end" : "start";
+          
+          svg += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle" 
+                    fill="${em.active ? em.color[2] : '#94a3b8'}" font-size="9" 
+                    font-weight="${em.active ? 700 : 400}" font-family="-apple-system,sans-serif">
+                    ${em.label.split("/")[0].trim()}
+                  </text>`;
+        });
+        
+        svg += `<circle cx="${cx}" cy="${cy}" r="50" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#1d4ed8" font-size="9" font-weight="700">PLUTCHIK</text>
+          <text x="${cx}" y="${cy + 6}" text-anchor="middle" fill="#334155" font-size="8">${this.D.territory}</text>
+          <text x="${cx}" y="${cy + 18}" text-anchor="middle" fill="#64748b" font-size="7">${this.D.date}</text>
+        </svg>`;
+        
+        return svg;
+      }
 
-<!-- FLOR DE EMOCIONES -->
-<div class="pnl on" id="pnl-flor">
-  <div class="gauto" style="margin-bottom:1rem">
-    <div>
-      <div class="sl">Rueda de Plutchik — <span id="whl-territory"></span></div>
-      <div class="card" style="padding:.8rem;text-align:center; background: #ffffff;">
-        <div id="wheel-wrap"></div>
-        <div style="font-size:10px;color:var(--tx3);margin-top:.4rem">Toca cualquier pétalo activo para ver detalles</div>
-      </div>
-      <div class="card" style="margin-top:.75rem;padding:.75rem 1rem">
-        <div class="cv">Leyenda de Intensidad</div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:5px"><div id="leg-hi" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Alta ●●●</span></div>
-          <div style="display:flex;align-items:center;gap:5px"><div id="leg-md" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Media ●●○</span></div>
-          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#e2e8f0;border:1px solid #cbd5e1"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div class="sl">Emociones Activas — clic para expandir</div>
-      <div class="card" id="em-list"></div>
-      <div class="card" style="margin-top:.75rem;padding:.9rem 1rem">
-        <div class="sl" style="margin-bottom:.5rem">Emociones Secundarias (Latentes)</div>
-        <div id="em-sec"></div>
-      </div>
-    </div>
-  </div>
-  <div class="cbox" style="margin-bottom:1rem" id="concepto-box"></div>
-  <div class="card">
-    <div class="sl">Distribución de Intensidad Emocional</div>
-    <div class="cw" style="height:200px"><canvas id="ch-intens"></canvas></div>
-  </div>
-</div>
+      renderLayout() {
+        const activeCount = this.D.emotions.filter(e => e.active).length;
+        const maxIntensity = Math.max(...this.D.emotions.map(e => e.intensity));
+        const firstActive = this.D.emotions.find(e => e.active && e.intensity > 0);
+        const riskHex = { CRÍTICO: "#ef4444", ALTO: "#f97316", MEDIO: "#b45309" };
+        const riskBg = { CRÍTICO: "#fee2e2", ALTO: "#ffedd5", MEDIO: "#fef9c3" };
 
-<!-- MAPA SOCIAL -->
-<div class="pnl" id="pnl-mapa">
-  <div class="g3" style="margin-bottom:1rem" id="mapa-cols"></div>
-  <div class="g2" style="margin-bottom:1rem">
-    <div class="card"><div class="sl">Frases Ciudadanas</div><div id="quotes"></div></div>
-    <div class="card">
-      <div class="sl">Emociones por Temática</div>
-      <div class="cw" style="height:260px"><canvas id="ch-temas"></canvas></div>
-    </div>
-  </div>
-  <div class="card"><div class="sl">Semáforo Emocional del Territorio</div><div class="g3" id="semaforo"></div></div>
-</div>
+        this.container.innerHTML = `
+          <header class="hdr">
+            <div>
+              <h1 class="hdr-name">${this.D.territory}</h1>
+              <p class="hdr-sub">${this.D.subtitle}</p>
+            </div>
+          </header>
 
-<!-- DÍADAS -->
-<div class="pnl" id="pnl-diadas">
-  <div class="g3" style="margin-bottom:1rem" id="dyad-cards"></div>
-  <div class="g2">
-    <div class="card">
-      <div class="sl">Score de Riesgo por Díada</div>
-      <div class="cw" style="height:220px"><canvas id="ch-diadas"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="sl">Interpretación Estratégica</div>
-      <div id="dyad-interp" style="font-size:12.5px;color:var(--tx2);line-height:1.75;margin-top:.3rem"></div>
-    </div>
-  </div>
-</div>
+          <div class="tabs">
+            <div class="tab on" onclick="window.EmotionSkillInstance.switchTab('flor', this)">🌸 Flor de Emociones</div>
+            <div class="tab" onclick="window.EmotionSkillInstance.switchTab('mapa', this)">🗺 Mapa Social</div>
+            <div class="tab" onclick="window.EmotionSkillInstance.switchTab('diadas', this)">⚡ Díadas</div>
+            <div class="tab" onclick="window.EmotionSkillInstance.switchTab('identidad', this)">🏛 Identidad Política</div>
+            <div class="tab" onclick="window.EmotionSkillInstance.switchTab('actores', this)">👤 Actores</div>
+            <div class="tab" onclick="window.EmotionSkillInstance.switchTab('recs', this)">🎯 Recomendaciones</div>
+          </div>
 
-<!-- IDENTIDAD POLÍTICA -->
-<div class="pnl" id="pnl-identidad">
-  <div class="cbox" style="margin-bottom:1rem" id="id-pregunta"></div>
-  <div class="g2" style="margin-bottom:1rem">
-    <div class="card"><div class="sl">Percepción del Gobierno Municipal</div><div id="gov-sem"></div></div>
-    <div class="card">
-      <div class="sl">Carga Emocional por Partido</div>
-      <div class="cw" style="height:220px"><canvas id="ch-partidos"></canvas></div>
-    </div>
-  </div>
-  <div class="card"><div class="sl">Percepción Ciudadana por Partido</div><div id="partidos-tbl"></div></div>
-</div>
+          <div class="cnt">
+            <div class="g4" style="margin-bottom:1rem">
+              <div class="card2"><div class="cv">Nivel de Riesgo</div><div class="cval" style="color:#e11d48">${this.D.riskLevel}</div><div class="csub">Clasificación general</div></div>
+              <div class="card2"><div class="cv">Emociones Activas</div><div class="cval" style="color:#1d4ed8">${activeCount}<span style="font-size:1rem;color:var(--tx3)">/8</span></div><div class="csub">Rueda de Plutchik</div></div>
+              <div class="card2"><div class="cv">Intensidad Máxima</div><div class="cval" style="color:#b91c1c">${["○","●","●●","●●●"][maxIntensity]}</div><div class="csub">Escala relativa</div></div>
+              <div class="card2"><div class="cv">IVE Estimado</div><div class="cval" style="color:#6b21a8">${this.D.iveScore||0}<span style="font-size:1rem">/100</span></div><div class="csub">Volatilidad Emocional</div></div>
+            </div>
 
-<!-- ACTORES -->
-<div class="pnl" id="pnl-actores">
-  <div style="background:rgba(29,78,216,.07);border:1px solid rgba(29,78,216,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:11.5px;color:var(--tx2);line-height:1.6">
-    <span style="color:var(--blue2);font-weight:700">ANÁLISIS COMPARATIVO DE ACTORES · Mayo–Junio 2026</span> — Se compara la posición emocional del presidente municipal en ejercicio frente al principal aspirante opositor del territorio, con base en investigación digital del período.
-  </div>
-  <div class="g2" style="margin-bottom:1rem" id="actores-grid"></div>
-  <div class="card">
-    <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
-    <div class="cw" style="height:300px"><canvas id="ch-actores"></canvas></div>
-  </div>
-</div>
+            <!-- PANEL: FLOR -->
+            <div class="pnl on" id="pnl-flor">
+              <div class="gauto" style="margin-bottom:1rem">
+                <div>
+                  <div class="sl">Rueda de Plutchik — ${this.D.territory}</div>
+                  <div class="card" style="padding:.8rem;text-align:center;background:#fff;">
+                    <div>${this.buildWheelSVG(this.D.emotions)}</div>
+                    <div style="font-size:10px;color:var(--tx3);margin-top:.4rem">Toca cualquier pétalo activo para ver detalles</div>
+                  </div>
+                  <div class="card" style="margin-top:.75rem;padding:.75rem 1rem">
+                    <div class="cv">Leyenda de Intensidad</div>
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+                      <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:${firstActive?firstActive.color[2]:'#ccc'}"></div><span style="font-size:11px;color:var(--tx2)">Alta ●●●</span></div>
+                      <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:${firstActive?firstActive.color[1]:'#eee'}"></div><span style="font-size:11px;color:var(--tx2)">Media ●●○</span></div>
+                      <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#e2e8f0;border:1px solid #cbd5e1"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div class="sl">Emociones Activas — clic para expandir</div>
+                  <div class="card">
+                    ${this.D.emotions.map((em, i) => `
+                      <div class="emr" onclick="window.EmotionSkillInstance.toggleEm(${i})">
+                        <div class="emh">
+                          <div style="width:8px;height:8px;border-radius:50%;background:${em.active ? em.color[2] : '#cbd5e1'};flex-shrink:0"></div>
+                          <div style="font-size:12.5px;font-weight:${em.active ? 700 : 400};color:${em.active ? 'var(--tx1)' : 'var(--tx3)'};flex:1">${em.label}</div>
+                          <div style="font-size:10px;color:${em.active ? em.color[2] : 'var(--tx3)'}">${em.active ? ["●○○","●●○","●●●"][em.intensity - 1] || "" : "○○○"}</div>
+                        </div>
+                        <div class="emd-box" id="emd-${i}">
+                          ${em.active && em.triggers ? `<div class="edk">Detonantes</div><div class="edv">${em.triggers.map(t => `• ${t}`).join("<br>")}</div>` : ""}
+                          ${em.active && em.consequences ? `<div class="edk" style="margin-top:6px">Consecuencias</div><div class="edv">${em.consequences.map(c => `• ${c}`).join("<br>")}</div>` : ""}
+                          ${!em.active ? `<div class="edv">Sin activación relevante detectada.</div>` : ""}
+                        </div>
+                      </div>
+                    `).join("")}
+                  </div>
+                  <div class="card" style="margin-top:.75rem;padding:.9rem 1rem">
+                    <div class="sl" style="margin-bottom:.5rem">Emociones Secundarias (Latentes)</div>
+                    ${this.D.secondary.map(s => `
+                      <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)">
+                        <div style="width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;margin-top:4px"></div>
+                        <div><div style="font-size:12px;font-weight:700;color:var(--tx1)">${s.name}</div>
+                        <div style="font-size:11px;color:var(--tx3);margin-top:2px;line-height:1.55">${s.text}</div></div>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              </div>
+              <div class="cbox" style="margin-bottom:1rem">
+                <div class="cbox-label">Concepto Central del Territorio</div>
+                <div class="cbox-name">"${this.D.concept}"</div>
+                <div class="cbox-text">${this.D.conceptDesc}</div>
+              </div>
+              <div class="card">
+                <div class="sl">Distribución de Intensidad Emocional</div>
+                <div style="height:200px"><canvas id="ch-intens"></canvas></div>
+              </div>
+            </div>
 
-<!-- RECOMENDACIONES ESTRATÉGICAS -->
-<div class="pnl" id="pnl-recs">
-  <div class="cbox" style="margin-bottom:1rem;border-left-color:var(--red)" id="alerta-box"></div>
-  <div class="card" style="margin-bottom:1rem"><div class="sl">Plan de Acción Estratégica</div><div id="recs-list"></div></div>
-  <div class="g2">
-    <div class="card"><div class="sl">Comunicación Contraproducente — Evitar</div><div id="evitar-list"></div></div>
-    <div class="card">
-      <div class="sl">Prioridad de Gestión Emocional</div>
-      <div class="cw" style="height:220px"><canvas id="ch-prior"></canvas></div>
-    </div>
-  </div>
-</div>
+            <!-- PANEL: MAPA SOCIAL -->
+            <div class="pnl" id="pnl-mapa">
+              <div class="g3" style="margin-bottom:1rem">
+                <div class="mpc"><div class="mptt" style="color:#b45309">⚠ Problemáticas</div>${this.renderListItems(this.D.problematics, "#b45309")}</div>
+                <div class="mpc"><div class="mptt" style="color:#b91c1c">⬡ Miedos</div>${this.renderListItems(this.D.fears, "#b91c1c")}</div>
+                <div class="mpc"><div class="mptt" style="color:#15803d">★ Orgullos</div>${this.renderListItems(this.D.prides, "#15803d")}</div>
+              </div>
+              <div class="g2" style="margin-bottom:1rem">
+                <div class="card">
+                  <div class="sl">Frases Ciudadanas</div>
+                  ${this.D.quotes.map(q => `<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion} · ${q.territory}</div></div>`).join("")}
+                </div>
+                <div class="card">
+                  <div class="sl">Emociones por Temática</div>
+                  <div style="height:260px"><canvas id="ch-temas"></canvas></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="sl">Semáforo Emocional del Territorio</div>
+                <div class="g3">${this.D.semaforo.map(s => `<div class="sem"><div class="semd" style="background:${s.color}"></div><div class="seml">${s.label}</div><div class="semv" style="color:${s.color}">${s.val}</div></div>`).join("")}</div>
+              </div>
+            </div>
 
-</div><!-- /cnt -->
+            <!-- PANEL: DÍADAS -->
+            <div class="pnl" id="pnl-diadas">
+              <div class="g3" style="margin-bottom:1rem">
+                ${this.D.dyads.map(d => `
+                  <div class="dyc" style="border-top-color:${riskHex[d.risk] || "#64748b"}">
+                    <span class="dybadge" style="background:${riskBg[d.risk]};color:${riskHex[d.risk]}">${d.risk}</span>
+                    <div class="dyn" style="color:${riskHex[d.risk] || "var(--tx1)"}">${d.name}</div>
+                    <div class="dyf">Díada ${d.type} · ${d.formula}</div>
+                    <div class="dyt">${d.text}</div>
+                  </div>
+                `).join("")}
+              </div>
+              <div class="g2">
+                <div class="card">
+                  <div class="sl">Score de Riesgo por Díada</div>
+                  <div style="height:220px"><canvas id="ch-diadas"></canvas></div>
+                </div>
+                <div class="card">
+                  <div class="sl">Interpretación Estratégica</div>
+                  <div style="font-size:12.5px;color:var(--tx2);line-height:1.75;margin-top:.3rem">${this.D.dyadInterp}</div>
+                </div>
+              </div>
+            </div>
 
-<div class="footer">
-  <span>Radar - Emociones &middot; Naucalpan de Juárez &middot;</span>
-  <span>CONFIDENCIAL &middot; Uso estratégico exclusivo &middot; </span>
-</div>
+            <!-- PANEL: IDENTIDAD POLÍTICA -->
+            <div class="pnl" id="pnl-identidad">
+              <div class="cbox" style="margin-bottom:1rem">
+                <div class="cbox-label">Pregunta Política del Territorio</div>
+                <div class="cbox-name" style="font-size:18px">"${this.D.preguntaPolitica}"</div>
+                <div class="cbox-text">${this.D.preguntaDesc}</div>
+              </div>
+              <div class="g2" style="margin-bottom:1rem">
+                <div class="card">
+                  <div class="sl">Percepción del Gobierno Municipal</div>
+                  <div>${this.D.govSemaforo.map(s => `<div class="sem"><div class="semd" style="background:${s.color}"></div><div class="seml">${s.label}</div><div class="semv" style="color:${s.color}">${s.val}</div></div>`).join("")}</div>
+                </div>
+                <div class="card">
+                  <div class="sl">Carga Emocional por Partido</div>
+                  <div style="height:220px"><canvas id="ch-partidos"></canvas></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="sl">Percepción Ciudadana por Partido</div>
+                <div>${this.D.partidos.map(p => `
+                  <div style="display:grid;grid-template-columns:1.3fr 2fr 1fr 1fr;gap:.5rem;padding:8px 0;border-bottom:1px solid var(--brd);font-size:12px">
+                    <div style="font-weight:700;color:var(--tx1)">${p.nombre}</div>
+                    <div style="color:var(--tx2)">${p.emocion}</div>
+                    <div style="color:var(--tx3)">${p.capital}</div>
+                    <div style="color:${p.tendencia.includes("↓") ? "#b91c1c" : p.tendencia.includes("↑") ? "#166534" : "#475569"};font-weight:600">${p.tendencia}</div>
+                  </div>
+                `).join("")}</div>
+              </div>
+            </div>
 
-<script>
-/* ================================================================
-   ▼▼▼  DATOS — Naucalpan de Juárez · Mayo–Junio 2026  ▼▼▼
-   ================================================================ */
-const D = {
-  territory:   "Naucalpan de Juárez",
-  subtitle:    "Isaac Montoya Márquez · Presidente Municipal · Morena · 2025–2027",
-  date:        "Mayo–Junio 2026",
-  riskLevel:   "ALTO",
-  concept:     "Desconfianza Verificada",
-  conceptDesc: "Naucalpan vive en mayo–junio 2026 una paradoja política de alto riesgo: el gobierno de Isaac Montoya presenta indicadores oficiales de mejora en seguridad e infraestructura, pero la ciudadanía no ha actualizado su paisaje emocional. La reducción estadística del delito, las obras en colonias y el Mexicable al 68% de avance conviven con bloqueos por corrupción de funcionarios, protestas recurrentes por desabasto de agua e inundaciones por el Río Hondo. Simultáneamente, David Parra Sánchez —ex diputado del PRI con más de 50 años de presencia territorial— renuncia a su partido en mayo 2026 y relanza su capital político desde la sociedad civil, capitalizando el malestar ciudadano rumbo a 2027.",
+            <!-- PANEL: ACTORES -->
+            <div class="pnl" id="pnl-actores">
+              <div class="g2" style="margin-bottom:1rem">
+                ${this.D.actores.map(a => `
+                  <div class="ac">
+                    <div class="ach" style="border-left:4px solid ${a.borderColor || "#3b82f6"}">
+                      <div class="acn">${a.name}</div><div class="acr">${a.role}</div>
+                    </div>
+                    <div class="acb">
+                      ${a.rows.map(([k, v]) => `<div class="acrow"><span class="ack">${k}</span><span class="acv">${v}</span></div>`).join("")}
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+              <div class="card">
+                <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
+                <div style="height:300px"><canvas id="ch-actores"></canvas></div>
+              </div>
+            </div>
 
-  emotions: [
-    { key:"ira", label:"Ira / Furia", active:true, intensity:3,
-      deg:180, color:["#FEE2E2","#FCA5A5","#B91C1C"],
-      sublabel:"Furia · Ira · Indignación",
-      triggers:["Acusaciones de extorsión a subdirector Pedro Gálvez: protesta con bloqueos el 16 de junio 2026","Desabasto de agua: vecinos de Santa Cruz Acatlán sin servicio 7 días, bloqueo en Paseo de los Mexicas (feb 2026)","Cobro de piso documentado en negocios de San Rafael Chamapa y San Lorenzo Totolinga","Padre e hijo asesinados en El Molinito el 28 de febrero 2026 a plena luz del día"],
-      consequences:["Bloqueos organizados en Periférico Norte, Gustavo Baz, Lomas Verdes y Primero de Mayo","Amenazas de suspender pago de recibos de agua (OAPAS)","Movilizaciones de transportistas y comerciantes exigiendo destitución de funcionarios","Activación de organizaciones civiles como Proyecto Social Naucalpan (David Parra)"] },
-    { key:"miedo", label:"Miedo / Terror", active:true, intensity:2,
-      deg:0, color:["#CFFAFE","#67E8F9","#0E7490"],
-      sublabel:"Terror · Miedo · Aprensión",
-      triggers:["Percepción de inseguridad en 79.7% pese a reducción oficial (ENSU Q4 2025)","Violencia en zonas residenciales: homicidio en Bosques de Echegaray y Blvd. Ávila Camacho","Extorsión normalizada: 'cobran piso en las tortillerías, eso no sale en ningún periódico'","Inundaciones por Río Hondo (mayo 2026) y socavones en colonia Estado de México"],
-      consequences:["78.9% de naucalpenses dejó de portar bienes de valor","65.7% evita caminar de noche","Subregistro delictivo: denuncias inhibidas por desconfianza institucional","57.4% considera riesgoso que niños salgan solos a la calle"] },
-    { key:"anticipacion", label:"Anticipación", active:true, intensity:2,
-      deg:225, color:["#FFEDD5","#FDba74","#C2410C"],
-      sublabel:"Vigilancia · Esperanza condicionada · Interés",
-      triggers:["Mexicable Línea 3 al 68% de avance — operación estimada Q1 2027","Reducción estadística de 77.7% en delitos de alto impacto según datos oficiales","78 Huellas de la Transformación entregadas en colonias del municipio","Movimiento de David Parra como nueva opción política en formación para 2027"],
-      consequences:["Expectativa ciudadana condicionada: se espera ver resultados antes de creer","Disposición a apoyar al gobierno si los servicios se materializan de forma visible","Riesgo de decepción profunda si el Mexicable sufre retrasos adicionales","Ventana de oportunidad para Parra si canaliza malestar antes de definición de candidaturas"] },
-    { key:"tristeza", label:"Tristeza / Abandono", active:true, intensity:2,
-      deg:90, color:["#EDE9FE","#A78BFA","#4C1D95"],
-      sublabel:"Aflicción · Melancolía · Desamparo",
-      triggers:["Más de 230 colonias en tandeo de agua; problema histórico sin solución estructural","Río Hondo convertido en foco de insalubridad y zona de hallazgo de cadáveres","Par Vial de San Mateo prometido durante 25 años por distintos gobiernos","Falta de alumbrado y servicios básicos en colonias periféricas como Las Huertas"],
-      consequences:["Narrativa de abandono estructural arraigada en colonias de bajos ingresos","Baja disposición a denunciar delitos: 'fui a la denuncia y me preguntaron si tenía un familiar hombre'","Acumulación de resentimiento intergeneracional hacia el Estado en general","Reserva emocional que actores de oposición como Parra pueden capitalizar con presencia territorial"] },
-    { key:"asco", label:"Asco / Aversión", active:true, intensity:2,
-      deg:135, color:["#DCFCE7","#86EFAC","#15803D"],
-      sublabel:"Aversión · Indignación moral · Descrédito",
-      triggers:["Extorsión documentada por funcionario municipal de segundo nivel (caso Gálvez, junio 2026)","Contraste entre discurso oficial de reducción del delito y experiencia cotidiana en colonias vulnerables","Ex aspirante a presidente municipal acusado de violencia doméstica (junio 2026)","Cifra negra persistente: delitos que no se denuncian por desconfianza hacia las instituciones"],
-      consequences:["Descrédito hacia funcionarios de segundo nivel del gobierno municipal","Rechazo a narrativas de logro sin verificación territorial","Terreno fértil para discursos de ruptura como el de Parra ('50 años viendo que nada cambia')","Voto de castigo latente activable si la corrupción no se sanciona públicamente antes de 2027"] },
-    { key:"alegria", label:"Alegría", active:false, intensity:0,
-      deg:-90, color:["#FFF9C4","#FFF176","#F9A825"], sublabel:"Éxtasis · Alegría · Serenidad", triggers:[], consequences:[] },
-    { key:"confianza", label:"Confianza", active:false, intensity:0,
-      deg:-45, color:["#D1FAE5","#6EE7B7","#059669"], sublabel:"Admiración · Confianza · Aceptación", triggers:[], consequences:[] },
-    { key:"sorpresa", label:"Sorpresa", active:true, intensity:1,
-      deg:45, color:["#DBEAFE","#93C5FD","#2563EB"],
-      sublabel:"Asombro · Distracción · Reencuadre",
-      triggers:["Renuncia de Parra al PRI tras 50 años —movimiento inesperado que reordena el tablero político de Naucalpan","Reducción de 80.2% en delitos de alto impacto en enero 2026 supera cualquier expectativa previa"],
-      consequences:["Ciudadanía en proceso de re-evaluación del escenario político rumbo a 2027","Escepticismo activo: se busca validar datos con experiencia propia antes de actualizar postura"] },
-  ],
+            <!-- PANEL: RECOMENDACIONES -->
+            <div class="pnl" id="pnl-recs">
+              <div class="cbox" style="margin-bottom:1rem;border-left-color:var(--red)">
+                <div class="cbox-label" style="color:var(--red-s)">Alerta Estratégica</div>
+                <div class="cbox-name" style="font-size:16px;color:var(--red-s)">${this.D.alertaEstrategica}</div>
+                <div class="cbox-text">${this.D.alertaDesc}</div>
+              </div>
+              <div class="card" style="margin-bottom:1rem">
+                <div class="sl">Plan de Acción Estratégica</div>
+                <div>${this.D.recs.map(r => `<div class="ri"><span class="rb" style="background:${r.bg};color:${r.tx}">${r.label}</span><span class="rt">${r.text}</span></div>`).join("")}</div>
+              </div>
+              <div class="g2">
+                <div class="card">
+                  <div class="sl">Comunicación Contraproducente — Evitar</div>
+                  <div>${this.D.evitar.map(e => `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)"><span style="color:#ef4444;flex-shrink:0">✕</span>${e}</div>`).join("")}</div>
+                </div>
+                <div class="card">
+                  <div class="sl">Prioridad de Gestión Emocional</div>
+                  <div style="height:220px"><canvas id="ch-prior"></canvas></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-  secondary: [
-    { name:"Desconfianza Institucional Crónica", color:"#64748b", text:"Opera como estado de base que filtra toda la información oficial. No es oposición ideológica: es el resultado acumulado de décadas de promesas incumplidas por PRI, PAN y ahora Morena. Esta desconfianza es el mayor activo de Parra y el mayor obstáculo de Montoya." },
-    { name:"Resignación Activa", color:"#7c3aed", text:"En colonias periféricas (San Lorenzo Totolinga, Las Huertas, El Molinito): no es apatía, es una tristeza que ya no espera solución del Estado pero activa mecanismos propios. Produce abstención electoral o voto de castigo. Es el segmento más disputado entre ambos actores." },
-    { name:"Esperanza Cautelosa", color:"#0891b2", text:"En zonas con mayor visibilidad de obras (Huellas de la Transformación, Mexicable): hay anticipación positiva condicionada. Si las obras se concretan, beneficia a Montoya. Si Parra consolida imagen de gestor territorial antes de 2027, podría capturar esta emoción." },
-  ],
+      renderListItems(arr, color) {
+        return arr.map(t => `<div class="mpi"><div class="mpd" style="background:${color}"></div>${t}</div>`).join("");
+      }
 
-  dyads: [
-    { name:"Agresividad Moral", formula:"Ira + Anticipación", type:"Primaria",
-      text:"La indignación por extorsión de funcionarios y desabasto de agua combinada con vigilancia activa sobre lo que viene produce movilización organizada con agendas concretas. Los bloqueos de junio 2026 con demandas específicas (renuncia de Gálvez) son la expresión más nítida. Esta díada es el motor de la organización ciudadana y el espacio donde Parra está compitiendo por presencia narrativa.", risk:"ALTO", score:82 },
-    { name:"Ansiedad Cívica", formula:"Miedo + Tristeza", type:"Primaria",
-      text:"El miedo crónico a la inseguridad física combinado con la tristeza del abandono histórico genera parálisis que inhibe la denuncia, la movilidad nocturna y la participación. Es la díada más silenciosa y más dañina: normaliza el sufrimiento y erosiona el tejido social. Afecta desproporcionadamente a mujeres y colonias periféricas. Parra tiene historia territorial en estas zonas; Montoya tiene estadísticas.", risk:"CRÍTICO", score:88 },
-    { name:"Desprecio Institucional", formula:"Asco + Tristeza", type:"Secundaria",
-      text:"La aversión moral hacia la corrupción documentada más la melancolía de décadas de promesas incumplidas produce un techo emocional que ningún dato oficial puede perforar solo. Opera como el principal obstáculo para que Montoya cierre la brecha de confianza, y como el principal catalizador del relanzamiento político de Parra.", risk:"ALTO", score:76 },
-  ],
-  dyadInterp: "Las tres díadas activas configuran un paisaje donde el gobierno municipal ha logrado mejoras técnicas medibles pero no ha cerrado la brecha emocional con su ciudadanía. La Agresividad Moral produce acción visible (bloqueos, protestas), pero la Ansiedad Cívica opera en silencio acumulando presión en colonias donde el Estado no llega con servicios básicos. El Desprecio Institucional funciona como el 'techo' que impide que la Anticipación positiva se convierta en Confianza. En este contexto, la reconfiguración política de David Parra —con 50 años de presencia territorial y un discurso de ruptura con el partido que lo marginó— encuentra un nicho emocional preciso: la ciudadanía que ya no confía en el sistema pero todavía cree en personas conocidas. Ninguna emoción constructiva —Alegría, Confianza— está activa. El espacio del héroe narrativo sigue en disputa activa entre ambos actores.",
+      initCharts() {
+        const acEm = this.D.emotions.filter(e => e.active);
+        
+        this.charts.intens = new Chart(document.getElementById("ch-intens"), {
+          type: "bar",
+          data: {
+            labels: acEm.map(e => e.label),
+            datasets: [{
+              data: acEm.map(e => e.intensity),
+              backgroundColor: acEm.map(e => e.color[2] + "cc"),
+              borderColor: acEm.map(e => e.color[2]),
+              borderWidth: 1, borderRadius: 5, borderSkipped: false
+            }]
+          },
+          options: {
+            ...this.CD, indexAxis: "y",
+            plugins: { ...this.CD.plugins, tooltip: { ...this.CD.plugins.tooltip, callbacks: { label: c => " " + ["Inactiva", "Baja", "Media", "Alta"][c.raw] } } },
+            scales: { x: { ...this.CD.scales.x, min: 0, max: 3, ticks: { ...this.CD.scales.x.ticks, stepSize: 1, callback: v => ["○○○", "●○○", "●●○", "●●●"][v] } }, y: { ...this.CD.scales.y } }
+          }
+        });
 
-  problematics: [
-    "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en febrero y mayo 2026 en Paseo de los Mexicas y Conscripto",
-    "Inseguridad percibida alta (79.7% ENSU Q4 2025) pese a reducción estadística; extorsión activa en corredores comerciales y colonias populares",
-    "Corrupción de funcionarios de segundo nivel: acusaciones a subdirector Pedro Gálvez por extorsiones a transportistas y comerciantes, junio 2026",
-    "Inundaciones recurrentes: desbordamiento del Río Hondo (mayo 2026) con socavones en colonia Estado de México; obras del Mexicable generan inundación adicional en Mártires de Río Blanco",
-    "Reconfiguración del tablero político: renuncia de David Parra al PRI en mayo 2026 y relanzamiento con base territorial propia crea incertidumbre rumbo a 2027",
-    "Violencia de género sin respuesta institucional adecuada: denuncias desincentivadas por respuestas discriminatorias en Ministerio Público"
-  ],
-  fears: [
-    "Ser víctima de violencia extrema en el espacio público: ejecuciones a plena luz del día en colonias populares erosionan la seguridad básica",
-    "Que las cifras oficiales de reducción del delito no correspondan a la realidad vivida en la colonia propia",
-    "Que el Mexicable Línea 3 sufra retrasos adicionales y los tiempos de traslado de 1+ hora persistan hasta 2027 y más allá",
-    "Que la corrupción de funcionarios de segundo nivel sea sistémica y no un caso aislado del gobierno municipal",
-    "Que las lluvias de temporada agraven inundaciones y socavones en zonas donde las obras del Mexicable alteraron el drenaje",
-    "Que el desabasto de agua empeore con la reducción del Cutzamala sin infraestructura alternativa suficiente"
-  ],
-  prides: [
-    "Ciudad Satélite como referente urbano de calidad de vida y capital social en el contexto metropolitano",
-    "Identidad industrial histórica: Naucalpan como motor económico que aporta el 18% del PIB estatal",
-    "Cultura de organización ciudadana activa: vecinos que bloquean calles con demandas concretas y negocian resultados",
-    "Potencial del Mexicable Línea 3 como símbolo de conectividad para colonias históricamente marginadas del transporte masivo"
-  ],
+        this.charts.temas = new Chart(document.getElementById("ch-temas"), {
+          type: "doughnut",
+          data: {
+            labels: this.D.temasChart.map(t => t[0]),
+            datasets: [{ data: this.D.temasChart.map(t => t[1]), backgroundColor: this.D.temasChart.map(t => t[2]), borderColor: "#d5d1d1", borderWidth: 2 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: "right", labels: { color: "#334155", font: { size: 11 }, boxWidth: 12, padding: 10 } } } }
+        });
 
-  quotes: [
-    { text:"La diferencia entre acá y Satélite es que allá les da miedo que les roben el reloj. Acá nos da miedo que nos quiten la vida por no mocharse con la maña.", topic:"Seguridad", emotion:"Miedo / Ira", territory:"Las Huertas" },
-    { text:"Los números dicen que bajó la violencia, pero en la calle ya ni se reportan los crímenes. ¿A quién le creo: a la estadística o a mis ojos?", topic:"Desconfianza institucional", emotion:"Asco / Tristeza", territory:"San Lorenzo Totolinga" },
-    { text:"Siete días sin agua y lo único que recibimos fueron evasivas. Pusimos el bloqueo porque no nos queda otra.", topic:"Desabasto de agua", emotion:"Ira / Anticipación", territory:"Santa Cruz Acatlán" },
-    { text:"Es la misma banda, los mismos que cobran piso en las tortillerías. Eso no sale en ningún periódico.", topic:"Extorsión / Cobro de piso", emotion:"Asco / Miedo", territory:"San Rafael Chamapa" },
-    { text:"Fue el papá y el muchachito, gente muy trabajadora. Antes podía uno andar a la 1 de la mañana. Ahora le quitan a uno todo.", topic:"Homicidios / Seguridad", emotion:"Tristeza / Miedo", territory:"El Molinito" },
-    { text:"Fui a levantar la denuncia y me dijeron: señora, ¿no tiene algún familiar hombre que la acompañe? Así están las autoridades.", topic:"Violencia de género / Impunidad", emotion:"Ira / Asco", territory:"San Lorenzo Totolinga" },
-  ],
+        const riskHex = { CRÍTICO: "#ef4444", ALTO: "#f97316", MEDIO: "#b45309" };
+        this.charts.diadas = new Chart(document.getElementById("ch-diadas"), {
+          type: "bar",
+          data: {
+            labels: this.D.dyads.map(d => d.name),
+            datasets: [{ label: "Score de riesgo", data: this.D.dyads.map(d => d.score), backgroundColor: this.D.dyads.map(d => riskHex[d.risk] + "cc"), borderColor: this.D.dyads.map(d => riskHex[d.risk]), borderWidth: 1, borderRadius: 6 }]
+          },
+          options: { ...this.CD, scales: { x: { ...this.CD.scales.x }, y: { ...this.CD.scales.y, min: 0, max: 100, ticks: { ...this.CD.scales.y.ticks, callback: v => v + "/100" } } } }
+        });
 
-  semaforo: [
-    { label:"Estado emocional general del territorio",       val:"ALTO RIESGO",     color:"#ef4444" },
-    { label:"Riesgo de voto de castigo (2027)",              val:"ALTO",            color:"#f97316" },
-    { label:"Potencial de protesta organizada",              val:"ACTIVO",          color:"#ef4444" },
-    { label:"Capital emocional positivo disponible",         val:"BAJO",            color:"#64748b" },
-    { label:"Legitimidad institucional percibida",           val:"MEDIA-BAJA",      color:"#eab308" },
-    { label:"Disposición al diálogo ciudadano",              val:"CONDICIONADA",    color:"#eab308" },
-  ],
+        this.charts.partidos = new Chart(document.getElementById("ch-partidos"), {
+          type: "bar",
+          data: {
+            labels: this.D.partidos.map(p => p.nombre),
+            datasets: [
+              { label: "Ira/Asco", data: this.D.partidosChart.map(x => x[0]), backgroundColor: "#B91C1Caa", borderRadius: 4 },
+              { label: "Decep/Tristeza", data: this.D.partidosChart.map(x => x[1]), backgroundColor: "#4C1D95aa", borderRadius: 4 },
+              { label: "Interés disp.", data: this.D.partidosChart.map(x => x[2]), backgroundColor: "#059669aa", borderRadius: 4 }
+            ]
+          },
+          options: { ...this.CD, plugins: { ...this.CD.plugins, legend: { display: true } }, scales: { x: { ...this.CD.scales.x }, y: { ...this.CD.scales.y, min: 0, max: 100 } } }
+        });
 
-  preguntaPolitica: "¿Las mejoras que anuncia el gobierno son reales o son otra vez estadísticas que no llegan a mi colonia?",
-  preguntaDesc: "Esta pregunta revela la fractura central del territorio: el gobierno municipal presenta datos objetivos de mejora, pero la ciudadanía los filtra a través de un historial de promesas incumplidas por todas las administraciones anteriores. No es oposición ideológica; es validación empírica. En este contexto, David Parra capitaliza su presencia histórica en colonias como argumento de credibilidad alternativa. Quien cierre esta brecha con hechos verificables —no con datos de conferencia de prensa— ganará el territorio emocional rumbo a 2027.",
+        this.charts.actores = new Chart(document.getElementById("ch-actores"), {
+          type: "radar",
+          data: {
+            labels: ["Legitimidad", "Presencia", "Capital Positivo", "Riesgo Castigo", "Cap. Gestión", "Credibilidad"],
+            datasets: this.D.actoresRadar.labels.map((lbl, i) => ({
+              label: lbl,
+              data: this.D.actoresRadar.data[i],
+              borderColor: this.D.actoresRadar.colors[i],
+              backgroundColor: this.D.actoresRadar.colors[i] + "22",
+              pointBackgroundColor: this.D.actoresRadar.colors[i],
+              pointRadius: 4
+            }))
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100 } } }
+        });
 
-  govSemaforo: [
-    { label:"Percepción de gestión en seguridad",           val:"MEDIA → EN MEJORA", color:"#eab308" },
-    { label:"Percepción de gestión del agua (OAPAS)",       val:"CRÍTICA",           color:"#ef4444" },
-    { label:"Percepción de obras e infraestructura",        val:"POSITIVA PARCIAL",  color:"#22c55e" },
-    { label:"Percepción de honestidad interna del gobierno",val:"EN DISPUTA",        color:"#f97316" },
-    { label:"Confianza en la Guardia Municipal",            val:"MEDIA (48.7%)",     color:"#eab308" },
-    { label:"Respuesta institucional a protesta ciudadana", val:"REACTIVA",          color:"#eab308" },
-  ],
+        this.charts.prior = new Chart(document.getElementById("ch-prior"), {
+          type: "bar",
+          data: {
+            labels: this.D.gestionPrioridad.map(x => x[0]),
+            datasets: [{ data: this.D.gestionPrioridad.map(x => x[1]), backgroundColor: this.D.gestionPrioridad.map(x => x[2] + "cc"), borderColor: this.D.gestionPrioridad.map(x => x[2]), borderWidth: 1, borderRadius: 5 }]
+          },
+          options: { ...this.CD, indexAxis: "y", scales: { x: { ...this.CD.scales.x, min: 0, max: 100 }, y: { ...this.CD.scales.y } } }
+        });
+      }
 
-  partidos: [
-    { nombre:"MORENA",   emocion:"Anticipación condicionada / Ira latente",   capital:"Medio",           tendencia:"→ Capital en riesgo si corrupción interna no se sanciona", color:"#b91c1c" },
-    { nombre:"PAN",      emocion:"Ira / Asco hacia Morena",                   capital:"Bajo",            tendencia:"↑ Capitalizando desconfianza, sin propuesta propia clara",   color:"#2563eb" },
-    { nombre:"PRI",      emocion:"Desprecio / Fractura interna",              capital:"Muy bajo",        tendencia:"↓ Salida de Parra agrava crisis orgánica en Naucalpan",      color:"#15803d" },
-    { nombre:"Soc. Civil / Parra", emocion:"Anticipación + Ira canalizada",  capital:"Creciente",       tendencia:"↑ Espacio en construcción; aún sin estructura partidista",    color:"#f97316" },
-  ],
-  partidosChart: [[55,40,22],[30,38,55],[15,55,8],[12,18,72]],
+      switchTab(tabId, el) {
+        document.querySelectorAll(".pnl").forEach(p => p.classList.remove("on"));
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("on"));
+        document.getElementById("pnl-" + tabId).classList.add("on");
+        el.classList.add("on");
+      }
 
-  actores: [
-    {
-      name:"Isaac Montoya Márquez",
-      role:"Presidente Municipal · Morena · 2025–2027",
-      partido:"MORENA",
-      borderColor:"#b91c1c",
-      rows:[
-        ["Emoción dominante que activa",     "Anticipación condicionada / Ira diferida"],
-        ["Rol narrativo (Westen)",           "Héroe en construcción — espacio disputado"],
-        ["Capital emocional positivo",       "78 Huellas de la Transformación, 250+ patrullas, Mexicable al 68%"],
-        ["Fundación moral amenazada (Haidt)","Lealtad y Cuidado: funcionario interno extorsiona a quienes prometió proteger"],
-        ["Principal vulnerabilidad",         "Brecha entre cifras oficiales y experiencia cotidiana en colonias periféricas"],
-        ["Ventana estratégica 30 días",      "Sancionar públicamente caso Gálvez + comunicar logros por colonia específica"]
-      ]
-    },
-    {
-      name:"David Parra Sánchez",
-      role:"Ex Diputado Local · Ex PRI · Presidente Proyecto Social Naucalpan A.C. · Aspirante 2027",
-      partido:"Independiente / Proyecto Social",
-      borderColor:"#f97316",
-      rows:[
-        ["Emoción dominante que activa",     "Confianza latente + Anticipación de cambio + Ira canalizada"],
-        ["Rol narrativo (Westen)",           "Héroe alternativo en construcción — 50 años de presencia territorial"],
-        ["Capital emocional diferencial",    "Reconocimiento territorial histórico en colonias donde Montoya no llega emocionalmente"],
-        ["Fundación moral que activa (Haidt)","Lealtad territorial: 'yo sí conozco tu colonia porque la he vivido contigo'"],
-        ["Principal vulnerabilidad",         "Sin partido formal; asociado al PRI durante décadas de promesas incumplidas"],
-        ["Riesgo para Montoya",              "Posicionado en sondeos digitales (mayo 2026); activa malestar con discurso de ruptura"]
-      ]
-    },
-  ],
-  actoresRadar: {
-    labels:["Isaac Montoya Márquez","David Parra Sánchez"],
-    data:[
-      [42, 55, 38, 62, 50, 40],
-      [58, 75, 45, 35, 30, 52]
-    ],
-    colors:["#b91c1c","#f97316"]
-  },
+      toggleEm(index) {
+        const box = document.getElementById(`emd-${index}`);
+        if (box) box.classList.toggle("open");
+      }
 
-  alertaEstrategica: "Ventana de 90 días: Parra construye capital territorial mientras Montoya cierra brecha emocional.",
-  alertaDesc: "La renuncia de David Parra al PRI en mayo 2026 y su relanzamiento desde la sociedad civil inaugura una competencia por el capital emocional de Naucalpan con 16 meses de anticipación a la elección municipal de 2027. Parra tiene presencia territorial histórica en colonias de alta volatilidad emocional donde la Ira, la Tristeza y el Miedo son más intensos. Montoya tiene indicadores objetivos de mejora pero no los ha aterrizado emocionalmente en esas mismas colonias. El territorio está técnicamente mejor pero emocionalmente igual de desconfiado. La definición del escenario de 2027 dependerá de quién cierre primero la brecha entre datos y experiencia cotidiana.",
+      init() {
+        this.renderLayout();
+        this.initCharts();
+        window.EmotionSkillInstance = this;
+      }
+    }
 
-  recs: [
-    { urgency:"urgente",    label:"Urgente 0–48h",     bg:"#FCEBEB", tx:"#A32D2D", text:"Resolver y comunicar públicamente el caso Pedro Gálvez con sanción visible. La falta de transparencia sobre los acuerdos del 16 de junio confirma el frame 'gobierno traidor' y entrega a Parra el argumento de credibilidad que necesita." },
-    { urgency:"corto",      label:"Corto 7–21d",       bg:"#FEF3C7", tx:"#92400E", text:"Territorializar la narrativa de logros: no basta la conferencia de prensa. Llevar los datos de reducción delictiva a cada colonia con formatos verificables. La ciudadanía necesita ver el número en su cuadra, no en el municipio en abstracto." },
-    { urgency:"corto",      label:"Corto 7–30d",       bg:"#FEF3C7", tx:"#92400E", text:"Reactivar comunicación específica del Plan Hídrico con fechas concretas por colonia. El agua es el detonante de la Ira más fácil de explotar para Parra y el más fácil de demostrar para Montoya si hay resultados reales." },
-    { urgency:"mediano",    label:"Mediano 30–90d",    bg:"#ECFDF5", tx:"#065F46", text:"Construir presencia territorial sistemática en colonias de alta volatilidad emocional (El Molinito, Las Huertas, San Lorenzo Totolinga) con gestoría directa. Parra ya tiene raíces ahí; Montoya necesita presencia, no solo obra." },
-    { urgency:"permanente", label:"Permanente",         bg:"#EFF6FF", tx:"#1E40AF", text:"Instalar canal de comunicación directa colonia–gobierno con respuesta en menos de 72 horas. Cada bloqueo de calle es evidencia de que el canal no existe o no funciona. Este déficit es el argumento central del relanzamiento de Parra." },
-  ],
-  evitar: [
-    "Presentar datos estadísticos de seguridad sin anclaje territorial visible: genera efecto boomerang de desconfianza activa",
-    "Responder bloqueos y protestas con acuerdos privados sin comunicación pública de compromisos: alimenta el frame de 'arreglo bajo la mesa'",
-    "Ignorar o minimizar el movimiento político de David Parra: tiene presencia real y capital territorial en colonias de alta volatilidad",
-    "Usar el frame 'Naucalpan en Transformación' sin evidencia territorial verificable: la ciudadanía ya aprendió a descontar los grandes relatos",
-    "Hacer visible el Mexicable solo en sus avances sin gestionar el impacto negativo de las obras en tránsito e inundaciones derivadas",
-    "Omitir la perspectiva de género en seguridad: respuestas institucionales discriminatorias se viralizan y contaminan la narrativa de 'gobierno humanista'"
-  ],
-  gestionPrioridad: [
-    ["Contener Ira (corrupción/servicios)",   92, "#B91C1C"],
-    ["Reducir Ansiedad Cívica (agua+seguridad)", 86, "#0E7490"],
-    ["Cerrar brecha vs. Parra (presencia territorial)", 78, "#f97316"],
-    ["Transformar Tristeza en Anticipación",  68, "#4C1D95"],
-    ["Activar Confianza con obras verificables", 55, "#059669"]
-  ],
-  temasChart: [
-    ["Seguridad / Inseguridad",     30, "#B91C1C"],
-    ["Agua y servicios básicos",    24, "#0E7490"],
-    ["Corrupción / Extorsión",      17, "#4C1D95"],
-    ["Reconfiguración política",    14, "#f97316"],
-    ["Movilidad / Mexicable",       10, "#C2410C"],
-    ["Violencia de género",          5, "#15803D"]
-  ],
-};
+    // DATASET DE EJEMPLO (ESTRUCTURA TOTALMENTE ADAPTABLE A CUALQUIER ENTIDAD)
+    const dataSetPolitico = {
+      territory: "Distrito Electoral Modelo",
+      subtitle: "Estudio de Clima Emocional Político · Evaluación de Territorio",
+      date: "2026",
+      riskLevel: "ALTO",
+      iveScore: 78,
+      concept: "Desconexión con la Gestión Pública",
+      conceptDesc: "Predominio de frustración en temas clave de infraestructura y seguridad con baja efectividad percibida en la respuesta institucional.",
+      emotions: [
+        { deg: -90, label: "Alegría / Gozo", active: false, intensity: 0, color: ["#fef9c3", "#fde047", "#eab308"] },
+        { deg: -45, label: "Confianza / Aceptación", active: true, intensity: 1, color: ["#dcfce7", "#86efac", "#22c55e"], triggers: ["Aceptación inicial a propuestas de renovación"], consequences: ["Base moderada de apertura al diálogo"] },
+        { deg: 0, label: "Miedo / Temor", active: true, intensity: 3, color: ["#fee2e2", "#fca5a5", "#ef4444"], triggers: ["Inseguridad nocturna", "Incertidumbre económica local"], consequences: ["Aumento de exigencias drásticas de control"] },
+        { deg: 45, label: "Sorpresa / Asombro", active: false, intensity: 0, color: ["#e0f2fe", "#7dd3fc", "#0284c7"] },
+        { deg: 90, label: "Tristeza / Pena", active: true, intensity: 2, color: ["#f3e8ff", "#c084fc", "#9333ea"], triggers: ["Deterioro de espacios públicos"], consequences: ["Desafección comunitaria e inacción"] },
+        { deg: 135, label: "Asco / Aversión", active: true, intensity: 3, color: ["#ffedd5", "#fdba74", "#ea580c"], triggers: ["Corrupción percibida", "Impunidad"], consequences: ["Rechazo generalizado a discursos tradicionales"] },
+        { deg: 180, label: "Ira / Rabia", active: true, intensity: 3, color: ["#ffe4e6", "#fda4af", "#e11d48"], triggers: ["Promesas no cumplidas", "Falta de servicios"], consequences: ["Protesta activa y voto de castigo"] },
+        { deg: -135, label: "Anticipación / Interés", active: true, intensity: 2, color: ["#fef3c7", "#fcd34d", "#d97706"], triggers: ["Nuevos liderazgos independientes"], consequences: ["Búsqueda activa de alternativas"] }
+      ],
+      secondary: [
+        { name: "Desprecio (Ira + Asco)", color: "#b91c1c", text: "Alto riesgo de sanción electoral hacia figuras vinculadas al actual status quo." },
+        { name: "Ansiedad (Miedo + Anticipación)", color: "#c2410c", text: "Preocupación generalizada sobre la estabilidad a mediano plazo." }
+      ],
+      dyads: [
+        { name: "Desprecio", risk: "CRÍTICO", type: "Primaria", formula: "Ira + Asco", score: 88, text: "Máxima animadversión hacia la gestión actual." },
+        { name: "Ansiedad", risk: "ALTO", type: "Primaria", formula: "Miedo + Anticipación", score: 72, text: "Expectativa de cambio con desconfianza en la ejecución." }
+      ],
+      dyadInterp: "La combinación de Ira y Asco genera un ambiente adverso para discursos oficiales. Se requiere virar la agenda hacia soluciones palpables.",
+      problematics: ["Deficiencia en transporte", "Inseguridad en vías principales", "Falta de mantenimiento urbano"],
+      fears: ["Pérdida de patrimonio", "Escalación de violencia local"],
+      prides: ["Identidad cultural local", "Organización comunitaria"],
+      quotes: [
+        { text: "Llevamos años escuchando lo mismo y las cosas siguen igual.", topic: "Gestión", emotion: "Asco", territory: "Zona Centro" },
+        { text: "Necesitamos a alguien que verdaderamente resuelva la seguridad.", topic: "Seguridad", emotion: "Ira", territory: "Zona Norte" }
+      ],
+      semaforo: [
+        { label: "Ánimo de Cambio", val: "78%", color: "#ef4444" },
+        { label: "Aprobación Local", val: "32%", color: "#f97316" },
+        { label: "Confianza Institucional", val: "24%", color: "#b91c1c" }
+      ],
+      preguntaPolitica: "¿Sostenibilidad o Cambio Radical?",
+      preguntaDesc: "El electorado se debate entre la búsqueda de estabilidad y el deseo de ruptura con el modelo actual.",
+      govSemaforo: [
+        { label: "Efectividad percibida", val: "Baja", color: "#ef4444" },
+        { label: "Cercanía con el ciudadano", val: "Insuficiente", color: "#f97316" }
+      ],
+      partidos: [
+        { nombre: "Opción A (Oficialismo)", emocion: "Asco / Frustración", capital: "Bajo", tendencia: "↓ Declive" },
+        { nombre: "Opción B (Oposición)", emocion: "Interés prudente", capital: "Medio", tendencia: "↑ Crecimiento" }
+      ],
+      partidosChart: [[65, 20, 15], [20, 30, 50]],
+      actores: [
+        { name: "Figura Pública A", role: "Representante Oficial", borderColor: "#ef4444", rows: [["Aprobación", "28%"], ["Efectividad", "Baja"]] },
+        { name: "Figura Pública B", role: "Líder Social", borderColor: "#22c55e", rows: [["Aprobación", "54%"], ["Efectividad", "Media-Alta"]] }
+      ],
+      actoresRadar: {
+        labels: ["Figura Pública A", "Figura Pública B"],
+        data: [[30, 80, 20, 85, 30, 25], [70, 60, 65, 20, 60, 75]],
+        colors: ["#ef4444", "#22c55e"]
+      },
+      alertaEstrategica: "Riesgo Severo de Voto de Castigo",
+      alertaDesc: "El volumen de descontento exige cambios visibles inmediatos en la narrativa de comunicación y propuestas concretas.",
+      recs: [
+        { label: "PRIORITARIO", bg: "#fee2e2", tx: "#991b1b", text: "Centrar la narrativa en la resolución de problemas de seguridad inmediata." },
+        { label: "ESTRATÉGICO", bg: "#fef3c7", tx: "#92400e", text: "Desvincular la comunicación de promesas abstractas o vacías." }
+      ],
+      evitar: ["Alegar logros no percibidos directamente por la ciudadanía.", "Uso de lenguaje burocrático o distante."],
+      gestionPrioridad: [["Inseguridad", 90, "#ef4444"], ["Infraestructura", 70, "#f97316"], ["Transparencia", 60, "#d97706"]],
+      temasChart: [["Inseguridad", 50, "#ef4444"], ["Servicios", 30, "#f97316"], ["Economía", 20, "#eab308"]]
+    };
 
-/* Configuración General de Gráficas */
-const CD={responsive:true,maintainAspectRatio:false,
-  plugins:{legend:{display:false},tooltip:{backgroundColor:"#ffffff",titleColor:"#1e293b",bodyColor:"#475569",borderColor:"#cbd5e1",borderWidth:1,padding:10}},
-  scales:{x:{grid:{color:"rgba(0,0,0,.05)"},ticks:{color:"#475569",font:{size:10}}},
-          y:{grid:{color:"rgba(0,0,0,.05)"},ticks:{color:"#475569",font:{size:10}}}}};
-
-function ST(id,el){
-  document.querySelectorAll(".pnl").forEach(p=>p.classList.remove("on"));
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
-  document.getElementById("pnl-"+id).classList.add("on");
-  el.classList.add("on");
-}
-function toggleEm(el){ el.querySelector(".emd-box").classList.toggle("open"); }
-
-function buildWheel(emotions){
-  const S=380,cx=S/2,cy=S/2,rings=[72,112,150];
-  let svg=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">`;
-  emotions.forEach((em,i)=>{
-    const a0=(em.deg-22.5)*Math.PI/180,a1=(em.deg+22.5)*Math.PI/180;
-    [0,1,2].forEach(r=>{
-      const r0=rings[r],r1=rings[r+1]||rings[r]+38;
-      const x1=cx+r0*Math.cos(a0),y1=cy+r0*Math.sin(a0);
-      const x2=cx+r1*Math.cos(a0),y2=cy+r1*Math.sin(a0);
-      const x3=cx+r1*Math.cos(a1),y3=cy+r1*Math.sin(a1);
-      const x4=cx+r0*Math.cos(a1),y4=cy+r0*Math.sin(a1);
-      const fill=em.active&&em.intensity>r?em.color[r]:"#e2e8f0";
-      const pulse=em.active&&em.intensity===3&&r===2?' class="pulse"':'';
-      svg+=`<path${pulse} d="M${x1},${y1} L${x2},${y2} A${r1},${r1} 0 0,1 ${x3},${y3} L${x4},${y4} A${r0},${r0} 0 0,0 ${x1},${y1}" fill="${fill}" stroke="#ffffff" stroke-width="1.5" style="cursor:${em.active?'pointer':'default'}" onclick="toggleEm(document.querySelectorAll('.emr')[${i}])"/>`;
+    // Inicializar Skill con los datos configurados
+    document.addEventListener("DOMContentLoaded", () => {
+      const dashboard = new EmotionDashboardEngine(dataSetPolitico, "dashboard-root");
+      dashboard.init();
     });
-    const lx=cx+(rings[2]+22)*Math.cos(em.deg*Math.PI/180);
-    const ly=cy+(rings[2]+22)*Math.sin(em.deg*Math.PI/180);
-    const anchor=Math.abs(em.deg)>90?"end":"start";
-    svg+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle" fill="${em.active?em.color[2]:'#94a3b8'}" font-size="9" font-weight="${em.active?700:400}" font-family="-apple-system,sans-serif">${em.label.split("/")[0].trim()}</text>`;
-  });
-  svg+=`<circle cx="${cx}" cy="${cy}" r="50" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
-  <text x="${cx}" y="${cy-8}" text-anchor="middle" fill="#1d4ed8" font-size="9" font-weight="700" font-family="-apple-system,sans-serif">PLUTCHIK</text>
-  <text x="${cx}" y="${cy+6}" text-anchor="middle" fill="#334155" font-size="8" font-family="-apple-system,sans-serif">Naucalpan</text>
-  <text x="${cx}" y="${cy+18}" text-anchor="middle" fill="#64748b" font-size="7" font-family="-apple-system,sans-serif">May–Jun 2026</text>
-  </svg>`;
-  return svg;
-}
-
-function init(){
-  const activeCount=D.emotions.filter(e=>e.active).length;
-  const maxIntensity=Math.max(...D.emotions.map(e=>e.intensity));
-  document.getElementById("whl-territory").innerText = D.territory;
-
-  // Render KPIs
-  document.getElementById("kpis").innerHTML=`
-    <div class="card2"><div class="cv">Nivel de Riesgo</div><div class="cval" style="color:#e11d48">${D.riskLevel}</div><div class="csub">Clasificación general</div></div>
-    <div class="card2"><div class="cv">Emociones Activas</div><div class="cval" style="color:#1d4ed8">${activeCount}<span style="font-size:1rem;color:var(--tx3)">/8</span></div><div class="csub">Rueda de Plutchik</div></div>
-    <div class="card2"><div class="cv">Intensidad Máxima</div><div class="cval" style="color:#b91c1c">${["○","●","●●","●●●"][maxIntensity]}</div><div class="csub">Ira / Furia · Alta</div></div>
-    <div class="card2"><div class="cv">IVE Estimado</div><div class="cval" style="color:#6b21a8">68<span style="font-size:1rem">/100</span></div><div class="csub">Volatilidad Alta</div></div>`;
-
-  document.getElementById("wheel-wrap").innerHTML=buildWheel(D.emotions);
-  const firstActive=D.emotions.find(e=>e.active&&e.intensity>0);
-  if(firstActive){
-    document.getElementById("leg-hi").style.background=firstActive.color[2];
-    document.getElementById("leg-md").style.background=firstActive.color[1];
-  }
-
-  document.getElementById("em-list").innerHTML=D.emotions.map((em,i)=>`
-    <div class="emr" onclick="toggleEm(this)">
-      <div class="emh">
-        <div style="width:8px;height:8px;border-radius:50%;background:${em.active?em.color[2]:'#cbd5e1'};flex-shrink:0"></div>
-        <div style="font-size:12.5px;font-weight:${em.active?700:400};color:${em.active?'var(--tx1)':'var(--tx3)'};flex:1">${em.label}</div>
-        <div style="font-size:10px;color:${em.active?em.color[2]:'var(--tx3)'}">${em.active?["●○○","●●○","●●●"][em.intensity-1]||"":"○○○"}</div>
-      </div>
-      <div class="emd-box">
-        ${em.active&&em.triggers.length?`<div class="edk">Detonantes</div><div class="edv">${em.triggers.map(t=>`• ${t}`).join("<br>")}</div>`:""}
-        ${em.active&&em.consequences.length?`<div class="edk" style="margin-top:6px">Consecuencias</div><div class="edv">${em.consequences.map(c=>`• ${c}`).join("<br>")}</div>`:""}
-        ${!em.active?`<div class="edv">Sin activación relevante detectada en Mayo–Junio 2026.</div>`:""}
-      </div>
-    </div>`).join("");
-
-  document.getElementById("em-sec").innerHTML=D.secondary.map(s=>`
-    <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)">
-      <div style="width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;margin-top:4px"></div>
-      <div><div style="font-size:12px;font-weight:700;color:var(--tx1)">${s.name}</div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:2px;line-height:1.55">${s.text}</div></div>
-    </div>`).join("");
-
-  document.getElementById("concepto-box").innerHTML=`<div class="cbox-label">Concepto Central del Territorio</div><div class="cbox-name">"${D.concept}"</div><div class="cbox-text">${D.conceptDesc}</div>`;
-
-  const makeMP=(arr,dc)=>arr.map(t=>`<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join("");
-  document.getElementById("mapa-cols").innerHTML=`
-    <div class="mpc"><div class="mptt" style="color:#b45309">⚠ Problemáticas</div>${makeMP(D.problematics,"#b45309")}</div>
-    <div class="mpc"><div class="mptt" style="color:#b91c1c">⬡ Miedos</div>${makeMP(D.fears,"#b91c1c")}</div>
-    <div class="mpc"><div class="mptt" style="color:#15803d">★ Orgullos</div>${makeMP(D.prides,"#15803d")}</div>`;
-
-  document.getElementById("quotes").innerHTML=D.quotes.map(q=>`<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion} · ${q.territory}</div></div>`).join("");
-
-  const makeSem=(arr,id)=>{ document.getElementById(id).innerHTML=arr.map(s=>`<div class="sem"><div class="semd" style="background:${s.color}"></div><div class="seml">${s.label}</div><div class="semv" style="color:${s.color}">${s.val}</div></div>`).join(""); };
-  makeSem(D.semaforo,"semaforo");
-
-  const riskHex={CRÍTICO:"#ef4444",ALTO:"#f97316",MEDIO:"#b45309"};
-  const riskBg={CRÍTICO:"#fee2e2",ALTO:"#ffedd5",MEDIO:"#fef9c3"};
-  document.getElementById("dyad-cards").innerHTML=D.dyads.map(d=>`<div class="dyc" style="border-top-color:${riskHex[d.risk]||"#64748b"}">
-    <span class="dybadge" style="background:${riskBg[d.risk]};color:${riskHex[d.risk]}">${d.risk}</span>
-    <div class="dyn" style="color:${riskHex[d.risk]||"var(--tx1)"}">${d.name}</div>
-    <div class="dyf">Díada ${d.type} · ${d.formula}</div>
-    <div class="dyt">${d.text}</div>
-  </div>`).join("");
-  document.getElementById("dyad-interp").innerHTML=D.dyadInterp;
-
-  document.getElementById("id-pregunta").innerHTML=`<div class="cbox-label">Pregunta Política del Territorio</div><div class="cbox-name" style="font-size:18px">"${D.preguntaPolitica}"</div><div class="cbox-text">${D.preguntaDesc}</div>`;
-  makeSem(D.govSemaforo,"gov-sem");
-  document.getElementById("partidos-tbl").innerHTML=D.partidos.map(p=>`<div style="display:grid;grid-template-columns:1.3fr 2fr 1fr 1fr;gap:.5rem;padding:8px 0;border-bottom:1px solid var(--brd);font-size:12px">
-    <div style="font-weight:700;color:var(--tx1)">${p.nombre}</div>
-    <div style="color:var(--tx2)">${p.emocion}</div>
-    <div style="color:var(--tx3)">${p.capital}</div>
-    <div style="color:${p.tendencia.includes("↓")?"#b91c1c":p.tendencia.includes("↑")?"#166534":"#475569"};font-weight:600">${p.tendencia}</div>
-  </div>`).join("");
-
-  document.getElementById("actores-grid").innerHTML=D.actores.map(a=>`<div class="ac">
-    <div class="ach" style="border-left:4px solid ${a.borderColor||"#3b82f6"}">
-      <div class="acn">${a.name}</div><div class="acr">${a.role}</div>
-    </div>
-    <div class="acb">${a.rows.map(([k,v])=>`<div class="acrow"><span class="ack">${k}</span><span class="acv">${v}</span></div>`).join("")}</div>
-  </div>`).join("");
-
-  document.getElementById("alerta-box").innerHTML=`<div class="cbox-label" style="color:var(--red-s)">Alerta Estratégica</div><div class="cbox-name" style="font-size:16px;color:var(--red-s)">${D.alertaEstrategica}</div><div class="cbox-text">${D.alertaDesc}</div>`;
-  document.getElementById("recs-list").innerHTML=D.recs.map(r=>`<div class="ri"><span class="rb" style="background:${r.bg};color:${r.tx}">${r.label}</span><span class="rt">${r.text}</span></div>`).join("");
-  document.getElementById("evitar-list").innerHTML=D.evitar.map(e=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)"><span style="color:#ef4444;flex-shrink:0">✕</span>${e}</div>`).join("");
-
-  /* CHARTS */
-  const acEm=D.emotions.filter(e=>e.active);
-  new Chart(document.getElementById("ch-intens"),{type:"bar",
-    data:{labels:acEm.map(e=>e.label),datasets:[{data:acEm.map(e=>e.intensity),backgroundColor:acEm.map(e=>e.color[2]+"cc"),borderColor:acEm.map(e=>e.color[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
-    options:{...CD,indexAxis:"y",plugins:{...CD.plugins,tooltip:{...CD.plugins.tooltip,callbacks:{label:c=>" "+["Inactiva","Baja","Media","Alta"][c.raw]}}},
-      scales:{x:{...CD.scales.x,min:0,max:3,ticks:{...CD.scales.x.ticks,stepSize:1,callback:v=>["○○○","●○○","●●○","●●●"][v]}},y:{...CD.scales.y}}}
-  });
-
-  new Chart(document.getElementById("ch-temas"),{type:"doughnut",
-    data:{labels:D.temasChart.map(t=>t[0]),datasets:[{data:D.temasChart.map(t=>t[1]),backgroundColor:D.temasChart.map(t=>t[2]),borderColor:"#d5d1d1",borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"right",labels:{color:"#334155",font:{size:11},boxWidth:12,padding:10}},tooltip:{...CD.plugins.tooltip,callbacks:{label:c=>" "+c.label+": "+c.raw+"%"}}}}
-  });
-
-  new Chart(document.getElementById("ch-diadas"),{type:"bar",
-    data:{labels:D.dyads.map(d=>d.name),datasets:[{label:"Score de riesgo",data:D.dyads.map(d=>d.score),backgroundColor:D.dyads.map(d=>riskHex[d.risk]+"cc"),borderColor:D.dyads.map(d=>riskHex[d.risk]),borderWidth:1,borderRadius:6,borderSkipped:false}]},
-    options:{...CD,plugins:{...CD.plugins,legend:{display:false}},scales:{x:{...CD.scales.x},y:{...CD.scales.y,min:0,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+"/100"}}}}
-  });
-
-  new Chart(document.getElementById("ch-partidos"),{type:"bar",
-    data:{labels:D.partidos.map(p=>p.nombre),datasets:[
-      {label:"Ira/Asco",      data:D.partidosChart.map(x=>x[0]),backgroundColor:"#B91C1Caa",borderRadius:4,borderSkipped:false},
-      {label:"Decep/Tristeza",data:D.partidosChart.map(x=>x[1]),backgroundColor:"#4C1D95aa",borderRadius:4,borderSkipped:false},
-      {label:"Interés disp.", data:D.partidosChart.map(x=>x[2]),backgroundColor:"#059669aa",borderRadius:4,borderSkipped:false},
-    ]},
-    options:{...CD,plugins:{...CD.plugins,legend:{display:true,labels:{color:"#334155",font:{size:10},boxWidth:10}}},
-      scales:{x:{...CD.scales.x},y:{...CD.scales.y,min:0,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+"%"}}}}
-  });
-
-  const radarLabels=["Legitimidad ciudadana","Presencia territorial","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
-  new Chart(document.getElementById("ch-actores"),{type:"radar",
-    data:{labels:radarLabels,datasets:D.actoresRadar.labels.map((lbl,i)=>({label:lbl,data:D.actoresRadar.data[i],borderColor:D.actoresRadar.colors[i],backgroundColor:D.actoresRadar.colors[i]+"22",pointBackgroundColor:D.actoresRadar.colors[i],pointRadius:4}))},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{r:{ticks:{color:"#475569",font:{size:9},stepSize:20},grid:{color:"rgba(0,0,0,.08)"},pointLabels:{color:"#334155",font:{size:10}},angleLines:{color:"rgba(0,0,0,.08)"},min:0,max:100}},
-      plugins:{legend:{display:true,labels:{color:"#334155",font:{size:11},boxWidth:10}},tooltip:{...CD.plugins.tooltip}}}
-  });
-
-  new Chart(document.getElementById("ch-prior"),{type:"bar",
-    data:{labels:D.gestionPrioridad.map(x=>x[0]),datasets:[{data:D.gestionPrioridad.map(x=>x[1]),backgroundColor:D.gestionPrioridad.map(x=>x[2]+"cc"),borderColor:D.gestionPrioridad.map(x=>x[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
-    options:{...CD,indexAxis:"y",scales:{x:{...CD.scales.x,min:0,max:100,ticks:{...CD.scales.x.ticks,callback:v=>v+"/100"}},y:{...CD.scales.y}}}
-  });
-}
-
-init();
-</script>
+  </script>
 </body>
 </html>
