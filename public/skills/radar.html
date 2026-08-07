@@ -5,25 +5,49 @@
   #radar-skill-root .r-hdr-name span{color:#00C2D4}
   #radar-skill-root .r-hdr-sub{font-size:12px;color:#94A3B8;margin-top:4px;font-weight:600}
   #radar-skill-root .r-body{padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px}
+  
+  /* PESTAÑAS Y SUBPESTAÑAS */
+  #radar-skill-root .r-tabs{display:flex;border-bottom:2px solid #1C2738;overflow-x:auto;margin-bottom:20px;gap:4px}
+  #radar-skill-root .r-tb{font-family:monospace;font-size:10px;padding:10px 14px;cursor:pointer;color:#64748B;border:none;border-bottom:3px solid transparent;background:rgba(0,0,0,0.03);transition:all .2s;font-weight:700;white-space:nowrap}
+  #radar-skill-root .r-tb:hover{color:#1C2738;background:rgba(0,0,0,0.06)}
+  #radar-skill-root .r-tb.act{color:#ffffff;background:#1C2738;border-bottom-color:#00C2D4}
+  
+  #radar-skill-root .r-subbar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;background:#f8fafc;padding:8px 12px;border-radius:6px}
+  #radar-skill-root .r-sublbl{font-family:monospace;font-size:9px;color:#1C2738;letter-spacing:1px;font-weight:700}
+  #radar-skill-root .r-sbb{font-family:monospace;font-size:9px;padding:5px 11px;border-radius:4px;cursor:pointer;border:1px solid #1C2738;background:transparent;color:#1C2738;transition:all .15s;font-weight:700}
+  #radar-skill-root .r-sbb.act, #radar-skill-root .r-sbb:hover{background:#1C2738;color:#fff}
+
+  #radar-skill-root .r-sec{display:none}
+  #radar-skill-root .r-sec.show{display:block !important;animation:rFi .3s ease}
+  @keyframes rFi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
   #radar-skill-root .r-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
   #radar-skill-root .r-kpi{background:#d5d1d1;border-radius:8px;padding:16px}
   #radar-skill-root .r-kpi-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#334155}
   #radar-skill-root .r-kpi-val{font-size:26px;font-weight:800;color:#0f172a;margin-top:4px}
+  
   #radar-skill-root .r-grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
-  #radar-skill-root .r-card{background:#d5d1d1;border-radius:8px;padding:18px}
+  #radar-skill-root .r-card{background:#d5d1d1;border-radius:8px;padding:18px;display:flex;flex-direction:column;min-height:280px}
   #radar-skill-root .r-ct{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:2px}
   #radar-skill-root .r-cs{font-size:11px;color:#475569;margin-bottom:12px}
+
+  /* FIX CANVAS DIMENSIONS */
+  #radar-skill-root .chart-box{position:relative;flex:1;width:100%;min-height:200px}
+  #radar-skill-root .chart-box canvas{position:absolute;left:0;top:0;width:100% !important;height:100% !important}
+
   #radar-skill-root .r-timeline{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
   #radar-skill-root .r-tl-item{background:#d5d1d1;border-left:4px solid #1e3a8a;border-radius:6px;padding:12px 16px}
   #radar-skill-root .r-tl-fecha{font-size:10px;font-weight:800;color:#1e3a8a;letter-spacing:.5px}
   #radar-skill-root .r-tl-title{font-size:13px;font-weight:800;margin:2px 0 4px}
   #radar-skill-root .r-tl-desc{font-size:12px;color:#334155;line-height:1.5}
+  
   #radar-skill-root .r-risk{border-radius:6px;padding:12px 16px;margin-bottom:10px;background:#d5d1d1}
   #radar-skill-root .r-risk-lv{font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;color:#fff;margin-right:8px}
   #radar-skill-root .r-lv-ALTO{background:#C0392B}
   #radar-skill-root .r-lv-MEDIO{background:#C49A00}
   #radar-skill-root .r-lv-BAJO{background:#1E8449}
   #radar-skill-root .r-summary{background:#f1f5f9;border-left:4px solid #00C2D4;border-radius:6px;padding:16px;font-size:13px;line-height:1.6;color:#1e293b}
+  
   @media (max-width:768px){#radar-skill-root .r-grid2{grid-template-columns:1fr}}
 </style>
 
@@ -34,61 +58,108 @@
 
 <div class="r-body">
 
-  <div class="r-kpis">
-    <div class="r-kpi"><div class="r-kpi-lbl">NPS-P Global</div><div class="r-kpi-val" id="r-kpi-nps">--</div></div>
-    <div class="r-kpi"><div class="r-kpi-lbl">Nivel de Alerta</div><div class="r-kpi-val" id="r-kpi-alerta">--</div></div>
-    <div class="r-kpi"><div class="r-kpi-lbl">Tema Dominante</div><div class="r-kpi-val" id="r-kpi-tema" style="font-size:15px">--</div></div>
-    <div class="r-kpi"><div class="r-kpi-lbl">Tendencia</div><div class="r-kpi-val" id="r-kpi-tendencia">--</div></div>
+  <!-- PESTAÑAS PRINCIPALES -->
+  <div class="r-tabs">
+    <button class="r-tb act" onclick="radarTab(this,'kpis')">KPIs AMPLIADOS</button>
+    <button class="r-tb" onclick="radarTab(this,'sent')">SENTIMIENTO</button>
+    <button class="r-tb" onclick="radarTab(this,'tom')">TOP OF MIND</button>
+    <button class="r-tb" onclick="radarTab(this,'picos')">PICOS DE CONVERSACIÓN</button>
+    <button class="r-tb" onclick="radarTab(this,'plat')">PLATAFORMAS</button>
+    <button class="r-tb" onclick="radarTab(this,'risk')">RIESGOS Y RESUMEN</button>
   </div>
 
-  <div class="r-grid2">
-    <div class="r-card">
-      <div class="r-ct">NPS-P por Segmento</div>
-      <div class="r-cs">Percepción neta por grupo de audiencia</div>
-      <canvas id="c-nps-segmento" style="max-height:230px"></canvas>
+  <!-- PESTAÑA: KPIs AMPLIADOS -->
+  <div class="r-sec show" id="rtab-kpis">
+    <div class="r-kpis">
+      <div class="r-kpi"><div class="r-kpi-lbl">NPS-P Global</div><div class="r-kpi-val" id="r-kpi-nps">--</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Nivel de Alerta</div><div class="r-kpi-val" id="r-kpi-alerta">--</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Tema Dominante</div><div class="r-kpi-val" id="r-kpi-tema" style="font-size:15px">--</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Tendencia</div><div class="r-kpi-val" id="r-kpi-tendencia">--</div></div>
     </div>
-    <div class="r-card">
-      <div class="r-ct">Tendencia NPS-P</div>
-      <div class="r-cs">Evolución temporal de la percepción</div>
-      <canvas id="c-nps-tendencia" style="max-height:230px"></canvas>
-    </div>
-  </div>
 
-  <div class="r-grid2">
-    <div class="r-card">
-      <div class="r-ct">Principales Temas</div>
-      <div class="r-cs">Peso relativo en la conversación pública</div>
-      <canvas id="c-temas" style="max-height:230px"></canvas>
-    </div>
-    <div class="r-card">
-      <div class="r-ct">Sentimiento por Plataforma</div>
-      <div class="r-cs">Positivo vs. negativo por red</div>
-      <canvas id="c-sentimiento" style="max-height:230px"></canvas>
+    <div class="r-grid2">
+      <div class="r-card">
+        <div class="r-ct">NPS-P por Segmento Demográfico</div>
+        <div class="r-cs">Brecha de percepción neta por grupo de audiencia</div>
+        <div class="chart-box"><canvas id="c-nps-segmento"></canvas></div>
+      </div>
+      <div class="r-card">
+        <div class="r-ct">Evolución de Tendencia (TRA / NPS-P)</div>
+        <div class="r-cs">Comportamiento temporal de la percepción acumulada</div>
+        <div class="chart-box"><canvas id="c-nps-tendencia"></canvas></div>
+      </div>
     </div>
   </div>
 
-  <div class="r-card" style="margin-bottom:22px">
-    <div class="r-ct">NPS-P por Territorio</div>
-    <div class="r-cs">Distribución geográfica de la percepción</div>
-    <canvas id="c-territorios" style="max-height:230px"></canvas>
+  <!-- PESTAÑA: SENTIMIENTO -->
+  <div class="r-sec" id="rtab-sent">
+    <div class="r-subbar">
+      <span class="r-sublbl">FILTRAR CRUCE &rarr;</span>
+      <button class="r-sbb act" onclick="filterSent(this,'general')">GENERAL</button>
+      <button class="r-sbb" onclick="filterSent(this,'partido')">PARTIDO</button>
+      <button class="r-sbb" onclick="filterSent(this,'plataforma')">PLATAFORMA</button>
+    </div>
+    <div class="r-grid2">
+      <div class="r-card" style="grid-column: 1 / -1;">
+        <div class="r-ct" id="sent-title">Sentimiento General por Plataforma</div>
+        <div class="r-cs">Distribución del tono positivo vs. negativo registrado</div>
+        <div class="chart-box"><canvas id="c-sentimiento"></canvas></div>
+      </div>
+    </div>
   </div>
 
-  <div class="r-ct" style="margin-bottom:10px">Línea de Tiempo — Eventos Relevantes</div>
-  <div class="r-timeline" id="r-timeline"></div>
+  <!-- PESTAÑA: TOP OF MIND -->
+  <div class="r-sec" id="rtab-tom">
+    <div class="r-grid2">
+      <div class="r-card">
+        <div class="r-ct">Principales Temas (Top of Mind)</div>
+        <div class="r-cs">Peso relativo dentro de la agenda pública</div>
+        <div class="chart-box"><canvas id="c-temas"></canvas></div>
+      </div>
+      <div class="r-card">
+        <div class="r-ct">NPS-P por Territorio</div>
+        <div class="r-cs">Aprobación o rechazo desagregado geográficamente</div>
+        <div class="chart-box"><canvas id="c-territorios"></canvas></div>
+      </div>
+    </div>
+  </div>
 
-  <div class="r-ct" style="margin-bottom:10px">Riesgos y Focos de Atención</div>
-  <div id="r-riesgos"></div>
+  <!-- PESTAÑA: PICOS -->
+  <div class="r-sec" id="rtab-picos">
+    <div class="r-ct" style="margin-bottom:10px">Línea de Tiempo — Eventos y Picos de Conversación</div>
+    <div class="r-timeline" id="r-timeline"></div>
+  </div>
 
-  <div class="r-ct" style="margin-bottom:10px">Resumen Ejecutivo</div>
-  <div class="r-summary" id="r-resumen">Sin datos disponibles.</div>
+  <!-- PESTAÑA: PLATAFORMAS -->
+  <div class="r-sec" id="rtab-plat">
+    <div class="r-grid2">
+      <div class="r-card">
+        <div class="r-ct">Distribución de Conversación</div>
+        <div class="r-cs">Volumen de menciones concentrado por canal</div>
+        <div class="chart-box"><canvas id="c-plat-dist"></canvas></div>
+      </div>
+      <div class="r-card">
+        <div class="r-ct">Ratio Ataque / Defensa</div>
+        <div class="r-cs">Intensidad de volumen adverso por plataforma</div>
+        <div class="chart-box"><canvas id="c-plat-ratio"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PESTAÑA: RIESGOS -->
+  <div class="r-sec" id="rtab-risk">
+    <div class="r-ct" style="margin-bottom:10px">Matriz Bivariada de Riesgos</div>
+    <div id="r-riesgos"></div>
+
+    <div class="r-ct" style="margin-top:20px;margin-bottom:10px">Resumen Ejecutivo</div>
+    <div class="r-summary" id="r-resumen">Sin datos disponibles.</div>
+  </div>
 
 </div>
 </div>
 
 <script>
 (function () {
-  // window.DATA lo inyecta index.html con la respuesta de /api/analizar (OpenRouter).
-  // Se definen valores de respaldo por si el backend no responde algo específico.
   const D = (window.DATA && Object.keys(window.DATA).length) ? window.DATA : {
     kpis: { npsGlobal: 0, nivelAlerta: 1, temaDominante: 'Sin datos', tendencia: 'estable' },
     npsPorSegmento: [{ segmento: 'Sin datos', valor: 0 }],
@@ -102,93 +173,154 @@
   };
 
   const C = { ac: '#00A8B5', go: '#C49A00', da: '#C0392B', su: '#1E8449', or: '#D35400', ne: '#5A6B7C', bl: '#1B4F8A' };
+  const CH = {};
 
-  // ---- KPIs ----
-  document.getElementById('r-kpi-nps').textContent = (D.kpis.npsGlobal > 0 ? '+' : '') + D.kpis.npsGlobal;
-  document.getElementById('r-kpi-alerta').textContent = 'Nivel ' + D.kpis.nivelAlerta;
-  document.getElementById('r-kpi-tema').textContent = D.kpis.temaDominante;
-  document.getElementById('r-kpi-tendencia').textContent = D.kpis.tendencia === 'sube' ? '↑ Sube' : D.kpis.tendencia === 'baja' ? '↓ Baja' : '→ Estable';
-
-  // ---- Chart: NPS por segmento ----
-  new Chart(document.getElementById('c-nps-segmento'), {
-    type: 'bar',
-    data: {
-      labels: D.npsPorSegmento.map(s => s.segmento),
-      datasets: [{ data: D.npsPorSegmento.map(s => s.valor), backgroundColor: d => d.raw >= 0 ? C.su : C.da, borderRadius: 3 }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } }
-  });
-
-  // ---- Chart: tendencia NPS ----
-  new Chart(document.getElementById('c-nps-tendencia'), {
-    type: 'line',
-    data: {
-      labels: D.npsTendencia.meses,
-      datasets: [{ data: D.npsTendencia.valores, borderColor: C.bl, backgroundColor: 'rgba(27,79,138,.08)', fill: true, tension: .4, borderWidth: 2, pointRadius: 4 }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } }
-  });
-
-  // ---- Chart: temas principales ----
-  new Chart(document.getElementById('c-temas'), {
-    type: 'bar',
-    data: {
-      labels: D.temasPrincipales.map(t => t.tema),
-      datasets: [{ data: D.temasPrincipales.map(t => t.peso), backgroundColor: C.ac, borderRadius: 3 }]
-    },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => v + '%' } } } }
-  });
-
-  // ---- Chart: sentimiento por plataforma ----
-  new Chart(document.getElementById('c-sentimiento'), {
-    type: 'bar',
-    data: {
-      labels: D.sentimientoPorPlataforma.map(p => p.plataforma),
-      datasets: [
-        { label: '% Positivo', data: D.sentimientoPorPlataforma.map(p => p.positivo), backgroundColor: C.su, borderRadius: 3 },
-        { label: '% Negativo', data: D.sentimientoPorPlataforma.map(p => p.negativo), backgroundColor: C.da, borderRadius: 3 }
-      ]
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
-  });
-
-  // ---- Chart: territorios ----
-  new Chart(document.getElementById('c-territorios'), {
-    type: 'bar',
-    data: {
-      labels: D.territorios.map(t => t.zona),
-      datasets: [{ data: D.territorios.map(t => t.nps), backgroundColor: d => d.raw >= 0 ? C.su : C.da, borderRadius: 3 }]
-    },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-  });
-
-  // ---- Línea de tiempo ----
-  const tl = document.getElementById('r-timeline');
-  if (D.lineaTiempo.length === 0) {
-    tl.innerHTML = '<div class="r-tl-item"><div class="r-tl-desc">No se detectaron eventos relevantes en el periodo.</div></div>';
-  } else {
-    tl.innerHTML = D.lineaTiempo.map(ev => `
-      <div class="r-tl-item">
-        <div class="r-tl-fecha">${ev.fecha}${ev.impactoNps !== undefined ? ' · Impacto NPS: ' + (ev.impactoNps > 0 ? '+' : '') + ev.impactoNps : ''}</div>
-        <div class="r-tl-title">${ev.titulo}</div>
-        <div class="r-tl-desc">${ev.descripcion}</div>
-      </div>`).join('');
+  function mkChart(id, cfg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (CH[id]) CH[id].destroy();
+    cfg.options = cfg.options || {};
+    cfg.options.responsive = true;
+    cfg.options.maintainAspectRatio = false;
+    CH[id] = new Chart(el.getContext('2d'), cfg);
   }
 
-  // ---- Riesgos ----
-  const rk = document.getElementById('r-riesgos');
-  if (D.riesgos.length === 0) {
-    rk.innerHTML = '<div class="r-risk">Sin riesgos relevantes detectados en el periodo.</div>';
-  } else {
-    rk.innerHTML = D.riesgos.map(r => `
-      <div class="r-risk">
-        <span class="r-risk-lv r-lv-${r.nivel}">${r.nivel}</span><strong>${r.titulo}</strong>
-        <div class="r-tl-desc" style="margin-top:6px">${r.descripcion}</div>
-        ${r.bivariado ? `<div class="r-tl-desc" style="margin-top:4px"><strong>Bivariado:</strong> ${r.bivariado}</div>` : ''}
-      </div>`).join('');
+  // ---- RENDERIZADO POR SECCIÓN ----
+  function renderKpis() {
+    document.getElementById('r-kpi-nps').textContent = (D.kpis.npsGlobal > 0 ? '+' : '') + D.kpis.npsGlobal;
+    document.getElementById('r-kpi-alerta').textContent = 'Nivel ' + D.kpis.nivelAlerta;
+    document.getElementById('r-kpi-tema').textContent = D.kpis.temaDominante;
+    document.getElementById('r-kpi-tendencia').textContent = D.kpis.tendencia === 'sube' ? '↑ Sube' : D.kpis.tendencia === 'baja' ? '↓ Baja' : '→ Estable';
+
+    mkChart('c-nps-segmento', {
+      type: 'bar',
+      data: {
+        labels: D.npsPorSegmento.map(s => s.segmento),
+        datasets: [{ data: D.npsPorSegmento.map(s => s.valor), backgroundColor: d => d.raw >= 0 ? C.su : C.da, borderRadius: 3 }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } }
+    });
+
+    mkChart('c-nps-tendencia', {
+      type: 'line',
+      data: {
+        labels: D.npsTendencia.meses,
+        datasets: [{ data: D.npsTendencia.valores, borderColor: C.bl, backgroundColor: 'rgba(27,79,138,.08)', fill: true, tension: .4, borderWidth: 2, pointRadius: 4 }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } }
+    });
   }
 
-  // ---- Resumen ejecutivo ----
-  document.getElementById('r-resumen').textContent = D.resumenEjecutivo || 'Sin resumen disponible.';
+  function renderSent() {
+    mkChart('c-sentimiento', {
+      type: 'bar',
+      data: {
+        labels: D.sentimientoPorPlataforma.map(p => p.plataforma),
+        datasets: [
+          { label: '% Positivo', data: D.sentimientoPorPlataforma.map(p => p.positivo), backgroundColor: C.su, borderRadius: 3 },
+          { label: '% Negativo', data: D.sentimientoPorPlataforma.map(p => p.negativo), backgroundColor: C.da, borderRadius: 3 }
+        ]
+      },
+      options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    });
+  }
+
+  function renderTom() {
+    mkChart('c-temas', {
+      type: 'bar',
+      data: {
+        labels: D.temasPrincipales.map(t => t.tema),
+        datasets: [{ data: D.temasPrincipales.map(t => t.peso), backgroundColor: C.ac, borderRadius: 3 }]
+      },
+      options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => v + '%' } } } }
+    });
+
+    mkChart('c-territorios', {
+      type: 'bar',
+      data: {
+        labels: D.territorios.map(t => t.zona),
+        datasets: [{ data: D.territorios.map(t => t.nps), backgroundColor: d => d.raw >= 0 ? C.su : C.da, borderRadius: 3 }]
+      },
+      options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+    });
+  }
+
+  function renderPicos() {
+    const tl = document.getElementById('r-timeline');
+    if (!D.lineaTiempo || D.lineaTiempo.length === 0) {
+      tl.innerHTML = '<div class="r-tl-item"><div class="r-tl-desc">No se detectaron eventos relevantes en el periodo.</div></div>';
+    } else {
+      tl.innerHTML = D.lineaTiempo.map(ev => `
+        <div class="r-tl-item">
+          <div class="r-tl-fecha">${ev.fecha}${ev.impactoNps !== undefined ? ' · Impacto NPS: ' + (ev.impactoNps > 0 ? '+' : '') + ev.impactoNps : ''}</div>
+          <div class="r-tl-title">${ev.titulo}</div>
+          <div class="r-tl-desc">${ev.descripcion}</div>
+        </div>`).join('');
+    }
+  }
+
+  function renderPlat() {
+    mkChart('c-plat-dist', {
+      type: 'doughnut',
+      data: {
+        labels: D.sentimientoPorPlataforma.map(p => p.plataforma),
+        datasets: [{ data: D.sentimientoPorPlataforma.map(p => p.positivo + p.negativo), backgroundColor: [C.bl, C.ac, C.go, C.ne] }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    mkChart('c-plat-ratio', {
+      type: 'bar',
+      data: {
+        labels: D.sentimientoPorPlataforma.map(p => p.plataforma),
+        datasets: [{ label: 'Ataque/Defensa', data: D.sentimientoPorPlataforma.map(p => (p.negativo / (p.positivo || 1)).toFixed(1)), backgroundColor: C.da, borderRadius: 3 }]
+      },
+      options: { plugins: { legend: { display: false } } }
+    });
+  }
+
+  function renderRisk() {
+    const rk = document.getElementById('r-riesgos');
+    if (!D.riesgos || D.riesgos.length === 0) {
+      rk.innerHTML = '<div class="r-risk">Sin riesgos relevantes detectados en el periodo.</div>';
+    } else {
+      rk.innerHTML = D.riesgos.map(r => `
+        <div class="r-risk">
+          <span class="r-risk-lv r-lv-${r.nivel}">${r.nivel}</span><strong>${r.titulo}</strong>
+          <div class="r-tl-desc" style="margin-top:6px">${r.descripcion}</div>
+          ${r.bivariado ? `<div class="r-tl-desc" style="margin-top:4px"><strong>Bivariado:</strong> ${r.bivariado}</div>` : ''}
+        </div>`).join('');
+    }
+    document.getElementById('r-resumen').textContent = D.resumenEjecutivo || 'Sin resumen disponible.';
+  }
+
+  // ---- MANEJO DE PESTAÑAS ----
+  window.radarTab = function (btn, id) {
+    document.querySelectorAll('#radar-skill-root .r-sec').forEach(s => s.classList.remove('show'));
+    document.querySelectorAll('#radar-skill-root .r-tb').forEach(t => t.classList.remove('act'));
+    
+    const target = document.getElementById('rtab-' + id);
+    if (target) target.classList.add('show');
+    btn.classList.add('act');
+
+    setTimeout(() => {
+      if (id === 'kpis') renderKpis();
+      if (id === 'sent') renderSent();
+      if (id === 'tom') renderTom();
+      if (id === 'picos') renderPicos();
+      if (id === 'plat') renderPlat();
+      if (id === 'risk') renderRisk();
+    }, 50);
+  };
+
+  window.filterSent = function (btn, key) {
+    document.querySelectorAll('#rtab-sent .r-sbb').forEach(b => b.classList.remove('act'));
+    btn.classList.add('act');
+    document.getElementById('sent-title').textContent = 'Sentimiento — ' + key.toUpperCase();
+    renderSent();
+  };
+
+  // INIT
+  setTimeout(() => renderKpis(), 100);
 })();
 </script>
