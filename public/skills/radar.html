@@ -1,208 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RADAR v2.0 - Plantilla Dinámica</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  .radar-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-top: 16px; }
-  .col-12 { grid-column: span 12; }
-  .col-8 { grid-column: span 8; }
-  .col-6 { grid-column: span 6; }
-  .col-4 { grid-column: span 4; }
-  .col-3 { grid-column: span 3; }
-  @media(max-width: 900px) { .col-8, .col-6, .col-4, .col-3 { grid-column: span 12; } }
+:root{ --hdrblue: #1C2738; --navy:#1C2738;--ac:#00C2D4;--go:#F4C430;--da:#E63946;--su:#2EC4B6;--ne:#556B2F;--bl:#1B4F8A;--card:#d5d1d1;--border:rgba(28,39,56,0.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#ffffff;color:#1C2738;font-family:system-ui,sans-serif;min-height:100vh}
 
-  .r-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-  .r-card-title { font-size: 13px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-  
-  .kpi-val { font-size: 32px; font-weight: 900; color: #0f172a; }
-  .kpi-sub { font-size: 12px; color: #64748b; font-weight: 600; margin-top: 4px; }
-  
-  .alerta-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 11px; }
-  .alerta-1 { background: #dcfce7; color: #166534; }
-  .alerta-2 { background: #fef9c3; color: #854d0e; }
-  .alerta-3 { background: #ffedd5; color: #9a3412; }
-  .alerta-4 { background: #fee2e2; color: #991b1b; }
+.hdr { background: var(--hdrblue); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 18px 24px; position: sticky; top: 0; backdrop-filter: blur(12px); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+.hdr-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1.2; }
+.hdr-name span { color: var(--ac); }
+.hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; font-weight: 500; }
 
-  .exec-summary { background: #f8fafc; border-left: 4px solid #00C2D4; padding: 14px; font-size: 13px; color: #334155; line-height: 1.6; }
-  
-  .timeline-item { border-left: 2px solid #cbd5e1; padding-left: 14px; margin-bottom: 14px; position: relative; }
-  .timeline-item::before { content: ''; position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #1e3a8a; }
-  
-  .risk-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #fff; display: inline-block; }
-  .risk-ALTO { background: #dc2626; }
-  .risk-MEDIO { background: #d97706; }
-  .risk-BAJO { background: #16a34a; }
+.con{max-width:1300px;margin:0 auto;padding:0 20px}
+.tabs{display:flex;border-bottom:2px solid var(--navy);overflow-x:auto;scrollbar-width:none;margin-bottom:24px;gap:4px;margin-top:20px}
+.tb{font-family:monospace;font-size:9px;padding:10px 14px;cursor:pointer;color:#718096;border-bottom:3px solid transparent;white-space:nowrap;background:rgba(0,0,0,0.03);border-top:none;border-left:none;border-right:none;transition:all .2s;font-weight:700}
+.tb:hover{color:var(--navy);background:rgba(0,0,0,0.07)}
+.tb.act{color:#ffffff;background:var(--navy);border-bottom-color:var(--ac)}
+.tsec{display:none}
+.tsec.show{display:block;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.stitle{font-family:monospace;font-size:10px;font-weight:700;color:var(--navy);letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;margin-top:10px}
+.stitle::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,var(--border),transparent)}
+
+.cg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:768px){.cg{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid rgba(0,0,0,0.05);border-radius:4px;padding:18px;color:#1a202c}
+.ct{font-size:13px;font-weight:700;margin-bottom:3px;color:var(--navy)}
+.cs{font-size:10px;color:#4a5568;margin-bottom:14px}
+.bbar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.blbl{font-family:monospace;font-size:9px;color:var(--navy);letter-spacing:1px;font-weight:700}
+.bb{font-family:monospace;font-size:8px;padding:5px 11px;border-radius:2px;cursor:pointer;border:1px solid var(--navy);background:transparent;color:var(--navy);letter-spacing:1px;transition:all .15s;font-weight:700}
+.bb:hover{background:var(--navy);color:#fff}
+.bb.act{background:var(--navy);color:#fff}
+
+.ng{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:900px){.ng{grid-template-columns:1fr}}
+.nc{background:var(--card);border:1px solid rgba(0,0,0,0.05);border-radius:4px;overflow:hidden;color:#1a202c}
+.nh{padding:10px 13px;font-family:monospace;font-size:9px;font-weight:700;letter-spacing:2px}
+.nh.fav{background:rgba(46,196,182,.25);color:#004d4d;border-bottom:1px solid rgba(46,196,182,.4)}
+.nh.crit{background:rgba(230,57,70,.2);color:#8b0000;border-bottom:1px solid rgba(230,57,70,.3)}
+.nh.neu{background:rgba(0,0,0,.08);color:var(--navy);border-bottom:1px solid rgba(0,0,0,.15)}
+.ni{padding:11px 13px;border-bottom:1px solid rgba(0,0,0,.06)}
+.ni:last-child{border-bottom:none}
+.nit{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--navy)}
+.nd{font-size:10px;color:#2d3748;line-height:1.4}
+.btag{display:inline-block;font-family:monospace;font-size:7px;padding:2px 6px;border-radius:2px;margin-top:4px;font-weight:700;margin-right:4px}
+.bgen{background:rgba(27,79,138,.15);color:var(--bl);border:1px solid rgba(27,79,138,.3)}
+.bage{background:rgba(244,196,48,.25);color:#8b6508;border:1px solid rgba(244,196,48,.4)}
+.bpar{background:rgba(46,196,182,.15);color:#006666;border:1px solid rgba(46,196,182,.3)}
+.bloc{background:rgba(28,39,56,.12);color:var(--navy);border:1px solid rgba(28,39,56,.25)}
+.bsrc{background:rgba(230,57,70,.15);color:#990000;border:1px solid rgba(230,57,70,.25)}
+.bi{background:rgba(255,255,255,.5);border-left:3px solid var(--bl);padding:6px 9px;font-size:9px;color:#2d3748;line-height:1.5;margin-top:7px;border-radius:0 2px 2px 0}
+.bi strong{color:var(--bl)}
+.bi.neg{border-left-color:var(--da);background:rgba(230,57,70,.08)}
+.bi.neg strong{color:var(--da)}
+.bi.ntr{border-left-color:#4a5568;background:rgba(0,0,0,.04)}
+.bi.ntr strong{color:#1a202c}
+
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+@media(max-width:768px){.mg{grid-template-columns:1fr}}
+.mh{padding:10px 14px;font-family:monospace;font-size:9px;font-weight:700;letter-spacing:2px}
+.mh.risk{background:rgba(230,57,70,.25);color:#8b0000;border:1px solid rgba(230,57,70,.3);border-bottom:none}
+.mh.opp{background:rgba(46,196,182,.2);color:#004d4d;border:1px solid rgba(46,196,182,.3);border-bottom:none}
+.mb{border:1px solid rgba(0,0,0,.08);border-top:none;border-radius:0 0 4px 4px;background:var(--card)}
+.mr{padding:11px 13px;border-bottom:1px solid rgba(0,0,0,.05)}
+.mr:last-child{border-bottom:none}
+.mt{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.lv{font-family:monospace;font-size:7px;font-weight:700;padding:3px 7px;border-radius:2px;min-width:50px;text-align:center}
+.lc{background:#E63946;color:#fff}.la{background:#E67E22;color:#fff}.lm{background:#F4C430;color:#0D1B2A}
+.mn{font-size:12px;font-weight:700;color:var(--navy)}
+.md{font-size:10px;color:#2d3748;line-height:1.5;margin-bottom:5px}
+
+.hm{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:28px}
+@media(max-width:768px){.hm{grid-template-columns:repeat(2,1fr)}}
+.hz{background:var(--card);border-radius:4px;padding:13px;text-align:center;border:2px solid transparent;color:#1a202c}
+.hz.fav{border-color:var(--su);background:rgba(46,196,182,.15)}
+.hz.adv{border-color:var(--da);background:rgba(230,57,70,.12)}
+.hz.ine{border-color:#b8860b;background:rgba(244,196,48,.15)}
+.hzn{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--navy)}
+.hzs{font-size:20px;font-weight:800}
+.hz.fav .hzs{color:#006666}.hz.adv .hzs{color:#990000}.hz.ine .hzs{color:#8b6508}
+.hzl{font-family:monospace;font-size:8px;margin-top:4px;font-weight:700}
+.hz.fav .hzl{color:#006666}.hz.adv .hzl{color:#990000}.hz.ine .hzl{color:#8b6508}
+
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:24px}
+@media(max-width:768px){.ig{grid-template-columns:1fr}}
+.ic{background:var(--card);border:1px solid rgba(0,0,0,0.05);border-radius:4px;padding:13px;color:#1a202c}
+.ic.ac{border-left:3px solid var(--bl)}.ic.go{border-left:3px solid #b8860b}.ic.su{border-left:3px solid #008080}.ic.bl{border-left:3px solid var(--navy)}.ic.da{border-left:3px solid var(--da)}
+.ih{font-size:11px;font-weight:700;margin-bottom:5px;color:var(--navy)}
+.ib{font-size:11px;color:#2d3748;line-height:1.6}
+.im{font-size:10px;color:var(--bl);margin-top:5px;font-weight:600}
+
+.footer { background: #1C2738; border-top: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 40px; border-radius: 4px; }
+canvas{max-height:220px}
 </style>
+</head>
+<body>
 
-<div class="radar-container">
-  <!-- KPIs TOP -->
-  <div class="radar-grid">
-    <div class="r-card col-3">
-      <div class="r-card-title">NPS Global</div>
-      <div class="kpi-val" id="kpiNps">0</div>
-      <div class="kpi-sub" id="kpiTendencia">-</div>
-    </div>
-    <div class="r-card col-3">
-      <div class="r-card-title">Nivel de Alerta</div>
-      <div class="kpi-val"><span id="kpiAlerta" class="alerta-pill">-</span></div>
-      <div class="kpi-sub">Grado de riesgo político</div>
-    </div>
-    <div class="r-card col-3">
-      <div class="r-card-title">Tema Dominante</div>
-      <div class="kpi-val" style="font-size: 18px;" id="kpiTema">-</div>
-      <div class="kpi-sub">Mayor conversación</div>
-    </div>
-    <div class="r-card col-3">
-      <div class="r-card-title">Fuentes Mapeadas</div>
-      <div class="kpi-val" id="kpiFuentes">0</div>
-      <div class="kpi-sub">Menciones analizadas</div>
+<main class="con">
+
+  <!-- PESTAÑAS PRINCIPALES -->
+  <div class="tabs">
+    <button class="tb act" onclick="tab(this,'kpis')">KPIs AMPLIADOS</button>
+    <button class="tb" onclick="tab(this,'sent')">SENTIMIENTO</button>
+    <button class="tb" onclick="tab(this,'tom')">TOP OF MIND</button>
+    <button class="tb" onclick="tab(this,'picos')">PICOS</button>
+    <button class="tb" onclick="tab(this,'plat')">PLATAFORMAS</button>
+    <button class="tb" onclick="tab(this,'nar')">NARRATIVAS</button>
+    <button class="tb" onclick="tab(this,'risk')">RIESGOS &amp; OPORT.</button>
+    <button class="tb" onclick="tab(this,'ter')">TERRITORIAL</button>
+  </div>
+
+  <!-- KPIs AMPLIADOS -->
+  <div class="tsec show" id="tab-kpis">
+    <div class="stitle">KPIs BIVARIADOS</div>
+    <div class="cg">
+      <div class="card"><div class="ct">NPS-P por Identidad Partidista</div><div class="cs">El apoyo real según filiación política</div><canvas id="c-npspar"></canvas></div>
+      <div class="card"><div class="ct">NPS-P por Género y Edad</div><div class="cs">Brecha de aprobación demográfica</div><canvas id="c-npsdemo"></canvas></div>
+      <div class="card"><div class="ct">Ratio Ataque/Defensa por Plataforma</div><div class="cs">¿Dónde crece más la conversación adversa?</div><canvas id="c-ratiopl"></canvas></div>
+      <div class="card"><div class="ct">TRA — Evolución Semanal</div><div class="cs">Temperatura reputacional acumulada</div><canvas id="c-tra"></canvas></div>
     </div>
   </div>
 
-  <!-- RESUMEN EJECUTIVO -->
-  <div class="r-card col-12" style="margin-top: 16px;">
-    <div class="r-card-title">Resumen Ejecutivo de Inteligencia</div>
-    <div class="exec-summary" id="resumenEjecutivo"></div>
+  <!-- SENTIMIENTO -->
+  <div class="tsec" id="tab-sent">
+    <div class="stitle">SENTIMIENTO DIGITAL &mdash; ANÁLISIS BIVARIADO</div>
+    <div class="bbar">
+      <span class="blbl">CRUZAR POR &rarr;</span>
+      <button class="bb act" onclick="updSent(this,'general')">GENERAL</button>
+      <button class="bb" onclick="updSent(this,'partido')">PARTIDO</button>
+      <button class="bb" onclick="updSent(this,'plataforma')">PLATAFORMA</button>
+      <button class="bb" onclick="updSent(this,'territorio')">TERRITORIO</button>
+    </div>
+    <div class="cg" style="grid-template-columns: 1fr;">
+      <div class="card"><div class="ct" id="sent-t">Sentimiento General</div><div class="cs" id="sent-s">Clasificación semántica del periodo</div><canvas id="c-sent"></canvas></div>
+    </div>
+    <div class="stitle">HALLAZGOS BIVARIADOS</div>
+    <div class="ig" id="sent-hallazgos"></div>
   </div>
 
-  <!-- GRÁFICAS -->
-  <div class="radar-grid">
-    <div class="r-card col-6">
-      <div class="r-card-title">Tendencia NPS Histórica</div>
-      <canvas id="chartTendencia" height="200"></canvas>
+  <!-- TOP OF MIND -->
+  <div class="tsec" id="tab-tom">
+    <div class="stitle">TOP OF MIND &mdash; ANÁLISIS BIVARIADO</div>
+    <div class="bbar">
+      <span class="blbl">CRUZAR POR &rarr;</span>
+      <button class="bb act" onclick="updTom(this,'general')">GENERAL</button>
+      <button class="bb" onclick="updTom(this,'partido')">PARTIDO</button>
+      <button class="bb" onclick="updTom(this,'plataforma')">PLATAFORMA</button>
+      <button class="bb" onclick="updTom(this,'territorio')">TERRITORIO</button>
     </div>
-    <div class="r-card col-6">
-      <div class="r-card-title">NPS por Segmento</div>
-      <canvas id="chartSegmentos" height="200"></canvas>
+    <div class="card" style="margin-bottom:18px"><div class="ct" id="tom-t">Top de Temas — General</div><div class="cs" id="tom-s">¿Qué domina la conversación pública?</div><canvas id="c-tom" style="max-height:230px"></canvas></div>
+    <div class="stitle">CRUCES TEMÁTICOS</div>
+    <div class="ig" id="tom-hallazgos"></div>
+  </div>
+
+  <!-- PICOS -->
+  <div class="tsec" id="tab-picos">
+    <div class="stitle">ANÁLISIS DE PICOS DE CONVERSACIÓN</div>
+    <div class="cg">
+      <div class="card" style="grid-column: 1 / -1;"><div class="ct">Línea de Tiempo de Volumen y Conversación Adversa</div><div class="cs">Picos de volumen crítico registrados en el periodo</div><canvas id="c-picos" style="max-height:250px"></canvas></div>
     </div>
-    <div class="r-card col-6">
-      <div class="r-card-title">Temas Principales en Conversación</div>
-      <canvas id="chartTemas" height="200"></canvas>
-    </div>
-    <div class="r-card col-6">
-      <div class="r-card-title">Sentimiento por Plataforma (%)</div>
-      <canvas id="chartPlataformas" height="200"></canvas>
+    <div class="ig" id="picos-cards"></div>
+  </div>
+
+  <!-- PLATAFORMAS -->
+  <div class="tsec" id="tab-plat">
+    <div class="stitle">PLATAFORMAS &mdash; ANÁLISIS BIVARIADO</div>
+    <div class="cg">
+      <div class="card"><div class="ct">Alcance por Plataforma</div><div class="cs">Peso relativo de cada canal</div><canvas id="c-plalc"></canvas></div>
+      <div class="card"><div class="ct">Tono por Plataforma</div><div class="cs">¿Dónde es más alta la crítica?</div><canvas id="c-pltono"></canvas></div>
+      <div class="card"><div class="ct">Plataforma &times; Edad</div><div class="cs">¿Dónde está cada generación?</div><canvas id="c-pledad"></canvas></div>
+      <div class="card"><div class="ct">Velocidad de Viralización (horas a 1K)</div><div class="cs">Crítica vs. contenido propio</div><canvas id="c-plviral"></canvas></div>
     </div>
   </div>
 
-  <!-- LINEA TIEMPO & RIESGOS -->
-  <div class="radar-grid">
-    <div class="r-card col-6">
-      <div class="r-card-title">Eventos Recientes y su Impacto en NPS</div>
-      <div id="timelineContainer"></div>
-    </div>
-    <div class="r-card col-6">
-      <div class="r-card-title">Matriz de Riesgos Detectados</div>
-      <div id="riesgosContainer"></div>
+  <!-- NARRATIVAS -->
+  <div class="tsec" id="tab-nar">
+    <div class="stitle">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
+    <div class="ng">
+      <div class="nc">
+        <div class="nh fav">&Delta; NARRATIVAS FAVORABLES</div>
+        <div id="nar-fav"></div>
+      </div>
+      <div class="nc">
+        <div class="nh crit">&nabla; NARRATIVAS CRÍTICAS</div>
+        <div id="nar-crit"></div>
+      </div>
+      <div class="nc">
+        <div class="nh neu">&diams; NARRATIVAS NEUTRAS</div>
+        <div id="nar-neu"></div>
+      </div>
     </div>
   </div>
+
+  <!-- RIESGOS -->
+  <div class="tsec" id="tab-risk">
+    <div class="stitle">MATRIZ BIVARIADA DE RIESGOS Y OPORTUNIDADES</div>
+    <div class="mg">
+      <div>
+        <div class="mh risk">&lambda; RIESGOS &mdash; IMPACTO POR SEGMENTO</div>
+        <div class="mb" id="risk-list"></div>
+      </div>
+      <div>
+        <div class="mh opp">&plusmn; OPORTUNIDADES &mdash; POTENCIAL POR SEGMENTO</div>
+        <div class="mb" id="opp-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERRITORIAL -->
+  <div class="tsec" id="tab-ter">
+    <div class="stitle">MAPA DE CALOR TERRITORIAL &mdash; NPS-P POR ZONA</div>
+    <div class="hm" id="ter-heatmap"></div>
+    <div class="cg">
+      <div class="card"><div class="ct">NPS-P por Zona</div><div class="cs">Aprobación neta por localidad</div><canvas id="c-ternps"></canvas></div>
+      <div class="card"><div class="ct">Volumen de Conversación por Zona</div><div class="cs">% del total de menciones del periodo</div><canvas id="c-tervol"></canvas></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="footer">
+  <span id="foot-title">Radar Análisis Bivariado</span>
+  <span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span>
 </div>
 
 <script>
-(function() {
-  const d = window.DATA || {};
-  const meta = window.DATA_META || {};
+// CONSTANTES DE COLOR
+const C = { ac: '#1B4F8A', go: '#B8860B', da: '#E63946', su: '#008080', ne: '#4a5568', bl: '#1C2738' };
+Chart.defaults.color = '#2d3748';
+Chart.defaults.font.family = 'system-ui,sans-serif';
 
-  // Render KPIs
-  if (d.kpis) {
-    document.getElementById('kpiNps').textContent = d.kpis.npsGlobal ?? 0;
-    document.getElementById('kpiTendencia').textContent = `Tendencia: ${d.kpis.tendencia || 'Estable'}`;
-    const elA = document.getElementById('kpiAlerta');
-    elA.textContent = `Nivel ${d.kpis.nivelAlerta || 1}`;
-    elA.className = `alerta-pill alerta-${d.kpis.nivelAlerta || 1}`;
-    document.getElementById('kpiTema').textContent = d.kpis.temaDominante || 'N/A';
+// LECTURA DINÁMICA DEL OBJETO GLOBAL window.DATA
+function getData() {
+  const d = window.DATA && window.DATA.radar ? window.DATA.radar : (window.DATA || {});
+  return {
+    kpis: d.kpis || {
+      npsPartido: { labels: ['Sin Datos'], data: [0] },
+      npsDemo: { labels: ['Sin Datos'], data: [0] },
+      ratioPlataforma: { labels: ['Sin Datos'], data: [0] },
+      traEvolucion: { labels: ['S1'], data: [0] }
+    },
+    sentimiento: d.sentimiento || {
+      general: { labels: ['Positivo', 'Neutro', 'Negativo'], data: [33, 33, 34], colors: [C.su, C.ne, C.da] },
+      hallazgos: []
+    },
+    topOfMind: d.topOfMind || {
+      general: { labels: ['Sin Datos'], data: [0] },
+      hallazgos: []
+    },
+    picos: d.picos || {
+      timeline: { labels: ['Día 1'], totales: [0], criticos: [0] },
+      eventos: []
+    },
+    plataformas: d.plataformas || {
+      alcance: { labels: ['Facebook'], data: [100] },
+      tono: { labels: ['Facebook'], pos: [50], neg: [50] },
+      edad: { labels: ['Facebook'], e18_29: [25], e30_44: [25], e45_59: [25], e60: [25] },
+      viralidad: { labels: ['Facebook'], critica: [2], propia: [10] }
+    },
+    narrativas: d.narrativas || { favorables: [], criticas: [], neutras: [] },
+    riesgosOportunidades: d.riesgosOportunidades || { riesgos: [], oportunidades: [] },
+    territorial: d.territorial || { heatmap: [], nps: { labels: [], data: [] }, volumen: { labels: [], data: [] } }
+  };
+}
+
+// CONTROL DE PESTAÑAS
+function tab(btn, id) {
+  document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
+  document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('show');
+  btn.classList.add('act');
+  setTimeout(() => rCharts(id), 60);
+}
+
+const CH = {};
+function mk(id, cfg) {
+  if (CH[id]) CH[id].destroy();
+  const c = document.getElementById(id);
+  if (!c) return;
+  CH[id] = new Chart(c, cfg);
+}
+
+// RENDERIZADO DE GRÁFICOS Y HTML DINÁMICO
+function rKpis() {
+  const data = getData().kpis;
+  mk('c-npspar', {
+    type: 'bar',
+    data: {
+      labels: data.npsPartido.labels,
+      datasets: [{ data: data.npsPartido.data, backgroundColor: [C.su, C.go, C.ne, C.da, '#AA0000'], borderRadius: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } }, x: { ticks: { font: { size: 9 } } } } }
+  });
+
+  mk('c-npsdemo', {
+    type: 'bar',
+    data: {
+      labels: data.npsDemo.labels,
+      datasets: [{ data: data.npsDemo.data, backgroundColor: d => d.raw >= 0 ? C.su : C.da, borderRadius: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } }, x: { ticks: { font: { size: 8 } } } } }
+  });
+
+  mk('c-ratiopl', {
+    type: 'bar',
+    data: {
+      labels: data.ratioPlataforma.labels,
+      datasets: [{ data: data.ratioPlataforma.data, backgroundColor: [C.da, C.da, C.da, C.go, C.su, C.su], borderRadius: 2 }]
+    },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  mk('c-tra', {
+    type: 'line',
+    data: {
+      labels: data.traEvolucion.labels,
+      datasets: [{ data: data.traEvolucion.data, borderColor: C.ac, backgroundColor: 'rgba(27,79,138,.1)', fill: true, tension: .4, borderWidth: 2, pointRadius: 3 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } }
+  });
+}
+
+let sC = null;
+function rSent(k) {
+  if (sC) sC.destroy();
+  const data = getData().sentimiento;
+  const d = data[k] || data.general;
+  const c1 = document.getElementById('c-sent');
+  if (!c1) return;
+  const isBar = d.t === 'bar';
+  sC = new Chart(c1, {
+    type: d.t || 'doughnut',
+    data: {
+      labels: d.labels,
+      datasets: [{ data: d.data, backgroundColor: d.colors || [C.su, C.go, C.da, C.ne], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: !isBar, position: 'bottom' } },
+      cutout: isBar ? undefined : '55%',
+      scales: isBar ? { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } : undefined
+    }
+  });
+
+  // Renderizar Hallazgos Dinámicos
+  const hBox = document.getElementById('sent-hallazgos');
+  if (hBox && data.hallazgos) {
+    hBox.innerHTML = data.hallazgos.map(item => `
+      <div class="ic ${item.cls || 'ac'}">
+        <div class="ih">${item.titulo}</div>
+        <div class="ib">${item.desc}</div>
+        <div class="im">&rarr; ${item.accion}</div>
+      </div>
+    `).join('');
   }
-  document.getElementById('kpiFuentes').textContent = meta.fuentesEncontradas || 0;
-  document.getElementById('resumenEjecutivo').textContent = d.resumenEjecutivo || 'Sin información disponible.';
+}
 
-  // Chart 1: Tendencia
-  if (d.npsTendencia) {
-    new Chart(document.getElementById('chartTendencia'), {
-      type: 'line',
-      data: {
-        labels: d.npsTendencia.meses || [],
-        datasets: [{
-          label: 'NPS',
-          data: d.npsTendencia.valores || [],
-          borderColor: '#1e3a8a',
-          backgroundColor: 'rgba(30, 58, 138, 0.1)',
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-  }
+function updSent(btn, k) {
+  document.querySelectorAll('#tab-sent .bb').forEach(b => b.classList.remove('act'));
+  btn.classList.add('act');
+  document.getElementById('sent-t').textContent = 'Sentimiento — ' + k.toUpperCase();
+  rSent(k);
+}
 
-  // Chart 2: Segmentos
-  if (d.npsPorSegmento) {
-    new Chart(document.getElementById('chartSegmentos'), {
+let tomC = null;
+function rTom(k) {
+  if (tomC) tomC.destroy();
+  const data = getData().topOfMind;
+  const c = document.getElementById('c-tom');
+  if (!c) return;
+
+  if (k === 'partido' && data.partido) {
+    tomC = new Chart(c, {
       type: 'bar',
       data: {
-        labels: d.npsPorSegmento.map(x => x.segmento),
-        datasets: [{
-          label: 'NPS',
-          data: d.npsPorSegmento.map(x => x.valor),
-          backgroundColor: d.npsPorSegmento.map(x => x.valor >= 0 ? '#16a34a' : '#dc2626')
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-  }
-
-  // Chart 3: Temas
-  if (d.temasPrincipales) {
-    new Chart(document.getElementById('chartTemas'), {
-      type: 'bar',
-      indexAxis: 'y',
-      data: {
-        labels: d.temasPrincipales.map(x => x.tema),
-        datasets: [{
-          label: 'Peso / Volumen',
-          data: d.temasPrincipales.map(x => x.peso),
-          backgroundColor: '#00C2D4'
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-  }
-
-  // Chart 4: Plataformas
-  if (d.sentimientoPorPlataforma) {
-    new Chart(document.getElementById('chartPlataformas'), {
-      type: 'bar',
-      data: {
-        labels: d.sentimientoPorPlataforma.map(x => x.plataforma),
+        labels: data.partido.labels,
         datasets: [
-          { label: '% Positivo', data: d.sentimientoPorPlataforma.map(x => x.positivo), backgroundColor: '#16a34a' },
-          { label: '% Negativo', data: d.sentimientoPorPlataforma.map(x => x.negativo), backgroundColor: '#dc2626' }
+          { label: 'Base', data: data.partido.base, backgroundColor: C.su },
+          { label: 'Disidentes', data: data.partido.dis, backgroundColor: C.da },
+          { label: 'Independientes', data: data.partido.indep, backgroundColor: C.go }
         ]
       },
-      options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } }
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  } else {
+    const d = data[k] || data.general;
+    tomC = new Chart(c, {
+      type: 'bar',
+      data: { labels: d.labels, datasets: [{ data: d.data, backgroundColor: d.colors || C.ac, borderRadius: 2 }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
     });
   }
 
-  // Render Linea de Tiempo
-  const tContainer = document.getElementById('timelineContainer');
-  if (d.lineaTiempo && d.lineaTiempo.length) {
-    tContainer.innerHTML = d.lineaTiempo.map(item => `
-      <div class="timeline-item">
-        <div style="font-size:11px; font-weight:800; color:#64748b;">${item.fecha} | Impacto: ${item.impactoNps > 0 ? '+' : ''}${item.impactoNps} NPS</div>
-        <div style="font-size:13px; font-weight:700; color:#0f172a;">${item.titulo}</div>
-        <div style="font-size:12px; color:#475569; margin-top:2px;">${item.descripcion}</div>
+  const hBox = document.getElementById('tom-hallazgos');
+  if (hBox && data.hallazgos) {
+    hBox.innerHTML = data.hallazgos.map(item => `
+      <div class="ic ${item.cls || 'ac'}">
+        <div class="ih">${item.titulo}</div>
+        <div class="ib">${item.desc}</div>
+        <div class="im">&rarr; ${item.accion}</div>
       </div>
     `).join('');
-  } else {
-    tContainer.innerHTML = '<div style="font-size:12px; color:#94a3b8;">No se registraron eventos críticos.</div>';
+  }
+}
+
+function updTom(btn, k) {
+  document.querySelectorAll('#tab-tom .bb').forEach(b => b.classList.remove('act'));
+  btn.classList.add('act');
+  document.getElementById('tom-t').textContent = 'Top of Mind — ' + k.toUpperCase();
+  rTom(k);
+}
+
+function rPicos() {
+  const data = getData().picos;
+  mk('c-picos', {
+    type: 'line',
+    data: {
+      labels: data.timeline.labels,
+      datasets: [
+        { label: 'Menciones Totales', data: data.timeline.totales, borderColor: C.ac, backgroundColor: 'rgba(27,79,138,.1)', fill: true, tension: .3 },
+        { label: 'Menciones Críticas', data: data.timeline.criticos, borderColor: C.da, backgroundColor: 'rgba(230,57,70,.1)', fill: true, tension: .3 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  const pBox = document.getElementById('picos-cards');
+  if (pBox && data.eventos) {
+    pBox.innerHTML = data.eventos.map(e => `
+      <div class="ic ${e.cls || 'da'}">
+        <div class="ih">${e.titulo}</div>
+        <div class="ib">${e.desc}</div>
+      </div>
+    `).join('');
+  }
+}
+
+function rPlat() {
+  const data = getData().plataformas;
+  mk('c-plalc', {
+    type: 'doughnut',
+    data: { labels: data.alcance.labels, datasets: [{ data: data.alcance.data, backgroundColor: [C.ac, C.bl, C.go, C.ne, C.su, C.da], borderWidth: 0 }] },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '55%' }
+  });
+
+  mk('c-pltono', {
+    type: 'bar',
+    data: {
+      labels: data.tono.labels,
+      datasets: [
+        { label: '% Positivo', data: data.tono.pos, backgroundColor: C.su },
+        { label: '% Negativo', data: data.tono.neg, backgroundColor: C.da }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  mk('c-pledad', {
+    type: 'bar',
+    data: {
+      labels: data.edad.labels,
+      datasets: [
+        { label: '18-29', data: data.edad.e18_29, backgroundColor: 'rgba(230,57,70,.8)' },
+        { label: '30-44', data: data.edad.e30_44, backgroundColor: C.go },
+        { label: '45-59', data: data.edad.e45_59, backgroundColor: C.su },
+        { label: '60+', data: data.edad.e60, backgroundColor: C.ne }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  mk('c-plviral', {
+    type: 'bar',
+    data: {
+      labels: data.viralidad.labels,
+      datasets: [
+        { label: 'Crítica (h)', data: data.viralidad.critica, backgroundColor: C.da },
+        { label: 'Propia (h)', data: data.viralidad.propia, backgroundColor: C.su }
+      ]
+    },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function rNar() {
+  const data = getData().narrativas;
+  const renderList = (items, targetId, biClass) => {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    el.innerHTML = items.map(n => `
+      <div class="ni">
+        <div class="nit">${n.titulo}</div>
+        <div class="nd">${n.desc}</div>
+        ${(n.tags || []).map(t => `<span class="btag ${t.cls}">${t.txt}</span>`).join('')}
+        <div class="bi ${biClass}"><strong>Bivariado:</strong> ${n.bivariado}</div>
+      </div>
+    `).join('');
+  };
+  renderList(data.favorables, 'nar-fav', '');
+  renderList(data.criticas, 'nar-crit', 'neg');
+  renderList(data.neutras, 'nar-neu', 'ntr');
+}
+
+function rRisk() {
+  const data = getData().riesgosOportunidades;
+  const rBox = document.getElementById('risk-list');
+  if (rBox) {
+    rBox.innerHTML = data.riesgos.map(r => `
+      <div class="mr">
+        <div class="mt"><span class="lv ${r.lvlCls}">${r.nivel}</span><span class="mn">${r.titulo}</span></div>
+        <div class="md">${r.desc}</div>
+      </div>
+    `).join('');
   }
 
-  // Render Riesgos
-  const rContainer = document.getElementById('riesgosContainer');
-  if (d.riesgos && d.riesgos.length) {
-    rContainer.innerHTML = d.riesgos.map(r => `
-      <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
-        <div><span class="risk-badge risk-${r.nivel}">${r.nivel}</span> <strong style="font-size:13px; color:#0f172a;">${r.titulo}</strong></div>
-        <div style="font-size:12px; color:#475569; margin-top:4px;">${r.descripcion}</div>
+  const oBox = document.getElementById('opp-list');
+  if (oBox) {
+    oBox.innerHTML = data.oportunidades.map(o => `
+      <div class="mr">
+        <div class="mt"><span class="lv" style="background:#008080;color:#fff">${o.nivel}</span><span class="mn">${o.titulo}</span></div>
+        <div class="md">${o.desc}</div>
       </div>
     `).join('');
-  } else {
-    rContainer.innerHTML = '<div style="font-size:12px; color:#94a3b8;">No hay riesgos relevantes reportados.</div>';
   }
-})();
+}
+
+function rTer() {
+  const data = getData().territorial;
+  const hBox = document.getElementById('ter-heatmap');
+  if (hBox && data.heatmap) {
+    hBox.innerHTML = data.heatmap.map(z => `
+      <div class="hz ${z.cls}">
+        <div class="hzn">${z.zona}</div>
+        <div class="hzs">${z.nps > 0 ? '+' + z.nps : z.nps}</div>
+        <div class="hzl">${z.status}</div>
+      </div>
+    `).join('');
+  }
+
+  mk('c-ternps', {
+    type: 'bar',
+    data: { labels: data.nps.labels, datasets: [{ data: data.nps.data, backgroundColor: d => d.raw > 0 ? C.su : C.da, borderRadius: 2 }] },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  mk('c-tervol', {
+    type: 'bar',
+    data: { labels: data.volumen.labels, datasets: [{ data: data.volumen.data, backgroundColor: C.ac, borderRadius: 2 }] },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+  });
+}
+
+function rCharts(t) {
+  if (t === 'kpis') rKpis();
+  if (t === 'sent') rSent('general');
+  if (t === 'tom') rTom('general');
+  if (t === 'picos') rPicos();
+  if (t === 'plat') rPlat();
+  if (t === 'nar') rNar();
+  if (t === 'risk') rRisk();
+  if (t === 'ter') rTer();
+}
+
+window.addEventListener('load', () => {
+  if (window.DATA && window.DATA.titulo) {
+    document.getElementById('foot-title').textContent = window.DATA.titulo;
+  }
+  setTimeout(() => rCharts('kpis'), 100);
+});
 </script>
+</body>
+</html>
