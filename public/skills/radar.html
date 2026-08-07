@@ -1,186 +1,208 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RADAR v2.0 - {{ACTOR_NOMBRE_PRINCIPAL}}</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <style>
-    :root {
-      --hdrblue: #1C2738;
-      --navy: #1C2738;
-      --ac: #00C2D4;
-      --go: #F4C430;
-      --da: #E63946;
-      --su: #2EC4B6;
-      --bl: #1B4F8A;
-      --card: #d5d1d1;
-      --border: rgba(28,39,56,0.15);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #ffffff; color: #1C2738; font-family: system-ui, sans-serif; min-height: 100vh; }
+<style>
+  .radar-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-top: 16px; }
+  .col-12 { grid-column: span 12; }
+  .col-8 { grid-column: span 8; }
+  .col-6 { grid-column: span 6; }
+  .col-4 { grid-column: span 4; }
+  .col-3 { grid-column: span 3; }
+  @media(max-width: 900px) { .col-8, .col-6, .col-4, .col-3 { grid-column: span 12; } }
 
-    .hdr { background: var(--hdrblue); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 18px 24px; position: sticky; top: 0; backdrop-filter: blur(12px); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-    .hdr-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1.2; }
-    .hdr-name span { color: var(--ac); }
-    .hdr-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; font-weight: 500; }
+  .r-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .r-card-title { font-size: 13px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  
+  .kpi-val { font-size: 32px; font-weight: 900; color: #0f172a; }
+  .kpi-sub { font-size: 12px; color: #64748b; font-weight: 600; margin-top: 4px; }
+  
+  .alerta-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 11px; }
+  .alerta-1 { background: #dcfce7; color: #166534; }
+  .alerta-2 { background: #fef9c3; color: #854d0e; }
+  .alerta-3 { background: #ffedd5; color: #9a3412; }
+  .alerta-4 { background: #fee2e2; color: #991b1b; }
 
-    .con { max-width: 1300px; margin: 0 auto; padding: 0 20px; }
-    
-    .tabs { display: flex; border-bottom: 2px solid var(--navy); overflow-x: auto; margin-top: 20px; margin-bottom: 24px; gap: 4px; }
-    .tb { font-family: monospace; font-size: 9px; padding: 10px 14px; cursor: pointer; color: #718096; border-bottom: 3px solid transparent; white-space: nowrap; background: rgba(0,0,0,0.03); border: none; font-weight: 700; }
-    .tb.act { color: #ffffff; background: var(--navy); border-bottom-color: var(--ac); }
-    
-    .tsec { display: none; }
-    .tsec.show { display: block; }
+  .exec-summary { background: #f8fafc; border-left: 4px solid #00C2D4; padding: 14px; font-size: 13px; color: #334155; line-height: 1.6; }
+  
+  .timeline-item { border-left: 2px solid #cbd5e1; padding-left: 14px; margin-bottom: 14px; position: relative; }
+  .timeline-item::before { content: ''; position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #1e3a8a; }
+  
+  .risk-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #fff; display: inline-block; }
+  .risk-ALTO { background: #dc2626; }
+  .risk-MEDIO { background: #d97706; }
+  .risk-BAJO { background: #16a34a; }
+</style>
 
-    .stitle { font-family: monospace; font-size: 10px; font-weight: 700; color: var(--navy); letter-spacing: 4px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-    .stitle::after { content: ''; flex: 1; height: 2px; background: linear-gradient(90deg, var(--border), transparent); }
-
-    .cg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 28px; }
-    @media(max-width: 768px) { .cg { grid-template-columns: 1fr; } }
-
-    .card { background: var(--card); border: 1px solid rgba(0,0,0,0.05); border-radius: 4px; padding: 18px; color: #1a202c; }
-    .ct { font-size: 13px; font-weight: 700; margin-bottom: 3px; color: var(--navy); }
-    .cs { font-size: 10px; color: #4a5568; margin-bottom: 14px; }
-
-    .footer { background: #1C2738; border-top: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 40px; border-radius: 4px; }
-    canvas { max-height: 230px; }
-  </style>
-</head>
-<body>
-
-<header class="hdr">
-  <div>
-    <h1 class="hdr-name">{{ACTOR_NOMBRE_PRINCIPAL}} <span>{{ACTOR_APELLIDOS}}</span></h1>
-    <p class="hdr-sub">{{ACTOR_CARGO}} &middot; {{ACTOR_ENTIDAD}} &middot; {{PERIODO_EVALUADO}}</p>
-  </div>
-</header>
-
-<main class="con">
-  <div class="tabs">
-    <button class="tb act" id="btn-tab-kpis">KPIs AMPLIADOS</button>
-    <button class="tb" id="btn-tab-sent">SENTIMIENTO</button>
-    <button class="tb" id="btn-tab-plat">PLATAFORMAS</button>
-  </div>
-
-  <div class="tsec show" id="tab-kpis">
-    <div class="stitle">KPIs BIVARIADOS — DATOS EN VIVO</div>
-    <div class="cg">
-      <div class="card"><div class="ct">NPS-P por Identidad Partidista</div><div class="cs">Aprobación según filiación política</div><canvas id="c-npspar"></canvas></div>
-      <div class="card"><div class="ct">NPS-P por Género y Edad</div><div class="cs">Brecha demográfica</div><canvas id="c-npsdemo"></canvas></div>
-      <div class="card"><div class="ct">Ratio Ataque/Defensa por Plataforma</div><div class="cs">Conversación adversa por red</div><canvas id="c-ratiopl"></canvas></div>
-      <div class="card"><div class="ct">TRA — Evolución Reputacional</div><div class="cs">Temperatura acumulada por periodos de evaluación</div><canvas id="c-tra"></canvas></div>
+<div class="radar-container">
+  <!-- KPIs TOP -->
+  <div class="radar-grid">
+    <div class="r-card col-3">
+      <div class="r-card-title">NPS Global</div>
+      <div class="kpi-val" id="kpiNps">0</div>
+      <div class="kpi-sub" id="kpiTendencia">-</div>
+    </div>
+    <div class="r-card col-3">
+      <div class="r-card-title">Nivel de Alerta</div>
+      <div class="kpi-val"><span id="kpiAlerta" class="alerta-pill">-</span></div>
+      <div class="kpi-sub">Grado de riesgo político</div>
+    </div>
+    <div class="r-card col-3">
+      <div class="r-card-title">Tema Dominante</div>
+      <div class="kpi-val" style="font-size: 18px;" id="kpiTema">-</div>
+      <div class="kpi-sub">Mayor conversación</div>
+    </div>
+    <div class="r-card col-3">
+      <div class="r-card-title">Fuentes Mapeadas</div>
+      <div class="kpi-val" id="kpiFuentes">0</div>
+      <div class="kpi-sub">Menciones analizadas</div>
     </div>
   </div>
 
-  <div class="tsec" id="tab-sent">
-    <div class="stitle">SENTIMIENTO DIGITAL</div>
-    <div class="cg" style="grid-template-columns: 1fr;">
-      <div class="card"><div class="ct">Sentimiento General Extraído</div><div class="cs">Basado en scraping de fuentes masivas</div><canvas id="c-sent"></canvas></div>
+  <!-- RESUMEN EJECUTIVO -->
+  <div class="r-card col-12" style="margin-top: 16px;">
+    <div class="r-card-title">Resumen Ejecutivo de Inteligencia</div>
+    <div class="exec-summary" id="resumenEjecutivo"></div>
+  </div>
+
+  <!-- GRÁFICAS -->
+  <div class="radar-grid">
+    <div class="r-card col-6">
+      <div class="r-card-title">Tendencia NPS Histórica</div>
+      <canvas id="chartTendencia" height="200"></canvas>
+    </div>
+    <div class="r-card col-6">
+      <div class="r-card-title">NPS por Segmento</div>
+      <canvas id="chartSegmentos" height="200"></canvas>
+    </div>
+    <div class="r-card col-6">
+      <div class="r-card-title">Temas Principales en Conversación</div>
+      <canvas id="chartTemas" height="200"></canvas>
+    </div>
+    <div class="r-card col-6">
+      <div class="r-card-title">Sentimiento por Plataforma (%)</div>
+      <canvas id="chartPlataformas" height="200"></canvas>
     </div>
   </div>
 
-  <div class="tsec" id="tab-plat">
-    <div class="stitle">TOP TEMAS DE CONVERSACIÓN</div>
-    <div class="card"><div class="ct">Temas Dominantes</div><div class="cs">Temáticas detectadas por la IA</div><canvas id="c-tom"></canvas></div>
+  <!-- LINEA TIEMPO & RIESGOS -->
+  <div class="radar-grid">
+    <div class="r-card col-6">
+      <div class="r-card-title">Eventos Recientes y su Impacto en NPS</div>
+      <div id="timelineContainer"></div>
+    </div>
+    <div class="r-card col-6">
+      <div class="r-card-title">Matriz de Riesgos Detectados</div>
+      <div id="riesgosContainer"></div>
+    </div>
   </div>
-</main>
-
-<div class="footer">
-  <span>Radar Análisis Político &middot; {{ACTOR_ENTIDAD}} &middot;</span>
-  <span>CONFIDENCIAL &middot; Datos Conectados en Tiempo Real</span>
 </div>
 
 <script>
 (function() {
-  const C = { ac: '#00C2D4', go: '#F4C430', da: '#E63946', su: '#2EC4B6', bl: '#1B4F8A', navy: '#1C2738' };
-  const ACTOR = window.DYNAMIC_ACTOR || localStorage.getItem('selectedPersonaje') || 'Personaje';
-  const MES = window.DYNAMIC_MES || localStorage.getItem('selectedMes') || 'Agosto';
-  const ANIO = window.DYNAMIC_ANIO || localStorage.getItem('selectedAnio') || '2026';
+  const d = window.DATA || {};
+  const meta = window.DATA_META || {};
 
-  let API_DATA = null;
-  const CH = {};
-
-  function tab(btn, id) {
-    document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
-    document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
-    document.getElementById('tab-' + id).classList.add('show');
-    btn.classList.add('act');
-    setTimeout(() => { Object.values(CH).forEach(c => c && c.resize()); }, 50);
+  // Render KPIs
+  if (d.kpis) {
+    document.getElementById('kpiNps').textContent = d.kpis.npsGlobal ?? 0;
+    document.getElementById('kpiTendencia').textContent = `Tendencia: ${d.kpis.tendencia || 'Estable'}`;
+    const elA = document.getElementById('kpiAlerta');
+    elA.textContent = `Nivel ${d.kpis.nivelAlerta || 1}`;
+    elA.className = `alerta-pill alerta-${d.kpis.nivelAlerta || 1}`;
+    document.getElementById('kpiTema').textContent = d.kpis.temaDominante || 'N/A';
   }
+  document.getElementById('kpiFuentes').textContent = meta.fuentesEncontradas || 0;
+  document.getElementById('resumenEjecutivo').textContent = d.resumenEjecutivo || 'Sin información disponible.';
 
-  document.getElementById('btn-tab-kpis').onclick = function() { tab(this, 'kpis'); };
-  document.getElementById('btn-tab-sent').onclick = function() { tab(this, 'sent'); };
-  document.getElementById('btn-tab-plat').onclick = function() { tab(this, 'plat'); };
-
-  function mk(id, cfg) {
-    if (CH[id]) CH[id].destroy();
-    const c = document.getElementById(id);
-    if (!c) return;
-    CH[id] = new Chart(c, cfg);
-  }
-
-  async function loadRadarData() {
-    try {
-      const res = await fetch(`/api/analizar?skill=radar&actor=${encodeURIComponent(ACTOR)}&mes=${encodeURIComponent(MES)}&anio=${encodeURIComponent(ANIO)}`);
-      API_DATA = await res.json();
-      renderCharts();
-    } catch(e) {
-      console.error("Error cargando radar:", e);
-      renderCharts();
-    }
-  }
-
-  function renderCharts() {
-    const rd = (API_DATA && API_DATA.radarData) ? API_DATA.radarData : {
-      npsPar: [75, 40, -30],
-      npsDemo: [28, 45, 60, 72, 55, 80],
-      ratioPl: [80, 40, 65, 70],
-      tra: [60, 64, 58, 72],
-      sentGeneral: [55, 30, 15],
-      topTopics: [40, 32, 25, 20, 15]
-    };
-
-    mk('c-npspar', {
-      type: 'bar',
-      data: { labels: ['Base Propia', 'Independientes', 'Oposición'], datasets: [{ data: rd.npsPar, backgroundColor: [C.su, C.go, C.da] }] },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-
-    mk('c-npsdemo', {
-      type: 'bar',
-      data: { labels: ['H 18-29', 'M 18-29', 'H 30-44', 'M 30-44', 'H 45+', 'M 45+'], datasets: [{ data: rd.npsDemo, backgroundColor: C.ac }] },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-
-    mk('c-ratiopl', {
-      type: 'bar',
-      data: { labels: ['Facebook', 'X / Twitter', 'TikTok', 'Instagram'], datasets: [{ data: rd.ratioPl, backgroundColor: [C.bl, C.da, C.go, C.su] }] },
-      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-    });
-
-    mk('c-tra', {
+  // Chart 1: Tendencia
+  if (d.npsTendencia) {
+    new Chart(document.getElementById('chartTendencia'), {
       type: 'line',
-      data: { labels: ['S-1', 'S-2', 'S-3', 'S-4'], datasets: [{ label: 'Aprobación', data: rd.tra, borderColor: C.bl, fill: true }] },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
-
-    mk('c-sent', {
-      type: 'doughnut',
-      data: { labels: ['Positivo', 'Neutral', 'Negativo'], datasets: [{ data: rd.sentGeneral, backgroundColor: [C.su, C.go, C.da] }] },
-      options: { responsive: true }
-    });
-
-    mk('c-tom', {
-      type: 'bar',
-      data: { labels: ['Infraestructura', 'Seguridad', 'Programas', 'Economía', 'Transparencia'], datasets: [{ data: rd.topTopics, backgroundColor: C.bl }] },
+      data: {
+        labels: d.npsTendencia.meses || [],
+        datasets: [{
+          label: 'NPS',
+          data: d.npsTendencia.valores || [],
+          borderColor: '#1e3a8a',
+          backgroundColor: 'rgba(30, 58, 138, 0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
       options: { responsive: true, plugins: { legend: { display: false } } }
     });
   }
 
-  loadRadarData();
+  // Chart 2: Segmentos
+  if (d.npsPorSegmento) {
+    new Chart(document.getElementById('chartSegmentos'), {
+      type: 'bar',
+      data: {
+        labels: d.npsPorSegmento.map(x => x.segmento),
+        datasets: [{
+          label: 'NPS',
+          data: d.npsPorSegmento.map(x => x.valor),
+          backgroundColor: d.npsPorSegmento.map(x => x.valor >= 0 ? '#16a34a' : '#dc2626')
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+  }
+
+  // Chart 3: Temas
+  if (d.temasPrincipales) {
+    new Chart(document.getElementById('chartTemas'), {
+      type: 'bar',
+      indexAxis: 'y',
+      data: {
+        labels: d.temasPrincipales.map(x => x.tema),
+        datasets: [{
+          label: 'Peso / Volumen',
+          data: d.temasPrincipales.map(x => x.peso),
+          backgroundColor: '#00C2D4'
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+  }
+
+  // Chart 4: Plataformas
+  if (d.sentimientoPorPlataforma) {
+    new Chart(document.getElementById('chartPlataformas'), {
+      type: 'bar',
+      data: {
+        labels: d.sentimientoPorPlataforma.map(x => x.plataforma),
+        datasets: [
+          { label: '% Positivo', data: d.sentimientoPorPlataforma.map(x => x.positivo), backgroundColor: '#16a34a' },
+          { label: '% Negativo', data: d.sentimientoPorPlataforma.map(x => x.negativo), backgroundColor: '#dc2626' }
+        ]
+      },
+      options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } }
+    });
+  }
+
+  // Render Linea de Tiempo
+  const tContainer = document.getElementById('timelineContainer');
+  if (d.lineaTiempo && d.lineaTiempo.length) {
+    tContainer.innerHTML = d.lineaTiempo.map(item => `
+      <div class="timeline-item">
+        <div style="font-size:11px; font-weight:800; color:#64748b;">${item.fecha} | Impacto: ${item.impactoNps > 0 ? '+' : ''}${item.impactoNps} NPS</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a;">${item.titulo}</div>
+        <div style="font-size:12px; color:#475569; margin-top:2px;">${item.descripcion}</div>
+      </div>
+    `).join('');
+  } else {
+    tContainer.innerHTML = '<div style="font-size:12px; color:#94a3b8;">No se registraron eventos críticos.</div>';
+  }
+
+  // Render Riesgos
+  const rContainer = document.getElementById('riesgosContainer');
+  if (d.riesgos && d.riesgos.length) {
+    rContainer.innerHTML = d.riesgos.map(r => `
+      <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
+        <div><span class="risk-badge risk-${r.nivel}">${r.nivel}</span> <strong style="font-size:13px; color:#0f172a;">${r.titulo}</strong></div>
+        <div style="font-size:12px; color:#475569; margin-top:4px;">${r.descripcion}</div>
+      </div>
+    `).join('');
+  } else {
+    rContainer.innerHTML = '<div style="font-size:12px; color:#94a3b8;">No hay riesgos relevantes reportados.</div>';
+  }
 })();
 </script>
-</body>
-</html>
