@@ -1,158 +1,332 @@
-const https = require('https');
+// api/analizar.js
+// Pipeline: Apify (scraping multi-fuente) -> OpenRouter/GPT (estructura en JSON) -> Upstash (cache) -> respuesta
+//
+// Variables de entorno requeridas en Vercel:
+//   APIFY_API_TOKEN         token de Apify
+//   OPENROUTER_API_KEY      token de OpenRouter
+//   OPENROUTER_MODEL        (opcional) ej. "openai/gpt-4o-mini" — default abajo
+//   UPSTASH_REDIS_REST_URL  (opcional, activa caché)
+//   UPSTASH_REDIS_REST_TOKEN(opcional, activa caché)
+//
+// NUNCA se exponen estos valores al cliente: todo corre server-side.
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { skill = 'emociones', actor = 'Personaje', mes = 'Agosto', anio = '2026' } = req.query;
+  const params = req.method === 'POST' ? req.body : req.query;
+  const {
+    skill = 'radar',
+    actor = '',
+    actor2 = '',
+    mes = 'Agosto',
+    anio = '2026',
+  } = params || {};
 
-  if (!actor) {
+  const actorName = String(actor).trim();
+  const actor2Name = String(actor2 || '').trim();
+
+  if (!actorName) {
     return res.status(400).json({ error: 'El parámetro "actor" es requerido.' });
   }
-
-  const apifyToken = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
-
-  // Función genérica para llamar a cualquier actor de Apify vía HTTP POST
-  async function llamarActorApify(actorPath, payload, token) {
-    return new Promise((resolve) => {
-      if (!token) return resolve([]);
-
-      const postData = JSON.stringify(payload);
-      const options = {
-        hostname: 'api.apify.com',
-        port: 443,
-        path: `/v2/acts/${actorPath}/run-sync-get-dataset-items?token=${token}&timeout=25`,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        }
-      };
-
-      const reqApify = https.request(options, (resApify) => {
-        let body = '';
-        resApify.on('data', (chunk) => body += chunk);
-        resApify.on('end', () => {
-          try {
-            const data = JSON.parse(body);
-            resolve(Array.isArray(data) ? data : []);
-          } catch (e) {
-            resolve([]);
-          }
-        });
-      });
-
-      reqApify.on('error', () => resolve([]));
-      reqApify.setTimeout(25000, () => { reqApify.destroy(); resolve([]); });
-      reqApify.write(postData);
-      reqApify.end();
-    });
+  if (skill === 'opositor' && !actor2Name) {
+    return res.status(400).json({ error: 'La Skill "Opositor" requiere dos personajes: "actor" y "actor2".' });
   }
 
-  // Definición de scrapers para noticias y redes sociales
-  const tareasApify = [
-    // 1. Google News / Prensa
-    llamarActorApify('apify~google-search-scraper', {
-      queries: `"${actor}" noticias opinion`,
-      maxPagesPerQuery: 1
-    }, apifyToken),
+  const APIFY_TOKEN = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
+  const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 
-    // 2. Twitter / X (Búsqueda por mención)
-    llamarActorApify('apidojo~tweet-scraper', {
-      searchTerms: [actor],
-      maxItems: 20
-    }, apifyToken),
+  if (!OPENROUTER_KEY) {
+    return res.status(500).json({ error: 'Falta OPENROUTER_API_KEY en las variables de entorno de Vercel.' });
+  }
 
-    // 3. Facebook Posts
-    llamarActorApify('apify~facebook-posts-scraper', {
-      search: actor,
-      resultsLimit: 15
-    }, apifyToken),
-
-    // 4. Instagram Scraper
-    llamarActorApify('apify~instagram-scraper', {
-      search: actor,
-      resultsLimit: 15
-    }, apifyToken),
-
-    // 5. TikTok Scraper
-    llamarActorApify('clockworks~tiktok-scraper', {
-      searchQueries: [actor],
-      resultsPerPage: 15
-    }, apifyToken)
-  ];
-
-  let rawItems = [];
+  // ---------- CACHÉ (Upstash Redis REST) ----------
+  const cacheKey = `radar:${skill}:${norm(actorName)}:${norm(actor2Name)}:${mes}:${anio}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
+    return res.status(200).json({ ...cached, cached: true });
+  }
 
   try {
-    // Ejecución simultánea de todos los actores
-    const resultados = await Promise.all(tareasApify);
-    rawItems = resultados.flat(); // Une los arrays de respuestas en uno solo
+    // ---------- 1. SCRAPING (Apify) ----------
+    const [datosActor1, datosActor2] = await Promise.all([
+      scrapeActor(actorName, APIFY_TOKEN),
+      actor2Name ? scrapeActor(actor2Name, APIFY_TOKEN) : Promise.resolve(null),
+    ]);
+
+    // ---------- 2. ESTRUCTURACIÓN (OpenRouter) ----------
+    const schema = SCHEMAS[skill] || SCHEMAS.radar;
+    const prompt = buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema });
+
+    const structured = await callOpenRouter(prompt, OPENROUTER_KEY);
+
+    const payload = {
+      skill,
+      actor: actorName,
+      actor2: actor2Name || null,
+      periodo: `${mes} ${anio}`,
+      fuentesEncontradas: (datosActor1?.count || 0) + (datosActor2?.count || 0),
+      data: structured,
+      cached: false,
+    };
+
+    await cacheSet(cacheKey, payload, 60 * 60 * 6); // 6 horas
+    return res.status(200).json(payload);
   } catch (err) {
-    console.error("Error al consultar actores en Apify:", err);
+    console.error('Error en /api/analizar:', err);
+    return res.status(500).json({ error: 'Error procesando el análisis.', detail: String(err.message || err) });
+  }
+}
+
+function norm(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, '-');
+}
+
+// =========================================================
+// APIFY: llamadas a los actores de scraping
+// =========================================================
+
+async function llamarActorApify(actorPath, payload, token, timeoutMs = 25000) {
+  if (!token) return [];
+  try {
+    const url = `https://api.apify.com/v2/acts/${actorPath}/run-sync-get-dataset-items?token=${token}&timeout=${Math.round(timeoutMs / 1000)}`;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (!r.ok) return [];
+    const data = await r.json();
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Scrapea todas las fuentes para un actor político y devuelve texto unificado + metadatos
+async function scrapeActor(nombre, token) {
+  const tareas = [
+    // Prensa / noticias vía Google
+    llamarActorApify('apify~google-search-scraper', {
+      queries: `"${nombre}" (noticias OR opinión OR declaraciones)`,
+      resultsPerPage: 20,
+      maxPagesPerQuery: 1,
+    }, token).then(items => tag(items, 'prensa')),
+
+    // Twitter/X
+    llamarActorApify('apidojo~tweet-scraper', {
+      searchTerms: [nombre],
+      maxItems: 30,
+      sort: 'Latest',
+    }, token).then(items => tag(items, 'twitter')),
+
+    // Facebook
+    llamarActorApify('apify~facebook-posts-scraper', {
+      search: nombre,
+      resultsLimit: 20,
+    }, token).then(items => tag(items, 'facebook')),
+
+    // Instagram
+    llamarActorApify('apify~instagram-scraper', {
+      search: nombre,
+      resultsLimit: 15,
+    }, token).then(items => tag(items, 'instagram')),
+
+    // TikTok
+    llamarActorApify('clockworks~tiktok-scraper', {
+      searchQueries: [nombre],
+      resultsPerPage: 15,
+    }, token).then(items => tag(items, 'tiktok')),
+
+    // YouTube (comentarios/menciones en videos de noticias)
+    llamarActorApify('streamers~youtube-scraper', {
+      searchKeywords: nombre,
+      maxResults: 10,
+    }, token).then(items => tag(items, 'youtube')),
+  ];
+
+  const resultados = await Promise.all(tareas);
+  const rawItems = resultados.flat();
+
+  const textos = rawItems
+    .map(i => ({
+      fuente: i.__fuente,
+      texto: i.snippet || i.full_text || i.text || i.caption || i.title || i.description || '',
+      fecha: i.date || i.timestamp || i.publishedAt || null,
+      autor: i.author || i.username || i.ownerUsername || i.channelName || null,
+      likes: i.likeCount ?? i.likes ?? i.diggCount ?? null,
+    }))
+    .filter(t => t.texto && t.texto.length > 8)
+    .slice(0, 120); // límite para no reventar el prompt / costos
+
+  return { count: textos.length, items: textos };
+}
+
+function tag(items, fuente) {
+  return (items || []).map(i => ({ ...i, __fuente: fuente }));
+}
+
+// =========================================================
+// OPENROUTER: estructuración de los datos en JSON fijo
+// =========================================================
+
+const SCHEMAS = {
+  radar: `{
+  "kpis": {"npsGlobal": number, "nivelAlerta": 1|2|3|4, "temaDominante": string, "tendencia": "sube"|"baja"|"estable"},
+  "npsPorSegmento": [{"segmento": string, "valor": number}],   // 4-6 segmentos (base, independientes, oposición, prensa, etc.)
+  "npsTendencia": {"meses": [string], "valores": [number]},     // serie 6-12 meses
+  "temasPrincipales": [{"tema": string, "peso": number}],       // 5-8 temas, peso 0-100
+  "sentimientoPorPlataforma": [{"plataforma": string, "positivo": number, "negativo": number}],
+  "lineaTiempo": [{"fecha": string, "titulo": string, "descripcion": string, "impactoNps": number}], // 2-4 eventos relevantes reales si se detectan en las fuentes
+  "riesgos": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}],
+  "territorios": [{"zona": string, "nps": number, "volumen": number}],
+  "resumenEjecutivo": string
+}`,
+  emociones: `{
+  "emociones": [{"key": "joy"|"trust"|"fear"|"surprise"|"sadness"|"disgust"|"anger"|"anticipation", "label": string, "intensity": 1|2|3, "activa": boolean, "disparadores": [string]}],
+  "diadas": [{"nombre": string, "formula": string, "texto": string}],
+  "problematicas": [string],
+  "temores": [string],
+  "orgullos": [string],
+  "citas": [{"texto": string, "tema": string, "emocion": string, "fuente": string}],
+  "resumenEjecutivo": string
+}`,
+  tensiones: `{
+  "alertas": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string}],
+  "tensiones": [{"actorA": string, "actorB": string, "tema": string, "intensidad": 1|2|3, "descripcion": string}],
+  "narrativas": [{"titulo": string, "resumen": string, "alcance": "alto"|"medio"|"bajo"}],
+  "riesgos": [{"titulo": string, "probabilidad": "alta"|"media"|"baja", "impacto": "alto"|"medio"|"bajo", "descripcion": string}],
+  "territorios": [{"zona": string, "nivelTension": number}],
+  "trayectoria": [{"fecha": string, "evento": string, "nivelTension": number}],
+  "emocionesDominantes": [{"emocion": string, "valor": number}],
+  "resumenEjecutivo": string
+}`,
+  opositor: `{
+  "overview": {"actorA": string, "actorB": string, "resumen": string},
+  "radar": {"ejes": [string], "valoresA": [number], "valoresB": [number]},   // 5-7 ejes (ej. presencia digital, favorabilidad, cobertura, red de poder, controversia)
+  "favorabilidad": {"actorA": number, "actorB": number},
+  "coberturaMediatica": {"actorA": number, "actorB": number},
+  "redDePoder": {"actorA": [string], "actorB": [string]},
+  "vulnerabilidades": {"actorA": [string], "actorB": [string]},
+  "puntosFuertes": {"actorA": [string], "actorB": [string]},
+  "resumenEjecutivo": string
+}`,
+};
+
+function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema }) {
+  const bloque1 = resumirFuentes(datosActor1);
+  const bloque2 = datosActor2 ? resumirFuentes(datosActor2) : null;
+
+  const contexto = actor2Name
+    ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos extraídos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos extraídos sobre ${actor2Name} ---\n${bloque2}`
+    : `Personaje: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
+
+  const system = `Eres un analista de inteligencia político-electoral en México. Recibes texto crudo extraído de prensa, X/Twitter, Facebook, Instagram, TikTok y YouTube sobre uno o dos personajes políticos, y debes producir un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
+
+Reglas:
+- Responde EXCLUSIVAMENTE con un objeto JSON válido que cumpla exactamente este esquema (los tipos y arrays son orientativos sobre forma y longitud esperada, no literales):
+${schema}
+- Basa el análisis en los datos crudos proporcionados. Si hay poca información, usa tu criterio experto sobre el contexto político mexicano para producir estimaciones razonables, pero indícalo de forma neutral en el resumen ejecutivo (evita inventar hechos específicos no verificables como acusaciones concretas).
+- No uses lenguaje partidista ni tomes postura política; mantén tono analítico y profesional.
+- Todos los textos en español de México.`;
+
+  const user = `Periodo evaluado: ${mes} ${anio}\nSkill solicitada: ${skill}\n\n${contexto}\n\nGenera el JSON con el esquema indicado.`;
+
+  return { system, user };
+}
+
+function resumirFuentes(bloque) {
+  if (!bloque || !bloque.items || bloque.items.length === 0) {
+    return '(No se obtuvieron resultados de scraping en vivo; produce el análisis con criterio experto general sobre el contexto político mexicano.)';
+  }
+  return bloque.items
+    .slice(0, 60)
+    .map(i => `[${i.fuente}] ${i.texto.slice(0, 280)}`)
+    .join('\n');
+}
+
+async function callOpenRouter({ system, user }, apiKey) {
+  const model = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+
+  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://radar-lorenzana.vercel.app',
+      'X-Title': 'RADAR Politico',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      temperature: 0.4,
+      max_tokens: 4000,
+      response_format: { type: 'json_object' },
+    }),
+  });
+
+  if (!r.ok) {
+    const errText = await r.text().catch(() => '');
+    throw new Error(`OpenRouter error ${r.status}: ${errText.slice(0, 300)}`);
   }
 
-  // Extracción y unificación de textos sin importar la red social de origen
-  const extractedTexts = rawItems
-    .map(i => i.snippet || i.full_text || i.text || i.caption || i.title || i.description)
-    .filter(t => t && typeof t === 'string' && t.length > 10);
+  const data = await r.json();
+  const raw = data?.choices?.[0]?.message?.content || '{}';
+  const clean = raw.replace(/```json|```/g, '').trim();
 
-  // Asignación dinámica de textos extraídos a las variables
-  const prob1 = extractedTexts[0] || `Análisis de la presencia digital y cobertura mediática de ${actor}.`;
-  const prob2 = extractedTexts[1] || `Atención a declaraciones y posicionamiento político de ${actor}.`;
-  const prob3 = extractedTexts[2] || `Debate y conversación en redes sociales sobre ${actor}.`;
+  try {
+    return JSON.parse(clean);
+  } catch (e) {
+    throw new Error('OpenRouter devolvió un JSON inválido.');
+  }
+}
 
-  const cita1 = extractedTexts[3] || prob1;
-  const cita2 = extractedTexts[4] || prob2;
+// =========================================================
+// CACHÉ: Upstash Redis (REST API) — opcional, reduce costos
+// =========================================================
 
-  const fear1 = extractedTexts[5] || `Exposición a señalamientos u opiniones críticas respecto a ${actor}.`;
-  const fear2 = extractedTexts[6] || `Riesgo de desgaste de narrativa en temas de agenda pública.`;
+async function cacheGet(key) {
+  const { url, token } = upstashConfig();
+  if (!url) return null;
+  try {
+    const r = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (!j.result) return null;
+    return JSON.parse(j.result);
+  } catch {
+    return null;
+  }
+}
 
-  const pride1 = extractedTexts[7] || `Respaldo e interacciones de sectores afines a ${actor}.`;
-  const pride2 = extractedTexts[8] || `Posicionamiento en medios locales y digitales.`;
+async function cacheSet(key, value, ttlSeconds) {
+  const { url, token } = upstashConfig();
+  if (!url) return;
+  try {
+    await fetch(`${url}/set/${encodeURIComponent(key)}?EX=${ttlSeconds}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(value),
+    });
+  } catch {
+    // silencioso: la caché es una optimización, no debe tumbar la respuesta
+  }
+}
 
-  const emotionsData = [
-    { key: "joy", label: "Alegría", active: true, intensity: 2, color: ["#fef08a", "#fde047", "#eab308"], deg: 0, triggers: ["Aceptación pública", "Cobertura positiva"] },
-    { key: "trust", label: "Confianza", active: true, intensity: 3, color: ["#bbf7d0", "#86efac", "#22c55e"], deg: 45, triggers: ["Respaldos clave", "Presencia institucional"] },
-    { key: "fear", label: "Miedo", active: false, intensity: 1, color: ["#bfdbfe", "#93c5fd", "#3b82f6"], deg: 90, triggers: [] },
-    { key: "surprise", label: "Sorpresa", active: true, intensity: 2, color: ["#ddd6fe", "#c084fc", "#a855f7"], deg: 135, triggers: ["Nuevos posicionamientos"] },
-    { key: "sadness", label: "Tristeza", active: false, intensity: 1, color: ["#fed7aa", "#fdba74", "#f97316"], deg: 180, triggers: [] },
-    { key: "disgust", label: "Aversión", active: true, intensity: 2, color: ["#fecdd3", "#fda4af", "#f43f5e"], deg: 225, triggers: ["Críticas mediáticas"] },
-    { key: "anger", label: "Ira", active: true, intensity: 3, color: ["#fecaca", "#fca5a5", "#ef4444"], deg: 270, triggers: ["Polarización en redes"] },
-    { key: "anticipation", label: "Anticipación", active: true, intensity: 2, color: ["#fef9c3", "#fef08a", "#ca8a04"], deg: 315, triggers: ["Expectativa de agenda"] }
-  ];
-
-  const dyadList = [
-    { name: "Agresividad / Confrontación", formula: "Ira + Anticipación", text: `Tensión detectada en entorno digital para ${actor}: ${prob1}` },
-    { name: "Alevosía / Contraste", formula: "Aversión + Ira", text: `Señalamientos y posturas opositoras hacia ${actor}: ${prob2}` },
-    { name: "Optimismo / Aceptación", formula: "Alegría + Anticipación", text: `Recepción de propuestas y agenda de ${actor}: ${prob3}` }
-  ];
-
-  return res.status(200).json({
-    concept: `Humor Social: ${actor}`,
-    conceptDesc: rawItems.length > 0 
-      ? `Se extrajeron ${rawItems.length} publicaciones de prensa, X, FB, IG y TikTok en vivo desde Apify.`
-      : `Análisis procesado para ${actor} (${mes} ${anio}).`,
-    emotions: emotionsData,
-    emociones: emotionsData,
-    secondary: [
-      { name: "Optimismo", text: "Percepción favorable en sectores afines", color: "#22c55e" },
-      { name: "Tensión Mediática", text: "Confrontación en debate público", color: "#ef4444" }
-    ],
-    problematics: [prob1, prob2, prob3],
-    problematicas: [prob1, prob2, prob3],
-    fears: [fear1, fear2],
-    temores: [fear1, fear2],
-    prides: [pride1, pride2],
-    orgullos: [pride1, pride2],
-    quotes: [
-      { text: cita1, topic: "Prensa / Redes", emotion: "Crítica / Tensión" },
-      { text: cita2, topic: "Medios Informativos", emotion: "Confianza" }
-    ],
-    dyads: dyadList,
-    diadas: dyadList
-  });
+function upstashConfig() {
+  return {
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  };
 }
