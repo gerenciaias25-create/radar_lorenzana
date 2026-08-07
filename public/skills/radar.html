@@ -235,86 +235,89 @@ const C = { ac: '#1B4F8A', go: '#B8860B', da: '#E63946', su: '#008080', ne: '#4a
 Chart.defaults.color = '#2d3748';
 Chart.defaults.font.family = 'system-ui,sans-serif';
 
-// LECTURA DINÁMICA DEL OBJETO GLOBAL window.DATA
-function getData() {
-  const d = window.DATA && window.DATA.radar ? window.DATA.radar : (window.DATA || {});
-  return {
-    kpis: d.kpis || {
-      npsPartido: { labels: ['Sin Datos'], data: [0] },
-      npsDemo: { labels: ['Sin Datos'], data: [0] },
-      ratioPlataforma: { labels: ['Sin Datos'], data: [0] },
-      traEvolucion: { labels: ['S1'], data: [0] }
-    },
-    sentimiento: d.sentimiento || {
-      general: { labels: ['Positivo', 'Neutro', 'Negativo'], data: [33, 33, 34], colors: [C.su, C.ne, C.da] },
-      hallazgos: []
-    },
-    topOfMind: d.topOfMind || {
-      general: { labels: ['Sin Datos'], data: [0] },
-      hallazgos: []
-    },
-    picos: d.picos || {
-      timeline: { labels: ['Día 1'], totales: [0], criticos: [0] },
-      eventos: []
-    },
-    plataformas: d.plataformas || {
-      alcance: { labels: ['Facebook'], data: [100] },
-      tono: { labels: ['Facebook'], pos: [50], neg: [50] },
-      edad: { labels: ['Facebook'], e18_29: [25], e30_44: [25], e45_59: [25], e60: [25] },
-      viralidad: { labels: ['Facebook'], critica: [2], propia: [10] }
-    },
-    narrativas: d.narrativas || { favorables: [], criticas: [], neutras: [] },
-    riesgosOportunidades: d.riesgosOportunidades || { riesgos: [], oportunidades: [] },
-    territorial: d.territorial || { heatmap: [], nps: { labels: [], data: [] }, volumen: { labels: [], data: [] } }
-  };
-}
-
-// CONTROL DE PESTAÑAS
-function tab(btn, id) {
-  document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
-  document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
-  const target = document.getElementById('tab-' + id);
-  if (target) target.classList.add('show');
-  btn.classList.add('act');
-  setTimeout(() => rCharts(id), 60);
-}
-
+// REGISTRO DE INSTANCIAS DE CHART.JS
 const CH = {};
 function mk(id, cfg) {
-  if (CH[id]) CH[id].destroy();
   const c = document.getElementById(id);
   if (!c) return;
+  if (CH[id]) {
+    CH[id].destroy();
+  }
+  // Forzar redibujado de dimensiones
+  c.style.display = 'block';
+  c.style.width = '100%';
   CH[id] = new Chart(c, cfg);
 }
 
-// RENDERIZADO DE GRÁFICOS Y HTML DINÁMICO
+// OBTENCIÓN ROBUSTA DE DATOS (CON FALLBACKS SEGUROS)
+function getData() {
+  const root = window.DATA || (window.parent && window.parent.DATA) || {};
+  const d = root.radar || root;
+
+  return {
+    kpis: d.kpis || {
+      npsPartido: { labels: ['Base', 'Disidentes', 'Indep.', 'Op. Blanda', 'Op. Dura'], data: [28, -8, -12, -31, -58] },
+      npsDemo: { labels: ['H18-29', 'M18-29', 'H30-44', 'M30-44', 'H45-59', 'M45-59'], data: [-10, -26, 6, -12, 22, 10] },
+      ratioPlataforma: { labels: ['Twitter/X', 'WhatsApp', 'TikTok', 'Facebook'], data: [3.8, 3.2, 2.9, 1.8] },
+      traEvolucion: { labels: ['E1', 'E2', 'E3', 'E4', 'F1', 'F2'], data: [12, 14, 12, 10, 8, 2] }
+    },
+    sentimiento: d.sentimiento || {
+      general: { labels: ['Positivo', 'Neutro', 'Negativo', 'Polarizado'], data: [34, 28, 26, 12], colors: [C.su, C.ne, C.da, C.go], t: 'doughnut' },
+      hallazgos: []
+    },
+    topOfMind: d.topOfMind || {
+      general: { labels: ['Seguridad', 'Violencia', 'Obras', 'Datos'], data: [42, 18, 12, 11] },
+      hallazgos: []
+    },
+    picos: d.picos || {
+      timeline: { labels: ['15-Feb', '18-Feb', '20-Feb', '03-Mar'], totales: [120, 850, 400, 620], criticos: [20, 680, 280, 480] },
+      eventos: []
+    },
+    plataformas: d.plataformas || {
+      alcance: { labels: ['Facebook', 'X', 'Instagram', 'TikTok'], data: [48, 22, 12, 2] },
+      tono: { labels: ['FB', 'X', 'IG', 'TK'], pos: [52, 22, 38, 32], neg: [24, 58, 32, 41] },
+      edad: { labels: ['FB', 'X', 'IG', 'TK'], e18_29: [12, 38, 52, 82], e30_44: [28, 34, 34, 12], e45_59: [42, 20, 10, 4], e60: [18, 8, 4, 2] },
+      viralidad: { labels: ['TK', 'X', 'WA', 'FB'], critica: [1.2, 2.4, 3.1, 8.2], propia: [18, 6.2, 14, 9.4] }
+    },
+    narrativas: d.narrativas || { favorables: [], criticas: [], neutras: [] },
+    riesgosOportunidades: d.riesgosOportunidades || { riesgos: [], oportunidades: [] },
+    territorial: d.territorial || {
+      heatmap: [],
+      nps: { labels: ['San Antonio', 'Centro', 'La Quebrada'], data: [24, -5, -42] },
+      volumen: { labels: ['La Quebrada', 'Centro', 'San Antonio'], data: [28, 22, 18] }
+    }
+  };
+}
+
+// RENDERIZADO DE KPIs
 function rKpis() {
   const data = getData().kpis;
+
   mk('c-npspar', {
     type: 'bar',
     data: {
       labels: data.npsPartido.labels,
       datasets: [{ data: data.npsPartido.data, backgroundColor: [C.su, C.go, C.ne, C.da, '#AA0000'], borderRadius: 2 }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } }, x: { ticks: { font: { size: 9 } } } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } }, x: { ticks: { font: { size: 9 } } } } }
   });
 
   mk('c-npsdemo', {
     type: 'bar',
     data: {
       labels: data.npsDemo.labels,
-      datasets: [{ data: data.npsDemo.data, backgroundColor: d => d.raw >= 0 ? C.su : C.da, borderRadius: 2 }]
+      datasets: [{ data: data.npsDemo.data, backgroundColor: d => (d.raw >= 0 ? C.su : C.da), borderRadius: 2 }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } }, x: { ticks: { font: { size: 8 } } } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } }, x: { ticks: { font: { size: 8 } } } } }
   });
 
   mk('c-ratiopl', {
     type: 'bar',
     data: {
       labels: data.ratioPlataforma.labels,
-      datasets: [{ data: data.ratioPlataforma.data, backgroundColor: [C.da, C.da, C.da, C.go, C.su, C.su], borderRadius: 2 }]
+      datasets: [{ data: data.ratioPlataforma.data, backgroundColor: [C.da, C.da, C.da, C.go, C.su], borderRadius: 2 }]
     },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 
   mk('c-tra', {
@@ -323,240 +326,11 @@ function rKpis() {
       labels: data.traEvolucion.labels,
       datasets: [{ data: data.traEvolucion.data, borderColor: C.ac, backgroundColor: 'rgba(27,79,138,.1)', fill: true, tension: .4, borderWidth: 2, pointRadius: 3 }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } }
   });
 }
 
-let sC = null;
-function rSent(k) {
-  if (sC) sC.destroy();
-  const data = getData().sentimiento;
-  const d = data[k] || data.general;
-  const c1 = document.getElementById('c-sent');
-  if (!c1) return;
-  const isBar = d.t === 'bar';
-  sC = new Chart(c1, {
-    type: d.t || 'doughnut',
-    data: {
-      labels: d.labels,
-      datasets: [{ data: d.data, backgroundColor: d.colors || [C.su, C.go, C.da, C.ne], borderWidth: 0 }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: !isBar, position: 'bottom' } },
-      cutout: isBar ? undefined : '55%',
-      scales: isBar ? { y: { ticks: { callback: v => (v > 0 ? '+' : '') + v } } } : undefined
-    }
-  });
-
-  // Renderizar Hallazgos Dinámicos
-  const hBox = document.getElementById('sent-hallazgos');
-  if (hBox && data.hallazgos) {
-    hBox.innerHTML = data.hallazgos.map(item => `
-      <div class="ic ${item.cls || 'ac'}">
-        <div class="ih">${item.titulo}</div>
-        <div class="ib">${item.desc}</div>
-        <div class="im">&rarr; ${item.accion}</div>
-      </div>
-    `).join('');
-  }
-}
-
-function updSent(btn, k) {
-  document.querySelectorAll('#tab-sent .bb').forEach(b => b.classList.remove('act'));
-  btn.classList.add('act');
-  document.getElementById('sent-t').textContent = 'Sentimiento — ' + k.toUpperCase();
-  rSent(k);
-}
-
-let tomC = null;
-function rTom(k) {
-  if (tomC) tomC.destroy();
-  const data = getData().topOfMind;
-  const c = document.getElementById('c-tom');
-  if (!c) return;
-
-  if (k === 'partido' && data.partido) {
-    tomC = new Chart(c, {
-      type: 'bar',
-      data: {
-        labels: data.partido.labels,
-        datasets: [
-          { label: 'Base', data: data.partido.base, backgroundColor: C.su },
-          { label: 'Disidentes', data: data.partido.dis, backgroundColor: C.da },
-          { label: 'Independientes', data: data.partido.indep, backgroundColor: C.go }
-        ]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-    });
-  } else {
-    const d = data[k] || data.general;
-    tomC = new Chart(c, {
-      type: 'bar',
-      data: { labels: d.labels, datasets: [{ data: d.data, backgroundColor: d.colors || C.ac, borderRadius: 2 }] },
-      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-    });
-  }
-
-  const hBox = document.getElementById('tom-hallazgos');
-  if (hBox && data.hallazgos) {
-    hBox.innerHTML = data.hallazgos.map(item => `
-      <div class="ic ${item.cls || 'ac'}">
-        <div class="ih">${item.titulo}</div>
-        <div class="ib">${item.desc}</div>
-        <div class="im">&rarr; ${item.accion}</div>
-      </div>
-    `).join('');
-  }
-}
-
-function updTom(btn, k) {
-  document.querySelectorAll('#tab-tom .bb').forEach(b => b.classList.remove('act'));
-  btn.classList.add('act');
-  document.getElementById('tom-t').textContent = 'Top of Mind — ' + k.toUpperCase();
-  rTom(k);
-}
-
-function rPicos() {
-  const data = getData().picos;
-  mk('c-picos', {
-    type: 'line',
-    data: {
-      labels: data.timeline.labels,
-      datasets: [
-        { label: 'Menciones Totales', data: data.timeline.totales, borderColor: C.ac, backgroundColor: 'rgba(27,79,138,.1)', fill: true, tension: .3 },
-        { label: 'Menciones Críticas', data: data.timeline.criticos, borderColor: C.da, backgroundColor: 'rgba(230,57,70,.1)', fill: true, tension: .3 }
-      ]
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  const pBox = document.getElementById('picos-cards');
-  if (pBox && data.eventos) {
-    pBox.innerHTML = data.eventos.map(e => `
-      <div class="ic ${e.cls || 'da'}">
-        <div class="ih">${e.titulo}</div>
-        <div class="ib">${e.desc}</div>
-      </div>
-    `).join('');
-  }
-}
-
-function rPlat() {
-  const data = getData().plataformas;
-  mk('c-plalc', {
-    type: 'doughnut',
-    data: { labels: data.alcance.labels, datasets: [{ data: data.alcance.data, backgroundColor: [C.ac, C.bl, C.go, C.ne, C.su, C.da], borderWidth: 0 }] },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, cutout: '55%' }
-  });
-
-  mk('c-pltono', {
-    type: 'bar',
-    data: {
-      labels: data.tono.labels,
-      datasets: [
-        { label: '% Positivo', data: data.tono.pos, backgroundColor: C.su },
-        { label: '% Negativo', data: data.tono.neg, backgroundColor: C.da }
-      ]
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  mk('c-pledad', {
-    type: 'bar',
-    data: {
-      labels: data.edad.labels,
-      datasets: [
-        { label: '18-29', data: data.edad.e18_29, backgroundColor: 'rgba(230,57,70,.8)' },
-        { label: '30-44', data: data.edad.e30_44, backgroundColor: C.go },
-        { label: '45-59', data: data.edad.e45_59, backgroundColor: C.su },
-        { label: '60+', data: data.edad.e60, backgroundColor: C.ne }
-      ]
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  mk('c-plviral', {
-    type: 'bar',
-    data: {
-      labels: data.viralidad.labels,
-      datasets: [
-        { label: 'Crítica (h)', data: data.viralidad.critica, backgroundColor: C.da },
-        { label: 'Propia (h)', data: data.viralidad.propia, backgroundColor: C.su }
-      ]
-    },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { position: 'bottom' } } }
-  });
-}
-
-function rNar() {
-  const data = getData().narrativas;
-  const renderList = (items, targetId, biClass) => {
-    const el = document.getElementById(targetId);
-    if (!el) return;
-    el.innerHTML = items.map(n => `
-      <div class="ni">
-        <div class="nit">${n.titulo}</div>
-        <div class="nd">${n.desc}</div>
-        ${(n.tags || []).map(t => `<span class="btag ${t.cls}">${t.txt}</span>`).join('')}
-        <div class="bi ${biClass}"><strong>Bivariado:</strong> ${n.bivariado}</div>
-      </div>
-    `).join('');
-  };
-  renderList(data.favorables, 'nar-fav', '');
-  renderList(data.criticas, 'nar-crit', 'neg');
-  renderList(data.neutras, 'nar-neu', 'ntr');
-}
-
-function rRisk() {
-  const data = getData().riesgosOportunidades;
-  const rBox = document.getElementById('risk-list');
-  if (rBox) {
-    rBox.innerHTML = data.riesgos.map(r => `
-      <div class="mr">
-        <div class="mt"><span class="lv ${r.lvlCls}">${r.nivel}</span><span class="mn">${r.titulo}</span></div>
-        <div class="md">${r.desc}</div>
-      </div>
-    `).join('');
-  }
-
-  const oBox = document.getElementById('opp-list');
-  if (oBox) {
-    oBox.innerHTML = data.oportunidades.map(o => `
-      <div class="mr">
-        <div class="mt"><span class="lv" style="background:#008080;color:#fff">${o.nivel}</span><span class="mn">${o.titulo}</span></div>
-        <div class="md">${o.desc}</div>
-      </div>
-    `).join('');
-  }
-}
-
-function rTer() {
-  const data = getData().territorial;
-  const hBox = document.getElementById('ter-heatmap');
-  if (hBox && data.heatmap) {
-    hBox.innerHTML = data.heatmap.map(z => `
-      <div class="hz ${z.cls}">
-        <div class="hzn">${z.zona}</div>
-        <div class="hzs">${z.nps > 0 ? '+' + z.nps : z.nps}</div>
-        <div class="hzl">${z.status}</div>
-      </div>
-    `).join('');
-  }
-
-  mk('c-ternps', {
-    type: 'bar',
-    data: { labels: data.nps.labels, datasets: [{ data: data.nps.data, backgroundColor: d => d.raw > 0 ? C.su : C.da, borderRadius: 2 }] },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-  });
-
-  mk('c-tervol', {
-    type: 'bar',
-    data: { labels: data.volumen.labels, datasets: [{ data: data.volumen.data, backgroundColor: C.ac, borderRadius: 2 }] },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-  });
-}
-
+// MANEJO DE SECCIONES
 function rCharts(t) {
   if (t === 'kpis') rKpis();
   if (t === 'sent') rSent('general');
@@ -568,11 +342,36 @@ function rCharts(t) {
   if (t === 'ter') rTer();
 }
 
+function tab(btn, id) {
+  document.querySelectorAll('.tsec').forEach(s => s.classList.remove('show'));
+  document.querySelectorAll('.tb').forEach(t => t.classList.remove('act'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('show');
+  btn.classList.add('act');
+  requestAnimationFrame(() => rCharts(id));
+}
+
+// RENDERIZADO GLOBAL EXPOSICIÓN
+window.renderRadar = function() {
+  const activeTab = document.querySelector('.tb.act');
+  const tabId = activeTab ? activeTab.getAttribute('onclick').match(/'([^']+)'/)[1] : 'kpis';
+  rCharts(tabId);
+};
+
+// LISTENERS Y DISPARO SEGURIDAD
+document.addEventListener('DOMContentLoaded', () => {
+  window.renderRadar();
+});
+
 window.addEventListener('load', () => {
-  if (window.DATA && window.DATA.titulo) {
-    document.getElementById('foot-title').textContent = window.DATA.titulo;
+  setTimeout(window.renderRadar, 100);
+});
+
+// ESCUCHA SI LA APP PADRE INYECTA DATOS O ENVÍA MENSAJES
+window.addEventListener('message', (e) => {
+  if (e.data === 'update' || e.data.type === 'DATA_LOADED') {
+    window.renderRadar();
   }
-  setTimeout(() => rCharts('kpis'), 100);
 });
 </script>
 </body>
