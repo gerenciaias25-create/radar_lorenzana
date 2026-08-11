@@ -31,9 +31,6 @@ export default async function handler(req, res) {
   if (!actorName) {
     return res.status(400).json({ error: 'El parámetro "actor" es requerido.' });
   }
-  if (skill === 'opositor' && !actor2Name) {
-    return res.status(400).json({ error: 'La Skill "Opositor" requiere dos personajes: "actor" y "actor2".' });
-  }
 
   const APIFY_TOKEN = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
   const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
@@ -232,14 +229,55 @@ const SCHEMAS = {
 
   "resumenEjecutivo": string
 }`,
+  // Esquema completo EMOCIONES — Rueda de Plutchik (8 emociones fijas), Mapa Social,
+  // Díadas, Identidad Política, Actores comparados y Recomendaciones. Ser AMPLIO:
+  // respetar las cantidades sugeridas en los comentarios, no minimizar contenido.
   emociones: `{
-  "emociones": [{"key": "joy"|"trust"|"fear"|"surprise"|"sadness"|"disgust"|"anger"|"anticipation", "label": string, "intensity": 1|2|3, "activa": boolean, "disparadores": [string]}],
-  "diadas": [{"nombre": string, "formula": string, "texto": string}],
-  "problematicas": [string],
-  "temores": [string],
-  "orgullos": [string],
-  "citas": [{"texto": string, "tema": string, "emocion": string, "fuente": string}],
-  "resumenEjecutivo": string
+  "territorio": {"nombre": string, "subtitulo": string, "periodo": string},
+  "riskLevel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO",
+  "ivEstimado": number,   // Índice de Volatilidad Emocional, 0-100
+  "concept": string,       // frase corta (2-4 palabras) que resume el estado emocional del territorio
+  "conceptDesc": string,   // párrafo largo (5-8 líneas) explicando la paradoja/situación emocional actual
+
+  "emotions": [
+    // EXACTAMENTE estas 8 claves, una por cada emoción de Plutchik, en este orden:
+    // "ira","miedo","anticipacion","tristeza","asco","alegria","confianza","sorpresa"
+    {"key": "ira"|"miedo"|"anticipacion"|"tristeza"|"asco"|"alegria"|"confianza"|"sorpresa",
+     "active": boolean, "intensity": 0|1|2|3,
+     "triggers": [string],       // 3-4 detonantes concretos si active=true, [] si active=false
+     "consequences": [string]}   // 3-4 consecuencias observables si active=true, [] si active=false
+  ],
+
+  "secondary": [{"name": string, "text": string}],  // 2-3 emociones secundarias/latentes
+
+  "dyads": [{"name": string, "formula": string, "type": "Primaria"|"Secundaria", "text": string, "risk": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "score": number}],  // EXACTAMENTE 3 díadas (combinaciones de 2 emociones)
+  "dyadInterp": string,  // párrafo de interpretación estratégica de las 3 díadas en conjunto
+
+  "problematics": [string],  // 4-6 problemáticas concretas del territorio
+  "fears": [string],         // 4-6 miedos ciudadanos concretos
+  "prides": [string],        // 3-4 orgullos/activos identitarios del territorio
+
+  "quotes": [{"text": string, "topic": string, "emotion": string, "territory": string}],  // 3-5 frases ciudadanas representativas (paráfrasis realista, no inventar atribuciones falsas a personas reales)
+
+  "semaforo": [{"label": string, "val": string, "estado": "positivo"|"atencion"|"critico"}],  // 5-6 indicadores del semáforo emocional del territorio
+
+  "preguntaPolitica": string,   // la pregunta central que se hace la ciudadanía (entre comillas, corta)
+  "preguntaDesc": string,       // párrafo explicando esa fractura/pregunta
+
+  "govSemaforo": [{"label": string, "val": string, "estado": "positivo"|"atencion"|"critico"}],  // 5-6 indicadores de percepción del gobierno en turno
+
+  "partidos": [{"nombre": string, "emocion": string, "capital": string, "tendencia": string, "direccion": "sube"|"baja"|"estable", "cargaEmocional": {"iraAsco": number, "decepcionTristeza": number, "interesDisponible": number}}],  // 3-5 partidos/fuerzas políticas relevantes, valores 0-100
+
+  "actores": [{"name": string, "role": string, "partido": string, "rows": [{"label": string, "value": string}], "radar": [number,number,number,number,number,number]}],  // 2-3 actores políticos comparados; "rows" con 5-6 pares label/value; "radar" son 6 valores 0-100 en este orden fijo: Legitimidad ciudadana, Presencia territorial, Capital positivo, Riesgo castigo, Cap. gestión, Credibilidad
+
+  "alertaEstrategica": string,  // título corto de la alerta principal
+  "alertaDesc": string,          // párrafo explicando la alerta
+
+  "recs": [{"urgencia": "urgente"|"corto"|"mediano"|"permanente", "text": string}],  // 4-6 recomendaciones accionables
+  "evitar": [string],  // 4-6 acciones de comunicación contraproducentes a evitar
+
+  "gestionPrioridad": [{"label": string, "valor": number}],  // 4-6 prioridades de gestión emocional, valor 0-100
+  "temasChart": [{"tema": string, "porcentaje": number}]  // 4-8 temas dominantes en la conversación, % de peso
 }`,
   tensiones: `{
   "alertas": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string}],
@@ -251,15 +289,33 @@ const SCHEMAS = {
   "emocionesDominantes": [{"emocion": string, "valor": number}],
   "resumenEjecutivo": string
 }`,
+  // Esquema completo OPOSITOR — Expediente de investigación de oposición sobre UN SOLO objetivo:
+  // Perfil, Vulnerabilidades, Contradicciones, Vectores de Ataque, Red de Poder. Ser AMPLIO
+  // y respetar las cantidades sugeridas en los comentarios.
   opositor: `{
-  "overview": {"actorA": string, "actorB": string, "resumen": string},
-  "radar": {"ejes": [string], "valoresA": [number], "valoresB": [number]},   // 5-7 ejes (ej. presencia digital, favorabilidad, cobertura, red de poder, controversia)
-  "favorabilidad": {"actorA": number, "actorB": number},
-  "coberturaMediatica": {"actorA": number, "actorB": number},
-  "redDePoder": {"actorA": [string], "actorB": [string]},
-  "vulnerabilidades": {"actorA": [string], "actorB": [string]},
-  "puntosFuertes": {"actorA": [string], "actorB": [string]},
-  "resumenEjecutivo": string
+  "actor": {"cargo": string, "partido": string, "periodo": string, "aspiracion": string},
+
+  "vulnerabilidades": [{"titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "bullets": [string], "score": number}],  // 4-6 vulnerabilidades, score 0-10, bullets 2-4 por item
+
+  "perfil": {
+    "rows": [{"label": string, "value": string}],  // 4-6 datos de perfil (trayectoria resumida, formación, aspiración, etc.)
+    "cronologia": [{"periodo": string, "titulo": string, "descripcion": string}],  // 5-8 hitos cronológicos de la carrera del objetivo
+    "ierPorCargo": [{"cargo": string, "valor": number}]  // Índice de Efectividad/Riesgo 0-10 por cada cargo ocupado (mismo número que cronologia idealmente)
+  },
+
+  "contradicciones": {
+    "ranking": [{"codigo": string, "titulo": string, "score": number, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"}],  // 4-6 items, score 0-10 potencial de daño
+    "destacados": [{"titulo": string, "texto": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO"}],  // 3 hallazgos que hacen único el expediente
+    "tabla": [{"codigo": string, "tipo": string, "declaracion": string, "realidad": string, "dano": "CRÍTICO"|"ALTO"|"MEDIO", "canal": string}]  // 4-6 filas dicho-vs-hecho
+  },
+
+  "vectoresAtaque": [{"codigo": string, "titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "fuenteTag": string, "argumento": string, "evidencias": [string], "fraseLista": string}],  // 3-5 vectores de ataque completos y accionables
+
+  "redDePoder": {
+    "radar": [number,number,number,number,number,number],  // 6 valores 0-10 en este orden fijo: Trayectoria, Consistencia Ética, Fortaleza Territorial, Control Narrativo, Vulnerabilidad Reputacional, Riesgo de Fractura Interna
+    "alertas": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO", "titulo": string, "bullets": [string]}],  // 2-4 alertas sobre vínculos/deudas políticas clave
+    "tabla": [{"actor": string, "vinculo": string, "riesgoOportunidad": string}]  // 4-6 actores de la red de poder
+  }
 }`,
 };
 
@@ -271,6 +327,13 @@ function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, dat
     ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos extraídos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos extraídos sobre ${actor2Name} ---\n${bloque2}`
     : `Personaje: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
 
+  const guardarropaOpositor = skill === 'opositor' ? `
+Reglas adicionales OBLIGATORIAS para este expediente de oposición (skill "opositor"):
+- Basa cualquier señalamiento grave (corrupción, vínculos delictivos, sanciones) ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas o en información pública ampliamente conocida y verificable sobre el personaje.
+- NO inventes números de expediente, oficios, citas textuales de instituciones (INE, TEPJF, SEDENA, Marina, etc.) ni fechas de documentos que no estén respaldados por las fuentes entregadas.
+- Si las fuentes no dan evidencia concreta de una acusación grave, formúlalo como "área de riesgo reputacional" o "contradicción discursiva" en vez de una acusación específica no verificada.
+- Este expediente es para uso interno de estrategia electoral (oposición política legítima), no para difamación pública sin sustento; mantén el rigor de un analista profesional.` : '';
+
   const system = `Eres un analista de inteligencia político-electoral en México. Recibes texto crudo extraído de prensa, X/Twitter, Facebook, Instagram, TikTok y YouTube sobre uno o dos personajes políticos, y debes producir un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
 
 Reglas:
@@ -279,7 +342,7 @@ ${schema}
 - Los comentarios "//" junto a cada campo indican la CANTIDAD de elementos esperada (ej. "4-6 segmentos", "EXACTAMENTE 4"). Respeta esas cantidades: el reporte debe ser AMPLIO y detallado, no minimalista. No devuelvas arrays vacíos ni de un solo elemento si el esquema pide varios.
 - Basa el análisis en los datos crudos proporcionados (menciones, notas de prensa, publicaciones). Si hay poca información en las fuentes, usa criterio experto sobre el contexto político-electoral mexicano y sobre la localidad/entidad indicada para producir estimaciones razonables y realistas (zonas/colonias reales si se conocen, temas de agenda pública típicos de un gobierno local o estatal, etc.), pero evita inventar hechos específicos no verificables (acusaciones penales concretas, nombres de terceros, cifras oficiales exactas).
 - No uses lenguaje partidista ni tomes postura política; mantén tono analítico y profesional, como un reporte de consultoría electoral real.
-- Todos los textos en español de México, con terminología de análisis político-digital (NPS-P, TRA, bivariado, top of mind, etc.) igual que la usaría un consultor senior.`;
+- Todos los textos en español de México, con terminología de análisis político-digital (NPS-P, TRA, bivariado, top of mind, etc.) igual que la usaría un consultor senior.${guardarropaOpositor}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}\nSkill solicitada: ${skill}\n\n${contexto}\n\nGenera el JSON con el esquema indicado.`;
 
