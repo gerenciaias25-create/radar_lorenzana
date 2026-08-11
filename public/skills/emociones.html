@@ -1,135 +1,385 @@
+<div id="emo-root">
 <style>
-  .emo-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-top: 16px; }
-  .col-12 { grid-column: span 12; }
-  .col-6 { grid-column: span 6; }
-  .col-4 { grid-column: span 4; }
-  @media(max-width: 900px) { .col-6, .col-4 { grid-column: span 12; } }
-
-  .e-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-  .e-card-title { font-size: 13px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-
-  .emo-chip { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin: 0 4px 8px 0; background: #f1f5f9; color: #334155; }
-  .emo-activa { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-
-  .list-box { list-style: none; padding: 0; }
-  .list-box li { position: relative; padding-left: 18px; font-size: 12px; color: #334155; margin-bottom: 8px; line-height: 1.4; }
-  .list-box li::before { content: "•"; position: absolute; left: 0; color: #00C2D4; font-weight: bold; font-size: 16px; top: -2px; }
-
-  .quote-card { background: #f8fafc; border-left: 3px solid #1e3a8a; padding: 10px; margin-bottom: 10px; border-radius: 0 6px 6px 0; }
-  .quote-text { font-size: 12px; font-style: italic; color: #1e293b; }
-  .quote-meta { font-size: 10px; color: #64748b; font-weight: 700; margin-top: 4px; }
+#emo-root{
+  --bg:#ffffff;--bg-card:#d5d1d1;--bg-card2:#d5d1d1;--bg-hdr:#1C2738;--brd:#b8b4b4;--brd2:#b8b4b4;
+  --tx1:#1e293b;--tx2:#334155;--tx3:#475569;
+  --blue:#3b82f6;--blue2:#1d4ed8;--red:#ef4444;--red-s:#991b1b;
+  --org:#f97316;--grn:#22c55e;--pur:#a855f7;--tel:#06b6d4;--ac:#00C2D4;--hdrblue:#1C2738;
+  background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+#emo-root *{box-sizing:border-box;margin:0;padding:0}
+#emo-root .hdr{background:var(--hdrblue);border-bottom:1px solid rgba(255,255,255,.1);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0}
+#emo-root .hdr-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1.2}
+#emo-root .hdr-name span{color:var(--ac)}
+#emo-root .hdr-sub{font-size:11px;color:#94A3B8;margin-top:4px;font-weight:500}
+#emo-root .tabs{display:flex;overflow-x:auto;border-bottom:1px solid #cbd5e1;padding:0 2rem;background:#f8fafc}
+#emo-root .tab{font-size:11.5px;font-weight:600;letter-spacing:.04em;padding:.85rem 1.1rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .18s}
+#emo-root .tab:hover{color:#0f172a;background:rgba(0,0,0,.03)}
+#emo-root .tab.on{color:var(--bg-hdr);border-bottom-color:var(--bg-hdr)}
+#emo-root .cnt{padding:1.4rem 2rem}
+#emo-root .pnl{display:none}#emo-root .pnl.on{display:block}
+#emo-root .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+#emo-root .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+#emo-root .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+#emo-root .gauto{display:grid;grid-template-columns:430px 1fr;gap:1.2rem;align-items:start}
+#emo-root .card{background:var(--bg-card);border:1px solid var(--brd);border-radius:10px;padding:1.1rem 1.2rem}
+#emo-root .card2{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1.1rem 1.2rem}
+#emo-root .cv{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.55rem}
+#emo-root .cval{font-size:2rem;font-weight:800;line-height:1;color:var(--tx1)}
+#emo-root .csub{font-size:11px;color:var(--tx2);margin-top:.3rem}
+#emo-root .sl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--brd)}
+#emo-root .emr{padding:9px 0;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .12s;border-radius:4px}
+#emo-root .emr:hover{background:rgba(0,0,0,.025)}
+#emo-root .emr:last-child{border-bottom:none}
+#emo-root .emh{display:flex;align-items:center;gap:7px}
+#emo-root .emd-box{display:none;margin-top:8px;margin-left:17px;background:rgba(0,0,0,.04);border-radius:6px;padding:8px 10px}
+#emo-root .emd-box.open{display:block}
+#emo-root .edk{font-size:10.5px;font-weight:700;color:var(--tx2);margin-bottom:3px}
+#emo-root .edv{font-size:11px;color:var(--tx1);line-height:1.6}
+#emo-root .dyc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1rem 1.1rem;border-top:3px solid}
+#emo-root .dyn{font-size:14px;font-weight:800;margin-bottom:3px}
+#emo-root .dyf{font-size:11px;color:var(--tx3);font-style:italic;margin-bottom:7px}
+#emo-root .dyt{font-size:12px;color:var(--tx2);line-height:1.6}
+#emo-root .dybadge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;float:right;margin-top:-2px}
+#emo-root .mpc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:.9rem 1rem}
+#emo-root .mptt{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+#emo-root .mpi{font-size:12px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;gap:6px}
+#emo-root .mpi:last-child{border-bottom:none}
+#emo-root .mpd{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
+#emo-root .qi{padding:9px 0;border-bottom:1px solid var(--brd)}
+#emo-root .qi:last-child{border-bottom:none}
+#emo-root .qt{font-size:12.5px;font-style:italic;color:var(--tx1);line-height:1.55}
+#emo-root .qt::before{content:'"';color:var(--blue2);font-style:normal;font-weight:700}
+#emo-root .qt::after{content:'"';color:var(--blue2);font-style:normal;font-weight:700}
+#emo-root .qm{font-size:10.5px;color:var(--tx3);margin-top:3px}
+#emo-root .ri{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--brd)}
+#emo-root .ri:last-child{border-bottom:none}
+#emo-root .rb{font-size:10px;padding:3px 7px;border-radius:5px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:1px}
+#emo-root .rt{font-size:12px;color:var(--tx2);line-height:1.6}
+#emo-root .sem{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)}
+#emo-root .sem:last-child{border-bottom:none}
+#emo-root .semd{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+#emo-root .seml{font-size:12px;color:var(--tx2);flex:1}
+#emo-root .semv{font-size:12px;font-weight:700}
+#emo-root .ac{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;overflow:hidden}
+#emo-root .ach{padding:.9rem 1.1rem;border-bottom:1px solid var(--brd);background:rgba(0,0,0,.03)}
+#emo-root .acn{font-size:14px;font-weight:800;color:var(--tx1)}
+#emo-root .acr{font-size:11px;color:var(--tx2);margin-top:2px}
+#emo-root .acb{padding:.9rem 1.1rem}
+#emo-root .acrow{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--brd);font-size:12px}
+#emo-root .acrow:last-child{border-bottom:none}
+#emo-root .ack{color:var(--tx3);font-size:11px}
+#emo-root .acv{color:var(--tx1);font-weight:600;text-align:right;max-width:65%}
+#emo-root .cbox{background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(6,182,212,.05));border:1px solid rgba(37,99,235,.2);border-radius:12px;padding:1.2rem 1.4rem;border-left:4px solid var(--blue)}
+#emo-root .cbox-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);margin-bottom:.35rem}
+#emo-root .cbox-name{font-size:21px;font-weight:800;color:var(--tx1);margin-bottom:.45rem}
+#emo-root .cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72}
+#emo-root .cw{position:relative}
+#emo-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
+@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4{grid-template-columns:1fr}#emo-root .cnt{padding:1rem}#emo-root .hdr{padding:1rem}#emo-root .tabs{padding:0 1rem}}
 </style>
 
-<div class="emociones-container">
-  <!-- RESUMEN EJECUTIVO -->
-  <div class="e-card col-12">
-    <div class="e-card-title">Análisis de Humor Social y Clima Emocional</div>
-    <div style="font-size: 13px; color: #334155; line-height: 1.6;" id="resumenEjecutivo"></div>
-  </div>
+<header class="hdr">
+  <div><h1 class="hdr-name" id="em-hdr-name">CARGANDO...</h1><p class="hdr-sub" id="em-hdr-sub"></p></div>
+</header>
+<div class="tabs">
+  <div class="tab on" onclick="emST('flor',this)">🌸 Flor de Emociones</div>
+  <div class="tab" onclick="emST('mapa',this)">🗺 Mapa Social</div>
+  <div class="tab" onclick="emST('diadas',this)">⚡ Díadas</div>
+  <div class="tab" onclick="emST('identidad',this)">🏛 Identidad Política</div>
+  <div class="tab" onclick="emST('actores',this)">👤 Actores</div>
+  <div class="tab" onclick="emST('recs',this)">📋 Recomendaciones</div>
+</div>
 
-  <div class="emo-grid">
-    <!-- RADAR EMOCIONES -->
-    <div class="e-card col-6">
-      <div class="e-card-title">Rueda de Emociones Detectadas</div>
-      <canvas id="chartEmociones" height="220"></canvas>
+<div class="cnt">
+<div class="g4" style="margin-bottom:1rem;display:none" id="em-kpis"></div>
+
+<!-- FLOR -->
+<div class="pnl on" id="empnl-flor">
+  <div class="gauto" style="margin-bottom:1rem">
+    <div>
+      <div class="sl">Rueda de Plutchik — <span id="em-whl-territory"></span></div>
+      <div class="card" style="padding:.8rem;text-align:center;background:#ffffff"><div id="em-wheel-wrap"></div><div style="font-size:10px;color:var(--tx3);margin-top:.4rem">Toca cualquier pétalo activo para ver detalles</div></div>
+      <div class="card" style="margin-top:.75rem;padding:.75rem 1rem">
+        <div class="cv">Leyenda de Intensidad</div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-hi" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Alta ●●●</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-md" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Media ●●○</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#e2e8f0;border:1px solid #cbd5e1"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
+        </div>
+      </div>
     </div>
-
-    <!-- DIADAS / COMPUESTAS -->
-    <div class="e-card col-6">
-      <div class="e-card-title">Díadas Emocionales Relevantes</div>
-      <div id="diadasContainer"></div>
-    </div>
-  </div>
-
-  <div class="emo-grid">
-    <!-- PROBLEMATICAS Y TEMORES -->
-    <div class="e-card col-4">
-      <div class="e-card-title" style="color: #dc2626;">Principales Temores</div>
-      <ul class="list-box" id="temoresList"></ul>
-    </div>
-
-    <div class="e-card col-4">
-      <div class="e-card-title" style="color: #d97706;">Problemáticas Mapeadas</div>
-      <ul class="list-box" id="problematiaList"></ul>
-    </div>
-
-    <div class="e-card col-4">
-      <div class="e-card-title" style="color: #16a34a;">Orgullos / Capital Positivo</div>
-      <ul class="list-box" id="orgullosList"></ul>
+    <div>
+      <div class="sl">Emociones Activas — clic para expandir</div>
+      <div class="card" id="em-list"></div>
+      <div class="card" style="margin-top:.75rem;padding:.9rem 1rem"><div class="sl" style="margin-bottom:.5rem">Emociones Secundarias (Latentes)</div><div id="em-sec"></div></div>
     </div>
   </div>
+  <div class="cbox" style="margin-bottom:1rem" id="em-concepto-box"></div>
+  <div class="card"><div class="sl">Distribución de Intensidad Emocional</div><div class="cw" style="height:200px"><canvas id="em-ch-intens"></canvas></div></div>
+</div>
 
-  <!-- CITAS TEXTUALES -->
-  <div class="emo-grid">
-    <div class="e-card col-12">
-      <div class="e-card-title">Citas y Narrativas Directas de Ciudadanos</div>
-      <div id="citasContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;"></div>
-    </div>
+<!-- MAPA -->
+<div class="pnl" id="empnl-mapa">
+  <div class="g3" style="margin-bottom:1rem" id="em-mapa-cols"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Frases Ciudadanas</div><div id="em-quotes"></div></div>
+    <div class="card"><div class="sl">Emociones por Temática</div><div class="cw" style="height:260px"><canvas id="em-ch-temas"></canvas></div></div>
+  </div>
+  <div class="card"><div class="sl">Semáforo Emocional del Territorio</div><div class="g3" id="em-semaforo"></div></div>
+</div>
+
+<!-- DÍADAS -->
+<div class="pnl" id="empnl-diadas">
+  <div class="g3" style="margin-bottom:1rem" id="em-dyad-cards"></div>
+  <div class="g2">
+    <div class="card"><div class="sl">Score de Riesgo por Díada</div><div class="cw" style="height:220px"><canvas id="em-ch-diadas"></canvas></div></div>
+    <div class="card"><div class="sl">Interpretación Estratégica</div><div id="em-dyad-interp" style="font-size:12.5px;color:var(--tx2);line-height:1.75;margin-top:.3rem"></div></div>
   </div>
 </div>
 
+<!-- IDENTIDAD -->
+<div class="pnl" id="empnl-identidad">
+  <div class="cbox" style="margin-bottom:1rem" id="em-id-pregunta"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Percepción del Gobierno en Turno</div><div id="em-gov-sem"></div></div>
+    <div class="card"><div class="sl">Carga Emocional por Partido</div><div class="cw" style="height:220px"><canvas id="em-ch-partidos"></canvas></div></div>
+  </div>
+  <div class="card"><div class="sl">Percepción Ciudadana por Partido</div><div id="em-partidos-tbl"></div></div>
+</div>
+
+<!-- ACTORES -->
+<div class="pnl" id="empnl-actores">
+  <div style="background:rgba(29,78,216,.07);border:1px solid rgba(29,78,216,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:11.5px;color:var(--tx2);line-height:1.6">
+    <span style="color:var(--blue2);font-weight:700" id="em-actores-label">ANÁLISIS COMPARATIVO DE ACTORES</span> — Se compara la posición emocional de los principales actores políticos del territorio, con base en investigación digital del período.
+  </div>
+  <div class="g2" style="margin-bottom:1rem" id="em-actores-grid"></div>
+  <div class="card"><div class="sl">Mapa de Posicionamiento Emocional de Actores</div><div class="cw" style="height:300px"><canvas id="em-ch-actores"></canvas></div></div>
+</div>
+
+<!-- RECS -->
+<div class="pnl" id="empnl-recs">
+  <div class="cbox" style="margin-bottom:1rem;border-left-color:var(--red)" id="em-alerta-box"></div>
+  <div class="card" style="margin-bottom:1rem"><div class="sl">Plan de Acción Estratégica</div><div id="em-recs-list"></div></div>
+  <div class="g2">
+    <div class="card"><div class="sl">Comunicación Contraproducente — Evitar</div><div id="em-evitar-list"></div></div>
+    <div class="card"><div class="sl">Prioridad de Gestión Emocional</div><div class="cw" style="height:220px"><canvas id="em-ch-prior"></canvas></div></div>
+  </div>
+</div>
+
+</div><!-- /cnt -->
+<div class="footer"><span id="em-ftr-l">RADAR - Emociones</span><span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span></div>
+</div>
+
 <script>
-(function() {
-  const d = window.DATA || {};
+(function(){
+const D_RAW = (window.DATA && Object.keys(window.DATA).length) ? window.DATA : null;
+const META = window.DATA_META || {};
+const root = document.getElementById('emo-root');
 
-  document.getElementById('resumenEjecutivo').textContent = d.resumenEjecutivo || 'Sin información disponible.';
+// 8 emociones fijas de Plutchik: geometría/color no dependen de la IA (estabilidad visual de la rueda)
+const EMOTION_META = [
+  {key:'ira',          label:'Ira / Furia',        sublabel:'Furia · Ira · Indignación',              deg:180, color:['#FEE2E2','#FCA5A5','#B91C1C']},
+  {key:'miedo',        label:'Miedo / Terror',     sublabel:'Terror · Miedo · Aprensión',              deg:0,   color:['#CFFAFE','#67E8F9','#0E7490']},
+  {key:'anticipacion', label:'Anticipación',        sublabel:'Vigilancia · Esperanza condicionada',     deg:225, color:['#FFEDD5','#FDBA74','#C2410C']},
+  {key:'tristeza',     label:'Tristeza / Abandono', sublabel:'Aflicción · Melancolía · Desamparo',      deg:90,  color:['#EDE9FE','#A78BFA','#4C1D95']},
+  {key:'asco',         label:'Asco / Aversión',     sublabel:'Aversión · Indignación moral · Descrédito',deg:135, color:['#DCFCE7','#86EFAC','#15803D']},
+  {key:'alegria',      label:'Alegría',              sublabel:'Éxtasis · Alegría · Serenidad',           deg:-90, color:['#FFF9C4','#FFF176','#F9A825']},
+  {key:'confianza',    label:'Confianza',            sublabel:'Admiración · Confianza · Aceptación',     deg:-45, color:['#D1FAE5','#6EE7B7','#059669']},
+  {key:'sorpresa',     label:'Sorpresa',             sublabel:'Asombro · Distracción · Reencuadre',      deg:45,  color:['#DBEAFE','#93C5FD','#2563EB']},
+];
+const RADAR_LABELS = ["Legitimidad ciudadana","Presencia territorial","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
+const ESTADO_COLOR = {positivo:'#22c55e', atencion:'#eab308', critico:'#ef4444'};
+const RISK_HEX = {"CRÍTICO":"#ef4444","ALTO":"#f97316","MEDIO":"#b45309","BAJO":"#64748b"};
+const RISK_BG  = {"CRÍTICO":"#fee2e2","ALTO":"#ffedd5","MEDIO":"#fef9c3","BAJO":"#f1f5f9"};
+const URG_STYLE = {urgente:{bg:'#FCEBEB',tx:'#A32D2D',label:'Urgente 0-48h'}, corto:{bg:'#FEF3C7',tx:'#92400E',label:'Corto plazo'}, mediano:{bg:'#ECFDF5',tx:'#065F46',label:'Mediano plazo'}, permanente:{bg:'#EFF6FF',tx:'#1E40AF',label:'Permanente'}};
+const PALETTE = ['#3b82f6','#f97316','#22c55e','#a855f7','#06b6d4','#eab308','#ef4444','#64748b'];
 
-  // Render Radar Emociones
-  if (d.emociones && d.emociones.length) {
-    new Chart(document.getElementById('chartEmociones'), {
-      type: 'radar',
-      data: {
-        labels: d.emociones.map(e => e.label || e.key),
-        datasets: [{
-          label: 'Intensidad',
-          data: d.emociones.map(e => e.intensity || 0),
-          backgroundColor: 'rgba(0, 194, 212, 0.2)',
-          borderColor: '#00C2D4',
-          pointBackgroundColor: '#1e3a8a'
-        }]
-      },
-      options: { responsive: true, scales: { r: { min: 0, max: 3, ticks: { stepSize: 1 } } } }
+const FALLBACK = {
+  territorio: {nombre: META.actor || 'Sin datos', subtitulo: '', periodo: (META.mes||'')+' '+(META.anio||'')},
+  riskLevel: 'MEDIO', ivEstimado: 0, concept: 'Sin datos', conceptDesc: 'No se recibieron datos estructurados del backend.',
+  emotions: EMOTION_META.map(e=>({key:e.key, active:false, intensity:0, triggers:[], consequences:[]})),
+  secondary: [], dyads: [], dyadInterp: '', problematics: [], fears: [], prides: [], quotes: [], semaforo: [],
+  preguntaPolitica: '', preguntaDesc: '', govSemaforo: [], partidos: [], actores: [],
+  alertaEstrategica: '', alertaDesc: '', recs: [], evitar: [], gestionPrioridad: [], temasChart: []
+};
+function pick(v, fb){ return (v!==undefined && v!==null && (Array.isArray(v)?v.length:Object.keys(v).length)) ? v : fb; }
+const D = {};
+Object.keys(FALLBACK).forEach(k => { D[k] = pick(D_RAW && D_RAW[k], FALLBACK[k]); });
+
+// ---------- header ----------
+document.getElementById('em-hdr-name').innerHTML = (D.territorio.nombre||'').toUpperCase();
+document.getElementById('em-hdr-sub').textContent = D.territorio.subtitulo || D.territorio.periodo || '';
+document.getElementById('em-whl-territory').textContent = D.territorio.nombre || '';
+document.getElementById('em-ftr-l').textContent = 'RADAR - Emociones · ' + (D.territorio.nombre||'');
+
+// ---------- tabs ----------
+window.emST = function(id, el){
+  root.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  root.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('empnl-'+id).classList.add('on');
+  el.classList.add('on');
+};
+window.emToggleEm = function(el){ el.querySelector('.emd-box').classList.toggle('open'); };
+
+// ---------- rueda de Plutchik ----------
+function buildWheel(emotions){
+  const S=380,cx=S/2,cy=S/2,rings=[72,112,150];
+  let svg=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">`;
+  emotions.forEach((em,i)=>{
+    const a0=(em.deg-22.5)*Math.PI/180,a1=(em.deg+22.5)*Math.PI/180;
+    [0,1,2].forEach(r=>{
+      const r0=rings[r],r1=rings[r+1]||rings[r]+38;
+      const x1=cx+r0*Math.cos(a0),y1=cy+r0*Math.sin(a0);
+      const x2=cx+r1*Math.cos(a0),y2=cy+r1*Math.sin(a0);
+      const x3=cx+r1*Math.cos(a1),y3=cy+r1*Math.sin(a1);
+      const x4=cx+r0*Math.cos(a1),y4=cy+r0*Math.sin(a1);
+      const fill=em.active&&em.intensity>r?em.color[r]:"#e2e8f0";
+      svg+=`<path d="M${x1},${y1} L${x2},${y2} A${r1},${r1} 0 0,1 ${x3},${y3} L${x4},${y4} A${r0},${r0} 0 0,0 ${x1},${y1}" fill="${fill}" stroke="#ffffff" stroke-width="1.5" style="cursor:${em.active?'pointer':'default'}" onclick="document.querySelectorAll('#emo-root .emr')[${i}] && emToggleEm(document.querySelectorAll('#emo-root .emr')[${i}])"/>`;
     });
+    const lx=cx+(rings[2]+22)*Math.cos(em.deg*Math.PI/180);
+    const ly=cy+(rings[2]+22)*Math.sin(em.deg*Math.PI/180);
+    const anchor=Math.abs(em.deg)>90?"end":"start";
+    svg+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle" fill="${em.active?em.color[2]:'#94a3b8'}" font-size="9" font-weight="${em.active?700:400}" font-family="-apple-system,sans-serif">${em.label.split("/")[0].trim()}</text>`;
+  });
+  svg+=`<circle cx="${cx}" cy="${cy}" r="50" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="${cx}" y="${cy-8}" text-anchor="middle" fill="#1d4ed8" font-size="9" font-weight="700" font-family="-apple-system,sans-serif">PLUTCHIK</text>
+  <text x="${cx}" y="${cy+6}" text-anchor="middle" fill="#334155" font-size="8" font-family="-apple-system,sans-serif">${(D.territorio.nombre||'').slice(0,18)}</text>
+  <text x="${cx}" y="${cy+18}" text-anchor="middle" fill="#64748b" font-size="7" font-family="-apple-system,sans-serif">${D.territorio.periodo||''}</text></svg>`;
+  return svg;
+}
+
+function init(){
+  // merge geometría fija + datos de la IA por key
+  const emotions = EMOTION_META.map(meta => {
+    const d = D.emotions.find(e=>e.key===meta.key) || {};
+    return {...meta, active: !!d.active, intensity: d.intensity||0, triggers: d.triggers||[], consequences: d.consequences||[]};
+  });
+
+  const activeCount = emotions.filter(e=>e.active).length;
+  const maxIntensity = Math.max(0, ...emotions.map(e=>e.intensity));
+  document.getElementById('em-kpis').innerHTML = `
+    <div class="card2"><div class="cv">Nivel de Riesgo</div><div class="cval" style="color:#e11d48">${D.riskLevel}</div><div class="csub">Clasificación general</div></div>
+    <div class="card2"><div class="cv">Emociones Activas</div><div class="cval" style="color:#1d4ed8">${activeCount}<span style="font-size:1rem;color:var(--tx3)">/8</span></div><div class="csub">Rueda de Plutchik</div></div>
+    <div class="card2"><div class="cv">Intensidad Máxima</div><div class="cval" style="color:#b91c1c">${["○","●","●●","●●●"][maxIntensity]}</div><div class="csub">Emoción dominante</div></div>
+    <div class="card2"><div class="cv">IVE Estimado</div><div class="cval" style="color:#6b21a8">${D.ivEstimado}<span style="font-size:1rem">/100</span></div><div class="csub">Volatilidad</div></div>`;
+
+  document.getElementById('em-wheel-wrap').innerHTML = buildWheel(emotions);
+  const firstActive = emotions.find(e=>e.active && e.intensity>0);
+  if(firstActive){
+    document.getElementById('em-leg-hi').style.background = firstActive.color[2];
+    document.getElementById('em-leg-md').style.background = firstActive.color[1];
   }
 
-  // Render Díadas
-  const diadasContainer = document.getElementById('diadasContainer');
-  if (d.diadas && d.diadas.length) {
-    diadasContainer.innerHTML = d.diadas.map(di => `
-      <div style="margin-bottom: 12px;">
-        <span class="emo-chip emo-activa">${di.nombre} (${di.formula})</span>
-        <div style="font-size:12px; color:#475569; margin-top:2px;">${di.texto}</div>
+  document.getElementById('em-list').innerHTML = emotions.map(em=>`
+    <div class="emr" onclick="emToggleEm(this)">
+      <div class="emh">
+        <div style="width:8px;height:8px;border-radius:50%;background:${em.active?em.color[2]:'#cbd5e1'};flex-shrink:0"></div>
+        <div style="font-size:12.5px;font-weight:${em.active?700:400};color:${em.active?'var(--tx1)':'var(--tx3)'};flex:1">${em.label}</div>
+        <div style="font-size:10px;color:${em.active?em.color[2]:'var(--tx3)'}">${em.active?["●○○","●●○","●●●"][em.intensity-1]||"":"○○○"}</div>
       </div>
-    `).join('');
-  } else {
-    diadasContainer.innerHTML = '<div style="font-size:12px; color:#94a3b8;">No se registraron díadas relevantes.</div>';
-  }
-
-  // Listas
-  const fillList = (id, items) => {
-    const el = document.getElementById(id);
-    if (!items || !items.length) {
-      el.innerHTML = '<li>Sin registros identificados</li>';
-      return;
-    }
-    el.innerHTML = items.map(i => `<li>${i}</li>`).join('');
-  };
-
-  fillList('temoresList', d.temores);
-  fillList('problematiaList', d.problematicas);
-  fillList('orgullosList', d.orgullos);
-
-  // Citas
-  const cContainer = document.getElementById('citasContainer');
-  if (d.citas && d.citas.length) {
-    cContainer.innerHTML = d.citas.map(c => `
-      <div class="quote-card">
-        <div class="quote-text">"${c.texto}"</div>
-        <div class="quote-meta">[${c.fuente || 'General'}] ${c.tema ? '• ' + c.tema : ''} ${c.emocion ? '(' + c.emocion + ')' : ''}</div>
+      <div class="emd-box">
+        ${em.active&&em.triggers.length?`<div class="edk">Detonantes</div><div class="edv">${em.triggers.map(t=>`• ${t}`).join("<br>")}</div>`:""}
+        ${em.active&&em.consequences.length?`<div class="edk" style="margin-top:6px">Consecuencias</div><div class="edv">${em.consequences.map(c=>`• ${c}`).join("<br>")}</div>`:""}
+        ${!em.active?`<div class="edv">Sin activación relevante detectada en el periodo.</div>`:""}
       </div>
-    `).join('');
-  } else {
-    cContainer.innerHTML = '<div style="font-size:12px; color:#94a3b8;">No hay citas extractadas.</div>';
-  }
+    </div>`).join('');
+
+  document.getElementById('em-sec').innerHTML = D.secondary.map((s,i)=>`
+    <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)">
+      <div style="width:7px;height:7px;border-radius:50%;background:${PALETTE[i%PALETTE.length]};flex-shrink:0;margin-top:4px"></div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--tx1)">${s.name}</div><div style="font-size:11px;color:var(--tx3);margin-top:2px;line-height:1.55">${s.text}</div></div>
+    </div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin emociones secundarias detectadas.</div>';
+
+  document.getElementById('em-concepto-box').innerHTML = `<div class="cbox-label">Concepto Central del Territorio</div><div class="cbox-name">"${D.concept}"</div><div class="cbox-text">${D.conceptDesc}</div>`;
+
+  const makeMP = (arr,dc) => arr.map(t=>`<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join('');
+  document.getElementById('em-mapa-cols').innerHTML = `
+    <div class="mpc"><div class="mptt" style="color:#b45309">⚠ Problemáticas</div>${makeMP(D.problematics,'#b45309') || '<div class="mpi">Sin datos.</div>'}</div>
+    <div class="mpc"><div class="mptt" style="color:#b91c1c">⬡ Miedos</div>${makeMP(D.fears,'#b91c1c') || '<div class="mpi">Sin datos.</div>'}</div>
+    <div class="mpc"><div class="mptt" style="color:#15803d">★ Orgullos</div>${makeMP(D.prides,'#15803d') || '<div class="mpi">Sin datos.</div>'}</div>`;
+
+  document.getElementById('em-quotes').innerHTML = D.quotes.map(q=>`<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion} · ${q.territory}</div></div>`).join('') || '<div class="qi"><div class="qt">Sin frases ciudadanas disponibles.</div></div>';
+
+  const makeSem = (arr, id) => { document.getElementById(id).innerHTML = arr.map(s=>`<div class="sem"><div class="semd" style="background:${ESTADO_COLOR[s.estado]||'#94a3b8'}"></div><div class="seml">${s.label}</div><div class="semv" style="color:${ESTADO_COLOR[s.estado]||'#94a3b8'}">${s.val}</div></div>`).join('') || '<div class="sem"><div class="seml">Sin datos.</div></div>'; };
+  makeSem(D.semaforo, 'em-semaforo');
+  makeSem(D.govSemaforo, 'em-gov-sem');
+
+  document.getElementById('em-dyad-cards').innerHTML = D.dyads.map(d=>`
+    <div class="dyc" style="border-top-color:${RISK_HEX[d.risk]||'#64748b'}">
+      <span class="dybadge" style="background:${RISK_BG[d.risk]||'#f1f5f9'};color:${RISK_HEX[d.risk]||'#64748b'}">${d.risk}</span>
+      <div class="dyn" style="color:${RISK_HEX[d.risk]||'var(--tx1)'}">${d.name}</div>
+      <div class="dyf">Díada ${d.type} · ${d.formula}</div>
+      <div class="dyt">${d.text}</div>
+    </div>`).join('') || '<div class="dyc">Sin díadas detectadas.</div>';
+  document.getElementById('em-dyad-interp').innerHTML = D.dyadInterp || 'Sin interpretación disponible.';
+
+  document.getElementById('em-id-pregunta').innerHTML = `<div class="cbox-label">Pregunta Política del Territorio</div><div class="cbox-name" style="font-size:18px">"${D.preguntaPolitica}"</div><div class="cbox-text">${D.preguntaDesc}</div>`;
+
+  document.getElementById('em-partidos-tbl').innerHTML = D.partidos.map(p=>`
+    <div style="display:grid;grid-template-columns:1.3fr 2fr 1fr 1fr;gap:.5rem;padding:8px 0;border-bottom:1px solid var(--brd);font-size:12px">
+      <div style="font-weight:700;color:var(--tx1)">${p.nombre}</div>
+      <div style="color:var(--tx2)">${p.emocion}</div>
+      <div style="color:var(--tx3)">${p.capital}</div>
+      <div style="color:${p.direccion==='baja'?'#b91c1c':p.direccion==='sube'?'#166534':'#475569'};font-weight:600">${p.tendencia}</div>
+    </div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
+
+  document.getElementById('em-actores-label').textContent = 'ANÁLISIS COMPARATIVO DE ACTORES · ' + (D.territorio.periodo||'');
+  document.getElementById('em-actores-grid').innerHTML = D.actores.map((a,i)=>`
+    <div class="ac">
+      <div class="ach" style="border-left:4px solid ${PALETTE[i%PALETTE.length]}"><div class="acn">${a.name}</div><div class="acr">${a.role}</div></div>
+      <div class="acb">${(a.rows||[]).map(r=>`<div class="acrow"><span class="ack">${r.label}</span><span class="acv">${r.value}</span></div>`).join('')}</div>
+    </div>`).join('') || '<div class="ac"><div class="acb">Sin actores disponibles.</div></div>';
+
+  document.getElementById('em-alerta-box').innerHTML = `<div class="cbox-label" style="color:var(--red-s)">Alerta Estratégica</div><div class="cbox-name" style="font-size:16px;color:var(--red-s)">${D.alertaEstrategica}</div><div class="cbox-text">${D.alertaDesc}</div>`;
+  document.getElementById('em-recs-list').innerHTML = D.recs.map(r=>{const u=URG_STYLE[r.urgencia]||URG_STYLE.corto; return `<div class="ri"><span class="rb" style="background:${u.bg};color:${u.tx}">${u.label}</span><span class="rt">${r.text}</span></div>`;}).join('') || '<div class="ri"><span class="rt">Sin recomendaciones disponibles.</span></div>';
+  document.getElementById('em-evitar-list').innerHTML = D.evitar.map(e=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)"><span style="color:#ef4444;flex-shrink:0">✕</span>${e}</div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
+
+  /* CHARTS */
+  const CDf = {responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#ffffff',titleColor:'#1e293b',bodyColor:'#475569',borderColor:'#cbd5e1',borderWidth:1,padding:10}},
+    scales:{x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}, y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}}};
+
+  const acEm = emotions.filter(e=>e.active);
+  new Chart(document.getElementById('em-ch-intens'),{type:'bar',
+    data:{labels:acEm.map(e=>e.label),datasets:[{data:acEm.map(e=>e.intensity),backgroundColor:acEm.map(e=>e.color[2]+'cc'),borderColor:acEm.map(e=>e.color[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
+    options:{...CDf, indexAxis:'y', plugins:{...CDf.plugins,tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>' '+['Inactiva','Baja','Media','Alta'][c.raw]}}},
+      scales:{x:{...CDf.scales.x,min:0,max:3,ticks:{...CDf.scales.x.ticks,stepSize:1,callback:v=>['○○○','●○○','●●○','●●●'][v]}},y:{...CDf.scales.y}}}
+  });
+
+  new Chart(document.getElementById('em-ch-temas'),{type:'doughnut',
+    data:{labels:D.temasChart.map(t=>t.tema),datasets:[{data:D.temasChart.map(t=>t.porcentaje),backgroundColor:D.temasChart.map((t,i)=>PALETTE[i%PALETTE.length]),borderColor:'#d5d1d1',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#334155',font:{size:11},boxWidth:12,padding:10}},tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}
+  });
+
+  new Chart(document.getElementById('em-ch-diadas'),{type:'bar',
+    data:{labels:D.dyads.map(d=>d.name),datasets:[{label:'Score de riesgo',data:D.dyads.map(d=>d.score),backgroundColor:D.dyads.map(d=>(RISK_HEX[d.risk]||'#64748b')+'cc'),borderColor:D.dyads.map(d=>RISK_HEX[d.risk]||'#64748b'),borderWidth:1,borderRadius:6,borderSkipped:false}]},
+    options:{...CDf, plugins:{...CDf.plugins,legend:{display:false}}, scales:{x:{...CDf.scales.x},y:{...CDf.scales.y,min:0,max:100,ticks:{...CDf.scales.y.ticks,callback:v=>v+'/100'}}}}
+  });
+
+  new Chart(document.getElementById('em-ch-partidos'),{type:'bar',
+    data:{labels:D.partidos.map(p=>p.nombre),datasets:[
+      {label:'Ira/Asco',       data:D.partidos.map(p=>(p.cargaEmocional||{}).iraAsco||0),        backgroundColor:'#B91C1Caa',borderRadius:4,borderSkipped:false},
+      {label:'Decep/Tristeza', data:D.partidos.map(p=>(p.cargaEmocional||{}).decepcionTristeza||0),backgroundColor:'#4C1D95aa',borderRadius:4,borderSkipped:false},
+      {label:'Interés disp.',  data:D.partidos.map(p=>(p.cargaEmocional||{}).interesDisponible||0),backgroundColor:'#059669aa',borderRadius:4,borderSkipped:false},
+    ]},
+    options:{...CDf, plugins:{...CDf.plugins,legend:{display:true,labels:{color:'#334155',font:{size:10},boxWidth:10}}},
+      scales:{x:{...CDf.scales.x},y:{...CDf.scales.y,min:0,max:100,ticks:{...CDf.scales.y.ticks,callback:v=>v+'%'}}}}
+  });
+
+  new Chart(document.getElementById('em-ch-actores'),{type:'radar',
+    data:{labels:RADAR_LABELS, datasets:D.actores.map((a,i)=>({label:a.name, data:a.radar||[0,0,0,0,0,0], borderColor:PALETTE[i%PALETTE.length], backgroundColor:PALETTE[i%PALETTE.length]+'22', pointBackgroundColor:PALETTE[i%PALETTE.length], pointRadius:4}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{r:{ticks:{color:'#475569',font:{size:9},stepSize:20},grid:{color:'rgba(0,0,0,.08)'},pointLabels:{color:'#334155',font:{size:10}},angleLines:{color:'rgba(0,0,0,.08)'},min:0,max:100}},
+      plugins:{legend:{display:true,labels:{color:'#334155',font:{size:11},boxWidth:10}},tooltip:{...CDf.plugins.tooltip}}}
+  });
+
+  new Chart(document.getElementById('em-ch-prior'),{type:'bar',
+    data:{labels:D.gestionPrioridad.map(x=>x.label),datasets:[{data:D.gestionPrioridad.map(x=>x.valor),backgroundColor:D.gestionPrioridad.map((x,i)=>PALETTE[i%PALETTE.length]+'cc'),borderColor:D.gestionPrioridad.map((x,i)=>PALETTE[i%PALETTE.length]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
+    options:{...CDf, indexAxis:'y', scales:{x:{...CDf.scales.x,min:0,max:100,ticks:{...CDf.scales.x.ticks,callback:v=>v+'/100'}},y:{...CDf.scales.y}}}
+  });
+}
+
+init();
 })();
 </script>
