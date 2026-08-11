@@ -177,15 +177,59 @@ function tag(items, fuente) {
 // =========================================================
 
 const SCHEMAS = {
+  // Esquema completo RADAR — 7 pestañas: KPIs, Sentimiento, Top of Mind, Plataformas,
+  // Narrativas, Riesgos&Oportunidades, Mapa Territorial. Debe ser AMPLIO en contenido:
+  // no reducir el número de items sugerido en los comentarios.
   radar: `{
-  "kpis": {"npsGlobal": number, "nivelAlerta": 1|2|3|4, "temaDominante": string, "tendencia": "sube"|"baja"|"estable"},
-  "npsPorSegmento": [{"segmento": string, "valor": number}],   // 4-6 segmentos (base, independientes, oposición, prensa, etc.)
-  "npsTendencia": {"meses": [string], "valores": [number]},     // serie 6-12 meses
-  "temasPrincipales": [{"tema": string, "peso": number}],       // 5-8 temas, peso 0-100
-  "sentimientoPorPlataforma": [{"plataforma": string, "positivo": number, "negativo": number}],
-  "lineaTiempo": [{"fecha": string, "titulo": string, "descripcion": string, "impactoNps": number}], // 2-4 eventos relevantes reales si se detectan en las fuentes
-  "riesgos": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}],
-  "territorios": [{"zona": string, "nps": number, "volumen": number}],
+  "actor": {"cargo": string, "entidad": string, "partido": string, "periodo": string},
+
+  "kpis": {
+    "npsPartido": [{"label": string, "valor": number}],            // 4-6 segmentos por identidad partidista
+    "npsDemografico": [{"label": string, "valor": number}],        // 6-8 cruces género x edad (ej. "H 18-29", "M 18-29"...)
+    "ratioAtaqueDefensa": [{"plataforma": string, "ratio": number}], // 5-6 plataformas, ratio decimal
+    "traSemanal": {"labels": [string], "valores": [number]}         // 10-14 puntos, temperatura reputacional semanal
+  },
+
+  "sentimiento": {
+    "general": {"labels": [string], "valores": [number]},   // 4 categorías: Positivo/Neutro/Negativo/Polarizado
+    "genero": {"labels": [string], "valores": [number]},    // 6 combinaciones (ej. H Pos/Neu/Neg, M Pos/Neu/Neg)
+    "edad": {"labels": [string], "valores": [number]},      // 4 grupos etarios, valor NPS
+    "partido": {"labels": [string], "valores": [number]},   // 3-4 identidades partidistas, valor NPS
+    "hallazgos": [{"titulo": string, "texto": string, "accion": string}]  // EXACTAMENTE 4: género×sentimiento, partido×sentimiento, edad×sentimiento, localidad×sentimiento
+  },
+
+  "topOfMind": {
+    "general": {"temas": [string], "valores": [number]},                    // 6-8 temas con % de peso
+    "genero": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},     // series: Hombres, Mujeres
+    "edad": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},        // series: por cada grupo etario (3-4)
+    "partido": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},     // series: base, oposición, independientes
+    "cruces": [{"titulo": string, "texto": string, "accion": string}]  // EXACTAMENTE 4: género×tema, edad×tema, partido×tema, localidad×tema
+  },
+
+  "plataformas": {
+    "alcance": [{"plataforma": string, "valor": number}],                                    // 5-6 plataformas, % alcance
+    "tono": [{"plataforma": string, "positivo": number, "negativo": number}],                 // mismas plataformas
+    "porEdad": [{"plataforma": string, "series": [{"nombre": string, "valor": number}]}],     // series = grupos etarios (4)
+    "viralizacion": [{"plataforma": string, "critica": number, "propia": number}],            // horas a 1K interacciones
+    "lecturaEstrategica": [{"titulo": string, "texto": string, "alerta": boolean}]  // 3 items, uno por plataforma principal (usar alerta:true si es brecha crítica)
+  },
+
+  "narrativas": {
+    "favorables": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],  // 2-3 items
+    "criticas": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],    // 3-4 items
+    "neutras": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}]      // 3-4 items
+  },
+
+  "riesgosOportunidades": {
+    "riesgos": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}],       // 4 items
+    "oportunidades": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}]            // 4 items
+  },
+
+  "territorial": {
+    "zonas": [{"nombre": string, "nps": number, "clasificacion": "favorable"|"adversa"|"inercial", "nota": string}],  // 6-8 zonas/colonias reales de la localidad
+    "volumenPorZona": [{"zona": string, "volumen": number}]  // mismas zonas, % del total de menciones
+  },
+
   "resumenEjecutivo": string
 }`,
   emociones: `{
@@ -230,11 +274,12 @@ function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, dat
   const system = `Eres un analista de inteligencia político-electoral en México. Recibes texto crudo extraído de prensa, X/Twitter, Facebook, Instagram, TikTok y YouTube sobre uno o dos personajes políticos, y debes producir un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
 
 Reglas:
-- Responde EXCLUSIVAMENTE con un objeto JSON válido que cumpla exactamente este esquema (los tipos y arrays son orientativos sobre forma y longitud esperada, no literales):
+- Responde EXCLUSIVAMENTE con un objeto JSON válido que cumpla exactamente este esquema y su estructura de campos:
 ${schema}
-- Basa el análisis en los datos crudos proporcionados. Si hay poca información, usa tu criterio experto sobre el contexto político mexicano para producir estimaciones razonables, pero indícalo de forma neutral en el resumen ejecutivo (evita inventar hechos específicos no verificables como acusaciones concretas).
-- No uses lenguaje partidista ni tomes postura política; mantén tono analítico y profesional.
-- Todos los textos en español de México.`;
+- Los comentarios "//" junto a cada campo indican la CANTIDAD de elementos esperada (ej. "4-6 segmentos", "EXACTAMENTE 4"). Respeta esas cantidades: el reporte debe ser AMPLIO y detallado, no minimalista. No devuelvas arrays vacíos ni de un solo elemento si el esquema pide varios.
+- Basa el análisis en los datos crudos proporcionados (menciones, notas de prensa, publicaciones). Si hay poca información en las fuentes, usa criterio experto sobre el contexto político-electoral mexicano y sobre la localidad/entidad indicada para producir estimaciones razonables y realistas (zonas/colonias reales si se conocen, temas de agenda pública típicos de un gobierno local o estatal, etc.), pero evita inventar hechos específicos no verificables (acusaciones penales concretas, nombres de terceros, cifras oficiales exactas).
+- No uses lenguaje partidista ni tomes postura política; mantén tono analítico y profesional, como un reporte de consultoría electoral real.
+- Todos los textos en español de México, con terminología de análisis político-digital (NPS-P, TRA, bivariado, top of mind, etc.) igual que la usaría un consultor senior.`;
 
   const user = `Periodo evaluado: ${mes} ${anio}\nSkill solicitada: ${skill}\n\n${contexto}\n\nGenera el JSON con el esquema indicado.`;
 
