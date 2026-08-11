@@ -233,51 +233,26 @@ const SCHEMAS = {
   // Díadas, Identidad Política, Actores comparados y Recomendaciones. Ser AMPLIO:
   // respetar las cantidades sugeridas en los comentarios, no minimizar contenido.
   emociones: `{
-  "territorio": {"nombre": string, "subtitulo": string, "periodo": string},
-  "riskLevel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO",
-  "ivEstimado": number,   // Índice de Volatilidad Emocional, 0-100
-  "concept": string,       // frase corta (2-4 palabras) que resume el estado emocional del territorio
-  "conceptDesc": string,   // párrafo largo (5-8 líneas) explicando la paradoja/situación emocional actual
-
+  "actor": {"cargo": string, "entidad": string, "partido": string, "periodo": string},
+  "riskLevel": "BAJO" | "MEDIO" | "ALTO" | "CRÍTICO",
+  "maxIntensity": {"emocion": string, "valor": string},
+  "fuentesAnalizadas": number,
   "emotions": [
-    // EXACTAMENTE estas 8 claves, una por cada emoción de Plutchik, en este orden:
-    // "ira","miedo","anticipacion","tristeza","asco","alegria","confianza","sorpresa"
-    {"key": "ira"|"miedo"|"anticipacion"|"tristeza"|"asco"|"alegria"|"confianza"|"sorpresa",
-     "active": boolean, "intensity": 0|1|2|3,
-     "triggers": [string],       // 3-4 detonantes concretos si active=true, [] si active=false
-     "consequences": [string]}   // 3-4 consecuencias observables si active=true, [] si active=false
+    {"key": "joy", "label": "ALEGRÍA / GOZO", "active": boolean, "intensity": 1|2|3, "disparadores": [string]},
+    {"key": "trust", "label": "CONFIANZA / AFINIDAD", "active": boolean, "intensity": 1|2|3, "disparadores": [string]},
+    {"key": "fear", "label": "TEMOR / INSEGURIDAD", "active": boolean, "intensity": 1|2|3, "disparadores": [string]},
+    {"key": "surprise", "label": "SORPRESA / ASOMBRO", "active": boolean, "intensity": 1|2|3, "disparadores": [string]},
+    {"key": "sadness", "label": "TRISTEZA / DESANIMO", "active": boolean, "intensity": 1|2|3, "disparadores": [string]},
+    {"key": "disgust", "label": "AVERSIÓN / RECHAZO", "active": boolean, "intensity": 1|2|3, "disparadores": [string]},
+    {"key": "anger", "label": "IRA / INDIGNACIÓN", "active": boolean, "intensity": 1|2|3, "disparadores": [string]},
+    {"key": "anticipation", "label": "EXPECTATIVA / ANHELO", "active": boolean, "intensity": 1|2|3, "disparadores": [string]}
   ],
-
-  "secondary": [{"name": string, "text": string}],  // 2-3 emociones secundarias/latentes
-
-  "dyads": [{"name": string, "formula": string, "type": "Primaria"|"Secundaria", "text": string, "risk": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "score": number}],  // EXACTAMENTE 3 díadas (combinaciones de 2 emociones)
-  "dyadInterp": string,  // párrafo de interpretación estratégica de las 3 díadas en conjunto
-
-  "problematics": [string],  // 4-6 problemáticas concretas del territorio
-  "fears": [string],         // 4-6 miedos ciudadanos concretos
-  "prides": [string],        // 3-4 orgullos/activos identitarios del territorio
-
-  "quotes": [{"text": string, "topic": string, "emotion": string, "territory": string}],  // 3-5 frases ciudadanas representativas (paráfrasis realista, no inventar atribuciones falsas a personas reales)
-
-  "semaforo": [{"label": string, "val": string, "estado": "positivo"|"atencion"|"critico"}],  // 5-6 indicadores del semáforo emocional del territorio
-
-  "preguntaPolitica": string,   // la pregunta central que se hace la ciudadanía (entre comillas, corta)
-  "preguntaDesc": string,       // párrafo explicando esa fractura/pregunta
-
-  "govSemaforo": [{"label": string, "val": string, "estado": "positivo"|"atencion"|"critico"}],  // 5-6 indicadores de percepción del gobierno en turno
-
-  "partidos": [{"nombre": string, "emocion": string, "capital": string, "tendencia": string, "direccion": "sube"|"baja"|"estable", "cargaEmocional": {"iraAsco": number, "decepcionTristeza": number, "interesDisponible": number}}],  // 3-5 partidos/fuerzas políticas relevantes, valores 0-100
-
-  "actores": [{"name": string, "role": string, "partido": string, "rows": [{"label": string, "value": string}], "radar": [number,number,number,number,number,number]}],  // 2-3 actores políticos comparados; "rows" con 5-6 pares label/value; "radar" son 6 valores 0-100 en este orden fijo: Legitimidad ciudadana, Presencia territorial, Capital positivo, Riesgo castigo, Cap. gestión, Credibilidad
-
-  "alertaEstrategica": string,  // título corto de la alerta principal
-  "alertaDesc": string,          // párrafo explicando la alerta
-
-  "recs": [{"urgencia": "urgente"|"corto"|"mediano"|"permanente", "text": string}],  // 4-6 recomendaciones accionables
-  "evitar": [string],  // 4-6 acciones de comunicación contraproducentes a evitar
-
-  "gestionPrioridad": [{"label": string, "valor": number}],  // 4-6 prioridades de gestión emocional, valor 0-100
-  "temasChart": [{"tema": string, "porcentaje": number}]  // 4-8 temas dominantes en la conversación, % de peso
+  "diadas": [{"nombre": string, "formula": string, "texto": string, "tipo": "primaria"|"secundaria"}],
+  "problematicas": [{"titulo": string, "descripcion": string}],
+  "temores": [{"titulo": string, "descripcion": string}],
+  "orgullos": [{"titulo": string, "descripcion": string}],
+  "citas": [{"texto": string, "tema": string, "emocion": string, "fuente": string}],
+  "resumenEjecutivo": string
 }`,
   tensiones: `{
   "alertas": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string}],
