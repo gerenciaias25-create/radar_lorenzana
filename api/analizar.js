@@ -229,55 +229,53 @@ const SCHEMAS = {
 
   "resumenEjecutivo": string
 }`,
-  // Esquema completo EMOCIONES — Rueda de Plutchik (8 emociones fijas), Mapa Social,
-  // Díadas, Identidad Política, Actores comparados y Recomendaciones. Ser AMPLIO:
-  // respetar las cantidades sugeridas en los comentarios, no minimizar contenido.
+  // Esquema EMOCIONES — 6 pestañas: Flor de Emociones, Mapa Social, Díadas,
+  // Identidad Política, Actores, Segmentos y Perfiles. Framework Plutchik.
+  // Debe ser AMPLIO: respetar las cantidades indicadas en los comentarios.
   emociones: `{
-  "territorio": {"nombre": string, "subtitulo": string, "periodo": string},
-  "riskLevel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO",
-  "ivEstimado": number,   // Índice de Volatilidad Emocional, 0-100
-  "concept": string,       // frase corta (2-4 palabras) que resume el estado emocional del territorio
-  "conceptDesc": string,   // párrafo largo (5-8 líneas) explicando la paradoja/situación emocional actual
+  "cabecera": {
+    "concepto": string,               // 2-4 palabras: concepto central que resume el humor social hacia el personaje (ej. "Ciudad Postergada", "Liderazgo en Disputa")
+    "conceptoDescripcion": string,     // 4-6 líneas explicando el concepto con hechos concretos del período
+    "nivelRiesgo": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO",
+    "cargoContexto": string           // una línea: cargo actual/aspiración, partido, hacia qué proceso electoral (equivale al subtítulo del header)
+  },
 
-  "emotions": [
-    // EXACTAMENTE estas 8 claves, una por cada emoción de Plutchik, en este orden:
-    // "ira","miedo","anticipacion","tristeza","asco","alegria","confianza","sorpresa"
-    {"key": "ira"|"miedo"|"anticipacion"|"tristeza"|"asco"|"alegria"|"confianza"|"sorpresa",
-     "active": boolean, "intensity": 0|1|2|3,
-     "triggers": [string],       // 3-4 detonantes concretos si active=true, [] si active=false
-     "consequences": [string]}   // 3-4 consecuencias observables si active=true, [] si active=false
-  ],
+  "emociones": [
+    {"key": "ira"|"sorpresa"|"anticipacion"|"tristeza"|"asco"|"alegria"|"confianza"|"miedo",
+     "activa": boolean, "intensidad": 0|1|2|3, "sublabel": string,
+     "disparadores": [string], "consecuencias": [string]}
+  ], // EXACTAMENTE 8 objetos, uno por cada "key" listada (Plutchik completo). En las inactivas usar intensidad:0, disparadores:[] y consecuencias:[]. En las activas: 2-4 disparadores y 1-3 consecuencias basados en los datos crudos.
+  "secundarias": [{"nombre": string, "texto": string}], // 2-3 emociones secundarias/latentes (combinaciones o matices no cubiertos arriba)
 
-  "secondary": [{"name": string, "text": string}],  // 2-3 emociones secundarias/latentes
+  "problematicas": [string], // 5-7, problemas concretos que explican el humor social
+  "temores": [string],       // 4-6
+  "orgullos": [string],      // 3-5
+  "citas": [{"texto": string, "tema": string, "emocion": string, "fuente": string}], // 6-8 frases ciudadanas realistas (fuente: zona/plataforma/perfil, ej. "Zona 12", "X", "Vecino de Col. Roma")
+  "temasChart": [{"tema": string, "valor": number}], // 4-6 temas con % de peso emocional (deben sumar ~100)
+  "semaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}], // EXACTAMENTE 6 indicadores del humor social general
 
-  "dyads": [{"name": string, "formula": string, "type": "Primaria"|"Secundaria", "text": string, "risk": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "score": number}],  // EXACTAMENTE 3 díadas (combinaciones de 2 emociones)
-  "dyadInterp": string,  // párrafo de interpretación estratégica de las 3 díadas en conjunto
+  "diadas": [{"nombre": string, "formula": string, "tipo": "Primaria"|"Secundaria", "texto": string, "riesgo": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "score": number}], // EXACTAMENTE 3 díadas emocionales (combinación de 2 emociones activas)
+  "diadaInterpretacion": string, // 3-5 líneas de interpretación estratégica conjunta de las 3 díadas
 
-  "problematics": [string],  // 4-6 problemáticas concretas del territorio
-  "fears": [string],         // 4-6 miedos ciudadanos concretos
-  "prides": [string],        // 3-4 orgullos/activos identitarios del territorio
+  "preguntaPolitica": string,       // la pregunta implícita que se hace la ciudadanía sobre este personaje/territorio
+  "preguntaDescripcion": string,    // 2-4 líneas explicando esa pregunta
+  "gobSemaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}], // 4-5 indicadores de percepción institucional/de gestión relacionados al personaje
+  "partidos": [{"nombre": string, "emocion": string, "capital": string, "tendencia": string}], // 3-5 fuerzas políticas relevantes en el entorno del personaje (incluir la suya); "tendencia" debe llevar ↑, ↓ o → al inicio
+  "partidosChart": [{"iraAsco": number, "decepcionTristeza": number, "interesDisponible": number}], // MISMO ORDEN y longitud que "partidos", valores 0-100
 
-  "quotes": [{"text": string, "topic": string, "emotion": string, "territory": string}],  // 3-5 frases ciudadanas representativas (paráfrasis realista, no inventar atribuciones falsas a personas reales)
+  "actores": [{"nombre": string, "rol": string, "fortaleza": string, "debilidad": string, "oportunidad": string, "amenaza": string, "emocionQueRecibe": string, "riesgoElectoral": string}], // 3-5 actores clave; el PRIMERO debe ser siempre el personaje analizado (actor)
+  "actoresRadar": [[number, number, number, number, number, number]], // MISMO ORDEN y longitud que "actores"; 6 valores 0-100 en los ejes fijos: Legitimidad ciudadana, Presencia territorial, Capital positivo, Riesgo de castigo, Capacidad de gestión, Credibilidad
 
-  "semaforo": [{"label": string, "val": string, "estado": "positivo"|"atencion"|"critico"}],  // 5-6 indicadores del semáforo emocional del territorio
+  "segmentos": [{
+    "tipo": string, "arquetipo": string, "subtitulo": string, "peso": string, "persuabilidad": string,
+    "fraseEmblema": string,
+    "perfil": {"edad": string, "zona": string, "ocupacion": string, "escolaridad": string, "digital": string, "historialElectoral": string},
+    "emocional": {"emocion": string, "vidaCotidiana": string, "tension": string, "dolor": string, "miedo": string, "orgullo": string, "narrativa": string},
+    "estrategia": {"problematicas": [string], "orgulloComunitario": string, "consumoDigital": string, "loAcerca": string, "loAleja": string, "frame": string, "palanca": string},
+    "vector": {"canal": string, "tono": string, "formato": string}
+  }], // EXACTAMENTE 4 segmentos/buyer personas electorales, diversos (ej. leal activo, indeciso evaluador, apático potencial, adversario simbólico)
 
-  "preguntaPolitica": string,   // la pregunta central que se hace la ciudadanía (entre comillas, corta)
-  "preguntaDesc": string,       // párrafo explicando esa fractura/pregunta
-
-  "govSemaforo": [{"label": string, "val": string, "estado": "positivo"|"atencion"|"critico"}],  // 5-6 indicadores de percepción del gobierno en turno
-
-  "partidos": [{"nombre": string, "emocion": string, "capital": string, "tendencia": string, "direccion": "sube"|"baja"|"estable", "cargaEmocional": {"iraAsco": number, "decepcionTristeza": number, "interesDisponible": number}}],  // 3-5 partidos/fuerzas políticas relevantes, valores 0-100
-
-  "actores": [{"name": string, "role": string, "partido": string, "rows": [{"label": string, "value": string}], "radar": [number,number,number,number,number,number]}],  // 2-3 actores políticos comparados; "rows" con 5-6 pares label/value; "radar" son 6 valores 0-100 en este orden fijo: Legitimidad ciudadana, Presencia territorial, Capital positivo, Riesgo castigo, Cap. gestión, Credibilidad
-
-  "alertaEstrategica": string,  // título corto de la alerta principal
-  "alertaDesc": string,          // párrafo explicando la alerta
-
-  "recs": [{"urgencia": "urgente"|"corto"|"mediano"|"permanente", "text": string}],  // 4-6 recomendaciones accionables
-  "evitar": [string],  // 4-6 acciones de comunicación contraproducentes a evitar
-
-  "gestionPrioridad": [{"label": string, "valor": number}],  // 4-6 prioridades de gestión emocional, valor 0-100
-  "temasChart": [{"tema": string, "porcentaje": number}]  // 4-8 temas dominantes en la conversación, % de peso
+  "resumenEjecutivo": string
 }`,
   tensiones: `{
   "alertas": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string}],
