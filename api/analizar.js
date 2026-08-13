@@ -149,76 +149,90 @@ function tag(items, fuente) {
 const SCHEMAS = {
   radar: `{
   "actor": {"cargo": string, "entidad": string, "partido": string, "periodo": string},
+
   "kpis": {
-    "npsPartido": [{"label": string, "valor": number}],
-    "npsDemografico": [{"label": string, "valor": number}],
-    "ratioAtaqueDefensa": [{"plataforma": string, "ratio": number}],
-    "traSemanal": {"labels": [string], "valores": [number]}
+    "npsPartido": [{"label": string, "valor": number}],            // 4-6 segmentos por identidad partidista
+    "npsDemografico": [{"label": string, "valor": number}],        // 6-8 cruces género x edad (ej. "H 18-29", "M 18-29"...)
+    "ratioAtaqueDefensa": [{"plataforma": string, "ratio": number}], // 5-6 plataformas, ratio decimal
+    "traSemanal": {"labels": [string], "valores": [number]}         // 10-14 puntos, temperatura reputacional semanal
   },
+
   "sentimiento": {
-    "general": {"labels": [string], "valores": [number]},
-    "genero": {"labels": [string], "valores": [number]},
-    "edad": {"labels": [string], "valores": [number]},
-    "partido": {"labels": [string], "valores": [number]},
-    "hallazgos": [{"titulo": string, "texto": string, "accion": string}]
+    "general": {"labels": [string], "valores": [number]},   // 4 categorías: Positivo/Neutro/Negativo/Polarizado
+    "genero": {"labels": [string], "valores": [number]},    // 6 combinaciones (ej. H Pos/Neu/Neg, M Pos/Neu/Neg)
+    "edad": {"labels": [string], "valores": [number]},      // 4 grupos etarios, valor NPS
+    "partido": {"labels": [string], "valores": [number]},   // 3-4 identidades partidistas, valor NPS
+    "hallazgos": [{"titulo": string, "texto": string, "accion": string}]  // EXACTAMENTE 4: género×sentimiento, partido×sentimiento, edad×sentimiento, localidad×sentimiento
   },
+
   "topOfMind": {
-    "general": {"temas": [string], "valores": [number]},
-    "genero": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},
-    "edad": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},
-    "partido": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},
-    "cruces": [{"titulo": string, "texto": string, "accion": string}]
+    "general": {"temas": [string], "valores": [number]},                    // 6-8 temas con % de peso
+    "genero": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},     // series: Hombres, Mujeres
+    "edad": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},        // series: por cada grupo etario (3-4)
+    "partido": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},     // series: base, oposición, independientes
+    "cruces": [{"titulo": string, "texto": string, "accion": string}]  // EXACTAMENTE 4: género×tema, edad×tema, partido×tema, localidad×tema
   },
+
   "plataformas": {
-    "alcance": [{"plataforma": string, "valor": number}],
-    "tono": [{"plataforma": string, "positivo": number, "negativo": number}],
-    "porEdad": [{"plataforma": string, "series": [{"nombre": string, "valor": number}]}],
-    "viralizacion": [{"plataforma": string, "critica": number, "propia": number}],
-    "lecturaEstrategica": [{"titulo": string, "texto": string, "alerta": boolean}]
+    "alcance": [{"plataforma": string, "valor": number}],                                    // 5-6 plataformas, % alcance
+    "tono": [{"plataforma": string, "positivo": number, "negativo": number}],                 // mismas plataformas
+    "porEdad": [{"plataforma": string, "series": [{"nombre": string, "valor": number}]}],     // series = grupos etarios (4)
+    "viralizacion": [{"plataforma": string, "critica": number, "propia": number}],            // horas a 1K interacciones
+    "lecturaEstrategica": [{"titulo": string, "texto": string, "alerta": boolean}]  // 3 items, uno por plataforma principal (usar alerta:true si es brecha crítica)
   },
+
   "narrativas": {
-    "favorables": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],
-    "criticas": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],
-    "neutras": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}]
+    "favorables": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],  // 2-3 items
+    "criticas": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],    // 3-4 items
+    "neutras": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}]      // 3-4 items
   },
+
   "riesgosOportunidades": {
-    "riesgos": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}],
-    "oportunidades": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}]
+    "riesgos": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}],       // 4 items
+    "oportunidades": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}]            // 4 items
   },
+
   "territorial": {
-    "zonas": [{"nombre": string, "nps": number, "clasificacion": "favorable"|"adversa"|"inercial", "nota": string}],
-    "volumenPorZona": [{"zona": string, "volumen": number}]
+    "zonas": [{"nombre": string, "nps": number, "clasificacion": "favorable"|"adversa"|"inercial", "nota": string}],  // 6-8 zonas/colonias reales de la localidad
+    "volumenPorZona": [{"zona": string, "volumen": number}]  // mismas zonas, % del total de menciones
   },
+
   "resumenEjecutivo": string
 }`,
   emociones: `{
   "cabecera": {
-    "concepto": string,
-    "conceptoDescripcion": string,
+    "concepto": string,               // 2-4 palabras: concepto central que resume el humor social hacia el personaje (ej. "Ciudad Postergada", "Liderazgo en Disputa")
+    "conceptoDescripcion": string,     // 4-6 líneas explicando el concepto con hechos concretos del período
     "nivelRiesgo": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO",
-    "cargoContexto": string
+    "cargoContexto": string           // una línea: cargo actual/aspiración, partido, hacia qué proceso electoral (equivale al subtítulo del header)
   },
+
   "emociones": [
     {"key": "ira"|"sorpresa"|"anticipacion"|"tristeza"|"asco"|"alegria"|"confianza"|"miedo",
      "activa": boolean, "intensidad": 0|1|2|3, "sublabel": string,
      "disparadores": [string], "consecuencias": [string]}
-  ],
-  "secundarias": [{"nombre": string, "texto": string}],
-  "problematicas": [string],
-  "temores": [string],
-  "orgullos": [string],
-  "citas": [{"texto": string, "tema": string, "emocion": string, "fuente": string}],
-  "temasChart": [{"tema": string, "valor": number}],
-  "semaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}],
-  "diadas": [{"nombre": string, "formula": string, "tipo": "Primaria"|"Secundaria", "texto": string, "riesgo": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "score": number}],
-  "diadaInterpretacion": string,
-  "preguntaPolitica": string,
-  "preguntaDescripcion": string,
-  "gobSemaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}],
-  "partidos": [{"nombre": string, "emocion": string, "capital": string, "tendencia": string}],
-  "partidosChart": [{"iraAsco": number, "decepcionTristeza": number, "interesDisponible": number}],
-  "actores": [{"nombre": string, "rol": string, "fortaleza": string, "debilidad": string, "oportunidad": string, "amenaza": string, "emocionQueRecibe": string, "riesgoElectoral": string}],
-  "actoresRadar": [[number, number, number, number, number, number]],
+  ], // EXACTAMENTE 8 objetos, uno por cada "key" listada (Plutchik completo). En las inactivas usar intensidad:0, disparadores:[] y consecuencias:[]. En las activas: 2-4 disparadores y 1-3 consecuencias basados en los datos crudos.
+  "secundarias": [{"nombre": string, "texto": string}], // 2-3 emociones secundarias/latentes (combinaciones o matices no cubiertos arriba)
+
+  "problematicas": [string], // 5-7, problemas concretos que explican el humor social
+  "temores": [string],       // 4-6
+  "orgullos": [string],      // 3-5
+  "citas": [{"texto": string, "tema": string, "emocion": string, "fuente": string}], // 6-8 frases ciudadanas realistas (fuente: zona/plataforma/perfil, ej. "Zona 12", "X", "Vecino de Col. Roma")
+  "temasChart": [{"tema": string, "valor": number}], // 4-6 temas con % de peso emocional (deben sumar ~100)
+  "semaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}], // EXACTAMENTE 6 indicadores del humor social general
+
+  "diadas": [{"nombre": string, "formula": string, "tipo": "Primaria"|"Secundaria", "texto": string, "riesgo": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "score": number}], // EXACTAMENTE 3 díadas emocionales (combinación de 2 emociones activas)
+  "diadaInterpretacion": string, // 3-5 líneas de interpretación estratégica conjunta de las 3 díadas
+
+  "preguntaPolitica": string,       // la pregunta implícita que se hace la ciudadanía sobre este personaje/territorio
+  "preguntaDescripcion": string,    // 2-4 líneas explicando esa pregunta
+  "gobSemaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}], // 4-5 indicadores de percepción institucional/de gestión relacionados al personaje
+  "partidos": [{"nombre": string, "emocion": string, "capital": string, "tendencia": string}], // 3-5 fuerzas políticas relevantes en el entorno del personaje (incluir la suya); "tendencia" debe llevar ↑, ↓ o → al inicio
+  "partidosChart": [{"iraAsco": number, "decepcionTristeza": number, "interesDisponible": number}], // MISMO ORDEN y longitud que "partidos", valores 0-100
+
+  "actores": [{"nombre": string, "rol": string, "fortaleza": string, "debilidad": string, "oportunidad": string, "amenaza": string, "emocionQueRecibe": string, "riesgoElectoral": string}], // 3-5 actores clave; el PRIMERO debe ser siempre el personaje analizado (actor)
+  "actoresRadar": [[number, number, number, number, number, number]], // MISMO ORDEN y longitud que "actores"; 6 valores 0-100 en los ejes fijos: Legitimidad ciudadana, Presencia territorial, Capital positivo, Riesgo de castigo, Capacidad de gestión, Credibilidad
+
   "segmentos": [{
     "tipo": string, "arquetipo": string, "subtitulo": string, "peso": string, "persuabilidad": string,
     "fraseEmblema": string,
@@ -226,7 +240,8 @@ const SCHEMAS = {
     "emocional": {"emocion": string, "vidaCotidiana": string, "tension": string, "dolor": string, "miedo": string, "orgullo": string, "narrativa": string},
     "estrategia": {"problematicas": [string], "orgulloComunitario": string, "consumoDigital": string, "loAcerca": string, "loAleja": string, "frame": string, "palanca": string},
     "vector": {"canal": string, "tono": string, "formato": string}
-  }],
+  }], // EXACTAMENTE 4 segmentos/buyer personas electorales, diversos (ej. leal activo, indeciso evaluador, apático potencial, adversario simbólico)
+
   "resumenEjecutivo": string
 }`,
   tensiones: `{
