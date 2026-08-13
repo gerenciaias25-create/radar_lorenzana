@@ -9,7 +9,10 @@
 //   UPSTASH_REDIS_REST_TOKEN(opcional, activa caché)
 //
 // NUNCA se exponen estos valores al cliente: todo corre server-side.
-
+// Al inicio de api/analizar.js (si usas Vercel con Plan Pro)
+export const config = {
+  maxDuration: 60, // Aumenta el tiempo límite a 60 segundos
+};
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -489,3 +492,14 @@ function upstashConfig() {
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
   };
 }
+const response = await fetch('/api/analizar', { ... });
+
+// 1. Validar si el servidor dio error HTTP (500, 504, 404)
+if (!response.ok) {
+  const errorText = await response.text();
+  console.error("Error del servidor:", errorText);
+  throw new Error(`Error en el servidor (${response.status}): Revisa la consola o los logs de Vercel.`);
+}
+
+// 2. Si todo estuvo OK, ahora sí parsear JSON
+const data = await response.json();
