@@ -6,6 +6,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+// Servir los archivos estáticos de la carpeta public (index.html, styles.css, skills, etc.)
+app.use(express.static('public'));
+
+// Si entran a la raíz '/', abre directamente el index.html
+app.get('/', (req, res) => {
+  res.sendFile(process.cwd() + '/public/index.html');
+});
 
 // Middlewares
 app.use(cors());
