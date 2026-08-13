@@ -1,7 +1,14 @@
 // api/analizar.js
-export const config = {
-  maxDuration: 60,
-};
+// Pipeline: Apify (scraping multi-fuente) -> OpenRouter/GPT (estructura en JSON) -> Upstash (cache) -> respuesta
+//
+// Variables de entorno requeridas en Vercel:
+//   APIFY_API_TOKEN         token de Apify
+//   OPENROUTER_API_KEY      token de OpenRouter
+//   OPENROUTER_MODEL        (opcional) ej. "openai/gpt-4o-mini" — default abajo
+//   UPSTASH_REDIS_REST_URL  (opcional, activa caché)
+//   UPSTASH_REDIS_REST_TOKEN(opcional, activa caché)
+//
+// NUNCA se exponen estos valores al cliente: todo corre server-side.
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,7 +39,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Falta OPENROUTER_API_KEY en las variables de entorno de Vercel.' });
   }
 
-  // ---------- CACHÉ ----------
+  // ---------- CACHÉ (Upstash Redis REST) ----------
   const cacheKey = `radar:${skill}:${norm(actorName)}:${norm(actor2Name)}:${mes}:${anio}`;
   const cached = await cacheGet(cacheKey);
   if (cached) {
@@ -78,8 +85,7 @@ function norm(s) {
 // APIFY: llamadas a los actores de scraping
 // =========================================================
 
-// Reducimos el timeout a 8000ms para asegurar respuesta rápida en Vercel
-async function llamarActorApify(actorPath, payload, token, timeoutMs = 8000) {
+async function llamarActorApify(actorPath, payload, token, timeoutMs = 25000) {
   if (!token) return [];
   try {
     const url = `https://api.apify.com/v2/acts/${actorPath}/run-sync-get-dataset-items?token=${token}&timeout=${Math.round(timeoutMs / 1000)}`;
@@ -100,25 +106,46 @@ async function llamarActorApify(actorPath, payload, token, timeoutMs = 8000) {
   }
 }
 
+// Scrapea todas las fuentes para un actor político y devuelve texto unificado + metadatos
 async function scrapeActor(nombre, token) {
-  // Reducimos a las 3 fuentes más rápidas y críticas para evitar timeouts severos
   const tareas = [
+    // Prensa / noticias vía Google
     llamarActorApify('apify~google-search-scraper', {
       queries: `"${nombre}" (noticias OR opinión OR declaraciones)`,
-      resultsPerPage: 15,
+      resultsPerPage: 20,
       maxPagesPerQuery: 1,
     }, token).then(items => tag(items, 'prensa')),
 
+    // Twitter/X
     llamarActorApify('apidojo~tweet-scraper', {
       searchTerms: [nombre],
-      maxItems: 20,
+      maxItems: 30,
       sort: 'Latest',
     }, token).then(items => tag(items, 'twitter')),
 
+    // Facebook
     llamarActorApify('apify~facebook-posts-scraper', {
       search: nombre,
-      resultsLimit: 15,
+      resultsLimit: 20,
     }, token).then(items => tag(items, 'facebook')),
+
+    // Instagram
+    llamarActorApify('apify~instagram-scraper', {
+      search: nombre,
+      resultsLimit: 15,
+    }, token).then(items => tag(items, 'instagram')),
+
+    // TikTok
+    llamarActorApify('clockworks~tiktok-scraper', {
+      searchQueries: [nombre],
+      resultsPerPage: 15,
+    }, token).then(items => tag(items, 'tiktok')),
+
+    // YouTube (comentarios/menciones en videos de noticias)
+    llamarActorApify('streamers~youtube-scraper', {
+      searchKeywords: nombre,
+      maxResults: 10,
+    }, token).then(items => tag(items, 'youtube')),
   ];
 
   const resultados = await Promise.all(tareas);
@@ -133,7 +160,7 @@ async function scrapeActor(nombre, token) {
       likes: i.likeCount ?? i.likes ?? i.diggCount ?? null,
     }))
     .filter(t => t.texto && t.texto.length > 8)
-    .slice(0, 100);
+    .slice(0, 120); // límite para no reventar el prompt / costos
 
   return { count: textos.length, items: textos };
 }
@@ -143,10 +170,13 @@ function tag(items, fuente) {
 }
 
 // =========================================================
-// OPENROUTER & SCHEMAS
+// OPENROUTER: estructuración de los datos en JSON fijo
 // =========================================================
 
 const SCHEMAS = {
+  // Esquema completo RADAR — 7 pestañas: KPIs, Sentimiento, Top of Mind, Plataformas,
+  // Narrativas, Riesgos&Oportunidades, Mapa Territorial. Debe ser AMPLIO en contenido:
+  // no reducir el número de items sugerido en los comentarios.
   radar: `{
   "actor": {"cargo": string, "entidad": string, "partido": string, "periodo": string},
 
@@ -199,6 +229,9 @@ const SCHEMAS = {
 
   "resumenEjecutivo": string
 }`,
+  // Esquema EMOCIONES — 6 pestañas: Flor de Emociones, Mapa Social, Díadas,
+  // Identidad Política, Actores, Segmentos y Perfiles. Framework Plutchik.
+  // Debe ser AMPLIO: respetar las cantidades indicadas en los comentarios.
   emociones: `{
   "cabecera": {
     "concepto": string,               // 2-4 palabras: concepto central que resume el humor social hacia el personaje (ej. "Ciudad Postergada", "Liderazgo en Disputa")
@@ -245,88 +278,44 @@ const SCHEMAS = {
   "resumenEjecutivo": string
 }`,
   tensiones: `{
-  "actor": {"entidad": string, "cargo": string, "periodo": string},
-  "kpis": {
-    "totalTensiones": number,
-    "promedioSTS": number,
-    "tensionCritica": string,
-    "emocionDominante": string,
-    "zonaSensible": string
-  },
-  "ranking": [
-    {
-      "id": number,
-      "nombre": string,
-      "score": number,
-      "color": string,
-      "nivel": "Alto" | "Relevante" | "Medio" | "Bajo",
-      "delta": string,
-      "emocion": string,
-      "intensidad": number,
-      "narrativa": string,
-      "actor": string,
-      "territorio": string,
-      "politica": string,
-      "evidencia": string,
-      "recomendacion": string
-    }
-  ],
-  "emociones": [
-    {"nombre": string, "intensidad": number, "color": string, "cambio": string, "lectura": string, "porcentaje": number}
-  ],
-  "narrativas": [
-    {"nombre": string, "tema": string, "actor": string, "politica": string, "frase": string, "origen": string}
-  ],
-  "territorios": [
-    {"nombre": string, "nivel": string, "color": string, "emocion": string, "tension": string, "observaciones": string}
-  ],
-  "riesgos": [
-    {"nombre": string, "srr": number, "actor": string, "tipo": string, "probabilidad": string, "accion": string, "color": string}
-  ],
-  "trayectoria": [
-    {"nombre": string, "t3": number, "t2": number, "t1": number, "ta": number, "tipo": string, "velocidad": string}
-  ],
-  "alertas": [
-    {
-      "titulo": string,
-      "rows": [
-        ["Territorio", string],
-        ["Emoción", string],
-        ["Actor expuesto", string],
-        ["Qué ocurrió", string],
-        ["Narrativa activa", string],
-        ["Fuente verificadora", string],
-        ["Riesgo", string],
-        ["Escalamiento", string],
-        ["Acción inmediata", string]
-      ]
-    }
-  ],
-  "hallazgoEmocional": string,
-  "hallazgoTrayectoria": string,
+  "alertas": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string}],
+  "tensiones": [{"actorA": string, "actorB": string, "tema": string, "intensidad": 1|2|3, "descripcion": string}],
+  "narrativas": [{"titulo": string, "resumen": string, "alcance": "alto"|"medio"|"bajo"}],
+  "riesgos": [{"titulo": string, "probabilidad": "alta"|"media"|"baja", "impacto": "alto"|"medio"|"bajo", "descripcion": string}],
+  "territorios": [{"zona": string, "nivelTension": number}],
+  "trayectoria": [{"fecha": string, "evento": string, "nivelTension": number}],
+  "emocionesDominantes": [{"emocion": string, "valor": number}],
   "resumenEjecutivo": string
 }`,
+  // Esquema completo OPOSITOR — Expediente de investigación de oposición sobre UN SOLO objetivo:
+  // Perfil, Vulnerabilidades, Contradicciones, Vectores de Ataque, Red de Poder. Ser AMPLIO
+  // y respetar las cantidades sugeridas en los comentarios.
   opositor: `{
   "actor": {"cargo": string, "partido": string, "periodo": string, "aspiracion": string},
-  "vulnerabilidades": [{"titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "bullets": [string], "score": number}],
-  "fortalezas": [{"titulo": string, "texto": string}],
+
+  "vulnerabilidades": [{"titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "bullets": [string], "score": number}],  // 4-6 vulnerabilidades, score 0-10, bullets 2-4 por item
+  "fortalezas": [{"titulo": string, "texto": string}],  // EXACTAMENTE 3 fortalezas del objetivo — "no subestimar"
+
   "perfil": {
-    "rows": [{"label": string, "value": string}],
-    "cronologia": [{"periodo": string, "titulo": string, "descripcion": string}],
-    "ierPorCargo": [{"cargo": string, "valor": number}]
+    "rows": [{"label": string, "value": string}],  // 4-6 datos de perfil (trayectoria resumida, formación, aspiración, etc.)
+    "cronologia": [{"periodo": string, "titulo": string, "descripcion": string}],  // 5-8 hitos cronológicos de la carrera del objetivo
+    "ierPorCargo": [{"cargo": string, "valor": number}]  // Índice de Efectividad/Riesgo 0-10 por cada cargo ocupado (mismo número que cronologia idealmente)
   },
+
   "contradicciones": {
-    "ranking": [{"codigo": string, "titulo": string, "score": number, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"}],
-    "destacados": [{"titulo": string, "texto": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO"}],
-    "tabla": [{"codigo": string, "tipo": string, "declaracion": string, "realidad": string, "dano": "CRÍTICO"|"ALTO"|"MEDIO", "canal": string}]
+    "ranking": [{"codigo": string, "titulo": string, "score": number, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"}],  // 4-6 items, score 0-10 potencial de daño
+    "destacados": [{"titulo": string, "texto": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO"}],  // 3 hallazgos que hacen único el expediente
+    "tabla": [{"codigo": string, "tipo": string, "declaracion": string, "realidad": string, "dano": "CRÍTICO"|"ALTO"|"MEDIO", "canal": string}]  // 4-6 filas dicho-vs-hecho
   },
-  "vectoresAtaque": [{"codigo": string, "titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "fuenteTag": string, "argumento": string, "evidencias": [string], "fraseLista": string}],
+
+  "vectoresAtaque": [{"codigo": string, "titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "fuenteTag": string, "argumento": string, "evidencias": [string], "fraseLista": string}],  // 3-5 vectores de ataque completos y accionables
+
   "redDePoder": {
-    "radar": [number,number,number,number,number,number],
-    "alertas": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO", "titulo": string, "bullets": [string]}],
-    "tabla": [{"actor": string, "vinculo": string, "riesgoOportunidad": string}]
+    "radar": [number,number,number,number,number,number],  // 6 valores 0-10 en este orden fijo: Trayectoria, Consistencia Ética, Fortaleza Territorial, Control Narrativo, Vulnerabilidad Reputacional, Riesgo de Fractura Interna
+    "alertas": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO", "titulo": string, "bullets": [string]}],  // 2-4 alertas sobre vínculos/deudas políticas clave
+    "tabla": [{"actor": string, "vinculo": string, "riesgoOportunidad": string}]  // 4-6 actores de la red de poder
   }
-}`
+}`,
 };
 
 function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema }) {
@@ -337,12 +326,22 @@ function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, dat
     ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos extraídos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos extraídos sobre ${actor2Name} ---\n${bloque2}`
     : `Personaje: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
 
-  const system = `Eres un analista de inteligencia político-electoral en México. Produce un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
+  const guardarropaOpositor = skill === 'opositor' ? `
+Reglas adicionales OBLIGATORIAS para este expediente de oposición (skill "opositor"):
+- Basa cualquier señalamiento grave (corrupción, vínculos delictivos, sanciones) ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas o en información pública ampliamente conocida y verificable sobre el personaje.
+- NO inventes números de expediente, oficios, citas textuales de instituciones (INE, TEPJF, SEDENA, Marina, etc.) ni fechas de documentos que no estén respaldados por las fuentes entregadas.
+- Si las fuentes no dan evidencia concreta de una acusación grave, formúlalo como "área de riesgo reputacional" o "contradicción discursiva" en vez de una acusación específica no verificada.
+- Este expediente es para uso interno de estrategia electoral (oposición política legítima), no para difamación pública sin sustento; mantén el rigor de un analista profesional.` : '';
+
+  const system = `Eres un analista de inteligencia político-electoral en México. Recibes texto crudo extraído de prensa, X/Twitter, Facebook, Instagram, TikTok y YouTube sobre uno o dos personajes políticos, y debes producir un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
 
 Reglas:
-- Responde EXCLUSIVAMENTE con un objeto JSON válido que cumpla exactamente este esquema:
+- Responde EXCLUSIVAMENTE con un objeto JSON válido que cumpla exactamente este esquema y su estructura de campos:
 ${schema}
-- Mantén tono analítico y profesional.`;
+- Los comentarios "//" junto a cada campo indican la CANTIDAD de elementos esperada (ej. "4-6 segmentos", "EXACTAMENTE 4"). Respeta esas cantidades: el reporte debe ser AMPLIO y detallado, no minimalista. No devuelvas arrays vacíos ni de un solo elemento si el esquema pide varios.
+- Basa el análisis en los datos crudos proporcionados (menciones, notas de prensa, publicaciones). Si hay poca información en las fuentes, usa criterio experto sobre el contexto político-electoral mexicano y sobre la localidad/entidad indicada para producir estimaciones razonables y realistas (zonas/colonias reales si se conocen, temas de agenda pública típicos de un gobierno local o estatal, etc.), pero evita inventar hechos específicos no verificables (acusaciones penales concretas, nombres de terceros, cifras oficiales exactas).
+- No uses lenguaje partidista ni tomes postura política; mantén tono analítico y profesional, como un reporte de consultoría electoral real.
+- Todos los textos en español de México, con terminología de análisis político-digital (NPS-P, TRA, bivariado, top of mind, etc.) igual que la usaría un consultor senior.${guardarropaOpositor}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}\nSkill solicitada: ${skill}\n\n${contexto}\n\nGenera el JSON con el esquema indicado.`;
 
@@ -354,8 +353,8 @@ function resumirFuentes(bloque) {
     return '(No se obtuvieron resultados de scraping en vivo; produce el análisis con criterio experto general sobre el contexto político mexicano.)';
   }
   return bloque.items
-    .slice(0, 40)
-    .map(i => `[${i.fuente}] ${i.texto.slice(0, 200)}`)
+    .slice(0, 60)
+    .map(i => `[${i.fuente}] ${i.texto.slice(0, 280)}`)
     .join('\n');
 }
 
@@ -377,7 +376,7 @@ async function callOpenRouter({ system, user }, apiKey) {
         { role: 'user', content: user },
       ],
       temperature: 0.4,
-      max_tokens: 3500,
+      max_tokens: 4000,
       response_format: { type: 'json_object' },
     }),
   });
@@ -399,7 +398,7 @@ async function callOpenRouter({ system, user }, apiKey) {
 }
 
 // =========================================================
-// CACHÉ
+// CACHÉ: Upstash Redis (REST API) — opcional, reduce costos
 // =========================================================
 
 async function cacheGet(key) {
@@ -427,7 +426,9 @@ async function cacheSet(key, value, ttlSeconds) {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(value),
     });
-  } catch {}
+  } catch {
+    // silencioso: la caché es una optimización, no debe tumbar la respuesta
+  }
 }
 
 function upstashConfig() {
