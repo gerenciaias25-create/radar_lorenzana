@@ -317,6 +317,34 @@ async function loadSelectedSkill() {
   },
   body: JSON.stringify({ skill, actor, actor2, mes, anio }),
 });
+    try {
+  // 1. Haces la petición al backend
+  const apiResp = await fetch('/api/analizar', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ skill, actor, actor2, mes, anio }),
+  });
+
+  // 🔴 ¡ESTA ES LA LÍNEA QUE TE FALTABA!
+  const apiJson = await apiResp.json(); 
+
+  // 2. Verificas si el backend devolvió un error
+  if (!apiResp.ok) {
+    throw new Error(apiJson.error || apiJson.detail || 'Error en el servidor');
+  }
+
+  // 3. Ya puedes usar apiJson sin problemas
+  console.log('Datos recibidos:', apiJson);
+
+  // Aquí continúas con la lógica para renderizar tu plantilla/iframe/skill
+  // ...
+
+} catch (err) {
+  // Muestra el error en la alerta roja de la pantalla
+  showErrorMsg(err.message); 
+}
     document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
 
     // 2. Cargar el HTML de la skill (plantilla visual, sin datos)
