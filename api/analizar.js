@@ -277,16 +277,68 @@ const SCHEMAS = {
 
   "resumenEjecutivo": string
 }`,
-  tensiones: `{
-  "alertas": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string}],
-  "tensiones": [{"actorA": string, "actorB": string, "tema": string, "intensidad": 1|2|3, "descripcion": string}],
-  "narrativas": [{"titulo": string, "resumen": string, "alcance": "alto"|"medio"|"bajo"}],
-  "riesgos": [{"titulo": string, "probabilidad": "alta"|"media"|"baja", "impacto": "alto"|"medio"|"bajo", "descripcion": string}],
-  "territorios": [{"zona": string, "nivelTension": number}],
-  "trayectoria": [{"fecha": string, "evento": string, "nivelTension": number}],
-  "emocionesDominantes": [{"emocion": string, "valor": number}],
+ tensiones: `{
+  "actor": {"entidad": string, "cargo": string, "periodo": string},
+  "kpis": {
+    "totalTensiones": number,
+    "promedioSTS": number,
+    "tensionCritica": string,
+    "emocionDominante": string,
+    "zonaSensible": string
+  },
+  "ranking": [
+    {
+      "id": number,
+      "nombre": string,
+      "score": number,
+      "color": string,
+      "nivel": "Alto" | "Relevante" | "Medio" | "Bajo",
+      "delta": string,
+      "emocion": string,
+      "intensidad": number,
+      "narrativa": string,
+      "actor": string,
+      "territorio": string,
+      "politica": string,
+      "evidencia": string,
+      "recomendacion": string
+    }
+  ],
+  "emociones": [
+    {"nombre": string, "intensidad": number, "color": string, "cambio": string, "lectura": string, "porcentaje": number}
+  ],
+  "narrativas": [
+    {"nombre": string, "tema": string, "actor": string, "politica": string, "frase": string, "origen": string}
+  ],
+  "territorios": [
+    {"nombre": string, "nivel": string, "color": string, "emocion": string, "tension": string, "observaciones": string}
+  ],
+  "riesgos": [
+    {"nombre": string, "srr": number, "actor": string, "tipo": string, "probabilidad": string, "accion": string, "color": string}
+  ],
+  "trayectoria": [
+    {"nombre": string, "t3": number, "t2": number, "t1": number, "ta": number, "tipo": string, "velocidad": string}
+  ],
+  "alertas": [
+    {
+      "titulo": string,
+      "rows": [
+        ["Territorio", string],
+        ["Emoción", string],
+        ["Actor expuesto", string],
+        ["Qué ocurrió", string],
+        ["Narrativa activa", string],
+        ["Fuente verificadora", string],
+        ["Riesgo", string],
+        ["Escalamiento", string],
+        ["Acción inmediata", string]
+      ]
+    }
+  ],
+  "hallazgoEmocional": string,
+  "hallazgoTrayectoria": string,
   "resumenEjecutivo": string
-}`,
+}`
   // Esquema completo OPOSITOR — Expediente de investigación de oposición sobre UN SOLO objetivo:
   // Perfil, Vulnerabilidades, Contradicciones, Vectores de Ataque, Red de Poder. Ser AMPLIO
   // y respetar las cantidades sugeridas en los comentarios.
