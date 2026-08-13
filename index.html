@@ -310,16 +310,13 @@ async function loadSelectedSkill() {
 
   try {
     // 1. Pedir el análisis estructurado al backend (Apify + OpenRouter)
-    const qs = new URLSearchParams({ skill, actor, mes, anio });
-    if (actor2) qs.set('actor2', actor2);
-
-    const apiResp = await fetch(`/api/analizar?${qs.toString()}`);
-    const apiJson = await apiResp.json();
-
-    if (!apiResp.ok) {
-      throw new Error(apiJson.error || 'Error consultando el backend de análisis.');
-    }
-
+    const apiResp = await fetch('/api/analizar', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ skill, actor, actor2, mes, anio }),
+});
     document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
 
     // 2. Cargar el HTML de la skill (plantilla visual, sin datos)
