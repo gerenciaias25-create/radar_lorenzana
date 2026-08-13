@@ -1,0 +1,381 @@
+<div id="radar-root">
+<style>
+#radar-root{ --hdrblue:#1C2738;--navy:#1C2738;--ac:#00C2D4;--go:#F4C430;--da:#E63946;--su:#2EC4B6;--ne:#556B2F;--bl:#1B4F8A;--card:#d5d1d1;--border:rgba(28,39,56,0.15); background:#ffffff;color:#1C2738;font-family:system-ui,sans-serif; }
+#radar-root *{box-sizing:border-box;margin:0;padding:0}
+#radar-root .hdr{background:var(--hdrblue);border-bottom:1px solid rgba(255,255,255,.1);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0}
+#radar-root .hdr-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1.2}
+#radar-root .hdr-name span{color:var(--ac)}
+#radar-root .hdr-sub{font-size:11px;color:#94A3B8;margin-top:4px;font-weight:500}
+#radar-root .con{max-width:1300px;margin:0 auto;padding:0 20px}
+#radar-root .tabs{display:flex;border-bottom:2px solid var(--navy);overflow-x:auto;scrollbar-width:none;margin-bottom:24px;gap:4px;margin-top:20px}
+#radar-root .tb{font-family:monospace;font-size:9px;padding:10px 14px;cursor:pointer;color:#718096;border-bottom:3px solid transparent;white-space:nowrap;background:rgba(0,0,0,.03);border-top:none;border-left:none;border-right:none;transition:all .2s;font-weight:700}
+#radar-root .tb:hover{color:var(--navy);background:rgba(0,0,0,.07)}
+#radar-root .tb.act{color:#fff;background:var(--navy);border-bottom-color:var(--ac)}
+#radar-root .tsec{display:none}
+#radar-root .tsec.show{display:block;animation:radarfi .3s ease}
+@keyframes radarfi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#radar-root .stitle{font-family:monospace;font-size:10px;font-weight:700;color:var(--navy);letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;margin-top:10px}
+#radar-root .stitle::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,var(--border),transparent)}
+#radar-root .cg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:768px){#radar-root .cg{grid-template-columns:1fr}}
+#radar-root .card{background:var(--card);border:1px solid rgba(0,0,0,.05);border-radius:4px;padding:18px;color:#1a202c}
+#radar-root .ct{font-size:13px;font-weight:700;margin-bottom:3px;color:var(--navy)}
+#radar-root .cs{font-size:10px;color:#4a5568;margin-bottom:14px}
+#radar-root .bbar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+#radar-root .blbl{font-family:monospace;font-size:9px;color:var(--navy);letter-spacing:1px;font-weight:700}
+#radar-root .bb{font-family:monospace;font-size:8px;padding:5px 11px;border-radius:2px;cursor:pointer;border:1px solid var(--navy);background:transparent;color:var(--navy);letter-spacing:1px;transition:all .15s;font-weight:700}
+#radar-root .bb:hover{background:var(--navy);color:#fff}
+#radar-root .bb.act{background:var(--navy);color:#fff}
+#radar-root .ng{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:900px){#radar-root .ng{grid-template-columns:1fr}}
+#radar-root .nc{background:var(--card);border:1px solid rgba(0,0,0,.05);border-radius:4px;overflow:hidden;color:#1a202c}
+#radar-root .nh{padding:10px 13px;font-family:monospace;font-size:9px;font-weight:700;letter-spacing:2px}
+#radar-root .nh.fav{background:rgba(46,196,182,.25);color:#004d4d;border-bottom:1px solid rgba(46,196,182,.4)}
+#radar-root .nh.crit{background:rgba(230,57,70,.2);color:#8b0000;border-bottom:1px solid rgba(230,57,70,.3)}
+#radar-root .nh.neu{background:rgba(0,0,0,.08);color:var(--navy);border-bottom:1px solid rgba(0,0,0,.15)}
+#radar-root .ni{padding:11px 13px;border-bottom:1px solid rgba(0,0,0,.06)}
+#radar-root .ni:last-child{border-bottom:none}
+#radar-root .nit{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--navy)}
+#radar-root .nd{font-size:10px;color:#2d3748;line-height:1.4}
+#radar-root .btag{display:inline-block;font-family:monospace;font-size:7px;padding:2px 6px;border-radius:2px;margin-top:4px;margin-right:3px;font-weight:700;background:rgba(27,79,138,.15);color:var(--bl);border:1px solid rgba(27,79,138,.3)}
+#radar-root .bi{background:rgba(255,255,255,.5);border-left:3px solid var(--bl);padding:6px 9px;font-size:9px;color:#2d3748;line-height:1.5;margin-top:7px;border-radius:0 2px 2px 0}
+#radar-root .bi strong{color:var(--bl)}
+#radar-root .bi.neg{border-left-color:var(--da);background:rgba(230,57,70,.08)}
+#radar-root .bi.neg strong{color:var(--da)}
+#radar-root .bi.ntr{border-left-color:#4a5568;background:rgba(0,0,0,.04)}
+#radar-root .bi.ntr strong{color:#1a202c}
+#radar-root .mg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+@media(max-width:768px){#radar-root .mg{grid-template-columns:1fr}}
+#radar-root .mh{padding:10px 14px;font-family:monospace;font-size:9px;font-weight:700;letter-spacing:2px}
+#radar-root .mh.risk{background:rgba(230,57,70,.25);color:#8b0000;border:1px solid rgba(230,57,70,.3);border-bottom:none}
+#radar-root .mh.opp{background:rgba(46,196,182,.2);color:#004d4d;border:1px solid rgba(46,196,182,.3);border-bottom:none}
+#radar-root .mb{border:1px solid rgba(0,0,0,.08);border-top:none;border-radius:0 0 4px 4px;background:var(--card)}
+#radar-root .mr{padding:11px 13px;border-bottom:1px solid rgba(0,0,0,.05)}
+#radar-root .mr:last-child{border-bottom:none}
+#radar-root .mt{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+#radar-root .lv{font-family:monospace;font-size:7px;font-weight:700;padding:3px 7px;border-radius:2px;min-width:50px;text-align:center;display:inline-block}
+#radar-root .lc{background:#E63946;color:#fff}#radar-root .la{background:#E67E22;color:#fff}#radar-root .lm{background:#F4C430;color:#0D1B2A}#radar-root .lb{background:#8fae4f;color:#fff}
+#radar-root .lo-alto{background:#008080;color:#fff}#radar-root .lo-medio{background:rgba(0,194,212,.8);color:#fff}#radar-root .lo-bajo{background:#7fa5c9;color:#fff}
+#radar-root .mn{font-size:12px;font-weight:700;color:var(--navy)}
+#radar-root .md{font-size:10px;color:#2d3748;line-height:1.5;margin-bottom:5px}
+#radar-root .hm{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:28px}
+@media(max-width:768px){#radar-root .hm{grid-template-columns:repeat(2,1fr)}}
+#radar-root .hz{background:var(--card);border-radius:4px;padding:13px;text-align:center;border:2px solid transparent;color:#1a202c}
+#radar-root .hz.fav{border-color:var(--su);background:rgba(46,196,182,.15)}
+#radar-root .hz.adv{border-color:var(--da);background:rgba(230,57,70,.12)}
+#radar-root .hz.ine{border-color:#b8860b;background:rgba(244,196,48,.15)}
+#radar-root .hzn{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--navy)}
+#radar-root .hzs{font-size:20px;font-weight:800}
+#radar-root .hz.fav .hzs{color:#006666}#radar-root .hz.adv .hzs{color:#990000}#radar-root .hz.ine .hzs{color:#8b6508}
+#radar-root .hzl{font-family:monospace;font-size:8px;margin-top:4px;font-weight:700}
+#radar-root .hz.fav .hzl{color:#006666}#radar-root .hz.adv .hzl{color:#990000}#radar-root .hz.ine .hzl{color:#8b6508}
+#radar-root .ig{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:24px}
+@media(max-width:768px){#radar-root .ig{grid-template-columns:1fr}}
+#radar-root .ic{background:var(--card);border:1px solid rgba(0,0,0,.05);border-radius:4px;padding:13px;color:#1a202c}
+#radar-root .ic.ac{border-left:3px solid var(--bl)}#radar-root .ic.go{border-left:3px solid #b8860b}#radar-root .ic.su{border-left:3px solid #008080}#radar-root .ic.bl{border-left:3px solid var(--navy)}#radar-root .ic.da{border-left:3px solid var(--da)}
+#radar-root .ih{font-size:11px;font-weight:700;margin-bottom:5px;color:var(--navy)}
+#radar-root .ib{font-size:11px;color:#2d3748;line-height:1.6}
+#radar-root .im{font-size:10px;color:var(--bl);margin-top:5px;font-weight:600}
+#radar-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
+#radar-root canvas{max-height:220px}
+</style>
+
+<header class="hdr">
+  <div>
+    <h1 class="hdr-name" id="r-hdr-name">CARGANDO...</h1>
+    <p class="hdr-sub" id="r-hdr-sub"></p>
+  </div>
+</header>
+<main class="con">
+
+  <div class="tabs">
+    <button class="tb act" onclick="radarTab(this,'kpis')">KPIs AMPLIADOS</button>
+    <button class="tb" onclick="radarTab(this,'sent')">SENTIMIENTO</button>
+    <button class="tb" onclick="radarTab(this,'tom')">TOP OF MIND</button>
+    <button class="tb" onclick="radarTab(this,'plat')">PLATAFORMAS</button>
+    <button class="tb" onclick="radarTab(this,'nar')">NARRATIVAS</button>
+    <button class="tb" onclick="radarTab(this,'risk')">RIESGOS &amp; OPORT.</button>
+    <button class="tb" onclick="radarTab(this,'ter')">MAPA TERRITORIAL</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="tsec show" id="rtab-kpis">
+    <div class="stitle">KPIs BIVARIADOS</div>
+    <div class="cg">
+      <div class="card"><div class="ct">NPS-P por Identidad Partidista</div><div class="cs">El apoyo real según filiación política</div><canvas id="rc-npspar"></canvas></div>
+      <div class="card"><div class="ct">NPS-P por Género y Edad</div><div class="cs">Brecha de aprobación demográfica</div><canvas id="rc-npsdemo"></canvas></div>
+      <div class="card"><div class="ct">Ratio Ataque/Defensa por Plataforma</div><div class="cs">¿Dónde crece más la conversación adversa?</div><canvas id="rc-ratiopl"></canvas></div>
+      <div class="card"><div class="ct">TRA — Evolución Semanal</div><div class="cs">Temperatura reputacional acumulada</div><canvas id="rc-tra"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SENTIMIENTO -->
+  <div class="tsec" id="rtab-sent">
+    <div class="stitle">SENTIMIENTO DIGITAL — ANÁLISIS BIVARIADO</div>
+    <div class="bbar">
+      <span class="blbl">CRUZAR POR →</span>
+      <button class="bb act" onclick="radarUpdSent(this,'general')">GENERAL</button>
+      <button class="bb" onclick="radarUpdSent(this,'genero')">GÉNERO</button>
+      <button class="bb" onclick="radarUpdSent(this,'edad')">EDAD</button>
+      <button class="bb" onclick="radarUpdSent(this,'partido')">PARTIDO</button>
+    </div>
+    <div class="cg" style="grid-template-columns:1fr">
+      <div class="card"><div class="ct" id="r-sent-t">Sentimiento General</div><div class="cs">Clasificación semántica del periodo</div><canvas id="rc-sent"></canvas></div>
+    </div>
+    <div class="stitle">HALLAZGOS BIVARIADOS</div>
+    <div class="ig" id="r-sent-hallazgos"></div>
+  </div>
+
+  <!-- TOP OF MIND -->
+  <div class="tsec" id="rtab-tom">
+    <div class="stitle">TOP OF MIND — ANÁLISIS BIVARIADO</div>
+    <div class="bbar">
+      <span class="blbl">CRUZAR POR →</span>
+      <button class="bb act" onclick="radarUpdTom(this,'general')">GENERAL</button>
+      <button class="bb" onclick="radarUpdTom(this,'genero')">GÉNERO</button>
+      <button class="bb" onclick="radarUpdTom(this,'edad')">EDAD</button>
+      <button class="bb" onclick="radarUpdTom(this,'partido')">PARTIDO</button>
+    </div>
+    <div class="card" style="margin-bottom:18px"><div class="ct" id="r-tom-t">Top de Temas — General</div><div class="cs">¿Qué domina la conversación pública?</div><canvas id="rc-tom" style="max-height:230px"></canvas></div>
+    <div class="stitle">CRUCES TEMÁTICOS</div>
+    <div class="ig" id="r-tom-cruces"></div>
+  </div>
+
+  <!-- PLATAFORMAS -->
+  <div class="tsec" id="rtab-plat">
+    <div class="stitle">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
+    <div class="cg">
+      <div class="card"><div class="ct">Alcance por Plataforma</div><div class="cs">Peso relativo de cada canal</div><canvas id="rc-plalc"></canvas></div>
+      <div class="card"><div class="ct">Tono por Plataforma</div><div class="cs">¿Dónde es más alta la crítica?</div><canvas id="rc-pltono"></canvas></div>
+      <div class="card"><div class="ct">Plataforma × Edad</div><div class="cs">¿Dónde está cada generación?</div><canvas id="rc-pledad"></canvas></div>
+      <div class="card"><div class="ct">Velocidad de Viralización (horas a 1K)</div><div class="cs">Crítica vs. contenido propio</div><canvas id="rc-plviral"></canvas></div>
+    </div>
+    <div class="stitle">LECTURA ESTRATÉGICA</div>
+    <div class="cg" style="grid-template-columns:repeat(3,1fr)" id="r-plat-lectura"></div>
+  </div>
+
+  <!-- NARRATIVAS -->
+  <div class="tsec" id="rtab-nar">
+    <div class="stitle">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
+    <div class="ng">
+      <div class="nc"><div class="nh fav">▲ NARRATIVAS FAVORABLES</div><div id="r-nar-fav"></div></div>
+      <div class="nc"><div class="nh crit">▼ NARRATIVAS CRÍTICAS</div><div id="r-nar-crit"></div></div>
+      <div class="nc"><div class="nh neu">◆ NARRATIVAS NEUTRAS</div><div id="r-nar-neu"></div></div>
+    </div>
+  </div>
+
+  <!-- RIESGOS -->
+  <div class="tsec" id="rtab-risk">
+    <div class="stitle">MATRIZ BIVARIADA DE RIESGOS Y OPORTUNIDADES</div>
+    <div class="mg">
+      <div>
+        <div class="mh risk">⚠ RIESGOS — IMPACTO POR SEGMENTO</div>
+        <div class="mb" id="r-riesgos"></div>
+      </div>
+      <div>
+        <div class="mh opp">✦ OPORTUNIDADES — POTENCIAL POR SEGMENTO</div>
+        <div class="mb" id="r-oportunidades"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERRITORIAL -->
+  <div class="tsec" id="rtab-ter">
+    <div class="stitle">MAPA DE CALOR TERRITORIAL — NPS-P POR ZONA</div>
+    <div class="hm" id="r-ter-hm"></div>
+    <div class="cg">
+      <div class="card"><div class="ct">NPS-P por Zona</div><div class="cs">Aprobación neta por localidad</div><canvas id="rc-ternps"></canvas></div>
+      <div class="card"><div class="ct">Volumen de Conversación por Zona</div><div class="cs">% del total de menciones del periodo</div><canvas id="rc-tervol"></canvas></div>
+    </div>
+  </div>
+
+  <div class="stitle" style="margin-top:10px">RESUMEN EJECUTIVO</div>
+  <div class="card" style="margin-bottom:30px"><div class="ib" id="r-resumen" style="font-size:12px;line-height:1.7"></div></div>
+
+</main>
+<div class="footer">
+  <span id="r-ftr-l">RADAR Análisis Bivariado</span>
+  <span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span>
+</div>
+</div>
+
+<script>
+(function(){
+const D = (window.DATA && Object.keys(window.DATA).length) ? window.DATA : null;
+const META = window.DATA_META || {};
+const root = document.getElementById('radar-root');
+const C = {ac:'#1B4F8A',go:'#B8860B',da:'#E63946',su:'#008080',ne:'#4a5568',bl:'#1C2738'};
+
+// ---------- valores de respaldo si el backend no entrega algo ----------
+const FALLBACK = {
+  actor: {cargo:'Servidor(a) Público(a)', entidad:'Estado de México', partido:'—', periodo: (META.mes||'')+' '+(META.anio||'')},
+  kpis: {npsPartido:[{label:'Sin datos',valor:0}], npsDemografico:[{label:'Sin datos',valor:0}], ratioAtaqueDefensa:[{plataforma:'Sin datos',ratio:0}], traSemanal:{labels:['--'],valores:[0]}},
+  sentimiento: {general:{labels:['Sin datos'],valores:[0]}, genero:{labels:['Sin datos'],valores:[0]}, edad:{labels:['Sin datos'],valores:[0]}, partido:{labels:['Sin datos'],valores:[0]}, hallazgos:[]},
+  topOfMind: {general:{temas:['Sin datos'],valores:[0]}, genero:{temas:['Sin datos'],series:[{nombre:'—',valores:[0]}]}, edad:{temas:['Sin datos'],series:[{nombre:'—',valores:[0]}]}, partido:{temas:['Sin datos'],series:[{nombre:'—',valores:[0]}]}, cruces:[]},
+  plataformas: {alcance:[{plataforma:'Sin datos',valor:0}], tono:[{plataforma:'Sin datos',positivo:0,negativo:0}], porEdad:[{plataforma:'Sin datos',series:[{nombre:'—',valor:0}]}], viralizacion:[{plataforma:'Sin datos',critica:0,propia:0}], lecturaEstrategica:[]},
+  narrativas: {favorables:[], criticas:[], neutras:[]},
+  riesgosOportunidades: {riesgos:[], oportunidades:[]},
+  territorial: {zonas:[], volumenPorZona:[]},
+  resumenEjecutivo: 'No se recibieron datos estructurados del backend para este periodo.'
+};
+
+function pick(obj, fallback) { return (obj && Object.keys(obj).length) ? obj : fallback; }
+
+const DATA = {
+  actor: pick(D && D.actor, FALLBACK.actor),
+  kpis: pick(D && D.kpis, FALLBACK.kpis),
+  sentimiento: pick(D && D.sentimiento, FALLBACK.sentimiento),
+  topOfMind: pick(D && D.topOfMind, FALLBACK.topOfMind),
+  plataformas: pick(D && D.plataformas, FALLBACK.plataformas),
+  narrativas: pick(D && D.narrativas, FALLBACK.narrativas),
+  riesgosOportunidades: pick(D && D.riesgosOportunidades, FALLBACK.riesgosOportunidades),
+  territorial: pick(D && D.territorial, FALLBACK.territorial),
+  resumenEjecutivo: (D && D.resumenEjecutivo) || FALLBACK.resumenEjecutivo
+};
+
+// ---------- header ----------
+const nameParts = (META.actor || 'PERSONAJE').split(' ');
+document.getElementById('r-hdr-name').innerHTML = (nameParts[0]||'').toUpperCase() + ' <span>' + nameParts.slice(1).join(' ').toUpperCase() + '</span>';
+document.getElementById('r-hdr-sub').textContent = [DATA.actor.cargo, DATA.actor.entidad, DATA.actor.partido, DATA.actor.periodo].filter(Boolean).join(' · ');
+document.getElementById('r-ftr-l').textContent = 'RADAR Análisis Bivariado · ' + (DATA.actor.entidad || '');
+document.getElementById('r-resumen').textContent = DATA.resumenEjecutivo;
+
+// ---------- helpers de tabs ----------
+window.radarTab = function(btn, id){
+  root.querySelectorAll('.tsec').forEach(s=>s.classList.remove('show'));
+  root.querySelectorAll('.tb').forEach(t=>t.classList.remove('act'));
+  const target = document.getElementById('rtab-'+id);
+  if(target) target.classList.add('show');
+  btn.classList.add('act');
+  setTimeout(()=>radarCharts(id), 60);
+};
+
+const CH = {};
+function mk(id, cfg){ if(CH[id]) CH[id].destroy(); const c=document.getElementById(id); if(!c) return; CH[id]=new Chart(c, cfg); }
+
+// ---------- KPIs ----------
+function rKpis(){
+  const p = DATA.kpis.npsPartido, dm = DATA.kpis.npsDemografico, ra = DATA.kpis.ratioAtaqueDefensa, tra = DATA.kpis.traSemanal;
+  mk('rc-npspar',{type:'bar',data:{labels:p.map(x=>x.label),datasets:[{data:p.map(x=>x.valor),backgroundColor:d=>d.raw>=0?C.su:C.da,borderRadius:2,borderWidth:0}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>(v>0?'+':'')+v}}}}});
+  mk('rc-npsdemo',{type:'bar',data:{labels:dm.map(x=>x.label),datasets:[{data:dm.map(x=>x.valor),backgroundColor:d=>d.raw>=0?C.su:C.da,borderRadius:2,borderWidth:0}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>(v>0?'+':'')+v}},x:{ticks:{font:{size:8}}}}}});
+  mk('rc-ratiopl',{type:'bar',data:{labels:ra.map(x=>x.plataforma),datasets:[{data:ra.map(x=>x.ratio),backgroundColor:d=>d.raw>=1.5?C.da:C.su,borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});
+  mk('rc-tra',{type:'line',data:{labels:tra.labels,datasets:[{data:tra.valores,borderColor:C.ac,backgroundColor:'rgba(27,79,138,.1)',fill:true,tension:.4,borderWidth:2,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>(v>0?'+':'')+v}}}}});
+}
+
+// ---------- SENTIMIENTO ----------
+let sC=null;
+function rSent(k){
+  if(sC) sC.destroy();
+  const c = document.getElementById('rc-sent'); if(!c) return;
+  const d = DATA.sentimiento[k];
+  const isBar = k !== 'general';
+  sC = new Chart(c, {type:isBar?'bar':'doughnut', data:{labels:d.labels, datasets:[{data:d.valores, backgroundColor: isBar ? d.valores.map(v=>v>=0?C.su:C.da) : [C.su,C.ne,C.da,C.go], borderWidth:0, borderRadius:isBar?2:0, hoverOffset:isBar?0:6}]}, options:{responsive:true, plugins:{legend:{display:!isBar,position:'bottom',labels:{font:{size:9},padding:8,color:'#2d3748'}}}, cutout:isBar?undefined:'55%', scales:isBar?{y:{ticks:{callback:v=>(typeof v==='number'&&v>0?'+':'')+v}}}:undefined}});
+}
+window.radarUpdSent = function(btn,k){
+  root.querySelectorAll('#rtab-sent .bb').forEach(b=>b.classList.remove('act')); btn.classList.add('act');
+  const t={general:'Sentimiento General',genero:'Sentimiento por Género',edad:'Sentimiento / NPS-P por Edad',partido:'Sentimiento / NPS-P por Partido'};
+  document.getElementById('r-sent-t').textContent = t[k]; rSent(k);
+};
+function rSentHallazgos(){
+  const items = DATA.sentimiento.hallazgos || [];
+  const classes = ['ac','go','su','bl'];
+  document.getElementById('r-sent-hallazgos').innerHTML = items.length ? items.map((h,i)=>`
+    <div class="ic ${classes[i%4]}"><div class="ih">${h.titulo||''}</div><div class="ib">${h.texto||''}</div>${h.accion?`<div class="im">→ ${h.accion}</div>`:''}</div>
+  `).join('') : '<div class="ic ac"><div class="ib">Sin hallazgos bivariados disponibles.</div></div>';
+}
+
+// ---------- TOP OF MIND ----------
+let tomC=null;
+function rTom(k){
+  if(tomC) tomC.destroy();
+  const c = document.getElementById('rc-tom'); if(!c) return;
+  const d = DATA.topOfMind[k];
+  if(k==='general'){
+    tomC = new Chart(c,{type:'bar',data:{labels:d.temas,datasets:[{data:d.valores,backgroundColor:C.ac,borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%'}},y:{ticks:{font:{size:10}}}}}});
+  } else {
+    const palette=[C.ac,C.da,C.go,C.su];
+    tomC = new Chart(c,{type:'bar',data:{labels:d.temas,datasets:(d.series||[]).map((s,i)=>({label:s.nombre,data:s.valores,backgroundColor:palette[i%4],borderRadius:2}))},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}},scales:{y:{ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:9}}}}}});
+  }
+}
+window.radarUpdTom = function(btn,k){
+  root.querySelectorAll('#rtab-tom .bb').forEach(b=>b.classList.remove('act')); btn.classList.add('act');
+  const t={general:'Top de Temas — General',genero:'Top of Mind por Género',edad:'Top of Mind por Edad',partido:'Top of Mind por Partido'};
+  document.getElementById('r-tom-t').textContent = t[k]; rTom(k);
+};
+function rTomCruces(){
+  const items = DATA.topOfMind.cruces || [];
+  const classes = ['ac','go','da','bl'];
+  document.getElementById('r-tom-cruces').innerHTML = items.length ? items.map((h,i)=>`
+    <div class="ic ${classes[i%4]}"><div class="ih">${h.titulo||''}</div><div class="ib">${h.texto||''}</div>${h.accion?`<div class="im">→ ${h.accion}</div>`:''}</div>
+  `).join('') : '<div class="ic ac"><div class="ib">Sin cruces temáticos disponibles.</div></div>';
+}
+
+// ---------- PLATAFORMAS ----------
+function rPlat(){
+  const alc=DATA.plataformas.alcance, tono=DATA.plataformas.tono, pe=DATA.plataformas.porEdad, vir=DATA.plataformas.viralizacion;
+  mk('rc-plalc',{type:'doughnut',data:{labels:alc.map(x=>x.plataforma),datasets:[{data:alc.map(x=>x.valor),backgroundColor:[C.ac,C.bl,C.go,C.ne,C.su,C.da],borderWidth:0,hoverOffset:6}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},padding:8,color:'#2d3748'}}},cutout:'55%'}});
+  mk('rc-pltono',{type:'bar',data:{labels:tono.map(x=>x.plataforma),datasets:[{label:'% Positivo',data:tono.map(x=>x.positivo),backgroundColor:C.su,borderRadius:2},{label:'% Negativo',data:tono.map(x=>x.negativo),backgroundColor:C.da,borderRadius:2}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});
+  const palette=[C.da,C.go,C.su,C.ne];
+  const grupos = (pe[0] && pe[0].series || []).map(s=>s.nombre);
+  mk('rc-pledad',{type:'bar',data:{labels:pe.map(x=>x.plataforma),datasets:grupos.map((g,i)=>({label:g,data:pe.map(x=>(x.series[i]||{}).valor||0),backgroundColor:palette[i%4],borderRadius:2}))},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});
+  mk('rc-plviral',{type:'bar',data:{labels:vir.map(x=>x.plataforma),datasets:[{label:'Crítica (h)',data:vir.map(x=>x.critica),backgroundColor:C.da,borderRadius:2},{label:'Propia (h)',data:vir.map(x=>x.propia),backgroundColor:C.su,borderRadius:2}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}}}});
+}
+function rPlatLectura(){
+  const items = DATA.plataformas.lecturaEstrategica || [];
+  document.getElementById('r-plat-lectura').innerHTML = items.length ? items.map(i=>`
+    <div class="card"><div class="ct" style="font-size:12px;color:${i.alerta?'var(--da)':'var(--bl)'};margin-bottom:4px;font-weight:700">${i.titulo||''}</div><div class="ib">${i.texto||''}</div></div>
+  `).join('') : '';
+}
+
+// ---------- NARRATIVAS ----------
+function narItemHtml(n, biClass){
+  const tags = (n.tags||[]).map(t=>`<span class="btag">${t}</span>`).join('');
+  return `<div class="ni"><div class="nit">${n.titulo||''}</div><div class="nd">${n.descripcion||''}</div>${tags}${n.bivariado?`<div class="bi ${biClass}"><strong>Bivariado:</strong> ${n.bivariado}</div>`:''}</div>`;
+}
+function rNarrativas(){
+  document.getElementById('r-nar-fav').innerHTML = (DATA.narrativas.favorables||[]).map(n=>narItemHtml(n,'')).join('') || '<div class="ni"><div class="nd">Sin narrativas favorables detectadas.</div></div>';
+  document.getElementById('r-nar-crit').innerHTML = (DATA.narrativas.criticas||[]).map(n=>narItemHtml(n,'neg')).join('') || '<div class="ni"><div class="nd">Sin narrativas críticas detectadas.</div></div>';
+  document.getElementById('r-nar-neu').innerHTML = (DATA.narrativas.neutras||[]).map(n=>narItemHtml(n,'ntr')).join('') || '<div class="ni"><div class="nd">Sin narrativas neutras detectadas.</div></div>';
+}
+
+// ---------- RIESGOS Y OPORTUNIDADES ----------
+const LVL_RIESGO = {'CRÍTICO':'lc','ALTO':'la','MEDIO':'lm','BAJO':'lb'};
+const LVL_OPP = {'ALTO':'lo-alto','MEDIO':'lo-medio','BAJO':'lo-bajo'};
+function rRiesgosOportunidades(){
+  document.getElementById('r-riesgos').innerHTML = (DATA.riesgosOportunidades.riesgos||[]).map(r=>`
+    <div class="mr"><div class="mt"><span class="lv ${LVL_RIESGO[r.nivel]||'lm'}">${r.nivel||''}</span><span class="mn">${r.titulo||''}</span></div><div class="md">${r.descripcion||''}</div>${r.bivariado?`<div class="bi neg"><strong>Bivariado:</strong> ${r.bivariado}</div>`:''}</div>
+  `).join('') || '<div class="mr"><div class="md">Sin riesgos relevantes detectados.</div></div>';
+
+  document.getElementById('r-oportunidades').innerHTML = (DATA.riesgosOportunidades.oportunidades||[]).map(r=>`
+    <div class="mr"><div class="mt"><span class="lv ${LVL_OPP[r.nivel]||'lo-medio'}">${r.nivel||''}</span><span class="mn">${r.titulo||''}</span></div><div class="md">${r.descripcion||''}</div>${r.bivariado?`<div class="bi"><strong>Bivariado:</strong> ${r.bivariado}</div>`:''}</div>
+  `).join('') || '<div class="mr"><div class="md">Sin oportunidades relevantes detectadas.</div></div>';
+}
+
+// ---------- TERRITORIAL ----------
+const CLASE_MAP = {favorable:'fav', adversa:'adv', inercial:'ine'};
+const EMOJI_MAP = {favorable:'🟢 FAVORABLE', adversa:'🔴 ADVERSA', inercial:'🟡 INERCIAL'};
+function rTer(){
+  const zonas = DATA.territorial.zonas || [];
+  document.getElementById('r-ter-hm').innerHTML = zonas.map(z=>`
+    <div class="hz ${CLASE_MAP[z.clasificacion]||'ine'}"><div class="hzn">${z.nombre}</div><div class="hzs">${z.nps>0?'+':''}${z.nps}</div><div class="hzl">${EMOJI_MAP[z.clasificacion]||''}</div><div style="font-size:9px;color:#4a5568;margin-top:5px">${z.nota||''}</div></div>
+  `).join('') || '<div class="hz ine"><div class="hzn">Sin datos</div></div>';
+
+  mk('rc-ternps',{type:'bar',data:{labels:zonas.map(z=>z.nombre),datasets:[{data:zonas.map(z=>z.nps),backgroundColor:d=>d.raw>10?C.su:d.raw>0?C.go:d.raw>-15?C.da:'#AA0000',borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});
+
+  const vol = DATA.territorial.volumenPorZona || [];
+  mk('rc-tervol',{type:'bar',data:{labels:vol.map(v=>v.zona),datasets:[{data:vol.map(v=>v.volumen),backgroundColor:C.go,borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%'}}}}});
+}
+
+function radarCharts(t){
+  if(t==='kpis') rKpis();
+  if(t==='sent'){ rSent('general'); rSentHallazgos(); }
+  if(t==='tom'){ rTom('general'); rTomCruces(); }
+  if(t==='plat'){ rPlat(); rPlatLectura(); }
+  if(t==='nar') rNarrativas();
+  if(t==='risk') rRiesgosOportunidades();
+  if(t==='ter') rTer();
+}
+
+setTimeout(()=>radarCharts('kpis'), 80);
+})();
+</script>
