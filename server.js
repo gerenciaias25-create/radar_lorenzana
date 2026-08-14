@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -260,6 +259,11 @@ const SCHEMAS = {
     "estrategia": {"problematicas": [string], "orgulloComunitario": string, "consumoDigital": string, "loAcerca": string, "loAleja": string, "frame": string, "palanca": string},
     "vector": {"canal": string, "tono": string, "formato": string}
   }],
+  "alertaEstrategica": string,   // título corto de la alerta principal del período
+  "alertaDescripcion": string,   // párrafo explicando la alerta
+  "recomendaciones": [{"urgencia": "urgente"|"corto"|"mediano"|"permanente", "texto": string}],  // 4-6 recomendaciones accionables
+  "evitar": [string],  // 4-6 acciones de comunicación contraproducentes a evitar
+  "gestionPrioridad": [{"etiqueta": string, "valor": number}],  // 4-6 prioridades de gestión emocional, valor 0-100
   "resumenEjecutivo": string
 }`,
   tensiones: `{
