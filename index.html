@@ -304,6 +304,11 @@ async function loadSelectedSkill() {
   const skillPath = SKILL_FILES[skill];
   if (!skillPath) return showError('Skill no reconocida.');
 
+  // Verificar que Chart.js esté cargado
+  if (typeof Chart === 'undefined') {
+    return showError('Error: Chart.js no está cargado. Recarga la página.');
+  }
+
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
   document.getElementById('loadingText').textContent = `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`;
@@ -313,77 +318,69 @@ async function loadSelectedSkill() {
     // 1. Petición POST al servidor backend
     const apiResp = await fetch('/api/analizar', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skill, actor, actor2, mes, anio }),
     });
 
-    // 2. Convertir respuesta a JSON
     const apiJson = await apiResp.json();
 
     if (!apiResp.ok) {
       throw new Error(apiJson.error || apiJson.detail || 'Error en el servidor');
     }
 
+    if (!apiJson.data || typeof apiJson.data !== 'object') {
+      throw new Error('El servidor no devolvió datos estructurados (apiJson.data está vacío o es inválido).');
+    }
+
     document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
 
-    // 3. Cargar la plantilla HTML correspondiente
+    // 2. Cargar la plantilla HTML correspondiente
     const htmlResp = await fetch(skillPath);
     if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath}`);
     const htmlContent = await htmlResp.text();
 
     document.getElementById('loadingSteps').textContent = '[3/3] Inyectando datos y renderizando gráficas...';
 
-    // 4. Mostrar vista del dashboard
+    // 3. Mostrar vista del dashboard
     document.getElementById('view2').style.display = 'none';
     document.getElementById('view3').style.display = 'block';
 
     const container = document.getElementById('skillContainer');
-    container.innerHTML = htmlContent;
+    container.innerHTML = '';
 
-    // 5. Reemplazar marcadores en el encabezado
-    replaceHeaderPlaceholders(container, { actor, actor2, mes, anio });
-
-    // 6. Inyectar datos globales
+    // 4. Inyectar datos globales ANTES de insertar el HTML de la skill
     window.DATA = apiJson.data;
-    window.DATA_META = { 
-      actor, 
-      actor2: actor2 || null, 
-      mes, 
-      anio, 
-      fuentesEncontradas: apiJson.fuentesEncontradas 
+    window.DATA_META = {
+      actor,
+      actor2: actor2 || null,
+      mes,
+      anio,
+      fuentesEncontradas: apiJson.fuentesEncontradas
     };
 
-    // 7. Ejecutar los scripts de la plantilla cargada
+    // 5. Insertar HTML de la skill
+    container.innerHTML = htmlContent;
+
+    // 6. Ejecutar los scripts de la plantilla cargada
     const scripts = Array.from(container.querySelectorAll('script'));
     scripts.forEach(oldScript => {
       const newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+      Array.from(oldScript.attributes).forEach(attr => {
+        newScript.setAttribute(attr.name, attr.value);
+      });
+      if (oldScript.src) {
+        newScript.src = oldScript.src;
+      } else {
+        newScript.textContent = oldScript.textContent;
+      }
       oldScript.parentNode.replaceChild(newScript, oldScript);
     });
 
   } catch (err) {
+    console.error(err);
     showError(err.message || 'Ocurrió un error inesperado');
     resetToSearch();
   }
-}
-
-function replaceHeaderPlaceholders(container, { actor, actor2, mes, anio }) {
-  const nameParts = actor.split(' ');
-  const map = {
-    ACTOR_NOMBRE_PRINCIPAL: (nameParts[0] || actor).toUpperCase(),
-    ACTOR_APELLIDOS: nameParts.slice(1).join(' ').toUpperCase(),
-    ACTOR_NOMBRE_COMPLETO: actor.toUpperCase(),
-    ACTOR2_NOMBRE_COMPLETO: (actor2 || '').toUpperCase(),
-    PERIODO_EVALUADO: `${mes.toUpperCase()} ${anio}`,
-  };
-  let html = container.innerHTML;
-  for (const [key, value] of Object.entries(map)) {
-    html = html.replace(new RegExp(`{{\\s*${key}\\s*}}`, 'g'), value);
-  }
-  container.innerHTML = html;
 }
 
 function downloadReport() { window.print(); }
@@ -393,6 +390,8 @@ function resetToSearch() {
   document.getElementById('view2').style.display = 'none';
   document.getElementById('view1').style.display = 'block';
   document.getElementById('skillContainer').innerHTML = '';
+  window.DATA = null;
+  window.DATA_META = null;
 }
 </script>
 </body>
