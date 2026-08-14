@@ -20,9 +20,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Endpoint principal de análisis (Acepta POST en JSON o GET con parámetros)
+// Endpoint principal de análisis
 app.all('/api/analizar', async (req, res) => {
-  // Soporta tanto req.body (POST) como req.query (GET)
   const params = req.method === 'POST' ? req.body : req.query;
 
   const {
@@ -56,7 +55,7 @@ app.all('/api/analizar', async (req, res) => {
       actor2Name ? scrapeActor(actor2Name, APIFY_TOKEN) : Promise.resolve(null),
     ]);
 
-    // 2. Estructuración con OpenRouter / GPT
+    // 2. Estructuración con OpenRouter
     const schema = SCHEMAS[skill] || SCHEMAS.radar;
     const prompt = buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema });
     const structured = await callOpenRouter(prompt, OPENROUTER_KEY);
@@ -78,21 +77,21 @@ app.all('/api/analizar', async (req, res) => {
   }
 });
 
-// Endpoint de verificación de estado (Health Check)
+// Health Check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Servidor RADAR activo' });
 });
 
-// Configuración del Puerto para Hostinger
+// Puerto
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 Servidor RADAR escuchando en el puerto ${PORT}`);
 });
 
-server.timeout = 180000; // 3 minutos
+server.timeout = 180000;
 
 // =========================================================
-// APIFY: MÓDULO DE SCRAPING DE LAS 6 REDES
+// APIFY: SCRAPING
 // =========================================================
 
 async function llamarActorApify(actorPath, payload, token, timeoutMs = 35000) {
@@ -101,7 +100,7 @@ async function llamarActorApify(actorPath, payload, token, timeoutMs = 35000) {
     const url = `https://api.apify.com/v2/acts/${actorPath}/run-sync-get-dataset-items?token=${token}&timeout=${Math.round(timeoutMs / 1000)}`;
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), timeoutMs);
-    
+
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -120,7 +119,6 @@ async function llamarActorApify(actorPath, payload, token, timeoutMs = 35000) {
 }
 
 async function scrapeActor(nombre, token) {
-  // Se ejecutan las 6 tareas simultáneamente
   const tareas = [
     llamarActorApify('apify~google-search-scraper', {
       queries: `"${nombre}" (noticias OR opinión OR declaraciones)`,
@@ -175,181 +173,168 @@ function tag(items, fuente) {
 }
 
 // =========================================================
-// PROMPTS Y SCHEMAS PARA OPENROUTER
+// SCHEMAS LIMPIOS (sin comentarios, nombres exactos a las plantillas)
 // =========================================================
 
 const SCHEMAS = {
-  radar: `{
-  "actor": {"cargo": string, "entidad": string, "partido": string, "periodo": string},
-  "kpis": {
-    "npsPartido": [{"label": string, "valor": number}],
-    "npsDemografico": [{"label": string, "valor": number}],
-    "ratioAtaqueDefensa": [{"plataforma": string, "ratio": number}],
-    "traSemanal": {"labels": [string], "valores": [number]}
-  },
-  "sentimiento": {
-    "general": {"labels": [string], "valores": [number]},
-    "genero": {"labels": [string], "valores": [number]},
-    "edad": {"labels": [string], "valores": [number]},
-    "partido": {"labels": [string], "valores": [number]},
-    "hallazgos": [{"titulo": string, "texto": string, "accion": string}]
-  },
-  "topOfMind": {
-    "general": {"temas": [string], "valores": [number]},
-    "genero": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},
-    "edad": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},
-    "partido": {"temas": [string], "series": [{"nombre": string, "valores": [number]}]},
-    "cruces": [{"titulo": string, "texto": string, "accion": string}]
-  },
-  "plataformas": {
-    "alcance": [{"plataforma": string, "valor": number}],
-    "tono": [{"plataforma": string, "positivo": number, "negativo": number}],
-    "porEdad": [{"plataforma": string, "series": [{"nombre": string, "valor": number}]}],
-    "viralizacion": [{"plataforma": string, "critica": number, "propia": number}],
-    "lecturaEstrategica": [{"titulo": string, "texto": string, "alerta": boolean}]
-  },
-  "narrativas": {
-    "favorables": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],
-    "criticas": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}],
-    "neutras": [{"titulo": string, "descripcion": string, "tags": [string], "bivariado": string}]
-  },
-  "riesgosOportunidades": {
-    "riesgos": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}],
-    "oportunidades": [{"nivel": "ALTO"|"MEDIO"|"BAJO", "titulo": string, "descripcion": string, "bivariado": string}]
-  },
-  "territorial": {
-    "zonas": [{"nombre": string, "nps": number, "clasificacion": "favorable"|"adversa"|"inercial", "nota": string}],
-    "volumenPorZona": [{"zona": string, "volumen": number}]
-  },
-  "resumenEjecutivo": string
-}`,
-  emociones: `{
-  "cabecera": {
-    "concepto": string,
-    "conceptoDescripcion": string,
-    "nivelRiesgo": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO",
-    "cargoContexto": string
-  },
-  "emociones": [
-    {"key": "ira"|"sorpresa"|"anticipacion"|"tristeza"|"asco"|"alegria"|"confianza"|"miedo",
-     "activa": boolean, "intensidad": 0|1|2|3, "sublabel": string,
-     "disparadores": [string], "consecuencias": [string]}
-  ],
-  "secundarias": [{"nombre": string, "texto": string}],
-  "problematicas": [string],
-  "temores": [string],
-  "orgullos": [string],
-  "citas": [{"texto": string, "tema": string, "emocion": string, "fuente": string}],
-  "temasChart": [{"tema": string, "valor": number}],
-  "semaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}],
-  "diadas": [{"nombre": string, "formula": string, "tipo": "Primaria"|"Secundaria", "texto": string, "riesgo": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO", "score": number}],
-  "diadaInterpretacion": string,
-  "preguntaPolitica": string,
-  "preguntaDescripcion": string,
-  "gobSemaforo": [{"etiqueta": string, "valor": string, "nivel": "critico"|"alto"|"medio"|"bajo"}],
-  "partidos": [{"nombre": string, "emocion": string, "capital": string, "tendencia": string}],
-  "partidosChart": [{"iraAsco": number, "decepcionTristeza": number, "interesDisponible": number}],
-  "actores": [{"nombre": string, "rol": string, "fortaleza": string, "debilidad": string, "oportunidad": string, "amenaza": string, "emocionQueRecibe": string, "riesgoElectoral": string}],
-  "actoresRadar": [[number, number, number, number, number, number]],
-  "segmentos": [{
-    "tipo": string, "arquetipo": string, "subtitulo": string, "peso": string, "persuabilidad": string,
-    "fraseEmblema": string,
-    "perfil": {"edad": string, "zona": string, "ocupacion": string, "escolaridad": string, "digital": string, "historialElectoral": string},
-    "emocional": {"emocion": string, "vidaCotidiana": string, "tension": string, "dolor": string, "miedo": string, "orgullo": string, "narrativa": string},
-    "estrategia": {"problematicas": [string], "orgulloComunitario": string, "consumoDigital": string, "loAcerca": string, "loAleja": string, "frame": string, "palanca": string},
-    "vector": {"canal": string, "tono": string, "formato": string}
-  }],
-  "alertaEstrategica": string,   // título corto de la alerta principal del período
-  "alertaDescripcion": string,   // párrafo explicando la alerta
-  "recomendaciones": [{"urgencia": "urgente"|"corto"|"mediano"|"permanente", "texto": string}],  // 4-6 recomendaciones accionables
-  "evitar": [string],  // 4-6 acciones de comunicación contraproducentes a evitar
-  "gestionPrioridad": [{"etiqueta": string, "valor": number}],  // 4-6 prioridades de gestión emocional, valor 0-100
-  "resumenEjecutivo": string
-}`,
-  tensiones: `{
-  "actor": {"entidad": string, "cargo": string, "periodo": string},
-  "kpis": {
-    "totalTensiones": number,
-    "promedioSTS": number,
-    "tensionCritica": string,
-    "emocionDominante": string,
-    "zonaSensible": string
-  },
-  "ranking": [
-    {
-      "id": number,
-      "nombre": string,
-      "score": number,
-      "color": string,
-      "nivel": "Alto" | "Relevante" | "Medio" | "Bajo",
-      "delta": string,
-      "emocion": string,
-      "intensidad": number,
-      "narrativa": string,
-      "actor": string,
-      "territorio": string,
-      "politica": string,
-      "evidencia": string,
-      "recomendacion": string
+  radar: JSON.stringify({
+    actor: { cargo: "string", entidad: "string", partido: "string", periodo: "string" },
+    kpis: {
+      npsPartido: [{ label: "string", valor: 0 }],
+      npsDemografico: [{ label: "string", valor: 0 }],
+      ratioAtaqueDefensa: [{ plataforma: "string", ratio: 0 }],
+      traSemanal: { labels: ["string"], valores: [0] }
+    },
+    sentimiento: {
+      general: { labels: ["string"], valores: [0] },
+      genero: { labels: ["string"], valores: [0] },
+      edad: { labels: ["string"], valores: [0] },
+      partido: { labels: ["string"], valores: [0] },
+      hallazgos: [{ titulo: "string", texto: "string", accion: "string" }]
+    },
+    topOfMind: {
+      general: { temas: ["string"], valores: [0] },
+      genero: { temas: ["string"], series: [{ nombre: "string", valores: [0] }] },
+      edad: { temas: ["string"], series: [{ nombre: "string", valores: [0] }] },
+      partido: { temas: ["string"], series: [{ nombre: "string", valores: [0] }] },
+      cruces: [{ titulo: "string", texto: "string", accion: "string" }]
+    },
+    plataformas: {
+      alcance: [{ plataforma: "string", valor: 0 }],
+      tono: [{ plataforma: "string", positivo: 0, negativo: 0 }],
+      porEdad: [{ plataforma: "string", series: [{ nombre: "string", valor: 0 }] }],
+      viralizacion: [{ plataforma: "string", critica: 0, propia: 0 }],
+      lecturaEstrategica: [{ titulo: "string", texto: "string", alerta: false }]
+    },
+    narrativas: {
+      favorables: [{ titulo: "string", descripcion: "string", tags: ["string"], bivariado: "string" }],
+      criticas: [{ titulo: "string", descripcion: "string", tags: ["string"], bivariado: "string" }],
+      neutras: [{ titulo: "string", descripcion: "string", tags: ["string"], bivariado: "string" }]
+    },
+    riesgosOportunidades: {
+      riesgos: [{ nivel: "CRÍTICO|ALTO|MEDIO|BAJO", titulo: "string", descripcion: "string", bivariado: "string" }],
+      oportunidades: [{ nivel: "ALTO|MEDIO|BAJO", titulo: "string", descripcion: "string", bivariado: "string" }]
+    },
+    territorial: {
+      zonas: [{ nombre: "string", nps: 0, clasificacion: "favorable|adversa|inercial", nota: "string" }],
+      volumenPorZona: [{ zona: "string", volumen: 0 }]
+    },
+    resumenEjecutivo: "string"
+  }, null, 2),
+
+  emociones: JSON.stringify({
+    territorio: { nombre: "string", subtitulo: "string", periodo: "string" },
+    riskLevel: "CRÍTICO|ALTO|MEDIO|BAJO",
+    ivEstimado: 0,
+    concept: "string",
+    conceptDesc: "string",
+    emotions: [
+      { key: "ira|sorpresa|anticipacion|tristeza|asco|alegria|confianza|miedo", active: true, intensity: 1, triggers: ["string"], consequences: ["string"] }
+    ],
+    secondary: [{ name: "string", text: "string" }],
+    problematics: ["string"],
+    fears: ["string"],
+    prides: ["string"],
+    quotes: [{ text: "string", topic: "string", emotion: "string", territory: "string" }],
+    temasChart: [{ tema: "string", porcentaje: 0 }],
+    semaforo: [{ label: "string", val: "string", estado: "positivo|atencion|critico" }],
+    dyads: [{ name: "string", formula: "string", type: "Primaria|Secundaria", text: "string", risk: "CRÍTICO|ALTO|MEDIO|BAJO", score: 0 }],
+    dyadInterp: "string",
+    preguntaPolitica: "string",
+    preguntaDesc: "string",
+    govSemaforo: [{ label: "string", val: "string", estado: "positivo|atencion|critico" }],
+    partidos: [
+      {
+        nombre: "string",
+        emocion: "string",
+        capital: "string",
+        tendencia: "string",
+        direccion: "baja|sube|estable",
+        cargaEmocional: { iraAsco: 0, decepcionTristeza: 0, interesDisponible: 0 }
+      }
+    ],
+    actores: [
+      {
+        name: "string",
+        role: "string",
+        rows: [{ label: "string", value: "string" }],
+        radar: [0, 0, 0, 0, 0, 0]
+      }
+    ],
+    alertaEstrategica: "string",
+    alertaDesc: "string",
+    recs: [{ urgencia: "urgente|corto|mediano|permanente", text: "string" }],
+    evitar: ["string"],
+    gestionPrioridad: [{ label: "string", valor: 0 }],
+    resumenEjecutivo: "string"
+  }, null, 2),
+
+  tensiones: JSON.stringify({
+    actor: { entidad: "string", cargo: "string", periodo: "string" },
+    ranking: [
+      {
+        nombre: "string",
+        score: 0,
+        color: "#C05621",
+        nivel: "string",
+        emocion: "string",
+        narrativa: "string",
+        actor: "string",
+        territorio: "string",
+        politica: "string",
+        recomendacion: "string"
+      }
+    ],
+    emociones: [
+      { nombre: "string", intensidad: 0, color: "#hex", porcentaje: 0 }
+    ],
+    narrativas: [
+      { nombre: "string", tema: "string", actor: "string", politica: "string", frase: "string" }
+    ],
+    territorios: [
+      { nombre: "string", tension: "string", emocion: "string", observaciones: "string" }
+    ],
+    riesgos: [
+      { nombre: "string", srr: 0, accion: "string", color: "#hex" }
+    ],
+    trayectoria: [
+      { nombre: "string", t3: 0, t2: 0, t1: 0, ta: 0, tipo: "string", velocidad: "string" }
+    ],
+    alertas: [
+      { titulo: "string", rows: [["clave", "valor"]] }
+    ],
+    hallazgoEmocional: "string",
+    hallazgoTrayectoria: "string",
+    resumenEjecutivo: "string"
+  }, null, 2),
+
+  opositor: JSON.stringify({
+    actor: { cargo: "string", partido: "string", periodo: "string", aspiracion: "string" },
+    vulnerabilidades: [{ titulo: "string", nivel: "CRÍTICO|ALTO|MEDIO", bullets: ["string"], score: 0 }],
+    fortalezas: [{ titulo: "string", texto: "string" }],
+    perfil: {
+      rows: [{ label: "string", value: "string" }],
+      cronologia: [{ periodo: "string", titulo: "string", descripcion: "string" }],
+      ierPorCargo: [{ cargo: "string", valor: 0 }]
+    },
+    contradicciones: {
+      ranking: [{ codigo: "string", titulo: "string", score: 0, nivel: "CRÍTICO|ALTO|MEDIO" }],
+      destacados: [{ titulo: "string", texto: "string", nivel: "CRÍTICO|ALTO|MEDIO|BAJO" }],
+      tabla: [{ codigo: "string", tipo: "string", declaracion: "string", realidad: "string", dano: "CRÍTICO|ALTO|MEDIO", canal: "string" }]
+    },
+    vectoresAtaque: [{ codigo: "string", titulo: "string", nivel: "CRÍTICO|ALTO|MEDIO", fuenteTag: "string", argumento: "string", evidencias: ["string"], fraseLista: "string" }],
+    redDePoder: {
+      radar: [0, 0, 0, 0, 0, 0],
+      alertas: [{ nivel: "CRÍTICO|ALTO|MEDIO", titulo: "string", bullets: ["string"] }],
+      tabla: [{ actor: "string", vinculo: "string", riesgoOportunidad: "string" }]
     }
-  ],
-  "emociones": [
-    {"nombre": string, "intensidad": number, "color": string, "cambio": string, "lectura": string, "porcentaje": number}
-  ],
-  "narrativas": [
-    {"nombre": string, "tema": string, "actor": string, "politica": string, "frase": string, "origen": string}
-  ],
-  "territorios": [
-    {"nombre": string, "nivel": string, "color": string, "emocion": string, "tension": string, "observaciones": string}
-  ],
-  "riesgos": [
-    {"nombre": string, "srr": number, "actor": string, "tipo": string, "probabilidad": string, "accion": string, "color": string}
-  ],
-  "trayectoria": [
-    {"nombre": string, "t3": number, "t2": number, "t1": number, "ta": number, "tipo": string, "velocidad": string}
-  ],
-  "alertas": [
-    {
-      "titulo": string,
-      "rows": [
-        ["Territorio", string],
-        ["Emoción", string],
-        ["Actor expuesto", string],
-        ["Qué ocurrió", string],
-        ["Narrativa activa", string],
-        ["Fuente verificadora", string],
-        ["Riesgo", string],
-        ["Escalamiento", string],
-        ["Acción inmediata", string]
-      ]
-    }
-  ],
-  "hallazgoEmocional": string,
-  "hallazgoTrayectoria": string,
-  "resumenEjecutivo": string
-}`,
-  opositor: `{
-  "actor": {"cargo": string, "partido": string, "periodo": string, "aspiracion": string},
-  "vulnerabilidades": [{"titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "bullets": [string], "score": number}],
-  "fortalezas": [{"titulo": string, "texto": string}],
-  "perfil": {
-    "rows": [{"label": string, "value": string}],
-    "cronologia": [{"periodo": string, "titulo": string, "descripcion": string}],
-    "ierPorCargo": [{"cargo": string, "valor": number}]
-  },
-  "contradicciones": {
-    "ranking": [{"codigo": string, "titulo": string, "score": number, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"}],
-    "destacados": [{"titulo": string, "texto": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO"|"BAJO"}],
-    "tabla": [{"codigo": string, "tipo": string, "declaracion": string, "realidad": string, "dano": "CRÍTICO"|"ALTO"|"MEDIO", "canal": string}]
-  },
-  "vectoresAtaque": [{"codigo": string, "titulo": string, "nivel": "CRÍTICO"|"ALTO"|"MEDIO", "fuenteTag": string, "argumento": string, "evidencias": [string], "fraseLista": string}],
-  "redDePoder": {
-    "radar": [number,number,number,number,number,number],
-    "alertas": [{"nivel": "CRÍTICO"|"ALTO"|"MEDIO", "titulo": string, "bullets": [string]}],
-    "tabla": [{"actor": string, "vinculo": string, "riesgoOportunidad": string}]
-  }
-}`
+  }, null, 2)
 };
+
+// =========================================================
+// PROMPTS
+// =========================================================
+
 function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema }) {
   const bloque1 = resumirFuentes(datosActor1);
   const bloque2 = datosActor2 ? resumirFuentes(datosActor2) : null;
@@ -358,28 +343,29 @@ function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, dat
     ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos sobre ${actor2Name} ---\n${bloque2}`
     : `Personaje: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
 
-  const guardarropaOpositor = skill === 'opositor' ? `
-Reglas adicionales OBLIGATORIAS para este expediente de oposición:
-- Basa cualquier señalamiento grave ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas.
-- NO inventes números de expediente ni fechas falsas de documentos.
-- Si no hay suficiente información cruda, trátalo como "área de riesgo reputacional".` : '';
+  const guardarropaOpositor = skill === 'opositor'
+    ? `\nReglas adicionales OBLIGATORIAS para este expediente de oposición:\n- Basa cualquier señalamiento grave ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas.\n- NO inventes números de expediente ni fechas falsas de documentos.\n- Si no hay suficiente información cruda, trátalo como "área de riesgo reputacional".`
+    : '';
 
   const system = `Eres un analista de inteligencia político-electoral en México. Produce un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
 
 Reglas:
-- Responde EXCLUSIVAMENTE con un objeto JSON válido acorde a este esquema:
+- Responde EXCLUSIVAMENTE con un objeto JSON válido acorde a este esquema exacto (mismos nombres de propiedades, mismos tipos de datos):
 ${schema}
 - Basa el análisis en los datos crudos proporcionados.
-- Todos los textos en español de México.${guardarropaOpositor}`;
+- Si no hay datos crudos suficientes para algún campo, genera valores realistas basados en el contexto político mexicano pero SIEMPRE respeta los nombres de propiedades del esquema.
+- Todos los textos en español de México.
+- Asegúrate de que TODOS los arrays tengan al menos un elemento.
+- Los campos numéricos deben ser números, no strings.${guardarropaOpositor}`;
 
-  const user = `Periodo evaluado: ${mes} ${anio}\nSkill solicitada: ${skill}\n\n${contexto}\n\nGenera el JSON con el esquema indicado.`;
+  const user = `Periodo evaluado: ${mes} ${anio}\nSkill solicitada: ${skill}\n\n${contexto}\n\nGenera el JSON completo con el esquema indicado. No omitas ninguna propiedad.`;
 
   return { system, user };
 }
 
 function resumirFuentes(bloque) {
   if (!bloque || !bloque.items || bloque.items.length === 0) {
-    return '(No se obtuvieron resultados directos de scraping en vivo; produce el análisis basándote en tu conocimiento experto general del personaje en el contexto político mexicano.)';
+    return '(No se obtuvieron resultados directos de scraping en vivo; genera el análisis basándote en conocimiento experto del contexto político mexicano respetando estrictamente el esquema JSON proporcionado.)';
   }
   return bloque.items
     .slice(0, 50)
@@ -402,8 +388,8 @@ async function callOpenRouter({ system, user }, apiKey) {
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
-      temperature: 0.4,
-      max_tokens: 3500,
+      temperature: 0.3,
+      max_tokens: 8000,
       response_format: { type: 'json_object' },
     }),
   });
@@ -420,6 +406,7 @@ async function callOpenRouter({ system, user }, apiKey) {
   try {
     return JSON.parse(clean);
   } catch (e) {
+    console.error('[-] JSON inválido de OpenRouter:', clean.slice(0, 500));
     throw new Error('OpenRouter devolvió un JSON con formato inválido.');
   }
 }
