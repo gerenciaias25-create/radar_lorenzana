@@ -284,6 +284,7 @@ function showError(msg) {
   box.textContent = msg;
   box.style.display = 'block';
 }
+
 function hideError() {
   document.getElementById('errorBox').style.display = 'none';
 }
@@ -309,66 +310,52 @@ async function loadSelectedSkill() {
   document.getElementById('loadingSteps').textContent = '[1/3] Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...';
 
   try {
-    // 1. Pedir el análisis estructurado al backend (Apify + OpenRouter)
+    // 1. Petición POST al servidor backend
     const apiResp = await fetch('/api/analizar', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ skill, actor, actor2, mes, anio }),
-});
-    try {
-  // 1. Haces la petición al backend
-  const apiResp = await fetch('/api/analizar', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ skill, actor, actor2, mes, anio }),
-  });
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ skill, actor, actor2, mes, anio }),
+    });
 
-  // 🔴 ¡ESTA ES LA LÍNEA QUE TE FALTABA!
-  const apiJson = await apiResp.json(); 
+    // 2. Convertir respuesta a JSON
+    const apiJson = await apiResp.json();
 
-  // 2. Verificas si el backend devolvió un error
-  if (!apiResp.ok) {
-    throw new Error(apiJson.error || apiJson.detail || 'Error en el servidor');
-  }
+    if (!apiResp.ok) {
+      throw new Error(apiJson.error || apiJson.detail || 'Error en el servidor');
+    }
 
-  // 3. Ya puedes usar apiJson sin problemas
-  console.log('Datos recibidos:', apiJson);
-
-  // Aquí continúas con la lógica para renderizar tu plantilla/iframe/skill
-  // ...
-
-} catch (err) {
-  // Muestra el error en la alerta roja de la pantalla
-  showErrorMsg(err.message); 
-}
     document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
 
-    // 2. Cargar el HTML de la skill (plantilla visual, sin datos)
+    // 3. Cargar la plantilla HTML correspondiente
     const htmlResp = await fetch(skillPath);
     if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath}`);
     const htmlContent = await htmlResp.text();
 
     document.getElementById('loadingSteps').textContent = '[3/3] Inyectando datos y renderizando gráficas...';
 
+    // 4. Mostrar vista del dashboard
     document.getElementById('view2').style.display = 'none';
     document.getElementById('view3').style.display = 'block';
 
     const container = document.getElementById('skillContainer');
     container.innerHTML = htmlContent;
 
-    // 3. Reemplazos simples de texto (nombre/cargo en el header) por si la plantilla los usa
+    // 5. Reemplazar marcadores en el encabezado
     replaceHeaderPlaceholders(container, { actor, actor2, mes, anio });
 
-    // 4. Inyectar los datos estructurados ANTES de correr los <script> de la skill,
-    //    para que sus funciones de render puedan leer window.DATA
+    // 6. Inyectar datos globales
     window.DATA = apiJson.data;
-    window.DATA_META = { actor, actor2: actor2 || null, mes, anio, fuentesEncontradas: apiJson.fuentesEncontradas };
+    window.DATA_META = { 
+      actor, 
+      actor2: actor2 || null, 
+      mes, 
+      anio, 
+      fuentesEncontradas: apiJson.fuentesEncontradas 
+    };
 
-    // 5. Re-ejecutar los <script> del skill (innerHTML no los corre automáticamente)
+    // 7. Ejecutar los scripts de la plantilla cargada
     const scripts = Array.from(container.querySelectorAll('script'));
     scripts.forEach(oldScript => {
       const newScript = document.createElement('script');
@@ -378,7 +365,7 @@ async function loadSelectedSkill() {
     });
 
   } catch (err) {
-    showError('Error: ' + err.message);
+    showError(err.message || 'Ocurrió un error inesperado');
     resetToSearch();
   }
 }
