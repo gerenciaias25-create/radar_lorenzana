@@ -350,7 +350,6 @@ const SCHEMAS = {
   }
 }`
 };
-
 function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema }) {
   const bloque1 = resumirFuentes(datosActor1);
   const bloque2 = datosActor2 ? resumirFuentes(datosActor2) : null;
