@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RADAR INTELLIGENCE v2.1</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root {
     --dark: #0f172a;
@@ -283,10 +283,16 @@ function showError(msg) {
   const box = document.getElementById('errorBox');
   box.textContent = msg;
   box.style.display = 'block';
+  console.error('[ERROR]', msg);
 }
 
 function hideError() {
   document.getElementById('errorBox').style.display = 'none';
+}
+
+function updateLoading(step, text) {
+  document.getElementById('loadingSteps').textContent = step;
+  if (text) document.getElementById('loadingText').textContent = text;
 }
 
 async function loadSelectedSkill() {
@@ -304,15 +310,14 @@ async function loadSelectedSkill() {
   const skillPath = SKILL_FILES[skill];
   if (!skillPath) return showError('Skill no reconocida.');
 
-  // Verificar que Chart.js esté cargado
+  // Verificar Chart.js
   if (typeof Chart === 'undefined') {
     return showError('Error: Chart.js no está cargado. Recarga la página.');
   }
 
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`;
-  document.getElementById('loadingSteps').textContent = '[1/3] Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...';
+  updateLoading('[1/3] Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...', `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`);
 
   try {
     // 1. Petición POST al servidor backend
@@ -322,64 +327,101 @@ async function loadSelectedSkill() {
       body: JSON.stringify({ skill, actor, actor2, mes, anio }),
     });
 
-    const apiJson = await apiResp.json();
+    let apiJson;
+    try {
+      apiJson = await apiResp.json();
+    } catch (parseErr) {
+      throw new Error('El servidor respondió con formato inválido. Verifica que el backend esté activo.');
+    }
 
     if (!apiResp.ok) {
-      throw new Error(apiJson.error || apiJson.detail || 'Error en el servidor');
+      throw new Error(apiJson.error || apiJson.detail || `Error ${apiResp.status} en el servidor`);
     }
 
     if (!apiJson.data || typeof apiJson.data !== 'object') {
       throw new Error('El servidor no devolvió datos estructurados (apiJson.data está vacío o es inválido).');
     }
 
-    document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
+    console.log('[Frontend] Datos recibidos:', apiJson);
+    updateLoading('[2/3] Cargando plantilla visual...');
 
     // 2. Cargar la plantilla HTML correspondiente
     const htmlResp = await fetch(skillPath);
-    if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath}`);
+    if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath} (status ${htmlResp.status})`);
     const htmlContent = await htmlResp.text();
 
-    document.getElementById('loadingSteps').textContent = '[3/3] Inyectando datos y renderizando gráficas...';
+    updateLoading('[3/3] Inyectando datos y renderizando gráficas...');
 
-    // 3. Mostrar vista del dashboard
-    document.getElementById('view2').style.display = 'none';
-    document.getElementById('view3').style.display = 'block';
-
-    const container = document.getElementById('skillContainer');
-    container.innerHTML = '';
-
-    // 4. Inyectar datos globales ANTES de insertar el HTML de la skill
+    // 3. Preparar datos globales ANTES de insertar HTML
     window.DATA = apiJson.data;
     window.DATA_META = {
       actor,
       actor2: actor2 || null,
       mes,
       anio,
-      fuentesEncontradas: apiJson.fuentesEncontradas
+      fuentesEncontradas: apiJson.fuentesEncontradas || 0
     };
+
+    // 4. Mostrar vista del dashboard
+    document.getElementById('view2').style.display = 'none';
+    document.getElementById('view3').style.display = 'block';
+
+    const container = document.getElementById('skillContainer');
+    container.innerHTML = '';
 
     // 5. Insertar HTML de la skill
     container.innerHTML = htmlContent;
 
-    // 6. Ejecutar los scripts de la plantilla cargada
-    const scripts = Array.from(container.querySelectorAll('script'));
-    scripts.forEach(oldScript => {
-      const newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach(attr => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      if (oldScript.src) {
-        newScript.src = oldScript.src;
-      } else {
-        newScript.textContent = oldScript.textContent;
-      }
-      oldScript.parentNode.replaceChild(newScript, oldScript);
-    });
+    // 6. Ejecutar scripts de la plantilla de forma confiable
+    await executeScripts(container);
+
+    console.log('[Frontend] Skill renderizada correctamente.');
 
   } catch (err) {
     console.error(err);
     showError(err.message || 'Ocurrió un error inesperado');
-    resetToSearch();
+    setTimeout(() => resetToSearch(), 4000);
+  }
+}
+
+// Función robusta para ejecutar scripts inline de las skills
+async function executeScripts(container) {
+  const scripts = Array.from(container.querySelectorAll('script'));
+  
+  for (const oldScript of scripts) {
+    const newScript = document.createElement('script');
+    
+    // Copiar atributos
+    Array.from(oldScript.attributes).forEach(attr => {
+      newScript.setAttribute(attr.name, attr.value);
+    });
+
+    if (oldScript.src) {
+      // Script externo
+      newScript.src = oldScript.src;
+      await new Promise((resolve, reject) => {
+        newScript.onload = resolve;
+        newScript.onerror = reject;
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    } else {
+      // Script inline: usar Blob para evitar restricciones del navegador
+      const blob = new Blob([oldScript.textContent], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      newScript.src = url;
+      
+      await new Promise((resolve, reject) => {
+        newScript.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        newScript.onerror = (e) => {
+          URL.revokeObjectURL(url);
+          reject(e);
+        };
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    }
   }
 }
 
