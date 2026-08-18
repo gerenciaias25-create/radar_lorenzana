@@ -124,13 +124,13 @@ function rTomCruces(){
 function rPlat(){
   const alc=DATA.plataformas.alcance, tono=DATA.plataformas.tono, pe=DATA.plataformas.porEdad, vir=DATA.plataformas.viralizacion;
   if(alc && alc.length) mk('rc-plalc',{type:'doughnut',data:{labels:alc.map(x=>x.plataforma),datasets:[{data:alc.map(x=>x.valor),backgroundColor:[C.ac,C.bl,C.go,C.ne,C.su,C.da],borderWidth:0,hoverOffset:6}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},padding:8,color:'#2d3748'}}},cutout:'55%'}});
-  if(tono && tono.length) mk('rc-pltono',{type:'bar',data:{labels:tono.map(x=>x.plataforma),datasets:[{label:'% Positivo',data:tono.map(x=>x.positivo),backgroundColor:C.su,borderRadius:2},{label:'% Negativo',data:tono.map(x=>x.negativo),backgroundColor:C.da,borderRadius:2}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}}});
+  if(tono && tono.length) mk('rc-pltono',{type:'bar',data:{labels:tono.map(x=>x.plataforma),datasets:[{label:'% Positivo',data:tono.map(x=>x.positivo),backgroundColor:C.su,borderRadius:2},{label:'% Negativo',data:tono.map(x=>x.negativo),backgroundColor:C.da,borderRadius:2}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});
   if(pe && pe.length && pe[0].series){
     const palette=[C.da,C.go,C.su,C.ne];
     const grupos = (pe[0].series || []).map(s=>s.nombre);
-    mk('rc-pledad',{type:'bar',data:{labels:pe.map(x=>x.plataforma),datasets:grupos.map((g,i)=>({label:g,data:pe.map(x=>(x.series[i]||{}).valor||0),backgroundColor:palette[i%4],borderRadius:2}))},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}}});
+    mk('rc-pledad',{type:'bar',data:{labels:pe.map(x=>x.plataforma),datasets:grupos.map((g,i)=>({label:g,data:pe.map(x=>(x.series[i]||{}).valor||0),backgroundColor:palette[i%4],borderRadius:2}))},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});
   }
-  if(vir && vir.length) mk('rc-plviral',{type:'bar',data:{labels:vir.map(x=>x.plataforma),datasets:[{label:'Crítica (h)',data:vir.map(x=>x.critica),backgroundColor:C.da,borderRadius:2},{label:'Propia (h)',data:vir.map(x=>x.propia),backgroundColor:C.su,borderRadius:2}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}}}}}});
+  if(vir && vir.length) mk('rc-plviral',{type:'bar',data:{labels:vir.map(x=>x.plataforma),datasets:[{label:'Crítica (h)',data:vir.map(x=>x.critica),backgroundColor:C.da,borderRadius:2},{label:'Propia (h)',data:vir.map(x=>x.propia),backgroundColor:C.su,borderRadius:2}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},color:'#2d3748'}}}}});
 }
 function rPlatLectura(){
   const items = DATA.plataformas.lecturaEstrategica || [];
@@ -175,7 +175,7 @@ function rTer(){
   if(zonas.length) mk('rc-ternps',{type:'bar',data:{labels:zonas.map(z=>z.nombre),datasets:[{data:zonas.map(z=>z.nps),backgroundColor:d=>d.raw>10?C.su:d.raw>0?C.go:d.raw>-15?C.da:'#AA0000',borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});
 
   const vol = DATA.territorial.volumenPorZona || [];
-  if(vol.length) mk('rc-tervol',{type:'bar',data:{labels:vol.map(v=>v.zona),datasets:[{data:vol.map(v=>v.volumen),backgroundColor:C.go,borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%'}}}}}});
+  if(vol.length) mk('rc-tervol',{type:'bar',data:{labels:vol.map(v=>v.zona),datasets:[{data:vol.map(v=>v.volumen),backgroundColor:C.go,borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'%'}}}}});
 }
 
 function radarCharts(t){

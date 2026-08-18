@@ -189,7 +189,7 @@ function init(){
   /* CHARTS */
   const CDf = {responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{backgroundColor:'#ffffff',titleColor:'#1e293b',bodyColor:'#475569',borderColor:'#cbd5e1',borderWidth:1,padding:10}},
-    scales:{x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}, y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}};
+    scales:{x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}, y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}}};
 
   const acEm = emotions.filter(e=>e.active);
   const intensCanvas = document.getElementById('em-ch-intens');
@@ -242,7 +242,7 @@ function init(){
       options:{responsive:true,maintainAspectRatio:false,
         scales:{r:{ticks:{color:'#475569',font:{size:9},stepSize:20},grid:{color:'rgba(0,0,0,.08)'},pointLabels:{color:'#334155',font:{size:10}},angleLines:{color:'rgba(0,0,0,.08)'},min:0,max:100}},
         plugins:{legend:{display:true,labels:{color:'#334155',font:{size:11},boxWidth:10}},tooltip:{...CDf.plugins.tooltip}}}
-    );
+    });
   }
 
   const priorCanvas = document.getElementById('em-ch-prior');

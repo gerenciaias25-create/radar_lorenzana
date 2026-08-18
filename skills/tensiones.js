@@ -202,3 +202,4 @@ function drawCharts(tab){
 }
 
 setTimeout(()=>drawCharts('tensiones'), 80);
+})();
