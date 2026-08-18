@@ -313,21 +313,58 @@ async function loadSelectedSkill() {
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
   document.getElementById('loadingText').textContent = `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`;
-  document.getElementById('loadingSteps').textContent = '[1/3] Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...';
+  document.getElementById('loadingSteps').textContent = 'Iniciando análisis...';
 
   try {
-    // 1. Petición POST al servidor backend
-    const apiResp = await fetch('/api/analizar', {
+    // Lee la respuesta como texto primero: si el proxy de Hostinger corta la
+    // petición (504) o hay un error 404/500, la respuesta puede venir en HTML
+    // en vez de JSON. Parsear eso directo con .json() revienta con
+    // "Unexpected token '<'". Con este helper mostramos un mensaje claro.
+    async function parseJsonSeguro(resp) {
+      const raw = await resp.text();
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        throw new Error(`El servidor respondió algo inesperado (HTTP ${resp.status}). Puede ser un timeout del hosting o que la ruta no existe.`);
+      }
+    }
+
+    // 1. Iniciar el análisis. Este endpoint responde casi de inmediato con un
+    //    jobId; el trabajo pesado (Apify + OpenRouter) corre en segundo plano
+    //    en el servidor para evitar el 504 Gateway Timeout del proxy.
+    const startResp = await fetch('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skill, actor, actor2, mes, anio }),
     });
-
-    const apiJson = await apiResp.json();
-
-    if (!apiResp.ok) {
-      throw new Error(apiJson.error || apiJson.detail || 'Error en el servidor');
+    const startJson = await parseJsonSeguro(startResp);
+    if (!startResp.ok) {
+      throw new Error(startJson.error || startJson.detail || 'Error al iniciar el análisis en el servidor.');
     }
+    const jobId = startJson.jobId;
+    if (!jobId) throw new Error('El servidor no devolvió un identificador de trabajo (jobId).');
+
+    // 2. Consultar el estado hasta que el job termine (polling cada 2s, máx 5 min)
+    document.getElementById('loadingSteps').textContent = '[1/3] Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...';
+    const maxIntentos = 150; // 150 x 2s = 5 minutos
+    let apiJson = null;
+    for (let intento = 0; intento < maxIntentos; intento++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const estadoResp = await fetch(`/api/estado/${jobId}`, { cache: 'no-store' });
+      const estadoJson = await parseJsonSeguro(estadoResp);
+      if (!estadoResp.ok) throw new Error(estadoJson.error || 'El trabajo expiró o no se encontró.');
+
+      if (estadoJson.progreso) document.getElementById('loadingSteps').textContent = estadoJson.progreso;
+
+      if (estadoJson.status === 'error') {
+        throw new Error(estadoJson.error || estadoJson.detail || 'Error procesando el análisis.');
+      }
+      if (estadoJson.status === 'done') {
+        apiJson = estadoJson.result;
+        break;
+      }
+    }
+    if (!apiJson) throw new Error('El análisis está tardando demasiado. Intenta de nuevo en unos minutos.');
 
     if (!apiJson.data || typeof apiJson.data !== 'object') {
       throw new Error('El servidor no devolvió datos estructurados (apiJson.data está vacío o es inválido).');
@@ -336,21 +373,21 @@ async function loadSelectedSkill() {
     console.log('[RADAR] Datos recibidos del backend:', apiJson);
     document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
 
-    // 2. Cargar la plantilla HTML correspondiente (solo marcado, sin <script>)
+    // 3. Cargar la plantilla HTML correspondiente (solo marcado, sin <script>)
     const htmlResp = await fetch(`${skillPath}.html`, { cache: 'no-store' });
     if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath}.html (HTTP ${htmlResp.status})`);
     const htmlContent = await htmlResp.text();
 
     document.getElementById('loadingSteps').textContent = '[3/3] Inyectando datos y renderizando gráficas...';
 
-    // 3. Mostrar vista del dashboard
+    // 4. Mostrar vista del dashboard
     document.getElementById('view2').style.display = 'none';
     document.getElementById('view3').style.display = 'block';
 
     const container = document.getElementById('skillContainer');
     container.innerHTML = '';
 
-    // 4. Inyectar datos globales ANTES de insertar el HTML de la skill
+    // 5. Inyectar datos globales ANTES de insertar el HTML de la skill
     window.DATA = apiJson.data;
     window.DATA_META = {
       actor,
@@ -360,10 +397,10 @@ async function loadSelectedSkill() {
       fuentesEncontradas: apiJson.fuentesEncontradas
     };
 
-    // 5. Insertar HTML de la skill (sin lógica, solo markup/estilos)
+    // 6. Insertar HTML de la skill (sin lógica, solo markup/estilos)
     container.innerHTML = htmlContent;
 
-    // 6. Cargar y ejecutar la lógica como un <script src> real.
+    // 7. Cargar y ejecutar la lógica como un <script src> real.
     //    Un <script src> siempre se ejecuta al insertarse en el DOM,
     //    a diferencia de un <script> inline reinyectado, que puede ser
     //    bloqueado por CSP o corrompido por minificadores de HTML del hosting.

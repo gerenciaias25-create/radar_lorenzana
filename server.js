@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,9 +21,24 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Endpoint principal de análisis
-app.all('/api/analizar', async (req, res) => {
-  const params = req.method === 'POST' ? req.body : req.query;
+// =========================================================
+// TRABAJOS EN SEGUNDO PLANO
+// El proxy de Hostinger corta peticiones que tardan mucho
+// (504 Gateway Timeout) mucho antes de que Apify + OpenRouter
+// terminen. Por eso /api/analizar ya NO espera el resultado:
+// crea un job, responde de inmediato, y procesa en background.
+// El frontend consulta /api/estado/:jobId hasta que termine.
+// =========================================================
+const JOBS = new Map(); // jobId -> { status: 'processing'|'done'|'error', result?, error? }
+const JOB_TTL_MS = 15 * 60 * 1000; // 15 min, luego se limpia de memoria
+
+function limpiarJob(jobId) {
+  setTimeout(() => JOBS.delete(jobId), JOB_TTL_MS);
+}
+
+// Endpoint que INICIA el análisis (responde en milisegundos)
+app.post('/api/analizar', (req, res) => {
+  const params = req.body || {};
 
   const {
     skill = 'radar',
@@ -30,7 +46,7 @@ app.all('/api/analizar', async (req, res) => {
     actor2 = '',
     mes = 'Agosto',
     anio = '2026',
-  } = params || {};
+  } = params;
 
   const actorName = String(actor).trim();
   const actor2Name = String(actor2 || '').trim();
@@ -46,14 +62,38 @@ app.all('/api/analizar', async (req, res) => {
     return res.status(500).json({ error: 'Falta OPENROUTER_API_KEY en las variables de entorno.' });
   }
 
+  const jobId = crypto.randomUUID();
+  JOBS.set(jobId, { status: 'processing', progreso: 'Extrayendo fuentes en Apify...' });
+
+  // Se procesa en segundo plano; NO se espera (no "await") para
+  // poder responder al cliente de inmediato.
+  procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio, APIFY_TOKEN, OPENROUTER_KEY });
+
+  return res.status(202).json({ jobId });
+});
+
+// Endpoint que CONSULTA el estado/resultado de un job ya iniciado
+app.get('/api/estado/:jobId', (req, res) => {
+  const job = JOBS.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: 'Job no encontrado o expirado.' });
+  }
+  return res.status(200).json(job);
+});
+
+async function procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio, APIFY_TOKEN, OPENROUTER_KEY }) {
   try {
-    console.log(`[+] Iniciando análisis para: ${actorName} ${actor2Name ? 'vs ' + actor2Name : ''} (${skill})`);
+    console.log(`[+] Iniciando análisis (${jobId}) para: ${actorName} ${actor2Name ? 'vs ' + actor2Name : ''} (${skill})`);
+
+    JOBS.set(jobId, { status: 'processing', progreso: 'Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...' });
 
     // 1. Scraping masivo (6 fuentes en paralelo)
     const [datosActor1, datosActor2] = await Promise.all([
       scrapeActor(actorName, APIFY_TOKEN),
       actor2Name ? scrapeActor(actor2Name, APIFY_TOKEN) : Promise.resolve(null),
     ]);
+
+    JOBS.set(jobId, { status: 'processing', progreso: 'Estructurando datos con OpenRouter...' });
 
     // 2. Estructuración con OpenRouter
     const schema = SCHEMAS[skill] || SCHEMAS.radar;
@@ -63,22 +103,28 @@ app.all('/api/analizar', async (req, res) => {
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
     const normalized = normalizeResponse(structured, skill);
 
-    return res.status(200).json({
-      skill,
-      actor: actorName,
-      actor2: actor2Name || null,
-      periodo: `${mes} ${anio}`,
-      fuentesEncontradas: (datosActor1?.count || 0) + (datosActor2?.count || 0),
-      data: normalized,
+    JOBS.set(jobId, {
+      status: 'done',
+      result: {
+        skill,
+        actor: actorName,
+        actor2: actor2Name || null,
+        periodo: `${mes} ${anio}`,
+        fuentesEncontradas: (datosActor1?.count || 0) + (datosActor2?.count || 0),
+        data: normalized,
+      },
     });
+    limpiarJob(jobId);
   } catch (err) {
-    console.error('[-] Error en /api/analizar:', err);
-    return res.status(500).json({
+    console.error(`[-] Error en job ${jobId}:`, err);
+    JOBS.set(jobId, {
+      status: 'error',
       error: 'Error procesando el análisis.',
       detail: String(err.message || err),
     });
+    limpiarJob(jobId);
   }
-});
+}
 
 // Health Check
 app.get('/api/health', (req, res) => {
