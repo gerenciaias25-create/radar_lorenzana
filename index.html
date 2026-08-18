@@ -263,10 +263,10 @@
 
 <script>
 const SKILL_FILES = {
-  radar: 'skills/radar.html',
-  emociones: 'skills/emociones.html',
-  tensiones: 'skills/tensiones.html',
-  opositor: 'skills/opositor.html',
+  radar: 'skills/radar',
+  emociones: 'skills/emociones',
+  tensiones: 'skills/tensiones',
+  opositor: 'skills/opositor',
 };
 
 function onSkillChange() {
@@ -336,9 +336,9 @@ async function loadSelectedSkill() {
     console.log('[RADAR] Datos recibidos del backend:', apiJson);
     document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
 
-    // 2. Cargar la plantilla HTML correspondiente
-    const htmlResp = await fetch(skillPath);
-    if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath}`);
+    // 2. Cargar la plantilla HTML correspondiente (solo marcado, sin <script>)
+    const htmlResp = await fetch(`${skillPath}.html`, { cache: 'no-store' });
+    if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath}.html (HTTP ${htmlResp.status})`);
     const htmlContent = await htmlResp.text();
 
     document.getElementById('loadingSteps').textContent = '[3/3] Inyectando datos y renderizando gráficas...';
@@ -360,22 +360,19 @@ async function loadSelectedSkill() {
       fuentesEncontradas: apiJson.fuentesEncontradas
     };
 
-    // 5. Insertar HTML de la skill
+    // 5. Insertar HTML de la skill (sin lógica, solo markup/estilos)
     container.innerHTML = htmlContent;
 
-    // 6. Ejecutar los scripts de la plantilla cargada
-    const scripts = Array.from(container.querySelectorAll('script'));
-    scripts.forEach(oldScript => {
-      const newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach(attr => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      if (oldScript.src) {
-        newScript.src = oldScript.src;
-      } else {
-        newScript.textContent = oldScript.textContent;
-      }
-      oldScript.parentNode.replaceChild(newScript, oldScript);
+    // 6. Cargar y ejecutar la lógica como un <script src> real.
+    //    Un <script src> siempre se ejecuta al insertarse en el DOM,
+    //    a diferencia de un <script> inline reinyectado, que puede ser
+    //    bloqueado por CSP o corrompido por minificadores de HTML del hosting.
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = `${skillPath}.js?v=${Date.now()}`; // cache-busting
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`No se pudo cargar la lógica: ${skillPath}.js`));
+      container.appendChild(s);
     });
 
     console.log('[RADAR] Skill renderizada correctamente:', skill);
