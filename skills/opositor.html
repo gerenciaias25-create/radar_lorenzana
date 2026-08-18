@@ -170,9 +170,15 @@ const FALLBACK = {
   perfil: {rows:[], cronologia:[], ierPorCargo:[]},
   contradicciones: {ranking:[], destacados:[], tabla:[]},
   vectoresAtaque: [],
-  redDePoder: {radar:[0,0,0,0,0,0], alertas:[], tabla:[]}
+  redDePoder: {radar:[0,0,0,0,0,0], alertas:[], tabla:[]},
+  resumenEjecutivo: ''
 };
-function pick(v, fb){ return (v!==undefined && v!==null && (Array.isArray(v)?v.length:Object.keys(v).length)) ? v : fb; }
+function pick(v, fb){ 
+  if (v === undefined || v === null) return fb;
+  if (Array.isArray(v)) return v.length ? v : fb;
+  if (typeof v === 'object') return Object.keys(v).length ? v : fb;
+  return v;
+}
 const D = {};
 Object.keys(FALLBACK).forEach(k => { D[k] = pick(D_RAW && D_RAW[k], FALLBACK[k]); });
 
@@ -191,17 +197,17 @@ window.opShow = function(id, btn){
 window.opTv = function(el){ el.classList.toggle('expanded'); el.querySelector('.varr').textContent = el.classList.contains('expanded') ? '▲' : '▼'; };
 
 // ---------- VULNERABILIDADES (ov) ----------
-document.getElementById('op-ov-alerts').innerHTML = D.vulnerabilidades.map(v=>`
+document.getElementById('op-ov-alerts').innerHTML = (D.vulnerabilidades||[]).map(v=>`
   <div class="al ${NIVEL_ALCLASS[v.nivel]||'al-o'}">
     <h4 class="${NIVEL_CLASS[v.nivel]||'o'}">${v.nivel==='CRÍTICO'?'🔴':'🟡'} ${v.nivel} — ${v.titulo}</h4>
     <ul>${(v.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
   </div>`).join('') || '<div class="al al-o">Sin vulnerabilidades detectadas.</div>';
 
-document.getElementById('op-ov-ranking').innerHTML = D.vulnerabilidades.map(v=>`
+document.getElementById('op-ov-ranking').innerHTML = (D.vulnerabilidades||[]).map(v=>`
   <div class="pw"><div class="pl"><span>${v.titulo}</span><span class="${NIVEL_CLASS[v.nivel]||'o'}">${v.score}/10</span></div>
   <div class="pb"><div class="pf" style="width:${(v.score/10)*100}%;background:${NIVEL_BAR[v.nivel]||'var(--orange)'}"></div></div></div>`).join('') || '<div class="pw">Sin datos.</div>';
 
-document.getElementById('op-ov-fortalezas').innerHTML = D.fortalezas.map(f=>`
+document.getElementById('op-ov-fortalezas').innerHTML = (D.fortalezas||[]).map(f=>`
   <div class="al al-g" style="margin-bottom:8px"><h4 class="g">${f.titulo}</h4><p>${f.texto}</p></div>`).join('') || '<div class="al al-g">Sin fortalezas registradas.</div>';
 
 // ---------- PERFIL (pf) ----------
@@ -212,7 +218,7 @@ document.getElementById('op-pf-cron').innerHTML = (D.perfil.cronologia||[]).map(
   <div class="ti"><div class="ty2">${c.periodo}</div><div class="tt">${c.titulo}</div><div class="td">${c.descripcion}</div></div>`).join('') || '<div class="ti"><div class="td">Sin cronología disponible.</div></div>';
 
 // ---------- CONTRADICCIONES (co) ----------
-document.getElementById('op-co-sub').textContent = `${D.contradicciones.tabla.length} contradicciones verificadas en fuentes públicas y de investigación digital del período.`;
+document.getElementById('op-co-sub').textContent = `${(D.contradicciones.tabla||[]).length} contradicciones verificadas en fuentes públicas y de investigación digital del período.`;
 document.getElementById('op-co-ranking').innerHTML = (D.contradicciones.ranking||[]).map(r=>`
   <div class="pw"><div class="pl"><span>${r.codigo} · ${r.titulo}</span><span class="${NIVEL_CLASS[r.nivel]||'o'}">${r.score}/10</span></div>
   <div class="pb"><div class="pf" style="width:${(r.score/10)*100}%;background:${NIVEL_BAR[r.nivel]||'var(--orange)'}"></div></div></div>`).join('') || '<div class="pw">Sin datos.</div>';
@@ -250,19 +256,27 @@ document.getElementById('op-red-tbl').innerHTML = (D.redDePoder.tabla||[]).map(t
 
 /* CHARTS */
 const ier = D.perfil.ierPorCargo || [];
-new Chart(document.getElementById('op-ierChart').getContext('2d'), {
-  type: 'bar',
-  data: { labels: ier.map(x=>x.cargo), datasets: [{ label:'IER (0-10)', data: ier.map(x=>x.valor),
-    backgroundColor: ier.map(x=>x.valor<=2.5?'rgba(183,28,28,.9)':x.valor<=4?'rgba(249,168,37,.7)':'rgba(46,125,50,.7)'),
-    borderColor: ier.map(x=>x.valor<=2.5?'#b71c1c':x.valor<=4?'#f9a825':'#2e7d32'), borderWidth:2, borderRadius:5 }] },
-  options: { responsive:true, maintainAspectRatio:false, scales:{ y:{beginAtZero:true,max:10,ticks:{color:'#1a1a1a'},grid:{color:'rgba(0,0,0,.05)'}}, x:{ticks:{color:'#1a1a1a',font:{size:9}},grid:{display:false}} }, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`IER: ${c.raw}/10`}} } }
-});
+const ierCanvas = document.getElementById('op-ierChart');
+if(ierCanvas && ier.length > 0){
+  new Chart(ierCanvas.getContext('2d'), {
+    type: 'bar',
+    data: { labels: ier.map(x=>x.cargo), datasets: [{ label:'IER (0-10)', data: ier.map(x=>x.valor),
+      backgroundColor: ier.map(x=>x.valor<=2.5?'rgba(183,28,28,.9)':x.valor<=4?'rgba(249,168,37,.7)':'rgba(46,125,50,.7)'),
+      borderColor: ier.map(x=>x.valor<=2.5?'#b71c1c':x.valor<=4?'#f9a825':'#2e7d32'), borderWidth:2, borderRadius:5 }] },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ y:{beginAtZero:true,max:10,ticks:{color:'#1a1a1a'},grid:{color:'rgba(0,0,0,.05)'}}, x:{ticks:{color:'#1a1a1a',font:{size:9}},grid:{display:false}} }, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`IER: ${c.raw}/10`}} } }
+  });
+}
 
-new Chart(document.getElementById('op-radarChart').getContext('2d'), {
-  type: 'radar',
-  data: { labels:['Trayectoria','Consistencia Ética','Fortaleza Territorial','Control Narrativo','Vulnerabilidad Reputacional','Riesgo de Fractura Interna'],
-    datasets:[{ label: META.actor||'Objetivo', data: D.redDePoder.radar, fill:true, backgroundColor:'rgba(183,28,28,.15)', borderColor:'rgba(183,28,28,.8)', pointBackgroundColor:'rgba(183,28,28,1)', pointBorderColor:'#fff' }] },
-  options: { responsive:true, maintainAspectRatio:false, scales:{ r:{beginAtZero:true,max:10,ticks:{color:'#4a4a4a',backdropColor:'transparent',stepSize:2},grid:{color:'rgba(0,0,0,.1)'},pointLabels:{color:'#1a1a1a',font:{size:10}},angleLines:{color:'rgba(0,0,0,.1)'}} }, plugins:{legend:{display:false}} }
-});
+const radarCanvas = document.getElementById('op-radarChart');
+const radarData = D.redDePoder.radar || [0,0,0,0,0,0];
+if(radarCanvas && Array.isArray(radarData) && radarData.length === 6){
+  new Chart(radarCanvas.getContext('2d'), {
+    type: 'radar',
+    data: { labels:["Trayectoria","Consistencia Ética","Fortaleza Territorial","Control Narrativo","Vulnerabilidad Reputacional","Riesgo de Fractura Interna"],
+      datasets:[{ label: META.actor||'Objetivo', data: radarData, fill:true, backgroundColor:'rgba(183,28,28,.15)', borderColor:'rgba(183,28,28,.8)', pointBackgroundColor:'rgba(183,28,28,1)', pointBorderColor:'#fff' }] },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{beginAtZero:true,max:10,ticks:{color:'#4a4a4a',backdropColor:'transparent',stepSize:2},grid:{color:'rgba(0,0,0,.1)'},pointLabels:{color:'#1a1a1a',font:{size:10}},angleLines:{color:'rgba(0,0,0,.1)'}} }, plugins:{legend:{display:false}} }
+  });
+}
 })();
 </script>
+</div>

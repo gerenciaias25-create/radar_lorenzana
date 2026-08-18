@@ -179,18 +179,23 @@ const D = (window.DATA && Object.keys(window.DATA).length) ? window.DATA : null;
 const META = window.DATA_META || {};
 const root = document.getElementById('tensiones-root');
 
-// Fallback de seguridad si falla la API
 const FALLBACK = {
   actor: {entidad: 'Entidad', cargo: 'Servidor Público', periodo: (META.mes||'')+' '+(META.anio||'')},
   ranking: [], emociones: [], narrativas: [], territorios: [], riesgos: [], trayectoria: [], alertas: [],
   hallazgoEmocional: 'Sin datos de hallazgo emocional disponibles.',
-  hallazgoTrayectoria: 'Sin datos de trayectoria disponibles.'
+  hallazgoTrayectoria: 'Sin datos de trayectoria disponibles.',
+  resumenEjecutivo: ''
 };
 
-function pick(obj, fb) { return (obj && (Array.isArray(obj) ? obj.length : Object.keys(obj).length)) ? obj : fb; }
+function pick(obj, fb) { 
+  if (obj === undefined || obj === null) return fb;
+  if (Array.isArray(obj)) return obj.length ? obj : fb;
+  if (typeof obj === 'object') return Object.keys(obj).length ? obj : fb;
+  return obj;
+}
 
 const DATA = {
-  actor: (D && D.actor) || FALLBACK.actor,
+  actor: pick(D && D.actor, FALLBACK.actor),
   ranking: pick(D && D.ranking, FALLBACK.ranking),
   emociones: pick(D && D.emociones, FALLBACK.emociones),
   narrativas: pick(D && D.narrativas, FALLBACK.narrativas),
@@ -199,7 +204,8 @@ const DATA = {
   trayectoria: pick(D && D.trayectoria, FALLBACK.trayectoria),
   alertas: pick(D && D.alertas, FALLBACK.alertas),
   hallazgoEmocional: (D && D.hallazgoEmocional) || FALLBACK.hallazgoEmocional,
-  hallazgoTrayectoria: (D && D.hallazgoTrayectoria) || FALLBACK.hallazgoTrayectoria
+  hallazgoTrayectoria: (D && D.hallazgoTrayectoria) || FALLBACK.hallazgoTrayectoria,
+  resumenEjecutivo: (D && D.resumenEjecutivo) || FALLBACK.resumenEjecutivo
 };
 
 // Header
@@ -219,13 +225,18 @@ window.tensTab = function(btn, id){
 };
 
 const CH = {};
-function mk(id, cfg){ if(CH[id]) CH[id].destroy(); const c=document.getElementById(id); if(!c) return; CH[id]=new Chart(c, cfg); }
+function mk(id, cfg){ 
+  if(CH[id]) CH[id].destroy(); 
+  const c=document.getElementById(id); 
+  if(!c) return; 
+  CH[id]=new Chart(c, cfg); 
+}
 
 // Render Ranking
 function renderRanking(){
   const list = document.getElementById('t-tens-list');
   if(!DATA.ranking.length){ list.innerHTML = '<div class="card">Sin tensiones registradas.</div>'; return; }
-  
+
   list.innerHTML = DATA.ranking.map((item, i)=>`
     <div class="trow ${i===0?'sel':''}" onclick="showDetail(${i}, this)">
       <span class="tnum">${i+1}</span>
@@ -260,11 +271,13 @@ window.showDetail = function(idx, el){
 function drawCharts(tab){
   if(tab==='tensiones'){
     renderRanking();
-    mk('tc-tens', {
-      type:'bar',
-      data: { labels: DATA.ranking.map(x=>x.nombre), datasets: [{ data: DATA.ranking.map(x=>x.score), backgroundColor: DATA.ranking.map(x=>x.color||'#C05621') }] },
-      options: { indexAxis:'y', plugins:{legend:{display:false}}, responsive:true }
-    });
+    if(DATA.ranking.length > 0){
+      mk('tc-tens', {
+        type:'bar',
+        data: { labels: DATA.ranking.map(x=>x.nombre), datasets: [{ data: DATA.ranking.map(x=>x.score), backgroundColor: DATA.ranking.map(x=>x.color||'#C05621') }] },
+        options: { indexAxis:'y', plugins:{legend:{display:false}}, responsive:true }
+      });
+    }
   }
   if(tab==='emociones'){
     document.getElementById('t-emo-bars').innerHTML = DATA.emociones.map(e=>`
@@ -275,11 +288,13 @@ function drawCharts(tab){
       </div>
     `).join('');
     document.getElementById('t-hallazgo-emo').textContent = DATA.hallazgoEmocional;
-    mk('tc-emo', {
-      type:'doughnut',
-      data: { labels: DATA.emociones.map(x=>x.nombre), datasets: [{ data: DATA.emociones.map(x=>x.porcentaje||10), backgroundColor: DATA.emociones.map(x=>x.color||'#C05621') }] },
-      options: { plugins:{legend:{position:'bottom'}}, responsive:true }
-    });
+    if(DATA.emociones.length > 0){
+      mk('tc-emo', {
+        type:'doughnut',
+        data: { labels: DATA.emociones.map(x=>x.nombre), datasets: [{ data: DATA.emociones.map(x=>x.porcentaje||10), backgroundColor: DATA.emociones.map(x=>x.color||'#C05621') }] },
+        options: { plugins:{legend:{position:'bottom'}}, responsive:true }
+      });
+    }
   }
   if(tab==='narrativas'){
     document.getElementById('t-nar-list').innerHTML = DATA.narrativas.map(n=>`
@@ -295,7 +310,7 @@ function drawCharts(tab){
           <p style="margin-top:4px;font-style:italic;color:var(--cyan)">${n.frase}</p>
         </div>
       </div>
-    `).join('');
+    `).join('') || '<div class="card">Sin narrativas registradas.</div>';
   }
   if(tab==='territorios'){
     document.getElementById('t-ter-list').innerHTML = DATA.territorios.map(t=>`
@@ -308,20 +323,22 @@ function drawCharts(tab){
         </div>
         <div class="ter-body">${t.observaciones}</div>
       </div>
-    `).join('');
+    `).join('') || '<div class="card">Sin territorios registrados.</div>';
   }
   if(tab==='riesgos'){
-    mk('tc-srr', {
-      type:'bar',
-      data: { labels: DATA.riesgos.map(x=>x.nombre), datasets: [{ data: DATA.riesgos.map(x=>x.srr), backgroundColor: DATA.riesgos.map(x=>x.color||'#C05621') }] },
-      options: { plugins:{legend:{display:false}}, responsive:true }
-    });
+    if(DATA.riesgos.length > 0){
+      mk('tc-srr', {
+        type:'bar',
+        data: { labels: DATA.riesgos.map(x=>x.nombre), datasets: [{ data: DATA.riesgos.map(x=>x.srr), backgroundColor: DATA.riesgos.map(x=>x.color||'#C05621') }] },
+        options: { plugins:{legend:{display:false}}, responsive:true }
+      });
+    }
     document.getElementById('t-riesgo-list').innerHTML = DATA.riesgos.map(r=>`
       <div class="card mb">
         <div style="font-weight:700;color:var(--hdrblue)">${r.nombre} (SRR: ${r.srr})</div>
         <div style="font-size:11px;margin-top:4px"><strong>Acción Recomendada:</strong> ${r.accion}</div>
       </div>
-    `).join('');
+    `).join('') || '<div class="card">Sin riesgos registrados.</div>';
   }
   if(tab==='trayectoria'){
     document.getElementById('t-hallazgo-traj').textContent = DATA.hallazgoTrayectoria;
@@ -332,15 +349,17 @@ function drawCharts(tab){
         <td><strong>${tr.ta}</strong></td>
         <td>${tr.tipo}</td><td>${tr.velocidad}</td>
       </tr>
-    `).join('');
-    mk('tc-traj', {
-      type:'line',
-      data: {
-        labels: ['Periodo 1', 'Periodo 2', 'Periodo 3', 'Actual'],
-        datasets: DATA.trayectoria.map(tr=>({ label: tr.nombre, data: [tr.t3, tr.t2, tr.t1, tr.ta], fill:false, tension:0.3 }))
-      },
-      options: { plugins:{legend:{position:'bottom'}}, responsive:true }
-    });
+    `).join('') || '<tr><td colspan="7">Sin datos de trayectoria.</td></tr>';
+    if(DATA.trayectoria.length > 0){
+      mk('tc-traj', {
+        type:'line',
+        data: {
+          labels: ['Periodo 1', 'Periodo 2', 'Periodo 3', 'Actual'],
+          datasets: DATA.trayectoria.map(tr=>({ label: tr.nombre, data: [tr.t3, tr.t2, tr.t1, tr.ta], fill:false, tension:0.3 }))
+        },
+        options: { plugins:{legend:{position:'bottom'}}, responsive:true }
+      });
+    }
   }
   if(tab==='alertas'){
     document.getElementById('t-alertas-list').innerHTML = DATA.alertas.map(a=>`
@@ -350,11 +369,11 @@ function drawCharts(tab){
         </div>
         <div class="abox-body">
           <div class="dg">
-            ${a.rows.map(r=>`<span class="dk">${r[0]}:</span><span class="dv">${r[1]}</span>`).join('')}
+            ${(a.rows||[]).map(r=>`<span class="dk">${r[0]}:</span><span class="dv">${r[1]}</span>`).join('')}
           </div>
         </div>
       </div>
-    `).join('');
+    `).join('') || '<div class="card">Sin alertas registradas.</div>';
   }
 }
 

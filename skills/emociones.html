@@ -1,6 +1,6 @@
 <!-- =========================================================
-  EMOCIONES SKILL — Plantilla Dinámica v3.0
-  Lee window.DATA del backend. Fallbacks integrados.
+  EMOCIONES SKILL — Plantilla Dinámica v3.1 (Corregida)
+  Lee window.DATA del backend. Fallbacks integrados y robustos.
   ========================================================= -->
 <div id="emo-root">
 <style>
@@ -250,7 +250,7 @@ const FALLBACK = {
   secondary: [],
   problematics: [], fears: [], prides: [],
   quotes: [],
-  temasChart: [],
+  temasChart: [['Sin datos', 0, '#94a3b8']],
   semaforo: [],
   dyads: [], dyadInterp: '',
   preguntaPolitica: '', preguntaDesc: '',
@@ -258,7 +258,7 @@ const FALLBACK = {
   partidos: [], partidosChart: [],
   actores: [], actoresRadar: {labels:[], data:[], colors:[]},
   alertaEstrategica: '', alertaDesc: '',
-  recs: [], evitar: [], gestionPrioridad: [],
+  recs: [], evitar: [], gestionPrioridad: [['Sin datos', 0, '#94a3b8']],
   resumenEjecutivo: ''
 };
 
@@ -318,7 +318,7 @@ function buildWheel(emotions){
 function init(){
   // merge geometría fija + datos de la IA por key
   const emotions = EMOTION_META.map(meta => {
-    const d = D.emotions.find(e=>e.key===meta.key) || {};
+    const d = (D.emotions || []).find(e=>e.key===meta.key) || {};
     return {...meta, active: !!d.active, intensity: d.intensity||0, triggers: d.triggers||[], consequences: d.consequences||[]};
   });
 
@@ -327,7 +327,7 @@ function init(){
   document.getElementById('em-kpis').innerHTML = `
     <div class="card2"><div class="cv">Nivel de Riesgo</div><div class="cval" style="color:#e11d48">${D.riskLevel}</div><div class="csub">Clasificación general</div></div>
     <div class="card2"><div class="cv">Emociones Activas</div><div class="cval" style="color:#1d4ed8">${activeCount}<span style="font-size:1rem;color:var(--tx3)">/8</span></div><div class="csub">Rueda de Plutchik</div></div>
-    <div class="card2"><div class="cv">Intensidad Máxima</div><div class="cval" style="color:#b91c1c">${["○","●","●●","●●●"][maxIntensity]}</div><div class="csub">Emoción dominante</div></div>
+    <div class="card2"><div class="cv">Intensidad Máxima</div><div class="cval" style="color:#b91c1c">${["○","●","●●","●●●"][maxIntensity]||'○'}</div><div class="csub">Emoción dominante</div></div>
     <div class="card2"><div class="cv">IVE Estimado</div><div class="cval" style="color:#6b21a8">${D.ivEstimado}<span style="font-size:1rem">/100</span></div><div class="csub">Volatilidad</div></div>`;
 
   document.getElementById('em-wheel-wrap').innerHTML = buildWheel(emotions);
@@ -351,7 +351,7 @@ function init(){
       </div>
     </div>`).join('');
 
-  document.getElementById('em-sec').innerHTML = D.secondary.map((s,i)=>`
+  document.getElementById('em-sec').innerHTML = (D.secondary||[]).map((s,i)=>`
     <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)">
       <div style="width:7px;height:7px;border-radius:50%;background:${s.color||PALETTE[i%PALETTE.length]};flex-shrink:0;margin-top:4px"></div>
       <div><div style="font-size:12px;font-weight:700;color:var(--tx1)">${s.name}</div><div style="font-size:11px;color:var(--tx3);margin-top:2px;line-height:1.55">${s.text}</div></div>
@@ -359,19 +359,23 @@ function init(){
 
   document.getElementById('em-concepto-box').innerHTML = `<div class="cbox-label">Concepto Central del Territorio</div><div class="cbox-name">"${D.concept}"</div><div class="cbox-text">${D.conceptDesc}</div>`;
 
-  const makeMP = (arr,dc) => arr.map(t=>`<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join('');
+  const makeMP = (arr,dc) => (arr||[]).map(t=>`<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join('');
   document.getElementById('em-mapa-cols').innerHTML = `
     <div class="mpc"><div class="mptt" style="color:#b45309">⚠ Problemáticas</div>${makeMP(D.problematics,'#b45309') || '<div class="mpi">Sin datos.</div>'}</div>
     <div class="mpc"><div class="mptt" style="color:#b91c1c">⬡ Miedos</div>${makeMP(D.fears,'#b91c1c') || '<div class="mpi">Sin datos.</div>'}</div>
     <div class="mpc"><div class="mptt" style="color:#15803d">★ Orgullos</div>${makeMP(D.prides,'#15803d') || '<div class="mpi">Sin datos.</div>'}</div>`;
 
-  document.getElementById('em-quotes').innerHTML = D.quotes.map(q=>`<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion} · ${q.territory}</div></div>`).join('') || '<div class="qi"><div class="qt">Sin frases ciudadanas disponibles.</div></div>';
+  document.getElementById('em-quotes').innerHTML = (D.quotes||[]).map(q=>`<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion} · ${q.territory}</div></div>`).join('') || '<div class="qi"><div class="qt">Sin frases ciudadanas disponibles.</div></div>';
 
-  const makeSem = (arr, id) => { document.getElementById(id).innerHTML = arr.map(s=>`<div class="sem"><div class="semd" style="background:${s.color||'#94a3b8'}"></div><div class="seml">${s.label}</div><div class="semv" style="color:${s.color||'#94a3b8'}">${s.val}</div></div>`).join('') || '<div class="sem"><div class="seml">Sin datos.</div></div>'; };
+  const makeSem = (arr, id) => { 
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = (arr||[]).map(s=>`<div class="sem"><div class="semd" style="background:${s.color||'#94a3b8'}"></div><div class="seml">${s.label}</div><div class="semv" style="color:${s.color||'#94a3b8'}">${s.val}</div></div>`).join('') || '<div class="sem"><div class="seml">Sin datos.</div></div>'; 
+  };
   makeSem(D.semaforo, 'em-semaforo');
   makeSem(D.govSemaforo, 'em-gov-sem');
 
-  document.getElementById('em-dyad-cards').innerHTML = D.dyads.map(d=>`
+  document.getElementById('em-dyad-cards').innerHTML = (D.dyads||[]).map(d=>`
     <div class="dyc" style="border-top-color:${RISK_HEX[d.risk]||'#64748b'}">
       <span class="dybadge" style="background:${RISK_BG[d.risk]||'#f1f5f9'};color:${RISK_HEX[d.risk]||'#64748b'}">${d.risk}</span>
       <div class="dyn" style="color:${RISK_HEX[d.risk]||'var(--tx1)'}">${d.name}</div>
@@ -382,24 +386,24 @@ function init(){
 
   document.getElementById('em-id-pregunta').innerHTML = `<div class="cbox-label">Pregunta Política del Territorio</div><div class="cbox-name" style="font-size:18px">"${D.preguntaPolitica}"</div><div class="cbox-text">${D.preguntaDesc}</div>`;
 
-  document.getElementById('em-partidos-tbl').innerHTML = D.partidos.map(p=>`
+  document.getElementById('em-partidos-tbl').innerHTML = (D.partidos||[]).map(p=>`
     <div style="display:grid;grid-template-columns:1.3fr 2fr 1fr 1fr;gap:.5rem;padding:8px 0;border-bottom:1px solid var(--brd);font-size:12px">
       <div style="font-weight:700;color:var(--tx1)">${p.nombre}</div>
       <div style="color:var(--tx2)">${p.emocion}</div>
       <div style="color:var(--tx3)">${p.capital}</div>
-      <div style="color:${p.tendencia.includes('↓')?'#b91c1c':p.tendencia.includes('↑')?'#166534':'#475569'};font-weight:600">${p.tendencia}</div>
+      <div style="color:${(p.tendencia||'').includes('↓')?'#b91c1c':(p.tendencia||'').includes('↑')?'#166534':'#475569'};font-weight:600">${p.tendencia}</div>
     </div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
 
   document.getElementById('em-actores-label').textContent = 'ANÁLISIS COMPARATIVO DE ACTORES · ' + (D.date||'');
-  document.getElementById('em-actores-grid').innerHTML = D.actores.map((a,i)=>`
+  document.getElementById('em-actores-grid').innerHTML = (D.actores||[]).map((a,i)=>`
     <div class="ac">
       <div class="ach" style="border-left:4px solid ${a.borderColor||PALETTE[i%PALETTE.length]}"><div class="acn">${a.name}</div><div class="acr">${a.role}</div></div>
       <div class="acb">${(a.rows||[]).map(r=>`<div class="acrow"><span class="ack">${r[0]}</span><span class="acv">${r[1]}</span></div>`).join('')}</div>
     </div>`).join('') || '<div class="ac"><div class="acb">Sin actores disponibles.</div></div>';
 
   document.getElementById('em-alerta-box').innerHTML = `<div class="cbox-label" style="color:var(--red-s)">Alerta Estratégica</div><div class="cbox-name" style="font-size:16px;color:var(--red-s)">${D.alertaEstrategica}</div><div class="cbox-text">${D.alertaDesc}</div>`;
-  document.getElementById('em-recs-list').innerHTML = D.recs.map(r=>`<div class="ri"><span class="rb" style="background:${r.bg};color:${r.tx}">${r.label}</span><span class="rt">${r.text}</span></div>`).join('') || '<div class="ri"><span class="rt">Sin recomendaciones disponibles.</span></div>';
-  document.getElementById('em-evitar-list').innerHTML = D.evitar.map(e=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)"><span style="color:#ef4444;flex-shrink:0">✕</span>${e}</div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
+  document.getElementById('em-recs-list').innerHTML = (D.recs||[]).map(r=>`<div class="ri"><span class="rb" style="background:${r.bg||'#e2e8f0'};color:${r.tx||'#1e293b'}">${r.label||r.urgencia||''}</span><span class="rt">${r.text}</span></div>`).join('') || '<div class="ri"><span class="rt">Sin recomendaciones disponibles.</span></div>';
+  document.getElementById('em-evitar-list').innerHTML = (D.evitar||[]).map(e=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)"><span style="color:#ef4444;flex-shrink:0">✕</span>${e}</div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
 
   /* CHARTS */
   const CDf = {responsive:true,maintainAspectRatio:false,
@@ -407,48 +411,70 @@ function init(){
     scales:{x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}, y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#475569',font:{size:10}}}};
 
   const acEm = emotions.filter(e=>e.active);
-  new Chart(document.getElementById('em-ch-intens'),{type:'bar',
-    data:{labels:acEm.map(e=>e.label),datasets:[{data:acEm.map(e=>e.intensity),backgroundColor:acEm.map(e=>e.color[2]+'cc'),borderColor:acEm.map(e=>e.color[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
-    options:{...CDf, indexAxis:'y', plugins:{...CDf.plugins,tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>' '+['Inactiva','Baja','Media','Alta'][c.raw]}}},
-      scales:{x:{...CDf.scales.x,min:0,max:3,ticks:{...CDf.scales.x.ticks,stepSize:1,callback:v=>['○○○','●○○','●●○','●●●'][v]}},y:{...CDf.scales.y}}}
-  });
-
-  new Chart(document.getElementById('em-ch-temas'),{type:'doughnut',
-    data:{labels:D.temasChart.map(t=>t[0]),datasets:[{data:D.temasChart.map(t=>t[1]),backgroundColor:D.temasChart.map(t=>t[2]),borderColor:'#d5d1d1',borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#334155',font:{size:11},boxWidth:12,padding:10}},tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}
-  });
-
-  new Chart(document.getElementById('em-ch-diadas'),{type:'bar',
-    data:{labels:D.dyads.map(d=>d.name),datasets:[{label:'Score de riesgo',data:D.dyads.map(d=>d.score),backgroundColor:D.dyads.map(d=>(RISK_HEX[d.risk]||'#64748b')+'cc'),borderColor:D.dyads.map(d=>RISK_HEX[d.risk]||'#64748b'),borderWidth:1,borderRadius:6,borderSkipped:false}]},
-    options:{...CDf, plugins:{...CDf.plugins,legend:{display:false}}, scales:{x:{...CDf.scales.x},y:{...CDf.scales.y,min:0,max:100,ticks:{...CDf.scales.y.ticks,callback:v=>v+'/100'}}}}
-  });
-
-  new Chart(document.getElementById('em-ch-partidos'),{type:'bar',
-    data:{labels:D.partidos.map(p=>p.nombre),datasets:[
-      {label:'Ira/Asco',       data:(D.partidosChart||[]).map(x=>x[0]||0),        backgroundColor:'#B91C1Caa',borderRadius:4,borderSkipped:false},
-      {label:'Decep/Tristeza', data:(D.partidosChart||[]).map(x=>x[1]||0),backgroundColor:'#4C1D95aa',borderRadius:4,borderSkipped:false},
-      {label:'Interés disp.',  data:(D.partidosChart||[]).map(x=>x[2]||0),backgroundColor:'#059669aa',borderRadius:4,borderSkipped:false},
-    ]},
-    options:{...CDf, plugins:{...CDf.plugins,legend:{display:true,labels:{color:'#334155',font:{size:10},boxWidth:10}}},
-      scales:{x:{...CDf.scales.x},y:{...CDf.scales.y,min:0,max:100,ticks:{...CDf.scales.y.ticks,callback:v=>v+'%'}}}}
-  });
-
-  const ar = D.actoresRadar;
-  if (ar && ar.labels && ar.labels.length) {
-    new Chart(document.getElementById('em-ch-actores'),{type:'radar',
-      data:{labels:RADAR_LABELS, datasets:ar.labels.map((lbl,i)=>({label:lbl, data:ar.data[i]||[0,0,0,0,0,0], borderColor:ar.colors[i]||PALETTE[i], backgroundColor:(ar.colors[i]||PALETTE[i])+'22', pointBackgroundColor:ar.colors[i]||PALETTE[i], pointRadius:4}))},
-      options:{responsive:true,maintainAspectRatio:false,
-        scales:{r:{ticks:{color:'#475569',font:{size:9},stepSize:20},grid:{color:'rgba(0,0,0,.08)'},pointLabels:{color:'#334155',font:{size:10}},angleLines:{color:'rgba(0,0,0,.08)'},min:0,max:100}},
-        plugins:{legend:{display:true,labels:{color:'#334155',font:{size:11},boxWidth:10}},tooltip:{...CDf.plugins.tooltip}}}
+  const intensCanvas = document.getElementById('em-ch-intens');
+  if(intensCanvas && acEm.length > 0){
+    new Chart(intensCanvas,{type:'bar',
+      data:{labels:acEm.map(e=>e.label),datasets:[{data:acEm.map(e=>e.intensity),backgroundColor:acEm.map(e=>e.color[2]+'cc'),borderColor:acEm.map(e=>e.color[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
+      options:{...CDf, indexAxis:'y', plugins:{...CDf.plugins,tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>' '+['Inactiva','Baja','Media','Alta'][c.raw]||''}}},
+        scales:{x:{...CDf.scales.x,min:0,max:3,ticks:{...CDf.scales.x.ticks,stepSize:1,callback:v=>['○○○','●○○','●●○','●●●'][v]||''}},y:{...CDf.scales.y}}}
     });
   }
 
-  new Chart(document.getElementById('em-ch-prior'),{type:'bar',
-    data:{labels:D.gestionPrioridad.map(x=>x[0]),datasets:[{data:D.gestionPrioridad.map(x=>x[1]),backgroundColor:D.gestionPrioridad.map(x=>x[2]+'cc'),borderColor:D.gestionPrioridad.map(x=>x[2]),borderWidth:1,borderRadius:5,borderSkipped:false}]},
-    options:{...CDf, indexAxis:'y', scales:{x:{...CDf.scales.x,min:0,max:100,ticks:{...CDf.scales.x.ticks,callback:v=>v+'/100'}},y:{...CDf.scales.y}}}
-  });
+  const temasCanvas = document.getElementById('em-ch-temas');
+  const temasData = (D.temasChart||[]).filter(t=>Array.isArray(t)&&t.length>=2);
+  if(temasCanvas && temasData.length > 0){
+    new Chart(temasCanvas,{type:'doughnut',
+      data:{labels:temasData.map(t=>t[0]),datasets:[{data:temasData.map(t=>t[1]),backgroundColor:temasData.map(t=>t[2]||'#94a3b8'),borderColor:'#d5d1d1',borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#334155',font:{size:11},boxWidth:12,padding:10}},tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}
+    });
+  }
+
+  const diadasCanvas = document.getElementById('em-ch-diadas');
+  const dyadsData = (D.dyads||[]).filter(d=>d.score!==undefined);
+  if(diadasCanvas && dyadsData.length > 0){
+    new Chart(diadasCanvas,{type:'bar',
+      data:{labels:dyadsData.map(d=>d.name),datasets:[{label:'Score de riesgo',data:dyadsData.map(d=>d.score),backgroundColor:dyadsData.map(d=>(RISK_HEX[d.risk]||'#64748b')+'cc'),borderColor:dyadsData.map(d=>RISK_HEX[d.risk]||'#64748b'),borderWidth:1,borderRadius:6,borderSkipped:false}]},
+      options:{...CDf, plugins:{...CDf.plugins,legend:{display:false}}, scales:{x:{...CDf.scales.x},y:{...CDf.scales.y,min:0,max:100,ticks:{...CDf.scales.y.ticks,callback:v=>v+'/100'}}}}
+    });
+  }
+
+  const partidosCanvas = document.getElementById('em-ch-partidos');
+  const partidosChartData = (D.partidosChart||[]).filter(x=>Array.isArray(x)&&x.length>=3);
+  const partidosLabels = (D.partidos||[]).map(p=>p.nombre);
+  if(partidosCanvas && partidosChartData.length > 0 && partidosLabels.length > 0){
+    new Chart(partidosCanvas,{type:'bar',
+      data:{labels:partidosLabels,datasets:[
+        {label:'Ira/Asco',       data:partidosChartData.map(x=>x[0]||0),        backgroundColor:'#B91C1Caa',borderRadius:4,borderSkipped:false},
+        {label:'Decep/Tristeza', data:partidosChartData.map(x=>x[1]||0),backgroundColor:'#4C1D95aa',borderRadius:4,borderSkipped:false},
+        {label:'Interés disp.',  data:partidosChartData.map(x=>x[2]||0),backgroundColor:'#059669aa',borderRadius:4,borderSkipped:false},
+      ]},
+      options:{...CDf, plugins:{...CDf.plugins,legend:{display:true,labels:{color:'#334155',font:{size:10},boxWidth:10}}},
+        scales:{x:{...CDf.scales.x},y:{...CDf.scales.y,min:0,max:100,ticks:{...CDf.scales.y.ticks,callback:v=>v+'%'}}}}
+    });
+  }
+
+  const ar = D.actoresRadar || {};
+  const actoresCanvas = document.getElementById('em-ch-actores');
+  if (actoresCanvas && ar.labels && ar.labels.length && ar.data && ar.data.length) {
+    new Chart(actoresCanvas,{type:'radar',
+      data:{labels:RADAR_LABELS, datasets:(ar.labels||[]).map((lbl,i)=>({label:lbl, data:(ar.data[i]||[]).map(v=>v||0), borderColor:ar.colors[i]||PALETTE[i], backgroundColor:(ar.colors[i]||PALETTE[i])+'22', pointBackgroundColor:ar.colors[i]||PALETTE[i], pointRadius:4}))},
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{r:{ticks:{color:'#475569',font:{size:9},stepSize:20},grid:{color:'rgba(0,0,0,.08)'},pointLabels:{color:'#334155',font:{size:10}},angleLines:{color:'rgba(0,0,0,.08)'},min:0,max:100}},
+        plugins:{legend:{display:true,labels:{color:'#334155',font:{size:11},boxWidth:10}},tooltip:{...CDf.plugins.tooltip}}}
+    );
+  }
+
+  const priorCanvas = document.getElementById('em-ch-prior');
+  const priorData = (D.gestionPrioridad||[]).filter(x=>Array.isArray(x)&&x.length>=2);
+  if(priorCanvas && priorData.length > 0){
+    new Chart(priorCanvas,{type:'bar',
+      data:{labels:priorData.map(x=>x[0]),datasets:[{data:priorData.map(x=>x[1]),backgroundColor:priorData.map(x=>(x[2]||'#94a3b8')+'cc'),borderColor:priorData.map(x=>x[2]||'#94a3b8'),borderWidth:1,borderRadius:5,borderSkipped:false}]},
+      options:{...CDf, indexAxis:'y', scales:{x:{...CDf.scales.x,min:0,max:100,ticks:{...CDf.scales.x.ticks,callback:v=>v+'/100'}},y:{...CDf.scales.y}}}
+    });
+  }
 }
 
 init();
 })();
 </script>
+</div>
