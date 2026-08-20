@@ -442,7 +442,7 @@ const SCHEMAS = {
     concept: "string",
     conceptDesc: "string",
     emotions: [
-      { key: "ira|sorpresa|anticipacion|tristeza|asco|alegria|confianza|miedo", active: true, intensity: 1, triggers: ["string"], consequences: ["string"] }
+      { key: "ira|sorpresa|anticipacion|tristeza|asco|alegria|confianza|miedo", active: true, intensity: 2, triggers: ["string"], consequences: ["string"] }
     ],
     secondary: [{ name: "string", text: "string", color: "#hex" }],
     problematics: ["string"],
@@ -568,7 +568,7 @@ function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, dat
     : '';
 
   const instruccionesEstructura = skill === 'emociones'
-    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "gestionPrioridad" debe ser un ARRAY DE ARRAYS: cada elemento es ["label", valorNumero, "colorHex"]. Ejemplo: [["Comunicación", 85, "#ef4444"]]\n- "actores.rows" dentro de cada actor debe ser un ARRAY DE ARRAYS: cada elemento es ["label", "valor"]. Ejemplo: [["Cargo", "Gobernador"], ["Partido", "Morena"]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "recs" debe incluir las propiedades: bg (color fondo), tx (color texto), label (texto corto), text (descripción).\n- "secondary" debe incluir color (hex) para cada emoción secundaria.`
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "emotions.intensity" es un ENTERO de escala fija 0-3, NUNCA otro rango: 0 = inactiva (no se detecta evidencia real de esta emoción), 1 = baja, 2 = media, 3 = alta. Debes DISTRIBUIR intensidades realistas y VARIADAS entre las 8 emociones según la evidencia — está PROHIBIDO poner intensity:3 a todas las emociones activas; eso es un error, no un signo de análisis completo. Como referencia, en un territorio típico: 1-2 emociones en intensidad 3 (las dominantes), 2-3 en intensidad 2, el resto en 1 o 0 (inactivas). Refleja la mezcla real de las fuentes, no un maximalismo genérico.\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "gestionPrioridad" debe ser un ARRAY DE ARRAYS: cada elemento es ["label", valorNumero, "colorHex"]. Ejemplo: [["Comunicación", 85, "#ef4444"]]\n- "actores.rows" dentro de cada actor debe ser un ARRAY DE ARRAYS: cada elemento es ["label", "valor"]. Ejemplo: [["Cargo", "Gobernador"], ["Partido", "Morena"]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "recs" debe incluir las propiedades: bg (color fondo), tx (color texto), label (texto corto), text (descripción).\n- "secondary" debe incluir color (hex) para cada emoción secundaria.`
     : '';
 
   // Antes solo decía "al menos un elemento" -> el modelo cumplía con el
