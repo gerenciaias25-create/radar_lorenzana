@@ -571,6 +571,12 @@ function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, dat
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "gestionPrioridad" debe ser un ARRAY DE ARRAYS: cada elemento es ["label", valorNumero, "colorHex"]. Ejemplo: [["Comunicación", 85, "#ef4444"]]\n- "actores.rows" dentro de cada actor debe ser un ARRAY DE ARRAYS: cada elemento es ["label", "valor"]. Ejemplo: [["Cargo", "Gobernador"], ["Partido", "Morena"]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "recs" debe incluir las propiedades: bg (color fondo), tx (color texto), label (texto corto), text (descripción).\n- "secondary" debe incluir color (hex) para cada emoción secundaria.`
     : '';
 
+  // Antes solo decía "al menos un elemento" -> el modelo cumplía con el
+  // mínimo literal (1-2 items, textos de una línea). Aquí se especifica
+  // cuánto es "amplio" para cada skill, campo por campo, en vez de dejarlo
+  // a interpretación del modelo.
+  const requisitosCantidad = REQUISITOS_MINIMOS[skill] || '';
+
   const system = `Eres un analista de inteligencia político-electoral en México. Produce un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
 
 Reglas:
@@ -579,19 +585,69 @@ ${schema}
 - Basa el análisis en los datos crudos proporcionados.
 - Si no hay datos crudos suficientes para algún campo, genera valores realistas basados en el contexto político mexicano pero SIEMPRE respeta los nombres de propiedades del esquema.
 - Todos los textos en español de México.
-- Asegúrate de que TODOS los arrays tengan al menos un elemento.
 - Los campos numéricos deben ser números, no strings.
-- NUNCA omitas ninguna propiedad del esquema, aunque sea con valores de fallback.${guardarropaOpositor}${instruccionesEstructura}`;
+- NUNCA omitas ninguna propiedad del esquema, aunque sea con valores de fallback.
+- PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
+- Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
+${requisitosCantidad}${guardarropaOpositor}${instruccionesEstructura}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}
 Skill solicitada: ${skill}
 
 ${contexto}
 
-Genera el JSON completo con el esquema indicado. No omitas ninguna propiedad. Si no hay datos suficientes para una sección, genera datos representativos del contexto político mexicano actual.`;
+Genera el JSON completo con el esquema indicado, cumpliendo las cantidades mínimas por sección y la extensión de párrafo indicadas arriba. No omitas ninguna propiedad. Si no hay datos suficientes para una sección, genera datos representativos y bien razonados del contexto político mexicano actual — pero con la misma profundidad y cantidad exigidas, nunca recortando el contenido por falta de fuentes.`;
 
   return { system, user };
 }
+
+// Cantidades mínimas por skill, calibradas para igualar la densidad que
+// tenían los dashboards estáticos originales (que tú ya conoces).
+// Ajusta estos números libremente según lo que necesite cada plantilla.
+const REQUISITOS_MINIMOS = {
+  radar: `
+REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
+- sentimiento.hallazgos: mínimo 4 hallazgos bivariados distintos.
+- topOfMind.cruces: mínimo 4 cruces temáticos.
+- plataformas.lecturaEstrategica: mínimo 3 lecturas, una por cada plataforma más relevante.
+- narrativas.favorables: mínimo 3. narrativas.criticas: mínimo 3. narrativas.neutras: mínimo 2. (Total mínimo 8 narrativas, no 2-3.)
+- riesgosOportunidades.riesgos: mínimo 4. riesgosOportunidades.oportunidades: mínimo 3.
+- territorial.zonas: mínimo 5 zonas/municipios distintos del territorio evaluado.
+- territorial.volumenPorZona: mismo número de entradas que "zonas".
+- resumenEjecutivo: mínimo 120 palabras, con al menos 3 hallazgos concretos citados.`,
+
+  emociones: `
+REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
+- emotions: EXACTAMENTE 8 entradas (las 8 emociones base de Plutchik), con "active:true" solo en las realmente detectadas y "active:false" en el resto — pero las 8 deben existir con "triggers" y "consequences" no vacíos.
+- secondary: mínimo 4 emociones secundarias.
+- quotes: mínimo 6 frases ciudadanas distintas, con tono y territorio variados.
+- dyads: mínimo 3 díadas emocionales.
+- partidos: mínimo 3 partidos/actores políticos distintos.
+- actores: mínimo 3 actores comparados, cada uno con mínimo 4 filas en "rows".
+- recs: mínimo 5 recomendaciones estratégicas, cubriendo distintas urgencias (urgente/corto/mediano/permanente).
+- evitar: mínimo 4 elementos.
+- problematics, fears, prides: mínimo 3 cada uno.`,
+
+  tensiones: `
+REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES) — no entregues menos de esto:
+- ranking: mínimo 6 tensiones sociales distintas, cada una con emocion/narrativa/actor/territorio/politica/recomendacion completos (no "—").
+- emociones: mínimo 5.
+- narrativas: mínimo 5, cada una con "frase" textual representativa.
+- territorios: mínimo 4 territorios/zonas con "observaciones" como párrafo completo.
+- riesgos: mínimo 4, cada uno con "accion" como recomendación concreta y accionable.
+- trayectoria: mínimo 4 tensiones con su evolución t3/t2/t1/actual.
+- alertas: mínimo 3, cada una con mínimo 3 "rows".`,
+
+  opositor: `
+REQUISITOS MÍNIMOS DE CANTIDAD (OPOSITOR) — no entregues menos de esto:
+- vulnerabilidades: mínimo 4, con mínimo 3 bullets cada una.
+- fortalezas: mínimo 3.
+- perfil.cronologia: mínimo 5 eventos cronológicos relevantes.
+- perfil.ierPorCargo: mínimo 3 cargos evaluados.
+- contradicciones.ranking: mínimo 4. contradicciones.destacados: mínimo 3. contradicciones.tabla: mínimo 5 filas.
+- vectoresAtaque: mínimo 4, cada uno con mínimo 2 "evidencias".
+- redDePoder.alertas: mínimo 3. redDePoder.tabla: mínimo 5 actores vinculados.`,
+};
 
 function resumirFuentes(bloque) {
   if (!bloque || !bloque.items || bloque.items.length === 0) {
@@ -619,7 +675,7 @@ async function callOpenRouter({ system, user }, apiKey) {
         { role: 'user', content: user },
       ],
       temperature: 0.3,
-      max_tokens: 12000,
+      max_tokens: 16000,
       response_format: { type: 'json_object' },
     }),
   });
