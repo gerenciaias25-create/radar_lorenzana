@@ -629,7 +629,11 @@ REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
 - evitar: mínimo 4 elementos.
 - problematics: mínimo 6 elementos, cada uno anclado en un hecho específico (fecha, colonia, cifra, nombre de funcionario si aplica) — usa como referencia de densidad y estilo: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en febrero y mayo 2026 en Paseo de los Mexicas y Conscripto".
 - fears: mínimo 5 elementos con el mismo nivel de especificidad territorial y temporal.
-- prides: mínimo 4 elementos con el mismo nivel de especificidad (nombres de proyectos, cifras de aportación económica, identidad territorial concreta).`,
+- prides: mínimo 4 elementos con el mismo nivel de especificidad (nombres de proyectos, cifras de aportación económica, identidad territorial concreta).
+- semaforo (Semáforo Emocional del Territorio): mínimo 6 indicadores distintos (p. ej. seguridad, economía/empleo, servicios públicos, movilidad, salud, educación, obra pública, percepción de gobierno local).
+- govSemaforo (Percepción del Gobierno en Turno): mínimo 6 indicadores de desempeño distintos y específicos (p. ej. seguridad pública, manejo del agua, vialidad/movilidad, transparencia, atención ciudadana, obra pública, economía local, salud), cada uno con su propio "estado" — NO los agrupes en un solo indicador genérico de "Desempeño del gobierno".
+- temasChart (Emociones por Temática): mínimo 5 temas distintos.
+- gestionPrioridad (Prioridad de Gestión Emocional): mínimo 4 elementos.`,
 
   tensiones: `
 REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES) — no entregues menos de esto:
