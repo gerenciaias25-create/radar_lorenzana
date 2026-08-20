@@ -23,20 +23,14 @@ app.get('/', (req, res) => {
 
 // =========================================================
 // TRABAJOS EN SEGUNDO PLANO
-// El proxy de Hostinger corta peticiones que tardan mucho
-// (504 Gateway Timeout) mucho antes de que Apify + OpenRouter
-// terminen. Por eso /api/analizar ya NO espera el resultado:
-// crea un job, responde de inmediato, y procesa en background.
-// El frontend consulta /api/estado/:jobId hasta que termine.
 // =========================================================
-const JOBS = new Map(); // jobId -> { status: 'processing'|'done'|'error', result?, error? }
-const JOB_TTL_MS = 15 * 60 * 1000; // 15 min, luego se limpia de memoria
+const JOBS = new Map();
+const JOB_TTL_MS = 15 * 60 * 1000;
 
 function limpiarJob(jobId) {
   setTimeout(() => JOBS.delete(jobId), JOB_TTL_MS);
 }
 
-// Endpoint que INICIA el análisis (responde en milisegundos)
 app.post('/api/analizar', (req, res) => {
   const params = req.body || {};
 
@@ -65,14 +59,11 @@ app.post('/api/analizar', (req, res) => {
   const jobId = crypto.randomUUID();
   JOBS.set(jobId, { status: 'processing', progreso: 'Extrayendo fuentes en Apify...' });
 
-  // Se procesa en segundo plano; NO se espera (no "await") para
-  // poder responder al cliente de inmediato.
   procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio, APIFY_TOKEN, OPENROUTER_KEY });
 
   return res.status(202).json({ jobId });
 });
 
-// Endpoint que CONSULTA el estado/resultado de un job ya iniciado
 app.get('/api/estado/:jobId', (req, res) => {
   const job = JOBS.get(req.params.jobId);
   if (!job) {
@@ -87,7 +78,6 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio
 
     JOBS.set(jobId, { status: 'processing', progreso: 'Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...' });
 
-    // 1. Scraping masivo (6 fuentes en paralelo)
     const [datosActor1, datosActor2] = await Promise.all([
       scrapeActor(actorName, APIFY_TOKEN),
       actor2Name ? scrapeActor(actor2Name, APIFY_TOKEN) : Promise.resolve(null),
@@ -95,12 +85,10 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio
 
     JOBS.set(jobId, { status: 'processing', progreso: 'Estructurando datos con OpenRouter...' });
 
-    // 2. Estructuración con OpenRouter
     const schema = SCHEMAS[skill] || SCHEMAS.radar;
     const prompt = buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema });
     const structured = await callOpenRouter(prompt, OPENROUTER_KEY);
 
-    // 3. Normalizar respuesta para asegurar que todos los arrays existan
     const normalized = normalizeResponse(structured, skill);
 
     JOBS.set(jobId, {
@@ -131,7 +119,6 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Servidor RADAR activo' });
 });
 
-// Puerto
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 Servidor RADAR escuchando en el puerto ${PORT}`);
@@ -142,6 +129,43 @@ server.timeout = 180000;
 // =========================================================
 // NORMALIZACIÓN DE RESPUESTA
 // =========================================================
+const EMOTION_LABELS = {
+  ira: 'Ira', sorpresa: 'Sorpresa', anticipacion: 'Anticipación', tristeza: 'Tristeza',
+  asco: 'Asco', alegria: 'Alegría', confianza: 'Confianza', miedo: 'Miedo',
+};
+
+function sintetizarDyads(emotions) {
+  const activas = (emotions || [])
+    .filter(e => e.active && e.intensity > 0)
+    .sort((a, b) => b.intensity - a.intensity);
+
+  if (activas.length < 2) return [];
+
+  const pares = [];
+  for (let i = 0; i < activas.length - 1 && pares.length < 3; i++) {
+    pares.push([activas[i], activas[i + 1]]);
+  }
+  if (pares.length < 3 && activas.length >= 3) pares.push([activas[0], activas[2]]);
+
+  const RISK_BY_SCORE = (score) => score >= 75 ? 'CRÍTICO' : score >= 55 ? 'ALTO' : score >= 35 ? 'MEDIO' : 'BAJO';
+
+  return pares.slice(0, 4).map(([a, b], idx) => {
+    const labelA = EMOTION_LABELS[a.key] || a.key;
+    const labelB = EMOTION_LABELS[b.key] || b.key;
+    const score = Math.round(((a.intensity + b.intensity) / 6) * 100);
+    const triggersA = (a.triggers || []).slice(0, 2).join(', ');
+    const triggersB = (b.triggers || []).slice(0, 2).join(', ');
+    return {
+      name: `${labelA} + ${labelB}`,
+      formula: `${labelA} + ${labelB}`,
+      type: idx === 0 ? 'Primaria' : 'Secundaria',
+      text: `La combinación de ${labelA.toLowerCase()} (detonada por ${triggersA || 'factores del contexto reciente'}) y ${labelB.toLowerCase()} (asociada a ${triggersB || 'la percepción ciudadana del período'}) genera una dinámica emocional de riesgo ${RISK_BY_SCORE(score).toLowerCase()} que puede erosionar la confianza si no se atiende con comunicación específica y acciones visibles en el corto plazo.`,
+      risk: RISK_BY_SCORE(score),
+      score,
+    };
+  });
+}
+
 function normalizeResponse(data, skill) {
   if (!data || typeof data !== 'object') data = {};
 
@@ -156,42 +180,78 @@ function normalizeResponse(data, skill) {
     return obj;
   };
 
-  // RADAR
+  // RADAR CON LAS 9 PESTAÑAS Y CABECERA
   if (skill === 'radar') {
+    ensureObject(data, 'header', {
+      nivelAlerta: 'NIVEL 2 · ALERTA AMARILLA',
+      actorNombre: 'Actor',
+      corte: '',
+      periodo: ''
+    });
     ensureObject(data, 'actor', { cargo: 'Servidor(a) Público(a)', entidad: 'Sin entidad', partido: '—', periodo: '' });
+
+    // 1. KPIs Ampliados
     ensureObject(data, 'kpis', {});
+    if (typeof data.kpis.volumenTotal !== 'number') data.kpis.volumenTotal = 0;
+    if (typeof data.kpis.npsPromedio !== 'number') data.kpis.npsPromedio = 0;
+    if (typeof data.kpis.reachEstimado !== 'number') data.kpis.reachEstimado = 0;
+    if (typeof data.kpis.conversacionCriticaPct !== 'number') data.kpis.conversacionCriticaPct = 0;
     ensureArray(data.kpis, 'npsPartido', [{ label: 'Sin datos', valor: 0 }]);
     ensureArray(data.kpis, 'npsDemografico', [{ label: 'Sin datos', valor: 0 }]);
     ensureArray(data.kpis, 'ratioAtaqueDefensa', [{ plataforma: 'Sin datos', ratio: 0 }]);
     ensureObject(data.kpis, 'traSemanal', { labels: ['Sin datos'], valores: [0] });
+
+    // 2. Sentimiento
     ensureObject(data, 'sentimiento', {});
-    ensureObject(data.sentimiento, 'general', { labels: ['Sin datos'], valores: [0] });
-    ensureObject(data.sentimiento, 'genero', { labels: ['Sin datos'], valores: [0] });
-    ensureObject(data.sentimiento, 'edad', { labels: ['Sin datos'], valores: [0] });
-    ensureObject(data.sentimiento, 'partido', { labels: ['Sin datos'], valores: [0] });
+    ensureObject(data.sentimiento, 'general', { labels: ['Positivo', 'Neutro', 'Negativo'], valores: [0, 0, 0] });
+    ensureObject(data.sentimiento, 'genero', { labels: ['Hombres', 'Mujeres'], valores: [0, 0] });
+    ensureObject(data.sentimiento, 'edad', { labels: ['18-29', '30-49', '50+'], valores: [0, 0, 0] });
+    ensureObject(data.sentimiento, 'partido', { labels: ['Propios', 'Oposición', 'Independientes'], valores: [0, 0, 0] });
     ensureArray(data.sentimiento, 'hallazgos', []);
+
+    // 3. Top of Mind
     ensureObject(data, 'topOfMind', {});
     ensureObject(data.topOfMind, 'general', { temas: ['Sin datos'], valores: [0] });
     ensureObject(data.topOfMind, 'genero', { temas: ['Sin datos'], series: [{ nombre: '—', valores: [0] }] });
     ensureObject(data.topOfMind, 'edad', { temas: ['Sin datos'], series: [{ nombre: '—', valores: [0] }] });
     ensureObject(data.topOfMind, 'partido', { temas: ['Sin datos'], series: [{ nombre: '—', valores: [0] }] });
     ensureArray(data.topOfMind, 'cruces', []);
+
+    // 4. Picos de Volatilidad
+    ensureObject(data, 'picos', {});
+    ensureArray(data.picos, 'eventos', []);
+    ensureObject(data.picos, 'graficoMenciones', { fechas: [], volumen: [], anomalias: [] });
+
+    // 5. Plataformas
     ensureObject(data, 'plataformas', {});
     ensureArray(data.plataformas, 'alcance', [{ plataforma: 'Sin datos', valor: 0 }]);
     ensureArray(data.plataformas, 'tono', [{ plataforma: 'Sin datos', positivo: 0, negativo: 0 }]);
     ensureArray(data.plataformas, 'porEdad', [{ plataforma: 'Sin datos', series: [{ nombre: '—', valor: 0 }] }]);
     ensureArray(data.plataformas, 'viralizacion', [{ plataforma: 'Sin datos', critica: 0, propia: 0 }]);
     ensureArray(data.plataformas, 'lecturaEstrategica', []);
+
+    // 6. Nube y Hashtags
+    ensureObject(data, 'nubeHashtags', {});
+    ensureArray(data.nubeHashtags, 'palabrasClave', []);
+    ensureArray(data.nubeHashtags, 'topHashtags', []);
+    ensureArray(data.nubeHashtags, 'mencionesActores', []);
+
+    // 7. Narrativas
     ensureObject(data, 'narrativas', {});
     ensureArray(data.narrativas, 'favorables', []);
     ensureArray(data.narrativas, 'criticas', []);
     ensureArray(data.narrativas, 'neutras', []);
+
+    // 8. Riesgos y Oportunidades
     ensureObject(data, 'riesgosOportunidades', {});
     ensureArray(data.riesgosOportunidades, 'riesgos', []);
     ensureArray(data.riesgosOportunidades, 'oportunidades', []);
+
+    // 9. Territorial
     ensureObject(data, 'territorial', {});
     ensureArray(data.territorial, 'zonas', []);
     ensureArray(data.territorial, 'volumenPorZona', []);
+
     if (!data.resumenEjecutivo) data.resumenEjecutivo = 'Sin datos de resumen ejecutivo disponibles.';
   }
 
@@ -262,24 +322,12 @@ function normalizeResponse(data, skill) {
 // =========================================================
 // APIFY: SCRAPING
 // =========================================================
-
-// Antes: 35s fijos para TODOS los actores. Los actores reales de scraping
-// (Facebook, Instagram, TikTok) casi nunca terminan en 35s -> el fetch se
-// abortaba, el server devolvía [] y OpenRouter recibía datos vacíos, aunque
-// el run de Apify ya había consumido créditos en segundo plano.
-// Como /api/analizar ya corre en background (jobId + polling), sí hay
-// margen real de tiempo: no hace falta abortar tan rápido.
 async function llamarActorApify(actorPath, payload, token, timeoutMs = 60000) {
   if (!token) return [];
   try {
-    // Le pedimos a Apify que espere hasta timeoutMs (en segundos) y nos
-    // devuelva lo que tenga listo en ese momento (partial results incluidos).
     const apifyTimeoutSec = Math.round(timeoutMs / 1000);
     const url = `https://api.apify.com/v2/acts/${actorPath}/run-sync-get-dataset-items?token=${token}&timeout=${apifyTimeoutSec}`;
 
-    // El abort de NUESTRO fetch se dispara un poco DESPUÉS del timeout que
-    // le dimos a Apify, para darle margen a que la respuesta de Apify llegue
-    // completa en vez de cortarla nosotros mismos primero.
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), timeoutMs + 10000);
 
@@ -306,10 +354,6 @@ async function llamarActorApify(actorPath, payload, token, timeoutMs = 60000) {
   }
 }
 
-// Timeouts realistas por plataforma. google-search suele responder rápido;
-// facebook/instagram/tiktok necesitan mucho más tiempo real de scraping.
-// Como el job corre en background (frontend hace polling hasta 5 min),
-// hay margen de sobra para esperar sin generar un 504.
 const PLATFORM_TIMEOUTS = {
   prensa: 60000,
   twitter: 90000,
@@ -352,8 +396,6 @@ async function scrapeActor(nombre, token) {
     }, token, PLATFORM_TIMEOUTS.youtube).then(i => tag(i, 'youtube')),
   ];
 
-  // Promise.allSettled en vez de Promise.all: si un actor revienta con una
-  // excepción no controlada, no debe tumbar a los otros 5 que sí llegaron bien.
   const resultados = await Promise.allSettled(tareas);
   const rawItems = resultados
     .filter(r => r.status === 'fulfilled')
@@ -384,23 +426,33 @@ function tag(items, fuente) {
 }
 
 // =========================================================
-// SCHEMAS LIMPIOS (coinciden 1:1 con las plantillas HTML)
+// SCHEMAS COMPLETOS
 // =========================================================
 
 const SCHEMAS = {
   radar: JSON.stringify({
+    header: {
+      nivelAlerta: "NIVEL 1 · ALERTA VERDE | NIVEL 2 · ALERTA AMARILLA | NIVEL 3 · ALERTA ROJA",
+      actorNombre: "string",
+      corte: "string",
+      periodo: "string"
+    },
     actor: { cargo: "string", entidad: "string", partido: "string", periodo: "string" },
     kpis: {
+      volumenTotal: 0,
+      npsPromedio: 0,
+      reachEstimado: 0,
+      conversacionCriticaPct: 0,
       npsPartido: [{ label: "string", valor: 0 }],
       npsDemografico: [{ label: "string", valor: 0 }],
       ratioAtaqueDefensa: [{ plataforma: "string", ratio: 0 }],
       traSemanal: { labels: ["string"], valores: [0] }
     },
     sentimiento: {
-      general: { labels: ["string"], valores: [0] },
-      genero: { labels: ["string"], valores: [0] },
-      edad: { labels: ["string"], valores: [0] },
-      partido: { labels: ["string"], valores: [0] },
+      general: { labels: ["Positivo", "Neutro", "Negativo"], valores: [0, 0, 0] },
+      genero: { labels: ["Hombres", "Mujeres"], valores: [0, 0] },
+      edad: { labels: ["18-29", "30-49", "50+"], valores: [0, 0, 0] },
+      partido: { labels: ["Propios", "Oposición", "Independientes"], valores: [0, 0, 0] },
       hallazgos: [{ titulo: "string", texto: "string", accion: "string" }]
     },
     topOfMind: {
@@ -410,12 +462,21 @@ const SCHEMAS = {
       partido: { temas: ["string"], series: [{ nombre: "string", valores: [0] }] },
       cruces: [{ titulo: "string", texto: "string", accion: "string" }]
     },
+    picos: {
+      eventos: [{ fecha: "string", titulo: "string", descripcion: "string", impacto: "CRÍTICO|ALTO|MEDIO|BAJO", fuente: "string" }],
+      graficoMenciones: { fechas: ["string"], volumen: [0], anomalias: [0] }
+    },
     plataformas: {
       alcance: [{ plataforma: "string", valor: 0 }],
       tono: [{ plataforma: "string", positivo: 0, negativo: 0 }],
       porEdad: [{ plataforma: "string", series: [{ nombre: "string", valor: 0 }] }],
       viralizacion: [{ plataforma: "string", critica: 0, propia: 0 }],
       lecturaEstrategica: [{ titulo: "string", texto: "string", alerta: false }]
+    },
+    nubeHashtags: {
+      palabrasClave: [{ texto: "string", peso: 0, sentimiento: "positivo|negativo|neutro" }],
+      topHashtags: [{ tag: "string", volumen: 0, tendencia: "sube|baja|estable" }],
+      mencionesActores: [{ actor: "string", menciones: 0, tono: "favorables|criticas" }]
     },
     narrativas: {
       favorables: [{ titulo: "string", descripcion: "string", tags: ["string"], bivariado: "string" }],
@@ -552,7 +613,7 @@ const SCHEMAS = {
 };
 
 // =========================================================
-// PROMPTS
+// PROMPTS Y REQUISITOS
 // =========================================================
 
 function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema }) {
@@ -568,28 +629,32 @@ function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, dat
     : '';
 
   const instruccionesEstructura = skill === 'emociones'
-    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "emotions.intensity" es un ENTERO de escala fija 0-3, NUNCA otro rango: 0 = inactiva (no se detecta evidencia real de esta emoción), 1 = baja, 2 = media, 3 = alta. Debes DISTRIBUIR intensidades realistas y VARIADAS entre las 8 emociones según la evidencia — está PROHIBIDO poner intensity:3 a todas las emociones activas; eso es un error, no un signo de análisis completo. Como referencia, en un territorio típico: 1-2 emociones en intensidad 3 (las dominantes), 2-3 en intensidad 2, el resto en 1 o 0 (inactivas). Refleja la mezcla real de las fuentes, no un maximalismo genérico.\n- "actores.rows" (comparación de actores políticos) — cada actor debe traer MÍNIMO 6 filas, usando estas categorías de análisis como referencia (puedes adaptar la etiqueta exacta pero cubre el fondo de cada una): "Emoción dominante que activa", "Rol narrativo (Westen)", "Capital emocional positivo/diferencial", "Fundación moral que activa (Haidt)", "Principal vulnerabilidad", "Ventana estratégica 30 días" o "Riesgo para [el otro actor]". El VALOR de cada fila NUNCA debe ser una etiqueta corta o palabra suelta — debe ser una CLÁUSULA COMPLETA Y ESPECÍFICA con evidencia concreta (cifras, nombres de proyectos/lugares, fechas), del mismo nivel de detalle que: "78 Huellas de la Transformación, 250+ patrullas, Mexicable al 68%" o "Brecha entre cifras oficiales y experiencia cotidiana en colonias periféricas" — nunca algo tan corto como "Popularidad alta" o "Buena imagen".\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "gestionPrioridad" debe ser un ARRAY DE ARRAYS: cada elemento es ["label", valorNumero, "colorHex"]. Ejemplo: [["Comunicación", 85, "#ef4444"]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "recs" debe incluir las propiedades: bg (color fondo), tx (color texto), label (texto corto), text (descripción).\n- "secondary" debe incluir color (hex) para cada emoción secundaria.`
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "emotions.intensity" es un ENTERO de escala fija 0-3...`
+    : skill === 'radar'
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (RADAR - LAS 9 PESTAÑAS Y CABECERA):
+1. **Header Metadatos:** Llena "header.nivelAlerta" (ej. "NIVEL 2 · ALERTA AMARILLA — ${actorName}"), "header.corte" y "header.periodo".
+2. **KPIs Ampliados:** "kpis.volumenTotal", "npsPromedio", "reachEstimado", "conversacionCriticaPct", "npsPartido", "npsDemografico", "ratioAtaqueDefensa", "traSemanal".
+3. **Sentimiento:** Distribuciones de "general", "genero", "edad", "partido", y arreglos de tarjetas bivariadas en "hallazgos".
+4. **Top of Mind:** Array en "general", desgloses en "genero", "edad", "partido", y hallazgos temáticos en "cruces".
+5. **Picos:** Genera "picos.eventos" con fechas y detonantes clave, y "picos.graficoMenciones" con la serie temporal.
+6. **Plataformas:** "alcance", "tono", "porEdad", "viralizacion", y "lecturaEstrategica" por red social.
+7. **Nube y Hashtags:** Llena "nubeHashtags.palabrasClave" (con pesos y sentimiento), "topHashtags" y "mencionesActores".
+8. **Narrativas:** Categorías "favorables", "criticas" y "neutras" con su descripción y análisis bivariado.
+9. **Riesgos y Oportunidades:** Tarjetas con nivel de severidad y recomendación táctica.
+10. **Territorial:** "zonas" principales con NPS local y "volumenPorZona".
+11. **Resumen Ejecutivo:** Redacción estratégica completa (mínimo 120 palabras).`
     : '';
 
-  // Antes solo decía "al menos un elemento" -> el modelo cumplía con el
-  // mínimo literal (1-2 items, textos de una línea). Aquí se especifica
-  // cuánto es "amplio" para cada skill, campo por campo, en vez de dejarlo
-  // a interpretación del modelo.
   const requisitosCantidad = REQUISITOS_MINIMOS[skill] || '';
 
   const system = `Eres un analista de inteligencia político-electoral en México. Produce un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
 
 Reglas:
-- Responde EXCLUSIVAMENTE con un objeto JSON válido acorde a este esquema exacto (mismos nombres de propiedades, mismos tipos de datos):
+- Responde EXCLUSIVAMENTE con un objeto JSON válido acorde a este esquema exacto:
 ${schema}
 - Basa el análisis en los datos crudos proporcionados.
-- Si no hay datos crudos suficientes para algún campo, genera valores realistas basados en el contexto político mexicano pero SIEMPRE respeta los nombres de propiedades del esquema.
-- Todos los textos en español de México.
-- Los campos numéricos deben ser números, no strings.
-- NUNCA omitas ninguna propiedad del esquema, aunque sea con valores de fallback.
-- PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
-- Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
-- ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
+- Si no hay datos crudos suficientes para algún campo, genera valores realistas basados en el contexto político mexicano.
+- PROHIBIDO omitir cualquier propiedad requerida por el esquema.
 ${requisitosCantidad}${guardarropaOpositor}${instruccionesEstructura}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}
@@ -597,63 +662,62 @@ Skill solicitada: ${skill}
 
 ${contexto}
 
-Genera el JSON completo con el esquema indicado, cumpliendo las cantidades mínimas por sección y la extensión de párrafo indicadas arriba. No omitas ninguna propiedad. Si no hay datos suficientes para una sección, genera datos representativos y bien razonados del contexto político mexicano actual — pero con la misma profundidad y cantidad exigidas, nunca recortando el contenido por falta de fuentes.`;
+Genera el JSON alimentando todas las pestañas de la skill solicitada exactamente con los nombres especificados.`;
 
   return { system, user };
 }
 
-// Cantidades mínimas por skill, calibradas para igualar la densidad que
-// tenían los dashboards estáticos originales (que tú ya conoces).
-// Ajusta estos números libremente según lo que necesite cada plantilla.
 const REQUISITOS_MINIMOS = {
   radar: `
-REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
+REQUISITOS MÍNIMOS DE CANTIDAD (RADAR):
 - sentimiento.hallazgos: mínimo 4 hallazgos bivariados distintos.
 - topOfMind.cruces: mínimo 4 cruces temáticos.
-- plataformas.lecturaEstrategica: mínimo 3 lecturas, una por cada plataforma más relevante.
-- narrativas.favorables: mínimo 3. narrativas.criticas: mínimo 3. narrativas.neutras: mínimo 2. (Total mínimo 8 narrativas, no 2-3.)
+- picos.eventos: mínimo 3 eventos críticos o picos de volatilidad.
+- plataformas.lecturaEstrategica: mínimo 3 lecturas estratégicas por red social.
+- nubeHashtags.palabrasClave: mínimo 10 términos clave.
+- nubeHashtags.topHashtags: mínimo 6 hashtags relevantes.
+- narrativas.favorables: mínimo 3. narrativas.criticas: mínimo 3. narrativas.neutras: mínimo 2.
 - riesgosOportunidades.riesgos: mínimo 4. riesgosOportunidades.oportunidades: mínimo 3.
-- territorial.zonas: mínimo 5 zonas/municipios distintos del territorio evaluado.
-- territorial.volumenPorZona: mismo número de entradas que "zonas".
-- resumenEjecutivo: mínimo 120 palabras, con al menos 3 hallazgos concretos citados.`,
+- territorial.zonas: mínimo 5 zonas/municipios distintos.
+- resumenEjecutivo: mínimo 120 palabras.`,
 
   emociones: `
-REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
-- emotions: EXACTAMENTE 8 entradas (las 8 emociones base de Plutchik), con "active:true" solo en las realmente detectadas y "active:false" en el resto — pero las 8 deben existir con "triggers" y "consequences" no vacíos.
+REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES):
+- emotions: EXACTAMENTE 8 entradas.
 - secondary: mínimo 4 emociones secundarias.
-- quotes: mínimo 6 frases ciudadanas distintas, cada una con cita textual + emoción/tono + colonia o zona específica (como en el ejemplo: cita, luego "Tema · Emoción · Colonia").
+- quotes: mínimo 6 frases ciudadanas distintas.
 - dyads: mínimo 3 díadas emocionales.
 - partidos: mínimo 3 partidos/actores políticos distintos.
-- actores: mínimo 3 actores comparados, cada uno con mínimo 6 filas en "rows" (ver categorías e instrucciones de contenido en la sección de INSTRUCCIONES DE ESTRUCTURA CRÍTICAS).
-- recs: mínimo 5 recomendaciones estratégicas, cubriendo distintas urgencias (urgente/corto/mediano/permanente).
+- actores: mínimo 3 actores comparados.
+- recs: mínimo 5 recomendaciones estratégicas.
 - evitar: mínimo 4 elementos.
-- problematics: mínimo 6 elementos, cada uno anclado en un hecho específico (fecha, colonia, cifra, nombre de funcionario si aplica) — usa como referencia de densidad y estilo: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en febrero y mayo 2026 en Paseo de los Mexicas y Conscripto".
-- fears: mínimo 5 elementos con el mismo nivel de especificidad territorial y temporal.
-- prides: mínimo 4 elementos con el mismo nivel de especificidad (nombres de proyectos, cifras de aportación económica, identidad territorial concreta).
-- semaforo (Semáforo Emocional del Territorio): mínimo 6 indicadores distintos (p. ej. seguridad, economía/empleo, servicios públicos, movilidad, salud, educación, obra pública, percepción de gobierno local).
-- govSemaforo (Percepción del Gobierno en Turno): mínimo 6 indicadores de desempeño distintos y específicos (p. ej. seguridad pública, manejo del agua, vialidad/movilidad, transparencia, atención ciudadana, obra pública, economía local, salud), cada uno con su propio "estado" — NO los agrupes en un solo indicador genérico de "Desempeño del gobierno".
-- temasChart (Emociones por Temática): mínimo 5 temas distintos.
-- gestionPrioridad (Prioridad de Gestión Emocional): mínimo 4 elementos.`,
+- problematics: mínimo 6 elementos.
+- fears: mínimo 5 elementos.
+- prides: mínimo 4 elementos.
+- semaforo: mínimo 6 indicadores.
+- govSemaforo: mínimo 6 indicadores.
+- temasChart: mínimo 5 temas distintos.
+- gestionPrioridad: mínimo 4 elementos.`,
 
   tensiones: `
-REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES) — no entregues menos de esto:
-- ranking: mínimo 6 tensiones sociales distintas, cada una con emocion/narrativa/actor/territorio/politica/recomendacion completos (no "—").
+REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES):
+- ranking: mínimo 6 tensiones sociales.
 - emociones: mínimo 5.
-- narrativas: mínimo 5, cada una con "frase" textual representativa.
-- territorios: mínimo 4 territorios/zonas con "observaciones" como párrafo completo.
-- riesgos: mínimo 4, cada uno con "accion" como recomendación concreta y accionable.
-- trayectoria: mínimo 4 tensiones con su evolución t3/t2/t1/actual.
-- alertas: mínimo 3, cada una con mínimo 3 "rows".`,
+- narrativas: mínimo 5.
+- territorios: mínimo 4 territorios/zonas.
+- riesgos: mínimo 4.
+- trayectoria: mínimo 4 tensiones.
+- alertas: mínimo 3.`,
 
   opositor: `
-REQUISITOS MÍNIMOS DE CANTIDAD (OPOSITOR) — no entregues menos de esto:
-- vulnerabilidades: mínimo 4, con mínimo 3 bullets cada una.
+REQUISITOS MÍNIMOS DE CANTIDAD (OPOSITOR):
+- vulnerabilidades: mínimo 4.
 - fortalezas: mínimo 3.
-- perfil.cronologia: mínimo 5 eventos cronológicos relevantes.
-- perfil.ierPorCargo: mínimo 3 cargos evaluados.
+- perfil.cronologia: mínimo 5 eventos.
+- perfil.ierPorCargo: mínimo 3 cargos.
 - contradicciones.ranking: mínimo 4. contradicciones.destacados: mínimo 3. contradicciones.tabla: mínimo 5 filas.
-- vectoresAtaque: mínimo 4, cada uno con mínimo 2 "evidencias".
-- redDePoder.alertas: mínimo 3. redDePoder.tabla: mínimo 5 actores vinculados.`,
+- vectoresAtaque: mínimo 4.
+- redDePoder.alertas: mínimo 3. redDePoder.tabla: mínimo 5 actores.`,
 };
 
 function resumirFuentes(bloque) {
@@ -669,7 +733,7 @@ function resumirFuentes(bloque) {
 async function callOpenRouter({ system, user }, apiKey) {
   const model = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 
-  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const r = await fetch('https://openrouter.ai/ai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
