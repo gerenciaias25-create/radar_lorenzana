@@ -140,6 +140,21 @@
     <div class="sl">Distribución de Intensidad Emocional</div>
     <div class="cw" style="height:200px"><canvas id="em-ch-intens"></canvas></div>
   </div>
+
+  <!-- RECS: antes vivía fuera de los .pnl y por eso se repetía en TODAS las
+       pestañas (Mapa, Díadas, Identidad, Actores). Ahora es parte del panel
+       "Flor de Emociones", así que solo aparece con esa pestaña activa. -->
+  <div style="margin-top:1.5rem">
+    <div class="cbox" style="margin-bottom:1rem;border-left-color:var(--red)" id="em-alerta-box"></div>
+    <div class="card" style="margin-bottom:1rem"><div class="sl">Plan de Acción Estratégica</div><div id="em-recs-list"></div></div>
+    <div class="g2">
+      <div class="card"><div class="sl">Comunicación Contraproducente — Evitar</div><div id="em-evitar-list"></div></div>
+      <div class="card">
+        <div class="sl">Prioridad de Gestión Emocional</div>
+        <div class="cw" style="height:220px"><canvas id="em-ch-prior"></canvas></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- MAPA -->
@@ -195,19 +210,6 @@
   </div>
 </div>
 
-<!-- RECS (siempre visible al final) -->
-<div style="margin-top:1.5rem">
-  <div class="cbox" style="margin-bottom:1rem;border-left-color:var(--red)" id="em-alerta-box"></div>
-  <div class="card" style="margin-bottom:1rem"><div class="sl">Plan de Acción Estratégica</div><div id="em-recs-list"></div></div>
-  <div class="g2">
-    <div class="card"><div class="sl">Comunicación Contraproducente — Evitar</div><div id="em-evitar-list"></div></div>
-    <div class="card">
-      <div class="sl">Prioridad de Gestión Emocional</div>
-      <div class="cw" style="height:220px"><canvas id="em-ch-prior"></canvas></div>
-    </div>
-  </div>
-</div>
-
 </div><!-- /cnt -->
 
 <div class="footer">
@@ -215,4 +217,3 @@
   <span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span>
 </div>
 </div>
-
