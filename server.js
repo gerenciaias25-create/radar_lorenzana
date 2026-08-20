@@ -589,6 +589,7 @@ ${schema}
 - NUNCA omitas ninguna propiedad del esquema, aunque sea con valores de fallback.
 - PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
 - Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
+- ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
 ${requisitosCantidad}${guardarropaOpositor}${instruccionesEstructura}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}
@@ -620,13 +621,15 @@ REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
 REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
 - emotions: EXACTAMENTE 8 entradas (las 8 emociones base de Plutchik), con "active:true" solo en las realmente detectadas y "active:false" en el resto — pero las 8 deben existir con "triggers" y "consequences" no vacíos.
 - secondary: mínimo 4 emociones secundarias.
-- quotes: mínimo 6 frases ciudadanas distintas, con tono y territorio variados.
+- quotes: mínimo 6 frases ciudadanas distintas, cada una con cita textual + emoción/tono + colonia o zona específica (como en el ejemplo: cita, luego "Tema · Emoción · Colonia").
 - dyads: mínimo 3 díadas emocionales.
 - partidos: mínimo 3 partidos/actores políticos distintos.
 - actores: mínimo 3 actores comparados, cada uno con mínimo 4 filas en "rows".
 - recs: mínimo 5 recomendaciones estratégicas, cubriendo distintas urgencias (urgente/corto/mediano/permanente).
 - evitar: mínimo 4 elementos.
-- problematics, fears, prides: mínimo 3 cada uno.`,
+- problematics: mínimo 6 elementos, cada uno anclado en un hecho específico (fecha, colonia, cifra, nombre de funcionario si aplica) — usa como referencia de densidad y estilo: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en febrero y mayo 2026 en Paseo de los Mexicas y Conscripto".
+- fears: mínimo 5 elementos con el mismo nivel de especificidad territorial y temporal.
+- prides: mínimo 4 elementos con el mismo nivel de especificidad (nombres de proyectos, cifras de aportación económica, identidad territorial concreta).`,
 
   tensiones: `
 REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES) — no entregues menos de esto:
