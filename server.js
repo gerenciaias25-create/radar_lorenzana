@@ -263,13 +263,27 @@ function normalizeResponse(data, skill) {
 // APIFY: SCRAPING
 // =========================================================
 
-async function llamarActorApify(actorPath, payload, token, timeoutMs = 35000) {
+// Antes: 35s fijos para TODOS los actores. Los actores reales de scraping
+// (Facebook, Instagram, TikTok) casi nunca terminan en 35s -> el fetch se
+// abortaba, el server devolvía [] y OpenRouter recibía datos vacíos, aunque
+// el run de Apify ya había consumido créditos en segundo plano.
+// Como /api/analizar ya corre en background (jobId + polling), sí hay
+// margen real de tiempo: no hace falta abortar tan rápido.
+async function llamarActorApify(actorPath, payload, token, timeoutMs = 60000) {
   if (!token) return [];
   try {
-    const url = `https://api.apify.com/v2/acts/${actorPath}/run-sync-get-dataset-items?token=${token}&timeout=${Math.round(timeoutMs / 1000)}`;
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), timeoutMs);
+    // Le pedimos a Apify que espere hasta timeoutMs (en segundos) y nos
+    // devuelva lo que tenga listo en ese momento (partial results incluidos).
+    const apifyTimeoutSec = Math.round(timeoutMs / 1000);
+    const url = `https://api.apify.com/v2/acts/${actorPath}/run-sync-get-dataset-items?token=${token}&timeout=${apifyTimeoutSec}`;
 
+    // El abort de NUESTRO fetch se dispara un poco DESPUÉS del timeout que
+    // le dimos a Apify, para darle margen a que la respuesta de Apify llegue
+    // completa en vez de cortarla nosotros mismos primero.
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs + 10000);
+
+    const inicio = Date.now();
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -278,50 +292,78 @@ async function llamarActorApify(actorPath, payload, token, timeoutMs = 35000) {
     });
     clearTimeout(t);
 
-    if (!r.ok) return [];
+    if (!r.ok) {
+      console.warn(`[!] Apify ${actorPath} respondió HTTP ${r.status} tras ${Date.now() - inicio}ms`);
+      return [];
+    }
     const data = await r.json();
-    return Array.isArray(data) ? data : [];
+    const items = Array.isArray(data) ? data : [];
+    console.log(`[✓] Apify ${actorPath}: ${items.length} items en ${Date.now() - inicio}ms`);
+    return items;
   } catch (e) {
     console.warn(`[!] Timeout o fallo en actor ${actorPath}:`, e.message);
     return [];
   }
 }
 
+// Timeouts realistas por plataforma. google-search suele responder rápido;
+// facebook/instagram/tiktok necesitan mucho más tiempo real de scraping.
+// Como el job corre en background (frontend hace polling hasta 5 min),
+// hay margen de sobra para esperar sin generar un 504.
+const PLATFORM_TIMEOUTS = {
+  prensa: 60000,
+  twitter: 90000,
+  facebook: 110000,
+  instagram: 100000,
+  tiktok: 90000,
+  youtube: 80000,
+};
+
 async function scrapeActor(nombre, token) {
   const tareas = [
     llamarActorApify('apify~google-search-scraper', {
       queries: `"${nombre}" (noticias OR opinión OR declaraciones)`,
       resultsPerPage: 20,
-    }, token).then(i => tag(i, 'prensa')),
+    }, token, PLATFORM_TIMEOUTS.prensa).then(i => tag(i, 'prensa')),
 
     llamarActorApify('apidojo~tweet-scraper', {
       searchTerms: [nombre],
       maxItems: 30,
-    }, token).then(i => tag(i, 'twitter')),
+    }, token, PLATFORM_TIMEOUTS.twitter).then(i => tag(i, 'twitter')),
 
     llamarActorApify('apify~facebook-posts-scraper', {
       search: nombre,
       resultsLimit: 20,
-    }, token).then(i => tag(i, 'facebook')),
+    }, token, PLATFORM_TIMEOUTS.facebook).then(i => tag(i, 'facebook')),
 
     llamarActorApify('apify~instagram-scraper', {
       search: nombre,
       resultsLimit: 15,
-    }, token).then(i => tag(i, 'instagram')),
+    }, token, PLATFORM_TIMEOUTS.instagram).then(i => tag(i, 'instagram')),
 
     llamarActorApify('clockworks~tiktok-scraper', {
       searchQueries: [nombre],
       resultsPerPage: 15,
-    }, token).then(i => tag(i, 'tiktok')),
+    }, token, PLATFORM_TIMEOUTS.tiktok).then(i => tag(i, 'tiktok')),
 
     llamarActorApify('streamers~youtube-scraper', {
       searchKeywords: nombre,
       maxResults: 10,
-    }, token).then(i => tag(i, 'youtube')),
+    }, token, PLATFORM_TIMEOUTS.youtube).then(i => tag(i, 'youtube')),
   ];
 
-  const resultados = await Promise.all(tareas);
-  const rawItems = resultados.flat();
+  // Promise.allSettled en vez de Promise.all: si un actor revienta con una
+  // excepción no controlada, no debe tumbar a los otros 5 que sí llegaron bien.
+  const resultados = await Promise.allSettled(tareas);
+  const rawItems = resultados
+    .filter(r => r.status === 'fulfilled')
+    .flatMap(r => r.value);
+
+  const conteoPorFuente = rawItems.reduce((acc, i) => {
+    acc[i.__fuente] = (acc[i.__fuente] || 0) + 1;
+    return acc;
+  }, {});
+  console.log(`[i] Scraping "${nombre}" — items por fuente:`, conteoPorFuente, `| total: ${rawItems.length}`);
 
   const textos = rawItems
     .map(i => ({
@@ -332,7 +374,7 @@ async function scrapeActor(nombre, token) {
       likes: i.likeCount ?? i.likes ?? i.diggCount ?? null,
     }))
     .filter(t => t.texto && t.texto.length > 8)
-    .slice(0, 120);
+    .slice(0, 160);
 
   return { count: textos.length, items: textos };
 }
@@ -556,8 +598,8 @@ function resumirFuentes(bloque) {
     return '(No se obtuvieron resultados directos de scraping en vivo; genera el análisis basándote en conocimiento experto del contexto político mexicano respetando estrictamente el esquema JSON proporcionado.)';
   }
   return bloque.items
-    .slice(0, 50)
-    .map(i => `[${i.fuente}] ${i.texto.slice(0, 200)}`)
+    .slice(0, 90)
+    .map(i => `[${i.fuente}] ${i.texto.slice(0, 280)}`)
     .join('\n');
 }
 
@@ -577,7 +619,7 @@ async function callOpenRouter({ system, user }, apiKey) {
         { role: 'user', content: user },
       ],
       temperature: 0.3,
-      max_tokens: 8000,
+      max_tokens: 12000,
       response_format: { type: 'json_object' },
     }),
   });
