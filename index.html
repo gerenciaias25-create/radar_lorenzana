@@ -6,7 +6,6 @@
   <title>RADAR - Inteligencia Político-Electoral</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Librería para conversión a PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -101,7 +100,6 @@
           </div>
           
           <div id="actoresContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <!-- Actor 1 (Por defecto) -->
             <div class="relative flex items-center">
               <input type="text" class="actor-input w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" placeholder="Actor Principal (Ej: Claudia Sheinbaum)" required>
             </div>
@@ -128,7 +126,6 @@
 
     <!-- Display de Resultados -->
     <section id="resultsSection" class="hidden space-y-6">
-      <!-- Opciones de Exportación / Botones de Descarga -->
       <div class="flex justify-end items-center gap-3">
         <button id="btnExportPDF" class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2 shadow-md">
           <i class="fa-solid fa-file-pdf"></i> Descargar PDF
@@ -138,9 +135,7 @@
         </button>
       </div>
 
-      <!-- Área Exportable -->
       <div id="exportableArea" class="space-y-6">
-        <!-- Resumen Ejecutivo Banner -->
         <div class="bg-gradient-to-r from-blue-900/40 to-slate-800 border border-blue-500/30 rounded-xl p-6 shadow-xl">
           <div class="flex items-center gap-3 mb-2">
             <i class="fa-solid fa-file-contract text-blue-400 text-lg"></i>
@@ -149,10 +144,7 @@
           <p id="resumenEjecutivoText" class="text-sm text-slate-300 leading-relaxed">Procesando datos...</p>
         </div>
 
-        <!-- Contenedores Dinámicos -->
-        <div id="outputContainer" class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 min-h-[300px]">
-          <!-- Aquí se inyectan dinámicamente las tarjetas, tablas o JSON -->
-        </div>
+        <div id="outputContainer" class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 min-h-[300px]"></div>
       </div>
     </section>
 
@@ -202,7 +194,6 @@
     radarForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Recopilar lista de actores ingresados
       const actorInputs = Array.from(document.querySelectorAll('.actor-input'))
                                .map(input => input.value.trim())
                                .filter(val => val !== '');
@@ -214,19 +205,19 @@
 
       const payload = {
         skill: document.getElementById('skill').value,
-        actores: actorInputs, // Envío como arreglo (1 a 4 actores)
+        actores: actorInputs,
+        actor: actorInputs[0] || '', // Retrocompatibilidad para backend
+        actor2: actorInputs[1] || '',
         mes: document.getElementById('mes').value,
         anio: document.getElementById('anio').value,
       };
 
-      // Limpiar interfaz
       resultsSection.classList.add('hidden');
       statusSection.classList.remove('hidden');
       btnAnalizar.disabled = true;
       btnAnalizar.classList.add('opacity-50', 'cursor-not-allowed');
 
       try {
-        // 1. Iniciar trabajo
         const response = await fetch('/api/analizar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -242,7 +233,6 @@
         const jobId = data.jobId;
         statusTitle.textContent = "Procesando en segundo plano...";
         
-        // 2. Hacer Polling continuo cada 3 segundos
         pollingInterval = setInterval(() => consultarEstado(jobId), 3000);
 
       } catch (err) {
@@ -288,14 +278,10 @@
       resultsSection.classList.remove('hidden');
       const data = result.data;
 
-      // Resumen ejecutivo
       resumenEjecutivoText.textContent = data.resumenEjecutivo || "Sin resumen ejecutivo.";
-
-      // Inyectar visualización según la Skill
       outputContainer.innerHTML = `<pre class="text-xs text-emerald-400 bg-slate-950 p-4 rounded-lg overflow-x-auto font-mono">${JSON.stringify(data, null, 2)}</pre>`;
     }
 
-    // Exportación a HTML Interactivo / Dinámico
     btnExportHTML.addEventListener('click', () => {
       const htmlContent = `<!DOCTYPE html>\n<html>\n${document.documentElement.innerHTML}\n</html>`;
       const blob = new Blob([htmlContent], { type: 'text/html' });
@@ -307,7 +293,6 @@
       URL.revokeObjectURL(url);
     });
 
-    // Exportación a PDF estático
     btnExportPDF.addEventListener('click', () => {
       const element = document.getElementById('exportableArea');
       const opt = {
