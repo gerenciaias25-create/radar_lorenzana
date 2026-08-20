@@ -1,436 +1,324 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RADAR INTELLIGENCE v2.1</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root {
-    --dark: #0f172a;
-    --card: #ffffff;
-    --border: #cbd5e1;
-    --text: #0f172a;
-    --muted: #64748b;
-    --ac: #00C2D4;
-    --hdrblue: #1C2738;
-    --btn-blue: #1e3a8a;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:var(--text);min-height:100vh;padding-bottom:40px}
-
-  .top-brand {
-    background: var(--hdrblue);
-    color: #00C2D4;
-    padding: 12px 32px;
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: 1.5px;
-  }
-
-  .app-viewport {
-    max-width: 1200px;
-    margin: 32px auto 0;
-    padding: 0 16px;
-  }
-
-  .search-container {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 32px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    border: 1px solid #e2e8f0;
-  }
-  .search-header-sub {
-    font-size: 11px;
-    font-weight: 800;
-    color: #1e3a8a;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-  }
-  .search-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 6px;
-  }
-  .search-title span { color: #1e3a8a; }
-  .search-desc {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 24px;
-  }
-
-  .filter-box {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .filter-select, .filter-input {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    color: #0f172a;
-    font-weight: 600;
-    outline: none;
-  }
-  .filter-input { flex: 1; min-width: 220px; }
-  .filter-input.hidden { display: none; }
-
-  .btn-analyze {
-    background: #1e3a8a;
-    color: #ffffff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-analyze:hover { background: #172554; }
-  .btn-analyze:disabled { opacity: .5; cursor: not-allowed; }
-
-  .hint-opositor {
-    display: none;
-    font-size: 12px;
-    color: #1e3a8a;
-    font-weight: 700;
-    margin-top: 10px;
-  }
-
-  .error-box {
-    display: none;
-    margin-top: 14px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .loading-view {
-    display: none;
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 60px 32px;
-    text-align: center;
-    border: 1px solid #e2e8f0;
-  }
-  .spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid #e2e8f0;
-    border-top: 4px solid #00C2D4;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-  }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  .loading-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
-  .loading-subtitle { font-size: 13px; color: var(--muted); }
-  .loading-steps { margin-top: 18px; font-size: 11px; color: #94a3b8; font-family: monospace; }
-
-  .dashboard-view { display: none; width: 100%; position: relative; }
-
-  .dashboard-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-
-  .btn-action {
-    background: #1C2738;
-    border: 1px solid #334155;
-    color: #ffffff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-  }
-  .btn-action:hover {
-    background: #00C2D4;
-    color: #0f172a;
-    border-color: #00C2D4;
-  }
-
-  #skillContainer {
-    background: transparent;
-    border-radius: 8px;
-  }
-
-  @media print {
-    .top-brand, .dashboard-toolbar, .search-container, .loading-view {
-      display: none !important;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RADAR - Inteligencia Político-Electoral</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Librería para conversión a PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .loader {
+      border-top-color: #3B82F6;
+      -webkit-animation: spinner 1.5s linear infinite;
+      animation: spinner 1.5s linear infinite;
     }
-    body { background: #fff !important; padding: 0 !important; }
-    .app-viewport { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
-    #skillContainer { border: none !important; }
-  }
-</style>
+    @-webkit-keyframes spinner {
+      0% { -webkit-transform: rotate(0deg); }
+      100% { -webkit-transform: rotate(360deg); }
+    }
+    @keyframes spinner {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
-<div class="top-brand">RADAR INTELLIGENCE v2.1</div>
-
-<div class="app-viewport">
-
-  <!-- VISTA 1: BÚSQUEDA -->
-  <div class="search-container" id="view1">
-    <div class="search-header-sub">Análisis Ejecutivo de Fuentes</div>
-    <div class="search-title">Módulo de <span>Inteligencia Político-Digital</span></div>
-    <p class="search-desc">Selecciona la Skill y ejecuta la consulta sobre el objetivo. Los datos se extraen en vivo (Apify) y se estructuran con IA (OpenRouter).</p>
-
-    <div class="filter-box">
-      <select id="skillSelect" class="filter-select" onchange="onSkillChange()">
-        <option value="" disabled selected>Selecciona una Skill...</option>
-        <option value="radar">Skill: RADAR Político</option>
-        <option value="emociones">Skill: Humor Social / Emociones</option>
-        <option value="tensiones">Skill: Tensiones</option>
-        <option value="opositor">Skill: Opositor (comparativo)</option>
-      </select>
-
-      <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
-
-      <input type="text" id="targetProfile2" class="filter-input hidden" placeholder="Nombre del segundo personaje (comparativo)...">
-
-      <select id="monthSelect" class="filter-select">
-        <option value="Enero">Enero</option>
-        <option value="Febrero">Febrero</option>
-        <option value="Marzo">Marzo</option>
-        <option value="Abril">Abril</option>
-        <option value="Mayo">Mayo</option>
-        <option value="Junio">Junio</option>
-        <option value="Julio">Julio</option>
-        <option value="Agosto" selected>Agosto</option>
-        <option value="Septiembre">Septiembre</option>
-        <option value="Octubre">Octubre</option>
-        <option value="Noviembre">Noviembre</option>
-        <option value="Diciembre">Diciembre</option>
-      </select>
-
-      <select id="yearSelect" class="filter-select">
-        <option value="2026" selected>2026</option>
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-        <option value="2023">2023</option>
-        <option value="2022">2022</option>
-        <option value="2021">2021</option>
-      </select>
-
-      <button type="button" class="btn-analyze" id="btnAnalyze" onclick="loadSelectedSkill()">Analizar</button>
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid me-2 fa-radar text-blue-500 text-2xl"></i>
+        <h1 class="text-xl font-bold tracking-wider text-white">RADAR <span class="text-xs px-2 py-0.5 rounded bg-blue-600/30 text-blue-400 font-mono">v2.0</span></h1>
+      </div>
+      <div class="text-xs text-slate-400 font-mono">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 me-1"></span> Sistema Operativo
+      </div>
     </div>
+  </header>
 
-    <div class="hint-opositor" id="hintOpositor">⚖️ La Skill Opositor requiere dos personajes para generar la comparativa.</div>
-    <div class="error-box" id="errorBox"></div>
-  </div>
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    
+    <!-- Panel de Control / Formulario -->
+    <section class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 shadow-xl backdrop-blur-sm">
+      <h2 class="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-sliders text-blue-400"></i> Parámetros de Análisis
+      </h2>
+      
+      <form id="radarForm" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Skill -->
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Módulo / Skill</label>
+            <select id="skill" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="radar">Radar Competitivo</option>
+              <option value="emociones">Mapa de Emociones</option>
+              <option value="tensiones">Matriz de Tensiones</option>
+              <option value="opositor">Expediente Opositor</option>
+            </select>
+          </div>
 
-  <!-- VISTA 2: LOADER -->
-  <div class="loading-view" id="view2">
-    <div class="spinner"></div>
-    <div class="loading-title">Cargando Inteligencia...</div>
-    <div class="loading-subtitle" id="loadingText">Procesando fuentes dinámicas de Apify y sintetizando con OpenRouter...</div>
-    <div class="loading-steps" id="loadingSteps"></div>
-  </div>
+          <!-- Mes -->
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Mes</label>
+            <select id="mes" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="Enero">Enero</option>
+              <option value="Febrero">Febrero</option>
+              <option value="Marzo">Marzo</option>
+              <option value="Abril">Abril</option>
+              <option value="Mayo">Mayo</option>
+              <option value="Junio">Junio</option>
+              <option value="Julio">Julio</option>
+              <option value="Agosto" selected>Agosto</option>
+              <option value="Septiembre">Septiembre</option>
+              <option value="Octubre">Octubre</option>
+              <option value="Noviembre">Noviembre</option>
+              <option value="Diciembre">Diciembre</option>
+            </select>
+          </div>
 
-  <!-- VISTA 3: DASHBOARD -->
-  <div class="dashboard-view" id="view3">
-    <div class="dashboard-toolbar">
-      <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte</button>
-      <button class="btn-action" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
-    </div>
+          <!-- Año -->
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Año</label>
+            <select id="anio" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="2026" selected>2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+        </div>
 
-    <div id="skillContainer"></div>
-  </div>
+        <!-- Selección Dinámica de Actores (1 a 4) -->
+        <div class="border-t border-slate-700/50 pt-4">
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-medium text-slate-400">Actores Políticos (1 a 4) *</label>
+            <button type="button" id="btnAddActor" class="text-xs bg-slate-700 hover:bg-slate-600 text-blue-400 px-2.5 py-1 rounded transition flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> Añadir Actor
+            </button>
+          </div>
+          
+          <div id="actoresContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- Actor 1 (Por defecto) -->
+            <div class="relative flex items-center">
+              <input type="text" class="actor-input w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" placeholder="Actor Principal (Ej: Claudia Sheinbaum)" required>
+            </div>
+          </div>
+        </div>
 
-</div>
+        <!-- Botón submit -->
+        <div class="flex justify-end pt-2">
+          <button type="submit" id="btnAnalizar" class="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
+            <i class="fa-solid fa-bolt"></i> Ejecutar Análisis Masivo
+          </button>
+        </div>
+      </form>
+    </section>
 
-<script>
-const SKILL_FILES = {
-  radar: 'skills/radar',
-  emociones: 'skills/emociones',
-  tensiones: 'skills/tensiones',
-  opositor: 'skills/opositor',
-};
+    <!-- Estado de Procesamiento / Loader -->
+    <section id="statusSection" class="hidden bg-slate-800/40 border border-slate-700 rounded-xl p-8 text-center space-y-4">
+      <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-700 h-12 w-12 mx-auto"></div>
+      <div class="space-y-1">
+        <h3 id="statusTitle" class="text-base font-semibold text-slate-200">Iniciando procesamiento...</h3>
+        <p id="statusProgreso" class="text-xs text-slate-400 font-mono">Enviando solicitud al servidor...</p>
+      </div>
+    </section>
 
-function onSkillChange() {
-  const skill = document.getElementById('skillSelect').value;
-  const isOpositor = skill === 'opositor';
-  document.getElementById('targetProfile2').classList.toggle('hidden', !isOpositor);
-  document.getElementById('hintOpositor').style.display = isOpositor ? 'block' : 'none';
-  document.getElementById('targetProfile').placeholder = isOpositor
-    ? 'Personaje A (oficialista/propio)...'
-    : 'Nombre del personaje político...';
-}
+    <!-- Display de Resultados -->
+    <section id="resultsSection" class="hidden space-y-6">
+      <!-- Opciones de Exportación / Botones de Descarga -->
+      <div class="flex justify-end items-center gap-3">
+        <button id="btnExportPDF" class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2 shadow-md">
+          <i class="fa-solid fa-file-pdf"></i> Descargar PDF
+        </button>
+        <button id="btnExportHTML" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2 shadow-md">
+          <i class="fa-solid fa-code"></i> Descargar HTML Dinámico
+        </button>
+      </div>
 
-function showError(msg) {
-  const box = document.getElementById('errorBox');
-  box.textContent = msg;
-  box.style.display = 'block';
-  console.error('[RADAR Error]', msg);
-}
+      <!-- Área Exportable -->
+      <div id="exportableArea" class="space-y-6">
+        <!-- Resumen Ejecutivo Banner -->
+        <div class="bg-gradient-to-r from-blue-900/40 to-slate-800 border border-blue-500/30 rounded-xl p-6 shadow-xl">
+          <div class="flex items-center gap-3 mb-2">
+            <i class="fa-solid fa-file-contract text-blue-400 text-lg"></i>
+            <h2 class="text-lg font-bold text-white">Resumen Ejecutivo</h2>
+          </div>
+          <p id="resumenEjecutivoText" class="text-sm text-slate-300 leading-relaxed">Procesando datos...</p>
+        </div>
 
-function hideError() {
-  document.getElementById('errorBox').style.display = 'none';
-}
+        <!-- Contenedores Dinámicos -->
+        <div id="outputContainer" class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 min-h-[300px]">
+          <!-- Aquí se inyectan dinámicamente las tarjetas, tablas o JSON -->
+        </div>
+      </div>
+    </section>
 
-async function loadSelectedSkill() {
-  hideError();
-  const skill = document.getElementById('skillSelect').value;
-  const actor = document.getElementById('targetProfile').value.trim();
-  const actor2 = document.getElementById('targetProfile2').value.trim();
-  const mes = document.getElementById('monthSelect').value;
-  const anio = document.getElementById('yearSelect').value;
+  </main>
 
-  if (!skill) return showError('Por favor selecciona una Skill.');
-  if (!actor) return showError('Por favor ingresa el nombre del personaje.');
-  if (skill === 'opositor' && !actor2) return showError('La Skill Opositor requiere el segundo personaje.');
+  <script>
+    const radarForm = document.getElementById('radarForm');
+    const btnAnalizar = document.getElementById('btnAnalizar');
+    const statusSection = document.getElementById('statusSection');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusProgreso = document.getElementById('statusProgreso');
+    const resultsSection = document.getElementById('resultsSection');
+    const resumenEjecutivoText = document.getElementById('resumenEjecutivoText');
+    const outputContainer = document.getElementById('outputContainer');
+    
+    const actoresContainer = document.getElementById('actoresContainer');
+    const btnAddActor = document.getElementById('btnAddActor');
+    const btnExportPDF = document.getElementById('btnExportPDF');
+    const btnExportHTML = document.getElementById('btnExportHTML');
 
-  const skillPath = SKILL_FILES[skill];
-  if (!skillPath) return showError('Skill no reconocida.');
+    let pollingInterval = null;
 
-  // Verificar que Chart.js esté cargado
-  if (typeof Chart === 'undefined') {
-    return showError('Error: Chart.js no está cargado. Recarga la página.');
-  }
+    // Manejo de adición de actores (Máximo 4)
+    btnAddActor.addEventListener('click', () => {
+      const currentActores = actoresContainer.querySelectorAll('.actor-input').length;
+      if (currentActores >= 4) {
+        alert('Se permite un máximo de 4 actores comparativos.');
+        return;
+      }
 
-  document.getElementById('view1').style.display = 'none';
-  document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`;
-  document.getElementById('loadingSteps').textContent = 'Iniciando análisis...';
+      const div = document.createElement('div');
+      div.className = 'relative flex items-center gap-2';
+      div.innerHTML = `
+        <input type="text" class="actor-input w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" placeholder="Actor ${currentActores + 1} (Opcional)">
+        <button type="button" class="btnRemoveActor text-slate-400 hover:text-red-400 p-2 text-sm transition">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      `;
 
-  try {
-    // Lee la respuesta como texto primero: si el proxy de Hostinger corta la
-    // petición (504) o hay un error 404/500, la respuesta puede venir en HTML
-    // en vez de JSON. Parsear eso directo con .json() revienta con
-    // "Unexpected token '<'". Con este helper mostramos un mensaje claro.
-    async function parseJsonSeguro(resp) {
-      const raw = await resp.text();
+      actoresContainer.appendChild(div);
+
+      div.querySelector('.btnRemoveActor').addEventListener('click', () => {
+        div.remove();
+      });
+    });
+
+    radarForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Recopilar lista de actores ingresados
+      const actorInputs = Array.from(document.querySelectorAll('.actor-input'))
+                               .map(input => input.value.trim())
+                               .filter(val => val !== '');
+
+      if (actorInputs.length === 0) {
+        alert('Debe ingresar al menos un actor.');
+        return;
+      }
+
+      const payload = {
+        skill: document.getElementById('skill').value,
+        actores: actorInputs, // Envío como arreglo (1 a 4 actores)
+        mes: document.getElementById('mes').value,
+        anio: document.getElementById('anio').value,
+      };
+
+      // Limpiar interfaz
+      resultsSection.classList.add('hidden');
+      statusSection.classList.remove('hidden');
+      btnAnalizar.disabled = true;
+      btnAnalizar.classList.add('opacity-50', 'cursor-not-allowed');
+
       try {
-        return JSON.parse(raw);
+        // 1. Iniciar trabajo
+        const response = await fetch('/api/analizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Error al iniciar análisis.');
+        }
+
+        const jobId = data.jobId;
+        statusTitle.textContent = "Procesando en segundo plano...";
+        
+        // 2. Hacer Polling continuo cada 3 segundos
+        pollingInterval = setInterval(() => consultarEstado(jobId), 3000);
+
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+        statusSection.classList.add('hidden');
+        btnAnalizar.disabled = false;
+        btnAnalizar.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    });
+
+    async function consultarEstado(jobId) {
+      try {
+        const res = await fetch(`/api/estado/${jobId}`);
+        const job = await res.json();
+
+        if (!res.ok) {
+          clearInterval(pollingInterval);
+          throw new Error(job.error || 'Job expirado o no encontrado.');
+        }
+
+        if (job.status === 'processing') {
+          statusProgreso.textContent = job.progreso || 'Procesando fuentes en vivo...';
+        } else if (job.status === 'done') {
+          clearInterval(pollingInterval);
+          statusSection.classList.add('hidden');
+          btnAnalizar.disabled = false;
+          btnAnalizar.classList.remove('opacity-50', 'cursor-not-allowed');
+          
+          mostrarResultados(job.result);
+        } else if (job.status === 'error') {
+          clearInterval(pollingInterval);
+          statusSection.classList.add('hidden');
+          btnAnalizar.disabled = false;
+          btnAnalizar.classList.remove('opacity-50', 'cursor-not-allowed');
+          alert(`Ocurrió un error: ${job.detail || job.error}`);
+        }
       } catch (e) {
-        throw new Error(`El servidor respondió algo inesperado (HTTP ${resp.status}). Puede ser un timeout del hosting o que la ruta no existe.`);
+        console.error("Error al consultar el job:", e);
       }
     }
 
-    // 1. Iniciar el análisis. Este endpoint responde casi de inmediato con un
-    //    jobId; el trabajo pesado (Apify + OpenRouter) corre en segundo plano
-    //    en el servidor para evitar el 504 Gateway Timeout del proxy.
-    const startResp = await fetch('/api/analizar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ skill, actor, actor2, mes, anio }),
-    });
-    const startJson = await parseJsonSeguro(startResp);
-    if (!startResp.ok) {
-      throw new Error(startJson.error || startJson.detail || 'Error al iniciar el análisis en el servidor.');
-    }
-    const jobId = startJson.jobId;
-    if (!jobId) throw new Error('El servidor no devolvió un identificador de trabajo (jobId).');
+    function mostrarResultados(result) {
+      resultsSection.classList.remove('hidden');
+      const data = result.data;
 
-    // 2. Consultar el estado hasta que el job termine (polling cada 2s, máx 5 min)
-    document.getElementById('loadingSteps').textContent = '[1/3] Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...';
-    const maxIntentos = 150; // 150 x 2s = 5 minutos
-    let apiJson = null;
-    for (let intento = 0; intento < maxIntentos; intento++) {
-      await new Promise(r => setTimeout(r, 2000));
-      const estadoResp = await fetch(`/api/estado/${jobId}`, { cache: 'no-store' });
-      const estadoJson = await parseJsonSeguro(estadoResp);
-      if (!estadoResp.ok) throw new Error(estadoJson.error || 'El trabajo expiró o no se encontró.');
+      // Resumen ejecutivo
+      resumenEjecutivoText.textContent = data.resumenEjecutivo || "Sin resumen ejecutivo.";
 
-      if (estadoJson.progreso) document.getElementById('loadingSteps').textContent = estadoJson.progreso;
-
-      if (estadoJson.status === 'error') {
-        throw new Error(estadoJson.error || estadoJson.detail || 'Error procesando el análisis.');
-      }
-      if (estadoJson.status === 'done') {
-        apiJson = estadoJson.result;
-        break;
-      }
-    }
-    if (!apiJson) throw new Error('El análisis está tardando demasiado. Intenta de nuevo en unos minutos.');
-
-    if (!apiJson.data || typeof apiJson.data !== 'object') {
-      throw new Error('El servidor no devolvió datos estructurados (apiJson.data está vacío o es inválido).');
+      // Inyectar visualización según la Skill
+      outputContainer.innerHTML = `<pre class="text-xs text-emerald-400 bg-slate-950 p-4 rounded-lg overflow-x-auto font-mono">${JSON.stringify(data, null, 2)}</pre>`;
     }
 
-    console.log('[RADAR] Datos recibidos del backend:', apiJson);
-    document.getElementById('loadingSteps').textContent = '[2/3] Cargando plantilla visual...';
-
-    // 3. Cargar la plantilla HTML correspondiente (solo marcado, sin <script>)
-    const htmlResp = await fetch(`${skillPath}.html`, { cache: 'no-store' });
-    if (!htmlResp.ok) throw new Error(`No se pudo cargar la plantilla: ${skillPath}.html (HTTP ${htmlResp.status})`);
-    const htmlContent = await htmlResp.text();
-
-    document.getElementById('loadingSteps').textContent = '[3/3] Inyectando datos y renderizando gráficas...';
-
-    // 4. Mostrar vista del dashboard
-    document.getElementById('view2').style.display = 'none';
-    document.getElementById('view3').style.display = 'block';
-
-    const container = document.getElementById('skillContainer');
-    container.innerHTML = '';
-
-    // 5. Inyectar datos globales ANTES de insertar el HTML de la skill
-    window.DATA = apiJson.data;
-    window.DATA_META = {
-      actor,
-      actor2: actor2 || null,
-      mes,
-      anio,
-      fuentesEncontradas: apiJson.fuentesEncontradas
-    };
-
-    // 6. Insertar HTML de la skill (sin lógica, solo markup/estilos)
-    container.innerHTML = htmlContent;
-
-    // 7. Cargar y ejecutar la lógica como un <script src> real.
-    //    Un <script src> siempre se ejecuta al insertarse en el DOM,
-    //    a diferencia de un <script> inline reinyectado, que puede ser
-    //    bloqueado por CSP o corrompido por minificadores de HTML del hosting.
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = `${skillPath}.js?v=${Date.now()}`; // cache-busting
-      s.onload = resolve;
-      s.onerror = () => reject(new Error(`No se pudo cargar la lógica: ${skillPath}.js`));
-      container.appendChild(s);
+    // Exportación a HTML Interactivo / Dinámico
+    btnExportHTML.addEventListener('click', () => {
+      const htmlContent = `<!DOCTYPE html>\n<html>\n${document.documentElement.innerHTML}\n</html>`;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `RADAR_Dashboard_${new Date().toISOString().slice(0,10)}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
     });
 
-    console.log('[RADAR] Skill renderizada correctamente:', skill);
-
-  } catch (err) {
-    console.error('[RADAR] Error en loadSelectedSkill:', err);
-    showError(err.message || 'Ocurrió un error inesperado');
-    resetToSearch();
-  }
-}
-
-function downloadReport() { window.print(); }
-
-function resetToSearch() {
-  document.getElementById('view3').style.display = 'none';
-  document.getElementById('view2').style.display = 'none';
-  document.getElementById('view1').style.display = 'block';
-  document.getElementById('skillContainer').innerHTML = '';
-  window.DATA = null;
-  window.DATA_META = null;
-}
-</script>
+    // Exportación a PDF estático
+    btnExportPDF.addEventListener('click', () => {
+      const element = document.getElementById('exportableArea');
+      const opt = {
+        margin:       0.5,
+        filename:     `RADAR_Informe_${new Date().toISOString().slice(0,10)}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, backgroundColor: '#0f172a' },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    });
+  </script>
 </body>
 </html>
