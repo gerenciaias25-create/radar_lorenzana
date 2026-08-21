@@ -203,15 +203,13 @@
         <option value="radar">Skill: RADAR Político</option>
         <option value="emociones">Skill: Humor Social / Emociones</option>
         <option value="tensiones">Skill: Tensiones</option>
-        <option value="opositor">Skill: Opositor (comparativo 2 actores)</option>
-        <option value="comparativo">Skill: Radar Comparativo (2 a 6 actores)</option>
+        <option value="opositor">Skill: Opositor (comparativo)</option>
+        <option value="comparativo">Skill: Comparativo (bivariado 2 actores)</option>
       </select>
 
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
 
       <input type="text" id="targetProfile2" class="filter-input hidden" placeholder="Nombre del segundo personaje (comparativo)...">
-
-      <input type="text" id="targetProfileMulti" class="filter-input hidden" placeholder="Resto de actores, separados por coma (ej. Actor 2, Actor 3, Actor 4)...">
 
       <select id="monthSelect" class="filter-select">
         <option value="Enero">Enero</option>
@@ -241,7 +239,7 @@
     </div>
 
     <div class="hint-opositor" id="hintOpositor">⚖️ La Skill Opositor requiere dos personajes para generar la comparativa.</div>
-    <div class="hint-opositor" id="hintComparativo">📊 La Skill Radar Comparativo requiere entre 2 y 6 personajes: el primero en el campo principal, el resto separados por coma.</div>
+    <div class="hint-opositor" id="hintComparativo">📊 La Skill Comparativo requiere dos personajes para generar el análisis bivariado.</div>
     <div class="error-box" id="errorBox"></div>
   </div>
 
@@ -274,19 +272,26 @@ const SKILL_FILES = {
   comparativo: 'skills/comparativo',
 };
 
+// Skills que necesitan un segundo personaje para generar la comparativa.
+const SKILLS_DOS_ACTORES = ['opositor', 'comparativo'];
+
 function onSkillChange() {
   const skill = document.getElementById('skillSelect').value;
-  const isOpositor = skill === 'opositor';
-  const isComparativo = skill === 'comparativo';
-  document.getElementById('targetProfile2').classList.toggle('hidden', !isOpositor);
-  document.getElementById('targetProfileMulti').classList.toggle('hidden', !isComparativo);
-  document.getElementById('hintOpositor').style.display = isOpositor ? 'block' : 'none';
-  document.getElementById('hintComparativo').style.display = isComparativo ? 'block' : 'none';
-  document.getElementById('targetProfile').placeholder = isOpositor
-    ? 'Personaje A (oficialista/propio)...'
-    : isComparativo
-    ? 'Actor 1...'
-    : 'Nombre del personaje político...';
+  const requiereDosActores = SKILLS_DOS_ACTORES.includes(skill);
+
+  document.getElementById('targetProfile2').classList.toggle('hidden', !requiereDosActores);
+  document.getElementById('hintOpositor').style.display = (skill === 'opositor') ? 'block' : 'none';
+  document.getElementById('hintComparativo').style.display = (skill === 'comparativo') ? 'block' : 'none';
+
+  if (skill === 'opositor') {
+    document.getElementById('targetProfile').placeholder = 'Personaje A (oficialista/propio)...';
+    document.getElementById('targetProfile2').placeholder = 'Nombre del segundo personaje (comparativo)...';
+  } else if (skill === 'comparativo') {
+    document.getElementById('targetProfile').placeholder = 'Primer personaje a comparar...';
+    document.getElementById('targetProfile2').placeholder = 'Segundo personaje a comparar...';
+  } else {
+    document.getElementById('targetProfile').placeholder = 'Nombre del personaje político...';
+  }
 }
 
 function showError(msg) {
@@ -305,20 +310,13 @@ async function loadSelectedSkill() {
   const skill = document.getElementById('skillSelect').value;
   const actor = document.getElementById('targetProfile').value.trim();
   const actor2 = document.getElementById('targetProfile2').value.trim();
-  const actoresMultiRaw = document.getElementById('targetProfileMulti').value.trim();
   const mes = document.getElementById('monthSelect').value;
   const anio = document.getElementById('yearSelect').value;
 
   if (!skill) return showError('Por favor selecciona una Skill.');
   if (!actor) return showError('Por favor ingresa el nombre del personaje.');
-  if (skill === 'opositor' && !actor2) return showError('La Skill Opositor requiere el segundo personaje.');
-
-  let actores = null;
-  if (skill === 'comparativo') {
-    const resto = actoresMultiRaw ? actoresMultiRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
-    actores = [actor, ...resto];
-    if (actores.length < 2) return showError('La Skill Radar Comparativo requiere al menos 2 actores.');
-    if (actores.length > 6) return showError('La Skill Radar Comparativo admite máximo 6 actores.');
+  if (SKILLS_DOS_ACTORES.includes(skill) && !actor2) {
+    return showError(`La Skill ${skill === 'comparativo' ? 'Comparativo' : 'Opositor'} requiere el segundo personaje.`);
   }
 
   const skillPath = SKILL_FILES[skill];
@@ -331,9 +329,7 @@ async function loadSelectedSkill() {
 
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = actores
-    ? `Analizando a ${actores.join(' vs. ')}...`
-    : `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`;
+  document.getElementById('loadingText').textContent = `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`;
   document.getElementById('loadingSteps').textContent = 'Iniciando análisis...';
 
   try {
@@ -356,7 +352,7 @@ async function loadSelectedSkill() {
     const startResp = await fetch('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ skill, actor, actor2, actores, mes, anio }),
+      body: JSON.stringify({ skill, actor, actor2, mes, anio }),
     });
     const startJson = await parseJsonSeguro(startResp);
     if (!startResp.ok) {
@@ -413,7 +409,6 @@ async function loadSelectedSkill() {
     window.DATA_META = {
       actor,
       actor2: actor2 || null,
-      actores: actores || null,
       mes,
       anio,
       fuentesEncontradas: apiJson.fuentesEncontradas
