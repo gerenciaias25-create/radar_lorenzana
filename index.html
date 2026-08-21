@@ -204,12 +204,14 @@
         <option value="emociones">Skill: Humor Social / Emociones</option>
         <option value="tensiones">Skill: Tensiones</option>
         <option value="opositor">Skill: Opositor (comparativo)</option>
-        <option value="comparativo">Skill: Comparativo (bivariado 2 actores)</option>
+        <option value="comparativo">Skill: Comparativo (2 a 6 actores)</option>
       </select>
 
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
 
       <input type="text" id="targetProfile2" class="filter-input hidden" placeholder="Nombre del segundo personaje (comparativo)...">
+
+      <input type="text" id="targetProfileExtra" class="filter-input hidden" placeholder="Actores adicionales (opcional, separados por coma) — hasta 4 más">
 
       <select id="monthSelect" class="filter-select">
         <option value="Enero">Enero</option>
@@ -239,7 +241,7 @@
     </div>
 
     <div class="hint-opositor" id="hintOpositor">⚖️ La Skill Opositor requiere dos personajes para generar la comparativa.</div>
-    <div class="hint-opositor" id="hintComparativo">📊 La Skill Comparativo requiere dos personajes para generar el análisis bivariado.</div>
+    <div class="hint-opositor" id="hintComparativo">📊 La Skill Comparativo requiere al menos dos personajes (hasta 6 en total) para generar el análisis bivariado.</div>
     <div class="error-box" id="errorBox"></div>
   </div>
 
@@ -274,19 +276,26 @@ const SKILL_FILES = {
 
 // Skills que necesitan un segundo personaje para generar la comparativa.
 const SKILLS_DOS_ACTORES = ['opositor', 'comparativo'];
+// Máximo de actores adicionales (más allá de actor + actor2) permitidos
+// SOLO en "comparativo" -- da un total de hasta 6 actores.
+const MAX_ACTORES_EXTRA = 4;
 
 function onSkillChange() {
   const skill = document.getElementById('skillSelect').value;
   const requiereDosActores = SKILLS_DOS_ACTORES.includes(skill);
+  const esComparativo = skill === 'comparativo';
 
   document.getElementById('targetProfile2').classList.toggle('hidden', !requiereDosActores);
+  document.getElementById('targetProfileExtra').classList.toggle('hidden', !esComparativo);
+  if (!esComparativo) document.getElementById('targetProfileExtra').value = '';
+
   document.getElementById('hintOpositor').style.display = (skill === 'opositor') ? 'block' : 'none';
-  document.getElementById('hintComparativo').style.display = (skill === 'comparativo') ? 'block' : 'none';
+  document.getElementById('hintComparativo').style.display = esComparativo ? 'block' : 'none';
 
   if (skill === 'opositor') {
     document.getElementById('targetProfile').placeholder = 'Personaje A (oficialista/propio)...';
     document.getElementById('targetProfile2').placeholder = 'Nombre del segundo personaje (comparativo)...';
-  } else if (skill === 'comparativo') {
+  } else if (esComparativo) {
     document.getElementById('targetProfile').placeholder = 'Primer personaje a comparar...';
     document.getElementById('targetProfile2').placeholder = 'Segundo personaje a comparar...';
   } else {
@@ -313,6 +322,19 @@ async function loadSelectedSkill() {
   const mes = document.getElementById('monthSelect').value;
   const anio = document.getElementById('yearSelect').value;
 
+  // Actores 3-6: solo aplica a "comparativo", separados por coma en un solo campo.
+  let actoresExtra = [];
+  if (skill === 'comparativo') {
+    const raw = document.getElementById('targetProfileExtra').value.trim();
+    actoresExtra = raw
+      ? raw.split(',').map(n => n.trim()).filter(Boolean)
+      : [];
+    if (actoresExtra.length > MAX_ACTORES_EXTRA) {
+      return showError(`Comparativo admite un máximo de 6 actores en total (2 + ${MAX_ACTORES_EXTRA} adicionales). Quita ${actoresExtra.length - MAX_ACTORES_EXTRA} nombre(s).`);
+    }
+  }
+  const [actor3 = '', actor4 = '', actor5 = '', actor6 = ''] = actoresExtra;
+
   if (!skill) return showError('Por favor selecciona una Skill.');
   if (!actor) return showError('Por favor ingresa el nombre del personaje.');
   if (SKILLS_DOS_ACTORES.includes(skill) && !actor2) {
@@ -327,9 +349,10 @@ async function loadSelectedSkill() {
     return showError('Error: Chart.js no está cargado. Recarga la página.');
   }
 
+  const todosLosActores = [actor, actor2, ...actoresExtra].filter(Boolean);
   document.getElementById('view1').style.display = 'none';
   document.getElementById('view2').style.display = 'block';
-  document.getElementById('loadingText').textContent = `Analizando a ${actor}${actor2 ? ' vs. ' + actor2 : ''}...`;
+  document.getElementById('loadingText').textContent = `Analizando a ${todosLosActores.join(' vs. ')}...`;
   document.getElementById('loadingSteps').textContent = 'Iniciando análisis...';
 
   try {
@@ -352,7 +375,7 @@ async function loadSelectedSkill() {
     const startResp = await fetch('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ skill, actor, actor2, mes, anio }),
+      body: JSON.stringify({ skill, actor, actor2, actor3, actor4, actor5, actor6, mes, anio }),
     });
     const startJson = await parseJsonSeguro(startResp);
     if (!startResp.ok) {
@@ -409,6 +432,10 @@ async function loadSelectedSkill() {
     window.DATA_META = {
       actor,
       actor2: actor2 || null,
+      actor3: actor3 || null,
+      actor4: actor4 || null,
+      actor5: actor5 || null,
+      actor6: actor6 || null,
       mes,
       anio,
       fuentesEncontradas: apiJson.fuentesEncontradas
