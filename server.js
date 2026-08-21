@@ -223,6 +223,11 @@ function normalizeResponse(data, skill, ctx = {}) {
   if (!data || typeof data !== 'object') data = {};
   const actorName = ctx.actorName || 'Actor A';
   const actor2Name = ctx.actor2Name || 'Actor B';
+  // Para "comparativo" puede haber de 2 a 6 actores; si ctx.actoresNombres
+  // viene poblado (desde procesarAnalisis) se usa esa lista completa.
+  const actoresNombresCtx = (ctx.actoresNombres && ctx.actoresNombres.length)
+    ? ctx.actoresNombres
+    : [actorName, actor2Name].filter(Boolean);
 
   const ensureArray = (obj, key, defaultVal = []) => {
     if (!obj[key]) obj[key] = defaultVal;
@@ -336,16 +341,21 @@ function normalizeResponse(data, skill, ctx = {}) {
   }
 
   // COMPARATIVO
-  // Este skill compara SIEMPRE 2 actores (usa actorName/actor2Name recibidos
-  // del request). Varios campos del frontend (comparativo.js) usan como
-  // LLAVE el nombre exacto del actor en objetos dinámicos (sentimientoGeneral,
-  // traSerie.series, picosSerie.series, plataformasRadar.data). Si el modelo
-  // devuelve una llave distinta al nombre real (typo, abreviación, etc.) el
-  // frontend no la encuentra y renderiza vacío -- por eso aquí se RE-MAPEAN
-  // esas llaves a los nombres reales en vez de solo confiar en el prompt.
+  // Este skill compara de 2 a 6 actores (usa ctx.actoresNombres, con
+  // [actorName, actor2Name] como respaldo si no viene poblado). Varios campos
+  // del frontend (comparativo.js) usan como LLAVE el nombre exacto del actor
+  // en objetos dinámicos (sentimientoGeneral, traSerie.series,
+  // picosSerie.series, plataformasRadar.data). Si el modelo devuelve una
+  // llave distinta al nombre real (typo, abreviación, etc.) el frontend no
+  // la encuentra y renderiza vacío -- por eso aquí se RE-MAPEAN esas llaves
+  // a los nombres reales en vez de solo confiar en el prompt.
   if (skill === 'comparativo') {
-    const nombreEsperados = [actorName, actor2Name];
+    const nombreEsperados = actoresNombresCtx;
     const zeros4 = () => [0, 0, 0, 0];
+    // Colores ya usados en las variables CSS de comparativo.html (--teal,
+    // --red, --orange, --green, --amber, --blue2), para que el color de cada
+    // actor siempre coincida con la paleta visual del propio skill.
+    const PALETA_ACTORES = ['#00A8B5', '#C0392B', '#D35400', '#1E8449', '#C49A00', '#1B4F8A'];
 
     // Re-mapea un objeto con llaves dinámicas de actor a los nombres reales,
     // por posición, si las llaves que mandó el modelo no calzan exactamente.
@@ -361,20 +371,28 @@ function normalizeResponse(data, skill, ctx = {}) {
       return out;
     };
 
-    ensureArray(data, 'actores', nombreEsperados.map((n, i) => ({ nombre: n, color: ['#00A8B5', '#C0392B', '#D35400', '#1E8449'][i % 4] })));
-    // Asegura que "actores" tenga nombre real aunque el modelo mande otra cosa.
+    ensureArray(data, 'actores', nombreEsperados.map((n, i) => ({ nombre: n, color: PALETA_ACTORES[i % PALETA_ACTORES.length] })));
+    // Asegura que "actores" tenga nombre real aunque el modelo mande otra cosa,
+    // y que el número de actores coincida EXACTAMENTE con los solicitados
+    // (si el modelo devuelve de más o de menos, se recorta o se completa).
     data.actores = nombreEsperados.map((n, i) => ({
       nombre: n,
-      color: (data.actores[i] && data.actores[i].color) || ['#00A8B5', '#C0392B', '#D35400', '#1E8449'][i % 4],
+      color: (data.actores[i] && data.actores[i].color) || PALETA_ACTORES[i % PALETA_ACTORES.length],
     }));
 
     ensureObject(data, 'alertaPrincipal', { actor: actorName, nivel: 'MEDIO', label: 'Sin alerta específica detectada.' });
     ensureObject(data, 'periodo', { corte: '', rango: '' });
     if (!data.resumenKpis) data.resumenKpis = '';
     ensureArray(data, 'kpiCards', []);
-    ensureArray(data, 'npsPorActor', [0, 0]);
+    ensureArray(data, 'npsPorActor', nombreEsperados.map(() => 0));
+    if (data.npsPorActor.length !== nombreEsperados.length) {
+      data.npsPorActor = nombreEsperados.map((_, i) => data.npsPorActor[i] ?? 0);
+    }
     if (!data.npsNote) data.npsNote = '';
-    ensureArray(data, 'ratioPorActor', [0, 0]);
+    ensureArray(data, 'ratioPorActor', nombreEsperados.map(() => 0));
+    if (data.ratioPorActor.length !== nombreEsperados.length) {
+      data.ratioPorActor = nombreEsperados.map((_, i) => data.ratioPorActor[i] ?? 0);
+    }
     if (!data.ratioNote) data.ratioNote = '';
 
     ensureObject(data, 'traSerie', { labels: [], series: {} });
@@ -811,8 +829,12 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
   const listaComparativo = (actoresNombres?.length ? actoresNombres : [actorName, actor2Name].filter(Boolean));
   const nombresComillas = listaComparativo.map(n => `"${n}"`).join(', ');
   const ejemploLlaves = listaComparativo.map(n => `"${n}": [...]`).join(', ');
+  const reglaEscalado = listaComparativo.length > 2
+    ? `\n- CONTROL DE LONGITUD (IMPORTANTE, hay ${listaComparativo.length} actores): como el JSON crece con cada actor adicional y hay un límite duro de tokens de salida, sé más CONCISO por actor que si solo hubiera 2: usa párrafos de 40-70 palabras (no 60-120) en "text"/"bivariado"/similares dentro de este skill, y para "narrativas" es suficiente 1 favorable + 1 crítica + 1 ambivalente por actor (no 2 de cada una). Prioriza que el JSON quede COMPLETO y válido para los ${listaComparativo.length} actores por encima de la extensión de cada texto individual.`
+    : '';
+
   const guardarropaComparativo = skill === 'comparativo'
-    ? `\nReglas adicionales OBLIGATORIAS para este comparativo de ${listaComparativo.length} actores:\n- Los actores a comparar son EXACTAMENTE (en este orden): ${nombresComillas}. Usa estos nombres tal cual, sin abreviar ni traducir, en TODOS los campos donde se requiera el nombre de un actor.\n- El array "actores" del JSON debe tener EXACTAMENTE ${listaComparativo.length} elementos, uno por cada nombre listado arriba, en el mismo orden.\n- Sé BALANCEADO: dedica volumen y profundidad comparable a TODOS los actores en cada sección (KPIs, sentimiento, narrativas, riesgos) — no conviertas esto en un perfil de un solo actor con menciones ocasionales del resto.`
+    ? `\nReglas adicionales OBLIGATORIAS para este comparativo de ${listaComparativo.length} actores:\n- Los actores a comparar son EXACTAMENTE (en este orden): ${nombresComillas}. Usa estos nombres tal cual, sin abreviar ni traducir, en TODOS los campos donde se requiera el nombre de un actor.\n- El array "actores" del JSON debe tener EXACTAMENTE ${listaComparativo.length} elementos, uno por cada nombre listado arriba, en el mismo orden.\n- Sé BALANCEADO: dedica volumen y profundidad comparable a TODOS los actores en cada sección (KPIs, sentimiento, narrativas, riesgos) — no conviertas esto en un perfil de un solo actor con menciones ocasionales del resto.${reglaEscalado}`
     : '';
 
   const instruccionesEstructura = skill === 'emociones'
@@ -908,7 +930,7 @@ REQUISITOS MÍNIMOS DE CANTIDAD (OPOSITOR) — no entregues menos de esto:
   comparativo: `
 REQUISITOS MÍNIMOS DE CANTIDAD (COMPARATIVO) — no entregues menos de esto:
 - kpiCards: mínimo 4 tarjetas KPI.
-- npsPorActor y ratioPorActor: exactamente 2 números (uno por actor, en el mismo orden que "actores").
+- npsPorActor y ratioPorActor: un número por cada actor comparado, en el mismo orden que "actores" (ni más ni menos números que actores haya).
 - traSerie.labels: mínimo 5 puntos temporales; cada serie en "traSerie.series" debe tener el mismo número de valores.
 - sentimientoCruces (edad/genero/partido): cada uno con datos completos para AMBOS actores en TODOS los segmentos declarados — no dejes segmentos en [0,0,0,0] si el actor tiene cobertura en las fuentes.
 - topOfMindTabla: mínimo 6 temas distintos.
@@ -917,9 +939,9 @@ REQUISITOS MÍNIMOS DE CANTIDAD (COMPARATIVO) — no entregues menos de esto:
 - plataformasNotas: mínimo 3, una por cada plataforma más relevante.
 - nubePalabras: mínimo 12 palabras/términos con pesos variados (no todos el mismo "weight").
 - hashtags: mínimo 6 hashtags distintos.
-- narrativas: mínimo 2 favorables + 2 críticas + 2 ambivalentes por CADA actor (mínimo 12 en total), no solo de uno de los dos.
+- narrativas: mínimo 2 favorables + 2 críticas + 2 ambivalentes por CADA actor comparado (el total escala con el número de actores), nunca concentradas solo en uno o dos de ellos.
 - riesgos: mínimo 4. oportunidades: mínimo 3.
-- alertaTabla: exactamente 2 filas (una por actor).
+- alertaTabla: exactamente una fila por cada actor comparado (ni más ni menos).
 - territorialTabla: mínimo 5 regiones/municipios.
 - resumenKpis: mínimo 100 palabras comparando explícitamente a ambos actores.`,
 };
