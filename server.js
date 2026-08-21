@@ -44,18 +44,32 @@ app.post('/api/analizar', (req, res) => {
     skill = 'radar',
     actor = '',
     actor2 = '',
+    actor3 = '',
+    actor4 = '',
+    actor5 = '',
+    actor6 = '',
     mes = 'Agosto',
     anio = '2026',
   } = params;
 
   const actorName = String(actor).trim();
   const actor2Name = String(actor2 || '').trim();
+  // Actores 3-6 son EXCLUSIVOS de "comparativo" (hasta 6 en total). Para el
+  // resto de skills se ignoran aunque lleguen en el body.
+  const extraActores = skill === 'comparativo'
+    ? [actor3, actor4, actor5, actor6].map(a => String(a || '').trim()).filter(Boolean)
+    : [];
+  // Lista completa sin duplicados vacíos, en el orden en que se capturaron.
+  const actoresNombres = [actorName, actor2Name, ...extraActores].filter(Boolean);
 
   if (!actorName) {
     return res.status(400).json({ error: 'El parámetro "actor" es requerido.' });
   }
   if ((skill === 'opositor' || skill === 'comparativo') && !actor2Name) {
     return res.status(400).json({ error: `La skill "${skill}" requiere un segundo actor ("actor2").` });
+  }
+  if (skill === 'comparativo' && actoresNombres.length > 6) {
+    return res.status(400).json({ error: 'La skill "comparativo" admite un máximo de 6 actores.' });
   }
 
   const APIFY_TOKEN = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
@@ -70,7 +84,7 @@ app.post('/api/analizar', (req, res) => {
 
   // Se procesa en segundo plano; NO se espera (no "await") para
   // poder responder al cliente de inmediato.
-  procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio, APIFY_TOKEN, OPENROUTER_KEY });
+  procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, APIFY_TOKEN, OPENROUTER_KEY });
 
   return res.status(202).json({ jobId });
 });
@@ -84,27 +98,43 @@ app.get('/api/estado/:jobId', (req, res) => {
   return res.status(200).json(job);
 });
 
-async function procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio, APIFY_TOKEN, OPENROUTER_KEY }) {
+async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, APIFY_TOKEN, OPENROUTER_KEY }) {
   try {
-    console.log(`[+] Iniciando análisis (${jobId}) para: ${actorName} ${actor2Name ? 'vs ' + actor2Name : ''} (${skill})`);
+    const listaActores = skill === 'comparativo' && actoresNombres?.length ? actoresNombres : [actorName, actor2Name].filter(Boolean);
+    console.log(`[+] Iniciando análisis (${jobId}) para: ${listaActores.join(' vs ')} (${skill})`);
 
-    JOBS.set(jobId, { status: 'processing', progreso: 'Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...' });
+    JOBS.set(jobId, { status: 'processing', progreso: `Extrayendo fuentes en Apify para ${listaActores.length} actor(es) (X, Facebook, Instagram, TikTok, YouTube, prensa)...` });
 
-    // 1. Scraping masivo (6 fuentes en paralelo)
-    const [datosActor1, datosActor2] = await Promise.all([
-      scrapeActor(actorName, APIFY_TOKEN),
-      actor2Name ? scrapeActor(actor2Name, APIFY_TOKEN) : Promise.resolve(null),
-    ]);
+    let datosActor1, datosActor2, datosPorActor;
+
+    if (skill === 'comparativo') {
+      // N actores (2-6), cada uno con sus 6 fuentes en paralelo. Con 6 actores
+      // esto son hasta 36 llamadas a Apify simultáneas -- vigila el consumo
+      // de créditos/concurrencia de tu plan si usas el máximo de actores.
+      const resultados = await Promise.allSettled(listaActores.map(nombre => scrapeActor(nombre, APIFY_TOKEN)));
+      datosPorActor = resultados.map(r => r.status === 'fulfilled' ? r.value : { count: 0, items: [] });
+    } else {
+      // 1. Scraping masivo (6 fuentes en paralelo) -- flujo original para
+      //    radar/emociones/tensiones/opositor, sin tocar.
+      [datosActor1, datosActor2] = await Promise.all([
+        scrapeActor(actorName, APIFY_TOKEN),
+        actor2Name ? scrapeActor(actor2Name, APIFY_TOKEN) : Promise.resolve(null),
+      ]);
+    }
 
     JOBS.set(jobId, { status: 'processing', progreso: 'Estructurando datos con OpenRouter...' });
 
     // 2. Estructuración con OpenRouter
     const schema = SCHEMAS[skill] || SCHEMAS.radar;
-    const prompt = buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema });
+    const prompt = buildPrompt({ skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, datosActor1, datosActor2, schema });
     const structured = await callOpenRouter(prompt, OPENROUTER_KEY);
 
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
-    const normalized = normalizeResponse(structured, skill, { actorName, actor2Name });
+    const normalized = normalizeResponse(structured, skill, { actorName, actor2Name, actoresNombres: listaActores });
+
+    const fuentesEncontradas = skill === 'comparativo'
+      ? (datosPorActor || []).reduce((sum, d) => sum + (d?.count || 0), 0)
+      : (datosActor1?.count || 0) + (datosActor2?.count || 0);
 
     JOBS.set(jobId, {
       status: 'done',
@@ -112,8 +142,9 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, mes, anio
         skill,
         actor: actorName,
         actor2: actor2Name || null,
+        actores: skill === 'comparativo' ? listaActores : undefined,
         periodo: `${mes} ${anio}`,
-        fuentesEncontradas: (datosActor1?.count || 0) + (datosActor2?.count || 0),
+        fuentesEncontradas,
         data: normalized,
       },
     });
@@ -757,26 +788,37 @@ const SCHEMAS = {
 // PROMPTS
 // =========================================================
 
-function buildPrompt({ skill, actorName, actor2Name, mes, anio, datosActor1, datosActor2, schema }) {
-  const bloque1 = resumirFuentes(datosActor1);
-  const bloque2 = datosActor2 ? resumirFuentes(datosActor2) : null;
+function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, datosActor1, datosActor2, schema }) {
+  let contexto;
 
-  const contexto = actor2Name
-    ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos sobre ${actor2Name} ---\n${bloque2}`
-    : `Personaje: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
+  if (skill === 'comparativo' && actoresNombres?.length) {
+    // N actores (2-6): un bloque de fuentes crudas por cada uno.
+    const encabezado = actoresNombres.map((n, i) => `Actor ${i + 1}: ${n}`).join('\n');
+    const bloques = actoresNombres.map((n, i) => `\n--- Datos crudos sobre ${n} ---\n${resumirFuentes(datosPorActor?.[i])}`).join('\n');
+    contexto = `${encabezado}\n${bloques}`;
+  } else {
+    const bloque1 = resumirFuentes(datosActor1);
+    const bloque2 = datosActor2 ? resumirFuentes(datosActor2) : null;
+    contexto = actor2Name
+      ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos sobre ${actor2Name} ---\n${bloque2}`
+      : `Personaje: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
+  }
 
   const guardarropaOpositor = skill === 'opositor'
     ? `\nReglas adicionales OBLIGATORIAS para este expediente de oposición:\n- Basa cualquier señalamiento grave ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas.\n- NO inventes números de expediente ni fechas falsas de documentos.\n- Si no hay suficiente información cruda, trátalo como "área de riesgo reputacional".`
     : '';
 
+  const listaComparativo = (actoresNombres?.length ? actoresNombres : [actorName, actor2Name].filter(Boolean));
+  const nombresComillas = listaComparativo.map(n => `"${n}"`).join(', ');
+  const ejemploLlaves = listaComparativo.map(n => `"${n}": [...]`).join(', ');
   const guardarropaComparativo = skill === 'comparativo'
-    ? `\nReglas adicionales OBLIGATORIAS para este comparativo de 2 actores:\n- Los dos actores a comparar son EXACTAMENTE: "${actorName}" y "${actor2Name}". Usa estos nombres tal cual, sin abreviar ni traducir, en TODOS los campos donde se requiera el nombre de un actor.\n- Sé BALANCEADO: dedica volumen y profundidad comparable a ambos actores en cada sección (KPIs, sentimiento, narrativas, riesgos). No conviertas esto en un perfil de un solo actor con menciones ocasionales del otro.`
+    ? `\nReglas adicionales OBLIGATORIAS para este comparativo de ${listaComparativo.length} actores:\n- Los actores a comparar son EXACTAMENTE (en este orden): ${nombresComillas}. Usa estos nombres tal cual, sin abreviar ni traducir, en TODOS los campos donde se requiera el nombre de un actor.\n- El array "actores" del JSON debe tener EXACTAMENTE ${listaComparativo.length} elementos, uno por cada nombre listado arriba, en el mismo orden.\n- Sé BALANCEADO: dedica volumen y profundidad comparable a TODOS los actores en cada sección (KPIs, sentimiento, narrativas, riesgos) — no conviertas esto en un perfil de un solo actor con menciones ocasionales del resto.`
     : '';
 
   const instruccionesEstructura = skill === 'emociones'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "emotions.intensity" es un ENTERO de escala fija 0-3, NUNCA otro rango: 0 = inactiva (no se detecta evidencia real de esta emoción), 1 = baja, 2 = media, 3 = alta. Debes DISTRIBUIR intensidades realistas y VARIADAS entre las 8 emociones según la evidencia — está PROHIBIDO poner intensity:3 a todas las emociones activas; eso es un error, no un signo de análisis completo. Como referencia, en un territorio típico: 1-2 emociones en intensidad 3 (las dominantes), 2-3 en intensidad 2, el resto en 1 o 0 (inactivas). Refleja la mezcla real de las fuentes, no un maximalismo genérico.\n- "dyads" (Díadas Emocionales) — NUNCA lo dejes vacío, es OBLIGATORIO que tenga mínimo 3 elementos, sin excepción. Una díada emocional es la COMBINACIÓN de dos de las 8 emociones activas que juntas producen una dinámica política específica y nombrable. Estructura de cada díada: "name" = nombre corto de la dinámica combinada (ej. "Indignación Resignada", "Miedo Desconfiado", "Esperanza Cautelosa"); "formula" = las dos emociones que se combinan, formato "EmociónA + EmociónB" (ej. "Ira + Tristeza"); "type" = "Primaria" si es la combinación dominante en el territorio o "Secundaria" si es una dinámica emergente menor; "text" = párrafo explicando el mecanismo político-emocional de esa combinación y su implicación estratégica; "risk" = CRÍTICO/ALTO/MEDIO/BAJO; "score" = número 0-100 de intensidad de riesgo. Ejemplo completo: {"name":"Indignación Resignada","formula":"Ira + Tristeza","type":"Primaria","text":"La ciudadanía combina enojo activo por el desabasto de agua con una tristeza resignada ante la falta de respuesta institucional, generando apatía electoral disfrazada de crítica...","risk":"ALTO","score":78}. Construye las díadas a partir de las emociones con mayor "intensity" en el array "emotions" — siempre hay al menos 3 combinaciones detectables en cualquier territorio político real.\n- "dyadInterp" debe ser un párrafo (60-120 palabras) interpretando el conjunto de díadas en términos de estrategia política, no una frase genérica.\n- "actores.rows" (comparación de actores políticos) — cada actor debe traer MÍNIMO 6 filas, usando estas categorías de análisis como referencia (puedes adaptar la etiqueta exacta pero cubre el fondo de cada una): "Emoción dominante que activa", "Rol narrativo (Westen)", "Capital emocional positivo/diferencial", "Fundación moral que activa (Haidt)", "Principal vulnerabilidad", "Ventana estratégica 30 días" o "Riesgo para [el otro actor]". El VALOR de cada fila NUNCA debe ser una etiqueta corta o palabra suelta — debe ser una CLÁUSULA COMPLETA Y ESPECÍFICA con evidencia concreta (cifras, nombres de proyectos/lugares, fechas), del mismo nivel de detalle que: "78 Huellas de la Transformación, 250+ patrullas, Mexicable al 68%" o "Brecha entre cifras oficiales y experiencia cotidiana en colonias periféricas" — nunca algo tan corto como "Popularidad alta" o "Buena imagen".\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "gestionPrioridad" debe ser un ARRAY DE ARRAYS: cada elemento es ["label", valorNumero, "colorHex"]. Ejemplo: [["Comunicación", 85, "#ef4444"]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "recs" debe incluir las propiedades: bg (color fondo), tx (color texto), label (texto corto), text (descripción).\n- "secondary" debe incluir color (hex) para cada emoción secundaria.`
     : skill === 'comparativo'
-    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Comparativo):\n- LLAVES DINÁMICAS POR ACTOR: en "sentimientoGeneral", "traSerie.series", "picosSerie.series", "plataformasRadar.data" y "sentimientoCruces.*.data", las llaves del objeto deben ser EXACTAMENTE "${actorName}" y "${actor2Name}" (los nombres reales), NUNCA "NombreActor1"/"NombreActor2" ni ninguna variante. Ejemplo real: "sentimientoGeneral": {"${actorName}": [40,30,20,10], "${actor2Name}": [25,35,30,10]}.\n- "sentimientoGeneral" y los arrays dentro de "sentimientoCruces.*.data.<actor>.<segmento>" son [positivo, neutro, negativo, polarizado] — 4 números que idealmente suman ~100.\n- "kpiCards": mínimo 4 tarjetas, "color" debe ser una de estas 4 letras exactas: "g" (verde/bueno), "a" (ámbar/atención), "r" (rojo/riesgo), "n" (neutro). NUNCA un color hex aquí.\n- "hashtags": cada fila es EXACTAMENTE 6 elementos en este orden: [hashtag (con #), nombre del actor al que más se asocia, tono ("Positivo"/"Negativo"/"Neutro"/"Polarizado"), plataforma principal donde circula, origen ("orgánico"/"inducido"), frecuencia relativa (número 0-100)].\n- "riesgos" y "oportunidades": cada fila es un array de 4 elementos [nivel, titulo, texto, bivariado]. Nivel de "riesgos" usa CRÍTICO/ALTO/MEDIO/BAJO; nivel de "oportunidades" usa ALTA/MEDIA/BAJA.\n- "narrativas.tipo" debe ser EXACTAMENTE uno de: "favorable", "critica", "ambivalente" (sin acentos, en minúsculas) — el frontend filtra por este valor literal.\n- "topOfMindCruces.*.data" usa como llave el NOMBRE DEL TEMA (no del actor), con un array de números alineado a "segments".\n- "plataformasRadar.labels" siempre debe ser ["X (Twitter)", "Facebook", "Instagram", "Medios digitales"] y "plataformasRadar.data.<actor>" un array de 4 números alineados a esas labels.`
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Comparativo, ${listaComparativo.length} actores):\n- LLAVES DINÁMICAS POR ACTOR: en "sentimientoGeneral", "traSerie.series", "picosSerie.series", "plataformasRadar.data" y "sentimientoCruces.*.data", las llaves del objeto deben ser EXACTAMENTE los ${listaComparativo.length} nombres reales listados arriba, NUNCA "NombreActor1"/"NombreActor2" ni variantes. Ejemplo real: {${ejemploLlaves}}. Cada uno de estos objetos debe traer entradas para TODOS los actores, no solo los primeros 2.\n- "npsPorActor" y "ratioPorActor" deben tener EXACTAMENTE ${listaComparativo.length} números, en el mismo orden que la lista de actores.\n- "sentimientoGeneral" y los arrays dentro de "sentimientoCruces.*.data.<actor>.<segmento>" son [positivo, neutro, negativo, polarizado] — 4 números que idealmente suman ~100.\n- "kpiCards": mínimo 4 tarjetas, "color" debe ser una de estas 4 letras exactas: "g" (verde/bueno), "a" (ámbar/atención), "r" (rojo/riesgo), "n" (neutro). NUNCA un color hex aquí.\n- "hashtags": cada fila es EXACTAMENTE 6 elementos en este orden: [hashtag (con #), nombre del actor al que más se asocia, tono ("Positivo"/"Negativo"/"Neutro"/"Polarizado"), plataforma principal donde circula, origen ("orgánico"/"inducido"), frecuencia relativa (número 0-100)].\n- "riesgos" y "oportunidades": cada fila es un array de 4 elementos [nivel, titulo, texto, bivariado]. Nivel de "riesgos" usa CRÍTICO/ALTO/MEDIO/BAJO; nivel de "oportunidades" usa ALTA/MEDIA/BAJA.\n- "narrativas.tipo" debe ser EXACTAMENTE uno de: "favorable", "critica", "ambivalente" (sin acentos, en minúsculas) — el frontend filtra por este valor literal. Debe haber narrativas para CADA uno de los ${listaComparativo.length} actores, no solo de los primeros 2.\n- "alertaTabla" debe tener EXACTAMENTE ${listaComparativo.length} filas, una por actor.\n- "topOfMindCruces.*.data" usa como llave el NOMBRE DEL TEMA (no del actor), con un array de números alineado a "segments".\n- "plataformasRadar.labels" siempre debe ser ["X (Twitter)", "Facebook", "Instagram", "Medios digitales"] y "plataformasRadar.data.<actor>" un array de 4 números alineados a esas labels, para CADA uno de los ${listaComparativo.length} actores.`
     : '';
 
   // Antes solo decía "al menos un elemento" -> el modelo cumplía con el
