@@ -692,29 +692,30 @@ const SCHEMAS = {
         nombre: "string",
         score: 0,
         color: "#C05621",
-        nivel: "string",
-        emocion: "string",
-        narrativa: "string",
-        actor: "string",
-        territorio: "string",
-        politica: "string",
-        recomendacion: "string"
+        nivel: "Alto|Relevante|Medio|Bajo",
+        emocion: "string (formato: 'EmociónPrimaria + EmociónSecundaria · X/5', ej. 'Hartazgo + Desprotección · 4/5')",
+        narrativa: "string (frase textual entrecomillada que resume el sentir ciudadano, ej. 'El agua es un privilegio en Pachuca')",
+        actor: "string (institución/persona responsable, puede ser una cadena 'A - B - C')",
+        territorio: "string (colonias/zonas específicas afectadas)",
+        politica: "string (potencial político/de movilización: riesgo de bloqueos, paro, viralización, etc., específico y accionable)",
+        evidencia: "string (párrafo de evidencia documentada con cifras y fuente entre paréntesis, ej. 'Corte de hasta 96h en mayo por rehabilitación planta X (La Silla Rota, ICF 4.3)')",
+        recomendacion: "string (acción concreta y específica, no genérica)"
       }
     ],
     emociones: [
-      { nombre: "string", intensidad: 0, color: "#hex", porcentaje: 0 }
+      { nombre: "string", intensidad: 0, color: "#hex", porcentaje: 0, descripcion: "string (una línea explicando el tipo/origen/tendencia de esta emoción, ej. 'Estructural, multi-frente · Agua, tarifa de transporte y comercio informal se acumulan sin resolución visible')" }
     ],
     narrativas: [
-      { nombre: "string", tema: "string", actor: "string", politica: "string", frase: "string" }
+      { nombre: "string", tema: "string", actor: "string", politica: "string (impacto/potencial político de esta narrativa)", frase: "string (cita textual representativa)", fuente: "string (medio y fecha aproximada, ej. 'La Silla Rota, mayo-julio 2026')" }
     ],
     territorios: [
-      { nombre: "string", tension: "string", emocion: "string", observaciones: "string" }
+      { nombre: "string", tension: "string", emocion: "string", color: "Rojo|Naranja|Amarillo", observaciones: "string (evidencia documentada con cifras concretas: número de afectados, fechas, montos, y fuente entre paréntesis)" }
     ],
     riesgos: [
-      { nombre: "string", srr: 0, accion: "string", color: "#hex" }
+      { nombre: "string", srr: 0, accion: "string", color: "#hex", actorExpuesto: "string", tipoSenal: "Amplificada legítima|Orgánica|Inducida|Aislada", probEscalar: "Alta|Media|Baja" }
     ],
     trayectoria: [
-      { nombre: "string", t3: 0, t2: 0, t1: 0, ta: 0, tipo: "string", velocidad: "string" }
+      { nombre: "string", t3: 0, t2: 0, t1: 0, ta: 0, delta: "string (ej. '+7' o '-3', con signo)", tipo: "Persistente|Nueva|Emergente", velocidad: "Creciendo|Estable|Bajando" }
     ],
     alertas: [
       { titulo: "string", rows: [["clave", "valor"]] }
