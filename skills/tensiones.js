@@ -78,15 +78,17 @@ window.showDetail = function(idx, el){
   const t = DATA.ranking[idx]; if(!t) return;
   document.getElementById('t-tens-detail').innerHTML = `
     <div class="card">
-      <div style="font-size:14px;font-weight:700;color:var(--hdrblue);margin-bottom:8px">${t.nombre}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--hdrblue);margin-bottom:8px">${t.nombre}${t.score!=null?` — STS ${t.score}`:''}</div>
       <div class="dg">
+        <span class="dk">Nivel:</span><span class="dv">${t.nivel || '—'}${t.score!=null?` · ${t.score}/100`:''}</span>
         <span class="dk">Emoción:</span><span class="dv">${t.emocion || '—'}</span>
-        <span class="dk">Narrativa:</span><span class="dv">${t.narrativa || '—'}</span>
-        <span class="dk">Actor Resp.:</span><span class="dv">${t.actor || '—'}</span>
+        <span class="dk">Narrativa:</span><span class="dv" style="font-style:italic">${t.narrativa ? '"'+t.narrativa+'"' : '—'}</span>
+        <span class="dk">Actor:</span><span class="dv">${t.actor || '—'}</span>
         <span class="dk">Territorio:</span><span class="dv">${t.territorio || '—'}</span>
-        <span class="dk">Riesgo Pol.:</span><span class="dv">${t.politica || '—'}</span>
+        <span class="dk">Potencial:</span><span class="dv">${t.politica || '—'}</span>
+        <span class="dk">Evidencia:</span><span class="dv">${t.evidencia || '—'}</span>
       </div>
-      ${t.recomendacion ? `<div class="drec"><strong>Recomendación:</strong> ${t.recomendacion}</div>` : ''}
+      ${t.recomendacion ? `<div class="drec">${t.recomendacion}</div>` : ''}
     </div>
   `;
 }
@@ -105,18 +107,23 @@ function drawCharts(tab){
   }
   if(tab==='emociones'){
     document.getElementById('t-emo-bars').innerHTML = DATA.emociones.map(e=>`
-      <div class="ebar">
-        <span class="enam">${e.nombre}</span>
-        <div class="ebg"><div class="efill" style="width:${(e.intensidad/5)*100}%;background:${e.color||'#C05621'}"></div></div>
-        <span style="font-size:11px;font-weight:700">${e.intensidad}/5</span>
+      <div class="ebar" style="flex-direction:column;align-items:stretch;gap:4px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="enam">${e.nombre}</span>
+          <div class="ebg"><div class="efill" style="width:${(e.intensidad/5)*100}%;background:${e.color||'#C05621'}"></div></div>
+          <span style="font-size:11px;font-weight:700">${e.intensidad}/5</span>
+        </div>
+        ${e.descripcion ? `<div style="font-size:10.5px;color:var(--dim);margin-left:120px">${e.descripcion}</div>` : ''}
       </div>
     `).join('');
     document.getElementById('t-hallazgo-emo').textContent = DATA.hallazgoEmocional;
     if(DATA.emociones.length > 0){
+      // Barras horizontales en vez de dona: más legible para comparar
+      // magnitudes entre emociones que un porcentaje circular.
       mk('tc-emo', {
-        type:'doughnut',
-        data: { labels: DATA.emociones.map(x=>x.nombre), datasets: [{ data: DATA.emociones.map(x=>x.porcentaje||10), backgroundColor: DATA.emociones.map(x=>x.color||'#C05621') }] },
-        options: { plugins:{legend:{position:'bottom'}}, responsive:true }
+        type:'bar',
+        data: { labels: DATA.emociones.map(x=>x.nombre), datasets: [{ data: DATA.emociones.map(x=>x.porcentaje||10), backgroundColor: DATA.emociones.map(x=>x.color||'#C05621'), borderRadius: 3 }] },
+        options: { indexAxis:'y', plugins:{legend:{display:false}}, responsive:true, scales:{ x:{beginAtZero:true} } }
       });
     }
   }
@@ -132,11 +139,13 @@ function drawCharts(tab){
         <div class="nar-body">
           <p><strong>Impacto Político:</strong> ${n.politica}</p>
           <p style="margin-top:4px;font-style:italic;color:var(--cyan)">${n.frase}</p>
+          ${n.fuente ? `<p style="margin-top:4px;font-size:10.5px;color:var(--dim)">${n.fuente}</p>` : ''}
         </div>
       </div>
     `).join('') || '<div class="card">Sin narrativas registradas.</div>';
   }
   if(tab==='territorios'){
+    const COLOR_MAP = { Rojo: '#C53030', Naranja: '#C05621', Amarillo: '#B7791F' };
     document.getElementById('t-ter-list').innerHTML = DATA.territorios.map(t=>`
       <div class="ter">
         <div class="ter-h" onclick="this.nextElementSibling.classList.toggle('op')">
@@ -144,6 +153,7 @@ function drawCharts(tab){
             <div class="ter-name">${t.nombre}</div>
             <div class="ter-sub">Tensión: ${t.tension} &middot; Emoción: ${t.emocion}</div>
           </div>
+          ${t.color ? `<span class="tniv" style="background:${COLOR_MAP[t.color]||'#C05621'};color:#fff;align-self:flex-start">${t.color}</span>` : ''}
         </div>
         <div class="ter-body">${t.observaciones}</div>
       </div>
@@ -159,8 +169,13 @@ function drawCharts(tab){
     }
     document.getElementById('t-riesgo-list').innerHTML = DATA.riesgos.map(r=>`
       <div class="card mb">
-        <div style="font-weight:700;color:var(--hdrblue)">${r.nombre} (SRR: ${r.srr})</div>
-        <div style="font-size:11px;margin-top:4px"><strong>Acción Recomendada:</strong> ${r.accion}</div>
+        <div style="font-weight:700;color:var(--hdrblue);margin-bottom:6px">${r.nombre} (SRR: ${r.srr})</div>
+        <div class="dg">
+          <span class="dk">Actor expuesto:</span><span class="dv">${r.actorExpuesto || '—'}</span>
+          <span class="dk">Tipo de señal:</span><span class="dv">${r.tipoSenal || '—'}</span>
+          <span class="dk">Prob. de escalar:</span><span class="dv">${r.probEscalar || '—'}</span>
+        </div>
+        <div class="drec" style="margin-top:.7rem">${r.accion}</div>
       </div>
     `).join('') || '<div class="card">Sin riesgos registrados.</div>';
   }
@@ -171,9 +186,10 @@ function drawCharts(tab){
         <td><strong>${tr.nombre}</strong></td>
         <td>${tr.t3}</td><td>${tr.t2}</td><td>${tr.t1}</td>
         <td><strong>${tr.ta}</strong></td>
+        <td>${tr.delta || ((tr.ta - tr.t3) >= 0 ? '+' : '') + (tr.ta - tr.t3)}</td>
         <td>${tr.tipo}</td><td>${tr.velocidad}</td>
       </tr>
-    `).join('') || '<tr><td colspan="7">Sin datos de trayectoria.</td></tr>';
+    `).join('') || '<tr><td colspan="8">Sin datos de trayectoria.</td></tr>';
     if(DATA.trayectoria.length > 0){
       mk('tc-traj', {
         type:'line',
