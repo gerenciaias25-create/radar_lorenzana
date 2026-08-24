@@ -44,6 +44,7 @@ window.opTv = function(el){ el.classList.toggle('expanded'); el.querySelector('.
 document.getElementById('op-ov-alerts').innerHTML = (D.vulnerabilidades||[]).map(v=>`
   <div class="al ${NIVEL_ALCLASS[v.nivel]||'al-o'}">
     <h4 class="${NIVEL_CLASS[v.nivel]||'o'}">${v.nivel==='CRÍTICO'?'🔴':'🟡'} ${v.nivel} — ${v.titulo}</h4>
+    ${v.descripcion?`<p style="margin-bottom:6px">${v.descripcion}</p>`:''}
     <ul>${(v.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
   </div>`).join('') || '<div class="al al-o">Sin vulnerabilidades detectadas.</div>';
 
@@ -93,10 +94,15 @@ document.getElementById('op-va-list').innerHTML = (D.vectoresAtaque||[]).map(v=>
   </div>`).join('') || '<div class="vc">Sin vectores de ataque disponibles.</div>';
 
 // ---------- RED DE PODER (red) ----------
+const CAT_TAG = {"Aliado":"tg","Deuda Política":"to","Tensión Interna":"ty","Vulnerabilidad de Red":"tr","Riesgo":"tr"};
 document.getElementById('op-red-alertas').innerHTML = (D.redDePoder.alertas||[]).map(a=>`
-  <div class="al ${NIVEL_ALCLASS[a.nivel]||'al-o'}" style="margin-bottom:8px"><h4 class="${NIVEL_CLASS[a.nivel]||'o'}">${a.nivel==='CRÍTICO'?'⚠️':'🔗'} ${a.titulo}</h4><ul>${(a.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul></div>`).join('') || '<div class="al al-o">Sin alertas de red registradas.</div>';
+  <div class="al ${NIVEL_ALCLASS[a.nivel]||'al-o'}" style="margin-bottom:8px">
+    <h4 class="${NIVEL_CLASS[a.nivel]||'o'}">${a.nivel==='CRÍTICO'?'⚠️':'🔗'} ${a.titulo}</h4>
+    ${a.categoria?`<span class="tag ${CAT_TAG[a.categoria]||'to'}">${a.categoria}</span>`:''}
+    <ul>${(a.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
+  </div>`).join('') || '<div class="al al-o">Sin alertas de red registradas.</div>';
 document.getElementById('op-red-tbl').innerHTML = (D.redDePoder.tabla||[]).map(t=>`
-  <tr><td><strong>${t.actor}</strong></td><td>${t.vinculo}</td><td>${t.riesgoOportunidad}</td></tr>`).join('') || '<tr><td colspan="3">Sin datos.</td></tr>';
+  <tr><td><strong>${t.actor}</strong></td><td>${t.vinculo}</td><td>${t.categoria?`<span class="tag ${CAT_TAG[t.categoria]||'to'}">${t.categoria}</span>`:''}</td><td>${t.riesgoOportunidad}</td></tr>`).join('') || '<tr><td colspan="4">Sin datos.</td></tr>';
 
 /* CHARTS */
 const ier = D.perfil.ierPorCargo || [];
