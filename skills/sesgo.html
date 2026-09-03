@@ -1,0 +1,122 @@
+<div id="sg-root">
+<style>
+#sg-root{ --card:#d5d1d1;--border:#b0aeae;--header-bg:#1C2738;--ac:#00C2D4;--text:#1a1a1a;--muted:#475569; background:#ffffff;color:var(--text);font-family:'Segoe UI',sans-serif;border-radius:8px;overflow:hidden; }
+#sg-root *{box-sizing:border-box}
+#sg-root .hdr{background:var(--header-bg);color:#fff;padding:1.25rem 1.5rem}
+#sg-root .hdr-row{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+#sg-root .hdr-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#94A3B8}
+#sg-root .hdr-sub{font-size:18px;font-weight:700;color:#fff;margin-top:2px}
+#sg-root .hdr-meta{font-size:12px;color:#94A3B8;margin-top:4px}
+#sg-root .status-badge{font-weight:700}
+#sg-root .hdr-right{text-align:right}
+#sg-root .persuasion-label{font-size:11px;color:#94A3B8}
+#sg-root .persuasion-val{font-size:22px;font-weight:800}
+#sg-root .body{padding:1.5rem}
+#sg-root .section-title{font-size:12px;font-weight:700;color:var(--header-bg);text-transform:uppercase;letter-spacing:.06em;margin-top:1.75rem;margin-bottom:.75rem;padding-bottom:4px;border-bottom:2px solid var(--header-bg)}
+#sg-root .section-title:first-child{margin-top:0}
+#sg-root .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem}
+#sg-root .card{background:var(--card);border-radius:10px;padding:.9rem 1.05rem}
+#sg-root .card-lbl{font-size:11px;color:#334155;font-weight:600}
+#sg-root .card-val{font-size:22px;font-weight:800;margin-top:2px}
+#sg-root .card-det{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+#sg-root .row{display:flex;align-items:center;gap:.75rem;padding:9px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+#sg-root .row:last-child{border-bottom:none}
+#sg-root .cat-badge{font-size:10px;font-weight:700;color:#fff;padding:2px 7px;border-radius:5px;flex-shrink:0;min-width:20px;text-align:center}
+#sg-root .row-name{font-size:12px;font-weight:600;color:#111827}
+#sg-root .row-desc{font-size:11px;color:var(--muted);margin-top:1px;line-height:1.4}
+#sg-root .row-score{font-size:16px;font-weight:800;flex-shrink:0}
+#sg-root .lvl-pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;flex-shrink:0;white-space:nowrap}
+#sg-root .lvl-critico{background:#FEE2E2;color:#991B1B}
+#sg-root .lvl-alto{background:#FEF3C7;color:#92400E}
+#sg-root .lvl-medio{background:#DBEAFE;color:#1E40AF}
+#sg-root .lvl-bajo{background:#DCFCE7;color:#166534}
+#sg-root .chart-box{position:relative;height:360px}
+#sg-root .seg-lbl{font-size:11px;font-weight:700;margin-bottom:4px}
+#sg-root .seg-main{font-size:12px;font-weight:600;color:#111827}
+#sg-root .seg-sub{font-size:11px;color:#334155}
+#sg-root .seg-read{font-size:11px;color:var(--muted);margin-top:4px;font-style:italic;line-height:1.4}
+#sg-root .vp-item{display:flex;gap:.75rem;align-items:flex-start}
+#sg-root .vp-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#sg-root .vp-num span{font-size:14px;font-weight:800;color:#fff}
+#sg-root .vp-seg{font-size:12px;font-weight:600;color:#111827}
+#sg-root .vp-sesgo{font-size:11px;color:#334155;margin-top:2px;font-weight:600}
+#sg-root .vp-rec{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+#sg-root .am-item{display:flex;gap:7px;align-items:flex-start}
+#sg-root .am-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;flex-shrink:0;margin-top:1px;white-space:nowrap}
+#sg-root .am-title{font-size:12px;font-weight:600;color:#111827}
+#sg-root .am-text{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+#sg-root .footer{background:var(--header-bg);border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+#sg-root .exec{font-size:12px;color:var(--text);line-height:1.6;background:var(--card);border-radius:10px;padding:1rem 1.1rem}
+@media(max-width:768px){#sg-root .body{padding:1rem}}
+</style>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <div>
+      <div class="hdr-title">Sesgos Cognitivos Electorales</div>
+      <div class="hdr-sub" id="sg-hdr-sub"></div>
+      <div class="hdr-meta" id="sg-hdr-meta"></div>
+    </div>
+    <div class="hdr-right">
+      <div class="persuasion-label">Ventana de Persuasión</div>
+      <div class="persuasion-val" id="sg-persuasion-val"></div>
+    </div>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- MÉTRICAS CLAVE -->
+  <div class="grid" style="margin-bottom:1rem">
+    <div class="card">
+      <div class="card-lbl">Sesgos Críticos (SAS≥81)</div>
+      <div class="card-val" id="sg-m-criticos-val" style="color:#DC2626"></div>
+      <div class="card-det" id="sg-m-criticos-det"></div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Sesgos Activos Altos (61–80)</div>
+      <div class="card-val" id="sg-m-altos-val" style="color:#D97706"></div>
+      <div class="card-det" id="sg-m-altos-det"></div>
+    </div>
+    <div class="card">
+      <div class="card-lbl" id="sg-m-sri-lbl">SRI · Riesgo Cognitivo</div>
+      <div class="card-val" id="sg-m-sri-val"></div>
+      <div class="card-det" id="sg-m-sri-det"></div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Sistema Dominante</div>
+      <div class="card-val" id="sg-m-sistema-val"></div>
+      <div class="card-det" id="sg-m-sistema-det"></div>
+    </div>
+  </div>
+
+  <!-- RANKING -->
+  <div class="section-title">Sesgos con Mayor Activación</div>
+  <div id="sg-ranking"></div>
+
+  <!-- GRÁFICA SAS -->
+  <div class="section-title">Score de Activación de Sesgo (SAS)</div>
+  <div class="card chart-box" style="margin-bottom:1.5rem">
+    <canvas id="sg-chart" role="img" aria-label="Gráfica de activación de sesgos cognitivos"></canvas>
+  </div>
+
+  <!-- SEGMENTOS -->
+  <div class="section-title">Sesgos Dominantes por Perfil Electoral</div>
+  <div class="grid" id="sg-segmentos" style="margin-bottom:1.5rem"></div>
+
+  <!-- VENTANAS DE PERSUASIÓN -->
+  <div class="section-title">Ventanas de Persuasión Activas</div>
+  <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem" id="sg-ventanas"></div>
+
+  <!-- ARQUITECTURA DE MENSAJES -->
+  <div class="section-title">Arquitectura de Mensajes</div>
+  <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem" id="sg-mensajes"></div>
+
+  <!-- RESUMEN EJECUTIVO -->
+  <div class="section-title">Resumen Ejecutivo</div>
+  <div class="exec" id="sg-resumen"></div>
+
+</div>
+
+<div class="footer"><span id="sg-ftr-l">Radar - Sesgo</span><span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span></div>
+</div>
