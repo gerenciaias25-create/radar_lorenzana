@@ -136,7 +136,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
     // reemplaza lo que haya devuelto el modelo (que podría inventar URLs)
     // por la lista real construida a partir de las URLs efectivamente
     // scrapeadas, para no exponer citas falsas.
-    if (skill === 'socioafectiva') {
+    if (skill === 'socioafectiva' || skill === 'semiotica') {
       const fuentesReales = construirFuentesReales(datosActor1);
       if (fuentesReales.length) normalized.fuentes = fuentesReales;
     }
@@ -501,6 +501,35 @@ function normalizeResponse(data, skill, ctx = {}) {
     if (!data.territorialLead) data.territorialLead = '';
     ensureArray(data, 'territorialTabla', []);
     if (data.territorialAlerta && typeof data.territorialAlerta !== 'object') data.territorialAlerta = null;
+  }
+
+  // SEMIOTICA (semiótica política digital territorial)
+  if (skill === 'semiotica') {
+    ensureObject(data, 'territorio', { nombre: actorName, ventana: '', corte: '', fuentesRevisadas: 0, metodologiaModulos: '13 módulos' });
+    ensureObject(data, 'kpis', { arquetipoColectivo: 'Sin datos', arquetipoColectivoDesc: '', arquetipoIdeal: 'Sin datos', arquetipoIdealDesc: '', tensionDominante: 'Sin datos', tensionDominanteDesc: '', irsTopActor: 'Sin datos', irsTopScore: 0, irsTopEstado: 'warning' });
+    if (!data.codigoSimbolico) data.codigoSimbolico = 'No se recibieron datos estructurados del backend.';
+    ensureArray(data, 'signos', []);
+    ensureArray(data, 'poblacion', []);
+    ensureArray(data, 'significacion', []);
+    ensureArray(data, 'narrativas', []);
+    ensureObject(data, 'frameDominante', { titulo: 'Frame dominante (Lakoff)', bullets: [] });
+    ensureArray(data.frameDominante, 'bullets', []);
+    ensureObject(data, 'fundacionesMorales', { titulo: 'Fundaciones morales activas (Haidt)', bullets: [] });
+    ensureArray(data.fundacionesMorales, 'bullets', []);
+    ensureArray(data, 'miedos', []);
+    ensureArray(data, 'deseos', []);
+    ensureArray(data, 'necesidades', []);
+    ensureArray(data, 'simbolosPoder', []);
+    ensureArray(data, 'mapaMemetico', []);
+    ensureArray(data, 'cosmovision', []);
+    ensureArray(data, 'arquetipos', []);
+    ensureObject(data, 'arquetipoIdealPrincipal', { rol: '', nombre: '', texto: '', riesgo: '' });
+    ensureObject(data, 'arquetipoIdealSecundario', { rol: '', nombre: '', texto: '', riesgo: '' });
+    ensureArray(data, 'tensiones', []);
+    ensureArray(data, 'matrizEstrategica', []);
+    ensureObject(data, 'irs', { actores: [], nota1: '', nota2: '' });
+    ensureArray(data.irs, 'actores', []);
+    ensureArray(data, 'fuentes', []);
   }
 
   return data;
@@ -930,6 +959,45 @@ const SCHEMAS = {
     territorialLead: "string",
     territorialTabla: [["región/municipio", "actor con mayor presencia", "nota"]],
     territorialAlerta: { titulo: "string", texto: "string" }
+  }, null, 2),
+
+  semiotica: JSON.stringify({
+    territorio: { nombre: "string", ventana: "string (ej. 'mar–sep 2026 (6 meses)')", corte: "string (fecha de corte del análisis)", fuentesRevisadas: 0, metodologiaModulos: "string (ej. '13 módulos')" },
+    kpis: {
+      arquetipoColectivo: "string (nombre del arquetipo junguiano dominante)",
+      arquetipoColectivoDesc: "string (una línea explicando por qué domina)",
+      arquetipoIdeal: "string (nombre del arquetipo político ideal para resonar)",
+      arquetipoIdealDesc: "string (una línea explicando por qué resonaría)",
+      tensionDominante: "string (ej. 'Orgullo identitario vs. estigma narco')",
+      tensionDominanteDesc: "string (una línea de contexto)",
+      irsTopActor: "string (nombre del aspirante con IRS más alto)",
+      irsTopScore: 0,
+      irsTopEstado: "good|warning|serious|critical (según banda del IRS: 81-100 good, 61-80 warning, 41-60 serious, 0-40 critical)"
+    },
+    codigoSimbolico: "string (párrafo de síntesis de 100-160 palabras, tono de consultoría, con al menos 2 hechos concretos del territorio)",
+    signos: [{ categoria: "string (ej. 'Naturales', 'Económicos', 'Culturales', 'Religiosos', 'Digitales', 'Históricos', 'Arquitectónicos', 'Signos de población — dominantes')", items: [{ titulo: "string", texto: "string" }] }],
+    poblacion: [{ titulo: "string", estado: "dominante|emergente", texto: "string" }],
+    significacion: [{ tema: "string", manifiesto: "string (lo que se dice textualmente)", latente: "string (lo que se sugiere)", inconsciente: "string (lo que se proyecta sin notarlo)" }],
+    narrativas: [{ tipo: "dominante|emergente|aspiracional|enojo|miedo|esperanza", texto: "string" }],
+    frameDominante: { titulo: "string (fijo: 'Frame dominante (Lakoff)')", bullets: ["string"] },
+    fundacionesMorales: { titulo: "string (fijo: 'Fundaciones morales activas (Haidt)')", bullets: ["string"] },
+    miedos: ["string"],
+    deseos: ["string"],
+    necesidades: ["string"],
+    simbolosPoder: [{ titulo: "string", texto: "string" }],
+    mapaMemetico: [{ tipo: "admira|ridiculiza|castiga|rechaza|legitima", texto: "string" }],
+    cosmovision: [{ concepto: "string (ej. 'Cambio', 'Orden', 'Libertad', 'Autoridad', 'Futuro')", texto: "string" }],
+    arquetipos: [{ rol: "Dominante|Secundario|Emergente|Rechazado", nombre: "string (nombre del arquetipo junguiano)", texto: "string" }],
+    arquetipoIdealPrincipal: { rol: "string (fijo: 'Arquetipo político ideal — 1er lugar')", nombre: "string", texto: "string (párrafo explicando por qué resuena más)", riesgo: "string (riesgo de sobreactuación, corto)" },
+    arquetipoIdealSecundario: { rol: "string (fijo: '2° lugar')", nombre: "string", texto: "string", riesgo: "string" },
+    tensiones: [{ poloA: "string", poloB: "string", intensidad: 0, texto: "string" }],
+    matrizEstrategica: [{ decir: "string", noDecir: "string", simbolosUsar: "string", simbolosEvitar: "string", emocionesMovilizan: "string", emocionesBloquean: "string", narrativaGanadora: "string", narrativaPerdedora: "string" }],
+    irs: {
+      actores: [{ nombre: "string", cargo: "string (partido/posición actual o aspiración)", narrativa: 0, simbolos: 0, arquetipo: 0, estado: "good|warning|serious|critical" }],
+      nota1: "string (explica qué mide cada capa A/B/C)",
+      nota2: "string (conclusión sobre el rango de resonancia alcanzado por los actores evaluados)"
+    },
+    fuentes: []
   }, null, 2)
 };
 
@@ -948,7 +1016,7 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
   } else {
     const bloque1 = resumirFuentes(datosActor1);
     const bloque2 = datosActor2 ? resumirFuentes(datosActor2) : null;
-    const etiquetaSujeto = (skill === 'tensiones' || skill === 'sesgo') ? 'Territorio/Entidad evaluada' : 'Personaje';
+    const etiquetaSujeto = (skill === 'tensiones' || skill === 'sesgo' || skill === 'semiotica') ? 'Territorio/Entidad evaluada' : 'Personaje';
     contexto = actor2Name
       ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos sobre ${actor2Name} ---\n${bloque2}`
       : `${etiquetaSujeto}: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
@@ -975,6 +1043,10 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
 
   const guardarropaComparativo = skill === 'comparativo'
     ? `\nReglas adicionales OBLIGATORIAS para este comparativo de ${listaComparativo.length} actores:\n- Los actores a comparar son EXACTAMENTE (en este orden): ${nombresComillas}. Usa estos nombres tal cual, sin abreviar ni traducir, en TODOS los campos donde se requiera el nombre de un actor.\n- El array "actores" del JSON debe tener EXACTAMENTE ${listaComparativo.length} elementos, uno por cada nombre listado arriba, en el mismo orden.\n- Sé BALANCEADO: dedica volumen y profundidad comparable a TODOS los actores en cada sección (KPIs, sentimiento, narrativas, riesgos) — no conviertas esto en un perfil de un solo actor con menciones ocasionales del resto.${reglaEscalado}`
+    : '';
+
+  const guardarropaSemiotica = skill === 'semiotica'
+    ? `\nReglas adicionales OBLIGATORIAS para este estudio de semiótica política digital:\n- NO generes el array "fuentes": ese campo se construye por separado a partir de las URLs reales scrapeadas; déjalo como array vacío si el esquema lo pide.\n- "signos" debe cubrir un mínimo de 6 categorías distintas (usa las sugeridas en el esquema como guía, adáptalas al territorio real), con 1-2 "items" cada una, y cada "texto" debe anclarse en un hecho digital verificable-style (fecha, cifra, medio, colonia) tomado de las fuentes crudas cuando exista evidencia.\n- "significacion" (Sistema de significación) debe cubrir mínimo 5 temas centrales del territorio (seguridad, autoridad/gobierno, futuro, trabajo/dinero, identidad regional u otros que apliquen), cada uno con sus tres capas (manifiesto/latente/inconsciente) claramente diferenciadas — nunca repitas el mismo texto en dos capas.\n- "narrativas": mínimo 6, cubriendo al menos 4 de los 6 tipos disponibles (dominante, emergente, aspiracional, enojo, miedo, esperanza) — nunca las concentres todas en "dominante".\n- "miedos", "deseos" y "necesidades": EXACTAMENTE 10 elementos cada uno, ordenados de mayor a menor intensidad/recurrencia, cada uno una frase corta y específica del territorio (no genérica).\n- "mapaMemetico": EXACTAMENTE 5 elementos, uno por cada "tipo" (admira, ridiculiza, castiga, rechaza, legitima), sin repetir tipo.\n- "cosmovision": EXACTAMENTE 5 elementos (Cambio, Orden, Libertad, Autoridad, Futuro o equivalentes conceptuales), cada uno con un "texto" que interprete cómo lo vive el territorio evaluado, no una definición genérica del concepto.\n- "arquetipos": EXACTAMENTE 4 elementos, uno por cada "rol" (Dominante, Secundario, Emergente, Rechazado), sin repetir rol. "arquetipoIdealPrincipal" y "arquetipoIdealSecundario" deben ser arquetipos DISTINTOS entre sí y coherentes con el "arquetipoIdeal" reportado en "kpis".\n- "tensiones": mínimo 5, ordenadas de mayor a menor "intensidad" (0-100), cada "texto" explicando por qué esa tensión es estratégicamente relevante (no solo describir los dos polos).\n- "matrizEstrategica": EXACTAMENTE 2 filas, cada una completa en las 8 columnas, con contenido específico y accionable (nunca "N/A" ni una palabra suelta).\n- "irs.actores": mínimo 3 aspirantes/actores políticos reales o verosímiles del territorio evaluado, con las 3 capas de puntaje (narrativa 0-40, símbolos 0-30, arquetipo 0-30) coherentes entre sí y con "estado" calculado según el total (81-100 good, 61-80 warning, 41-60 serious, 0-40 critical) — nunca dejes que ningún actor supere 80 salvo que la evidencia lo respalde con claridad excepcional.\n- Todos los "texto"/"descripcion" de una sola frase deben tener 25-50 palabras; los párrafos más largos (codigoSimbolico, textos de tensiones y del código simbólico) 60-160 palabras según se indique.`
     : '';
 
   const instruccionesEstructura = skill === 'emociones'
@@ -1010,7 +1082,7 @@ ${schema}
 - PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
 - Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
 - ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
-${requisitosCantidad}${guardarropaOpositor}${guardarropaSesgo}${guardarropaSocioafectiva}${guardarropaComparativo}${instruccionesEstructura}`;
+${requisitosCantidad}${guardarropaOpositor}${guardarropaSesgo}${guardarropaSocioafectiva}${guardarropaComparativo}${guardarropaSemiotica}${instruccionesEstructura}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}
 Skill solicitada: ${skill}
@@ -1144,6 +1216,23 @@ REQUISITOS MÍNIMOS DE CANTIDAD (COMPARATIVO) — no entregues menos de esto:
 - alertaTabla: exactamente una fila por cada actor comparado (ni más ni menos).
 - territorialTabla: mínimo 5 regiones/municipios.
 - resumenKpis: mínimo 100 palabras comparando explícitamente a ambos actores.`,
+
+  semiotica: `
+REQUISITOS MÍNIMOS DE CANTIDAD (SEMIÓTICA) — no entregues menos de esto:
+- signos: mínimo 6 categorías, cada una con 1-2 "items" (mínimo 8 items en total).
+- poblacion: mínimo 3 elementos, mezclando estado "dominante" y "emergente".
+- significacion: mínimo 5 temas, con las tres capas (manifiesto/latente/inconsciente) siempre diferenciadas entre sí.
+- narrativas: mínimo 6, cubriendo al menos 4 tipos distintos de los 6 disponibles.
+- frameDominante.bullets: mínimo 2. fundacionesMorales.bullets: mínimo 3.
+- miedos, deseos, necesidades: EXACTAMENTE 10 elementos cada lista.
+- simbolosPoder: mínimo 5.
+- mapaMemetico: EXACTAMENTE 5 (uno por tipo: admira/ridiculiza/castiga/rechaza/legitima).
+- cosmovision: EXACTAMENTE 5 conceptos.
+- arquetipos: EXACTAMENTE 4 (uno por rol: Dominante/Secundario/Emergente/Rechazado).
+- tensiones: mínimo 5, ordenadas de mayor a menor intensidad.
+- matrizEstrategica: EXACTAMENTE 2 filas completas en las 8 columnas.
+- irs.actores: mínimo 3 aspirantes/actores, con las 3 capas de puntaje siempre llenas.
+- codigoSimbolico: 100-160 palabras. irs.nota2: 40-80 palabras.`,
 };
 
 function resumirFuentes(bloque) {
