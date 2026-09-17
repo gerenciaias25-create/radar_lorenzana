@@ -205,6 +205,9 @@
         <option value="tensiones">Skill: Tensiones</option>
         <option value="opositor">Skill: Opositor (comparativo)</option>
         <option value="comparativo">Skill: Comparativo (2 a 6 actores)</option>
+        <option value="sesgo">Skill: SESGO (Sesgos Cognitivos)</option>
+        <option value="semiotica">Skill: SEMIÓTICA (Política Digital)</option>
+        <option value="socioafectiva">Skill: SOCIOAFECTIVA (Cartografía Territorial)</option>
       </select>
 
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
@@ -272,7 +275,14 @@ const SKILL_FILES = {
   tensiones: 'skills/tensiones',
   opositor: 'skills/opositor',
   comparativo: 'skills/comparativo',
+  sesgo: 'skills/sesgo',
+  semiotica: 'skills/semiotica',
+  socioafectiva: 'skills/socioafectiva',
 };
+
+// Skills cuyo "objeto de análisis" es un territorio/entidad, no un personaje
+// (afecta solo el texto del placeholder del campo de búsqueda).
+const SKILLS_TERRITORIO = ['tensiones', 'sesgo', 'semiotica', 'socioafectiva'];
 
 // Skills que necesitan un segundo personaje para generar la comparativa.
 const SKILLS_DOS_ACTORES = ['opositor', 'comparativo'];
@@ -298,6 +308,8 @@ function onSkillChange() {
   } else if (esComparativo) {
     document.getElementById('targetProfile').placeholder = 'Primer personaje a comparar...';
     document.getElementById('targetProfile2').placeholder = 'Segundo personaje a comparar...';
+  } else if (SKILLS_TERRITORIO.includes(skill)) {
+    document.getElementById('targetProfile').placeholder = 'Territorio o entidad a evaluar (ej. "Sinaloa", "Culiacán")...';
   } else {
     document.getElementById('targetProfile').placeholder = 'Nombre del personaje político...';
   }
