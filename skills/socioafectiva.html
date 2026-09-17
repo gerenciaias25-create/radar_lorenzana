@@ -1,0 +1,392 @@
+<div id="sa-root">
+<style>
+#sa-root{
+  --page:#ffffff; --card-bg:#d5d1d1; --header-bg:#1C2738;
+  --text-primary:#1c1712; --text-secondary:#333333; --text-muted:#555555;
+  --border:rgba(28,23,18,0.15); --border-strong:rgba(28,23,18,0.3);
+  --accent:#a85a1c; --accent-ink:#7a4114; --accent-soft:#e2dede;
+  --accent-2:#1f6b61; --accent-2-soft:#dcece8;
+  --violet:#5b4a94; --violet-soft:#e6e1f3;
+  --good:#0ca30c; --good-soft:#dff3df;
+  --warning:#c98500; --warning-soft:#faecc9;
+  --serious:#c9612f; --serious-soft:#f8ddcb;
+  --critical:#d03b3b; --critical-soft:#f9dcdc;
+  --shadow: 0 2px 4px rgba(0,0,0,0.08);
+  background:var(--page);color:var(--text-primary);
+  font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;
+  border-radius:8px;overflow:hidden;
+}
+#sa-root *{box-sizing:border-box}
+#sa-root h1,#sa-root h2,#sa-root h3,#sa-root h4{font-family:"Fraunces", Georgia, serif;font-weight:600;text-wrap:balance;margin:0;letter-spacing:-0.01em}
+#sa-root .mono{font-family:"IBM Plex Mono", ui-monospace, monospace}
+#sa-root .tabular{font-variant-numeric:tabular-nums}
+#sa-root a{color:var(--accent-ink)}
+#sa-root .wrap{max-width:1180px;margin:0 auto;padding:0 28px;background:var(--page)}
+#sa-root .brandbar{background:var(--header-bg);color:#fff;padding:16px 0}
+#sa-root .brandbar-inner{max-width:1180px;margin:0 auto;padding:0 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+#sa-root .brand{font-family:"Fraunces",serif;font-weight:600;font-size:15px;color:#fff}
+#sa-root .brand span{color:#fff}
+#sa-root .brand-tag{font-size:11.5px;color:#94A3B8}
+#sa-root .hero{padding:40px 0 0}
+#sa-root .hero-eyebrow{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:16px}
+#sa-root .hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+#sa-root .hero h1{font-size:clamp(28px,4vw,40px);line-height:1.08;max-width:20ch}
+#sa-root .hero-sub{color:var(--text-secondary);font-size:15.5px;max-width:66ch;margin-top:14px}
+#sa-root .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+#sa-root .meta-pill{display:flex;align-items:center;gap:7px;background:var(--card-bg);border:1px solid var(--border);padding:7px 13px;border-radius:99px;font-size:12.5px;color:var(--text-secondary)}
+#sa-root .meta-pill b{color:var(--text-primary);font-weight:600}
+#sa-root .index-panel{display:grid;grid-template-columns:280px 1fr;gap:16px;margin-top:28px}
+#sa-root .gauge-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+#sa-root .gauge-wrap{position:relative;width:150px;height:150px}
+#sa-root .gauge-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#sa-root .gauge-num b{font-family:"Fraunces",serif;font-size:34px;line-height:1}
+#sa-root .gauge-num span{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px}
+#sa-root .gauge-label{font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted)}
+#sa-root .band-chip{font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px}
+#sa-root .brutal-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:24px 26px;display:flex;flex-direction:column;justify-content:center}
+#sa-root .brutal-card .tag-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent-ink);margin-bottom:10px}
+#sa-root .brutal-card p{font-family:"Fraunces",serif;font-size:19px;line-height:1.5;margin:0;color:var(--text-primary)}
+#sa-root .tabs-nav{display:flex;gap:6px;margin-top:34px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+#sa-root .tabs-nav::-webkit-scrollbar{display:none}
+#sa-root .tab-btn{appearance:none;border:none;background:transparent;cursor:pointer;font-family:"IBM Plex Sans";font-size:13.5px;font-weight:600;color:var(--text-muted);padding:12px 16px;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
+#sa-root .tab-btn:hover{color:var(--text-primary)}
+#sa-root .tab-btn.active{color:var(--accent-ink);border-bottom-color:var(--accent)}
+#sa-root .tab-panel{display:none;padding:32px 0 60px;background:var(--page)}
+#sa-root .tab-panel.active{display:block}
+#sa-root .sec-num{font-family:"IBM Plex Mono";font-size:12px;color:var(--accent-ink);font-weight:600;margin-bottom:6px;letter-spacing:0.04em}
+#sa-root .sec-head h2{font-size:clamp(20px,2.4vw,25px)}
+#sa-root .sec-dek{color:var(--text-secondary);font-size:14px;max-width:76ch;margin-top:8px;margin-bottom:26px}
+#sa-root section.block{margin-bottom:46px}
+#sa-root .issue-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+#sa-root .issue-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+#sa-root .issue-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+#sa-root .issue-card h4{font-size:15.5px;line-height:1.25}
+#sa-root .issue-idx{font-family:"IBM Plex Mono";font-size:11px;color:var(--text-muted);flex:none}
+#sa-root .issue-card .quote{font-size:12.5px;font-style:italic;color:var(--text-secondary);border-left:2px solid var(--accent);padding-left:10px}
+#sa-root .issue-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+#sa-root .issue-meta span{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:99px}
+#sa-root .find-table{width:100%;border-collapse:collapse;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+#sa-root .find-table th,#sa-root .find-table td{padding:12px 15px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--border)}
+#sa-root .find-table th{background:#c4c0c0;font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-primary);font-weight:700}
+#sa-root .find-table tr:last-child td{border-bottom:none}
+#sa-root .find-table td:first-child{font-weight:600;color:var(--text-primary)}
+#sa-root .find-table td{color:var(--text-secondary)}
+#sa-root .emo-list{display:flex;flex-direction:column;gap:10px}
+#sa-root .emo-row{display:grid;grid-template-columns:170px 1fr 40px;gap:12px;align-items:center;background:var(--card-bg);padding:10px 14px;border-radius:8px;border:1px solid var(--border)}
+#sa-root .emo-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+#sa-root .emo-dot{width:9px;height:9px;border-radius:3px;flex:none}
+#sa-root .emo-track{height:22px;background:#c4c0c0;border-radius:6px;overflow:hidden}
+#sa-root .emo-fill{height:100%;border-radius:6px}
+#sa-root .emo-score{font-family:"IBM Plex Mono";font-size:12.5px;font-weight:600;text-align:right}
+#sa-root .emo-detail{font-size:11.5px;color:var(--text-muted);margin-top:2px;grid-column:1/4}
+#sa-root .emo-synth{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-top:18px;font-size:13px;color:var(--text-secondary)}
+#sa-root .emo-synth b{color:var(--text-primary)}
+#sa-root .pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+#sa-root .pain-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:15px 16px}
+#sa-root .pain-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#sa-root .pain-top b{font-size:13.5px}
+#sa-root .pain-score{font-family:"IBM Plex Mono";font-size:12px;color:var(--critical);font-weight:700}
+#sa-root .pain-card .quote{font-size:12px;font-style:italic;color:var(--text-secondary);margin:6px 0}
+#sa-root .pain-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+#sa-root .pain-tags span{font-size:10px;background:#c4c0c0;color:var(--text-primary);padding:2px 8px;border-radius:99px}
+#sa-root .zone-grid{display:flex;flex-direction:column;gap:10px}
+#sa-root .zone-row{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:14px;align-items:center}
+#sa-root .zone-name{font-weight:600;font-size:13.5px}
+#sa-root .zone-name span{display:block;font-weight:400;font-size:11.5px;color:var(--text-muted);margin-top:2px}
+#sa-root .zone-dolor{font-size:12px;color:var(--text-secondary)}
+#sa-root .zone-tension{display:flex;flex-direction:column;gap:4px}
+#sa-root .zone-tension .lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase}
+#sa-root .tbar-mini{height:7px;border-radius:99px;background:#c4c0c0;overflow:hidden}
+#sa-root .tbar-mini i{display:block;height:100%;background:var(--critical);border-radius:99px}
+#sa-root .zone-score{font-family:"IBM Plex Mono";font-weight:700;font-size:15px;color:var(--critical);text-align:right}
+#sa-root .seg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+#sa-root .seg-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:17px;display:flex;flex-direction:column;gap:8px}
+#sa-root .seg-card h4{font-size:14.5px}
+#sa-root .seg-card .profile{font-size:11.5px;color:var(--text-muted)}
+#sa-root .seg-row{display:flex;gap:8px;font-size:12px;color:var(--text-secondary)}
+#sa-root .seg-row b{color:var(--text-primary);font-weight:600;flex:none;width:64px}
+#sa-root .actor-table{width:100%;border-collapse:collapse;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+#sa-root .actor-table th,#sa-root .actor-table td{padding:12px 15px;font-size:12.5px;border-bottom:1px solid var(--border);text-align:left}
+#sa-root .actor-table th{background:#c4c0c0;font-size:10.5px;text-transform:uppercase;color:var(--text-primary);font-weight:700}
+#sa-root .actor-table tr:last-child td{border-bottom:none}
+#sa-root .trust-bar{width:70px;height:8px;background:#c4c0c0;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px}
+#sa-root .trust-bar i{display:block;height:100%;border-radius:99px}
+#sa-root .narr-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
+#sa-root table.narr{width:100%;border-collapse:collapse;min-width:820px;background:var(--card-bg)}
+#sa-root table.narr th{background:#c4c0c0;font-size:10.5px;text-transform:uppercase;color:var(--text-primary);padding:11px 14px;text-align:left}
+#sa-root table.narr td{padding:11px 14px;font-size:12.5px;color:var(--text-secondary);border-top:1px solid var(--border)}
+#sa-root table.narr td:first-child{color:var(--text-primary);font-weight:600}
+#sa-root table.narr td.quote-cell{font-style:italic}
+#sa-root .mother-panel{background:var(--card-bg);border-left:4px solid var(--accent);border:1px solid var(--border);border-radius:14px;padding:24px 26px;margin-top:20px}
+#sa-root .mother-panel .tag-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent-ink);margin-bottom:10px}
+#sa-root .mother-panel p.quote{font-family:"Fraunces",serif;font-size:19px;color:var(--text-primary);margin:0 0 16px}
+#sa-root .mother-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;margin-top:14px}
+#sa-root .mother-grid div{font-size:12.5px;color:var(--text-secondary);padding:8px 0;border-top:1px solid var(--border-strong)}
+#sa-root .mother-grid div b{display:block;color:var(--text-primary);font-size:11px;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:3px}
+#sa-root .force-msgs{display:flex;flex-direction:column;gap:8px;margin-top:18px;list-style:none;padding:0}
+#sa-root .force-msgs li{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;font-style:italic}
+#sa-root .risk-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
+#sa-root table.risk{width:100%;border-collapse:collapse;min-width:760px;background:var(--card-bg)}
+#sa-root table.risk th{background:#c4c0c0;font-size:10.5px;text-transform:uppercase;color:var(--text-primary);padding:11px 14px;text-align:left}
+#sa-root table.risk td{padding:11px 14px;font-size:12.5px;color:var(--text-secondary);border-top:1px solid var(--border)}
+#sa-root table.risk td:first-child{color:var(--text-primary);font-weight:600}
+#sa-root .pill{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+#sa-root .pill.alta,#sa-root .pill.muyalto{background:var(--critical-soft);color:var(--critical)}
+#sa-root .pill.mediaalta,#sa-root .pill.alto{background:var(--serious-soft);color:var(--serious)}
+#sa-root .pill.media,#sa-root .pill.medio{background:var(--warning-soft);color:var(--warning)}
+#sa-root .pill.baja,#sa-root .pill.bajo{background:var(--good-soft);color:var(--good)}
+#sa-root .opp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:20px}
+#sa-root .opp-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px}
+#sa-root .opp-card b{display:block;font-size:13.5px;margin-bottom:6px;color:var(--accent-2)}
+#sa-root .opp-card p{margin:0;font-size:12.5px;color:var(--text-secondary)}
+#sa-root .reco-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:20px}
+#sa-root .reco-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:15px 16px}
+#sa-root .reco-card .dim{font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--accent-ink);font-weight:700;margin-bottom:6px}
+#sa-root .reco-card p{margin:0 0 6px;font-size:13px;color:var(--text-primary)}
+#sa-root .reco-card span{font-size:11.5px;color:var(--text-muted)}
+#sa-root .qa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+#sa-root .qa-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+#sa-root .qa-card .q{font-size:11.5px;font-weight:700;color:var(--accent-ink);margin-bottom:6px}
+#sa-root .qa-card .a{font-size:12.5px;color:var(--text-secondary)}
+#sa-root .conclusion-box{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-top:20px}
+#sa-root .conclusion-box .tag-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--critical);margin-bottom:10px}
+#sa-root .conclusion-box p{font-family:"Fraunces",serif;font-size:17px;color:var(--text-primary);margin:0}
+#sa-root .sources-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 28px}
+#sa-root .source-item{font-size:12.5px;padding:9px 0;border-bottom:1px solid var(--border);display:flex;gap:8px}
+#sa-root .source-item .n{color:var(--text-muted);font-family:"IBM Plex Mono";font-size:11px;flex:none;width:18px}
+#sa-root .source-item a{color:var(--text-secondary);text-decoration:none}
+#sa-root .source-item a:hover{color:var(--accent-ink);text-decoration:underline}
+#sa-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}
+@media (max-width:1020px){
+  #sa-root .index-panel{grid-template-columns:1fr}
+  #sa-root .issue-grid{grid-template-columns:repeat(2,1fr)}
+  #sa-root .pain-grid{grid-template-columns:1fr}
+  #sa-root .seg-grid{grid-template-columns:repeat(2,1fr)}
+  #sa-root .zone-row{grid-template-columns:1fr 1fr}
+  #sa-root .mother-grid{grid-template-columns:1fr}
+  #sa-root .opp-grid{grid-template-columns:1fr}
+  #sa-root .reco-grid{grid-template-columns:1fr}
+  #sa-root .qa-grid{grid-template-columns:1fr}
+  #sa-root .sources-grid{grid-template-columns:1fr}
+  #sa-root .emo-row{grid-template-columns:120px 1fr 34px}
+}
+@media (max-width:680px){
+  #sa-root .issue-grid{grid-template-columns:1fr}
+  #sa-root .seg-grid{grid-template-columns:1fr}
+}
+</style>
+
+<div class="brandbar">
+  <div class="brandbar-inner">
+    <div class="brand">SOCIOAFECTIVA <span id="sa-brand-territorio">· —</span></div>
+    <div class="brand-tag" id="sa-brand-tag">Cartografía del clima emocional colectivo</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-eyebrow"><span class="dot"></span>Cartografía Socioafectiva Territorial</div>
+    <h1 id="sa-hero-title">Cargando diagnóstico…</h1>
+    <p class="hero-sub" id="sa-hero-sub"></p>
+    <div class="hero-meta">
+      <div class="meta-pill">Territorio: <b id="sa-meta-territorio"></b></div>
+      <div class="meta-pill">Ventana: <b id="sa-meta-ventana"></b></div>
+      <div class="meta-pill">Modalidad: <b id="sa-meta-modalidad"></b></div>
+      <div class="meta-pill">Fuentes revisadas: <b id="sa-meta-fuentes"></b></div>
+    </div>
+
+    <div class="index-panel">
+      <div class="gauge-card">
+        <div class="gauge-label">Índice general socioafectivo</div>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 150 150" width="150" height="150">
+            <circle cx="75" cy="75" r="62" fill="none" stroke="#c4c0c0" stroke-width="14"/>
+            <circle id="sa-gauge-arc" cx="75" cy="75" r="62" fill="none" stroke="var(--critical)" stroke-width="14" stroke-linecap="round" transform="rotate(-90 75 75)"/>
+          </svg>
+          <div class="gauge-num"><b class="tabular" id="sa-gauge-num">—</b><span>de 10</span></div>
+        </div>
+        <div class="band-chip" id="sa-band-chip"></div>
+      </div>
+      <div class="brutal-card">
+        <div class="tag-label">Lectura brutalmente clara</div>
+        <p id="sa-brutal-text"></p>
+      </div>
+    </div>
+
+    <nav class="tabs-nav" id="sa-tabsNav">
+      <button class="tab-btn active" onclick="saShow('sa-tab-resumen',this)">Resumen</button>
+      <button class="tab-btn" onclick="saShow('sa-tab-emociones',this)">Emociones</button>
+      <button class="tab-btn" onclick="saShow('sa-tab-territorio',this)">Territorio</button>
+      <button class="tab-btn" onclick="saShow('sa-tab-segmentos',this)">Segmentos y actores</button>
+      <button class="tab-btn" onclick="saShow('sa-tab-narrativas',this)">Narrativas</button>
+      <button class="tab-btn" onclick="saShow('sa-tab-riesgos',this)">Riesgos y acción</button>
+      <button class="tab-btn" onclick="saShow('sa-tab-fuentes',this)">Fuentes</button>
+    </nav>
+  </header>
+
+  <!-- ============ TAB: RESUMEN ============ -->
+  <div class="tab-panel active" id="sa-tab-resumen">
+    <section class="block">
+      <div class="sec-num">01</div>
+      <div class="sec-head"><h2>Problemas estatales prioritarios</h2></div>
+      <p class="sec-dek">Issues que concentran hoy la mayor activación emocional del territorio, con la frase ciudadana que mejor los resume.</p>
+      <div class="issue-grid" id="sa-issue-grid"></div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">02</div>
+      <div class="sec-head"><h2>Radiografía territorial sintética</h2></div>
+      <table class="find-table"><tbody id="sa-radiografia-body"></tbody></table>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">03</div>
+      <div class="sec-head"><h2>Hallazgos centrales</h2></div>
+      <table class="find-table">
+        <thead><tr><th>Hallazgo central</th><th>Lectura socioafectiva</th></tr></thead>
+        <tbody id="sa-hallazgos-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ============ TAB: EMOCIONES ============ -->
+  <div class="tab-panel" id="sa-tab-emociones">
+    <section class="block">
+      <div class="sec-num">04</div>
+      <div class="sec-head"><h2>Mapa emocional colectivo</h2></div>
+      <p class="sec-dek">Intensidad de cada emoción dominante, grupo donde aparece con mayor fuerza y detonante inmediato.</p>
+      <div class="emo-list" id="sa-emo-list"></div>
+      <div class="emo-synth" id="sa-emo-synth"></div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">05</div>
+      <div class="sec-head"><h2>Mapa de dolores sociales</h2></div>
+      <p class="sec-dek">Dolores concretos detrás de cada emoción, con su narrativa ciudadana y su lectura de riesgo/oportunidad.</p>
+      <div class="pain-grid" id="sa-pain-grid"></div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">06</div>
+      <div class="sec-head"><h2>Mapa simbólico del territorio</h2></div>
+      <p class="sec-dek">Objetos, lugares y actores concretos que condensan el estado emocional colectivo — la materia prima de cualquier narrativa efectiva.</p>
+      <table class="find-table">
+        <thead><tr><th>Símbolo</th><th>Emoción que activa</th><th>Uso estratégico</th></tr></thead>
+        <tbody id="sa-symbol-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ============ TAB: TERRITORIO ============ -->
+  <div class="tab-panel" id="sa-tab-territorio">
+    <section class="block">
+      <div class="sec-num">07</div>
+      <div class="sec-head"><h2>Mapa territorial por zonas</h2></div>
+      <p class="sec-dek">Tensión socioafectiva por zona (0–10), ordenada de mayor a menor. El territorio no es homogéneo: cada zona necesita su propia intervención.</p>
+      <div class="zone-grid" id="sa-zone-grid"></div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">08</div>
+      <div class="sec-head"><h2>Enemigos simbólicos y fracturas sociales</h2></div>
+      <table class="find-table">
+        <thead><tr><th>Enemigo / fractura</th><th>Riesgo</th><th>Cómo neutralizarlo</th></tr></thead>
+        <tbody id="sa-enemy-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ============ TAB: SEGMENTOS Y ACTORES ============ -->
+  <div class="tab-panel" id="sa-tab-segmentos">
+    <section class="block">
+      <div class="sec-num">09</div>
+      <div class="sec-head"><h2>Segmentación socioafectiva</h2></div>
+      <p class="sec-dek">Segmentos con distinta emoción dominante, dolor principal y narrativa que los activa.</p>
+      <div class="seg-grid" id="sa-seg-grid"></div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">10</div>
+      <div class="sec-head"><h2>Actores afectivos del territorio</h2></div>
+      <p class="sec-dek">Confianza ciudadana estimada (0–10) y potencial estratégico de cada actor relevante.</p>
+      <table class="actor-table">
+        <thead><tr><th>Actor</th><th>Confianza</th><th>Emoción asociada</th><th>Potencial estratégico</th></tr></thead>
+        <tbody id="sa-actor-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ============ TAB: NARRATIVAS ============ -->
+  <div class="tab-panel" id="sa-tab-narrativas">
+    <section class="block">
+      <div class="sec-num">11</div>
+      <div class="sec-head"><h2>Narrativas dominantes en competencia</h2></div>
+      <div class="narr-table-wrap">
+        <table class="narr">
+          <thead><tr><th>Narrativa</th><th>Quién la impulsa</th><th>Frase representativa</th><th>Penetración</th><th>Oportunidad</th></tr></thead>
+          <tbody id="sa-narr-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">12</div>
+      <div class="sec-head"><h2>Narrativa madre recomendada</h2></div>
+      <div class="mother-panel">
+        <div class="tag-label">Frase rectora</div>
+        <p class="quote" id="sa-mother-quote"></p>
+        <div class="mother-grid" id="sa-mother-grid"></div>
+        <ul class="force-msgs" id="sa-force-msgs"></ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ TAB: RIESGOS Y ACCIÓN ============ -->
+  <div class="tab-panel" id="sa-tab-riesgos">
+    <section class="block">
+      <div class="sec-num">13</div>
+      <div class="sec-head"><h2>Riesgos estratégicos</h2></div>
+      <div class="risk-table-wrap">
+        <table class="risk">
+          <thead><tr><th>Riesgo</th><th>Probabilidad</th><th>Impacto</th><th>Detonante posible</th><th>Recomendación preventiva</th></tr></thead>
+          <tbody id="sa-risk-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">14</div>
+      <div class="sec-head"><h2>Oportunidades estratégicas</h2></div>
+      <div class="opp-grid" id="sa-opp-grid"></div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">15</div>
+      <div class="sec-head"><h2>Recomendaciones de intervención</h2></div>
+      <div class="reco-grid" id="sa-reco-grid"></div>
+    </section>
+
+    <section class="block">
+      <div class="sec-num">16</div>
+      <div class="sec-head"><h2>Conclusión ejecutiva — las 9 preguntas</h2></div>
+      <div class="qa-grid" id="sa-qa-grid"></div>
+      <div class="conclusion-box">
+        <div class="tag-label">Conclusión brutalmente clara</div>
+        <p id="sa-conclusion"></p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ TAB: FUENTES ============ -->
+  <div class="tab-panel" id="sa-tab-fuentes">
+    <section class="block">
+      <div class="sec-num">17</div>
+      <div class="sec-head"><h2>Fuentes digitales consultadas</h2></div>
+      <p class="sec-dek">Cifras sin validación institucional precisa (ej. conteos periodísticos) se presentan como estimaciones sujetas a corroboración oficial, no como dato duro cerrado.</p>
+      <div class="sources-grid" id="sa-sources-grid"></div>
+    </section>
+  </div>
+</div>
+
+<div class="footer"><span id="sa-ftr-l">Radar - Socioafectiva</span><span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span></div>
+</div>
