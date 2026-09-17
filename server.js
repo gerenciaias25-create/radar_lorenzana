@@ -132,6 +132,15 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
     const normalized = normalizeResponse(structured, skill, { actorName, actor2Name, actoresNombres: listaActores });
 
+    // "socioafectiva" tiene una pestaña de Fuentes con enlaces citables: se
+    // reemplaza lo que haya devuelto el modelo (que podría inventar URLs)
+    // por la lista real construida a partir de las URLs efectivamente
+    // scrapeadas, para no exponer citas falsas.
+    if (skill === 'socioafectiva') {
+      const fuentesReales = construirFuentesReales(datosActor1);
+      if (fuentesReales.length) normalized.fuentes = fuentesReales;
+    }
+
     const fuentesEncontradas = skill === 'comparativo'
       ? (datosPorActor || []).reduce((sum, d) => sum + (d?.count || 0), 0)
       : (datosActor1?.count || 0) + (datosActor2?.count || 0);
@@ -338,6 +347,47 @@ function normalizeResponse(data, skill, ctx = {}) {
     ensureArray(data, 'vectoresAtaque', []);
     ensureObject(data, 'redDePoder', { radar: [0, 0, 0, 0, 0, 0], alertas: [], tabla: [] });
     if (!data.resumenEjecutivo) data.resumenEjecutivo = '';
+  }
+
+  // SESGO (sesgos cognitivos electorales)
+  if (skill === 'sesgo') {
+    ensureObject(data, 'meta', { entidad: 'Sin entidad', segmento: 'Electorado general', periodo: '', fuentes: 0, estado: 'LIMITADO', ventanaPersuasion: 'Entreabierta' });
+    ensureObject(data, 'metricas', {});
+    ensureObject(data.metricas, 'sesgosCriticos', { valor: 0, detalle: '' });
+    ensureObject(data.metricas, 'sesgosAltos', { valor: 0, detalle: '' });
+    ensureObject(data.metricas, 'sri', { valor: 0, nivel: 'Medio', detalle: '' });
+    ensureObject(data.metricas, 'sistemaDominante', { valor: 'Sistema 1', detalle: '' });
+    ensureArray(data, 'ranking', []);
+    ensureArray(data, 'segmentos', []);
+    ensureArray(data, 'ventanasPersuasion', []);
+    ensureArray(data, 'arquitecturaMensajes', []);
+    if (!data.resumenEjecutivo) data.resumenEjecutivo = '';
+  }
+
+  // SOCIOAFECTIVA (cartografía socioafectiva territorial)
+  if (skill === 'socioafectiva') {
+    ensureObject(data, 'meta', { territorio: actorName, ventana: '', modalidad: '', fuentesRevisadas: 0, corte: '' });
+    ensureObject(data, 'indice', { valor: 0, lecturaBrutal: '' });
+    ensureArray(data, 'issues', []);
+    ensureArray(data, 'radiografia', []);
+    ensureArray(data, 'hallazgos', []);
+    ensureArray(data, 'emociones', []);
+    ensureObject(data, 'sintesisEmocional', { dominante: '', secundaria: '', masPeligrosa: '', masPeligrosaRiesgo: '', masMovilizable: '', masMovilizableEvidencia: '', masDesaprovechada: '', masDesaprovechadaEvidencia: '' });
+    ensureArray(data, 'dolores', []);
+    ensureArray(data, 'simbolos', []);
+    ensureArray(data, 'zonas', []);
+    ensureArray(data, 'enemigos', []);
+    ensureArray(data, 'segmentos', []);
+    ensureArray(data, 'actores', []);
+    ensureArray(data, 'narrativas', []);
+    ensureObject(data, 'narrativaMadre', { fraseRectora: '', heridaCentral: '', enemigoSimbolico: '', promesaEmocional: '', protagonista: '', futuroDeseado: '', tonoNarrativo: '', simbolosUsar: '', simbolosEvitar: '', mensajesFuerza: [] });
+    ensureArray(data.narrativaMadre, 'mensajesFuerza', []);
+    ensureArray(data, 'riesgos', []);
+    ensureArray(data, 'oportunidades', []);
+    ensureArray(data, 'recomendaciones', []);
+    ensureArray(data, 'preguntas9', []);
+    ensureArray(data, 'fuentes', []);
+    if (!data.conclusionEjecutiva) data.conclusionEjecutiva = '';
   }
 
   // COMPARATIVO
@@ -569,6 +619,7 @@ async function scrapeActor(nombre, token) {
       fecha: i.date || i.timestamp || i.publishedAt || null,
       autor: i.author || i.username || i.ownerUsername || i.channelName || null,
       likes: i.likeCount ?? i.likes ?? i.diggCount ?? null,
+      url: i.url || i.link || i.webUrl || i.postUrl || i.permalink || null,
     }))
     .filter(t => t.texto && t.texto.length > 8)
     .slice(0, 160);
@@ -578,6 +629,25 @@ async function scrapeActor(nombre, token) {
 
 function tag(items, fuente) {
   return (items || []).map(i => ({ ...i, __fuente: fuente }));
+}
+
+// Construye la pestaña "Fuentes" (solo usada por "socioafectiva") a partir de
+// metadatos REALES del scraping — nunca del modelo — para evitar que
+// OpenRouter invente títulos de artículos o URLs que parezcan reales pero
+// sean falsas. Deduplica por URL y descarta cualquier item sin URL (mejor
+// pocas fuentes reales que una lista larga con enlaces inventados).
+function construirFuentesReales(bloque, max = 24) {
+  if (!bloque || !bloque.items) return [];
+  const vistos = new Set();
+  const out = [];
+  for (const item of bloque.items) {
+    if (!item.url || vistos.has(item.url)) continue;
+    vistos.add(item.url);
+    const titulo = (item.texto || '').replace(/\s+/g, ' ').trim().slice(0, 140) || `Publicación en ${item.fuente}`;
+    out.push({ titulo, url: item.url, fuente: item.fuente });
+    if (out.length >= max) break;
+  }
+  return out;
 }
 
 // =========================================================
@@ -748,6 +818,66 @@ const SCHEMAS = {
     resumenEjecutivo: "string"
   }, null, 2),
 
+  sesgo: JSON.stringify({
+    meta: {
+      entidad: "string (territorio/entidad evaluada)",
+      segmento: "string (ej. 'Electorado general (sucesión gubernatura 2027)')",
+      periodo: "string (ej. 'mar–sep 2026')",
+      fuentes: 0,
+      estado: "ROBUSTO|MODERADO|LIMITADO (según cantidad y calidad de evidencia disponible)",
+      ventanaPersuasion: "Abierta|Entreabierta|Cerrada"
+    },
+    metricas: {
+      sesgosCriticos: { valor: 0, detalle: "string (nombres de los sesgos SAS≥81, separados por ' · ')" },
+      sesgosAltos: { valor: 0, detalle: "string (nombres de los sesgos SAS 61-80, separados por ' · ')" },
+      sri: { valor: 0, nivel: "Alto|Medio|Bajo", detalle: "string (explica brevemente qué actor/continuidad está en riesgo y por qué)" },
+      sistemaDominante: { valor: "Sistema 1|Sistema 2", detalle: "string (una línea explicando el procesamiento dominante: emocional/reactivo vs. deliberativo/racional)" }
+    },
+    ranking: [{ categoria: "I|II|III|IV|V|VI|VII|VIII", codigo: "string (ej. S11)", nombre: "string (nombre del sesgo cognitivo)", descripcion: "string (una línea explicando el mecanismo y el hecho/evidencia que lo activa)", score: 0, nivel: "Crítico|Alto|Medio|Bajo" }],
+    segmentos: [{ perfil: "string (ej. 'Duro (Morena)', 'Blando', 'Persuadible', 'Abstencionista', 'Indeciso')", color: "verde|azul|ambar|gris", sesgoPrincipal: "string (código + nombre del sesgo)", sesgoSecundario: "string (código + nombre del sesgo)", lectura: "string (frase interpretativa breve del comportamiento cognitivo de este segmento)" }],
+    ventanasPersuasion: [{ segmento: "string (público objetivo específico, no genérico)", sesgoActivo: "string (código(s) + nombre(s) de sesgo, ej. 'S11 Negatividad + S20 Aversión a la pérdida')", ivp: "Abierta|Entreabierta|Cerrada", recomendacion: "string (mensaje o acción concreta y específica para abrir/aprovechar esta ventana)" }],
+    arquitecturaMensajes: [{ etiqueta: "Diferenciación|Posicionamiento|Lanzamiento|Contención|Movilización", titulo: "string (sesgo(s) objetivo + público al que se dirige)", texto: "string (táctica concreta de mensaje/canal, no genérica)" }],
+    resumenEjecutivo: "string"
+  }, null, 2),
+
+  socioafectiva: JSON.stringify({
+    meta: {
+      territorio: "string",
+      ventana: "string (ej. 'mar–sep 2026 (6 meses)')",
+      modalidad: "string (ej. 'Multitemática · 6 issues')",
+      fuentesRevisadas: 0,
+      corte: "string (fecha de corte del análisis)"
+    },
+    indice: {
+      valor: 0,
+      lecturaBrutal: "string (párrafo de 60-100 palabras, tono directo y sin eufemismos, resumiendo el estado emocional colectivo del territorio con al menos 2 hechos concretos — NO incluyas emoji de banda ni la palabra 'Banda', eso se calcula aparte)"
+    },
+    issues: [{ titulo: "string (problema estatal/municipal prioritario)", frase: "string (frase ciudadana textual representativa, entre comillas)", emocion: "string (emoción dominante que activa)", score: 0 }],
+    radiografia: [{ label: "string", valor: "string" }],
+    hallazgos: [{ hallazgo: "string (hecho concreto con cifra/fecha/fuente)", lectura: "string (interpretación socioafectiva de ese hallazgo, 20-40 palabras)" }],
+    emociones: [{ nombre: "string", score: 0, grupo: "string (segmento donde aparece con mayor fuerza)", detonante: "string (hecho concreto que la activa)", color: "critical|serious|violet|warning|muted|accent|good" }],
+    sintesisEmocional: { dominante: "string", secundaria: "string", masPeligrosa: "string", masPeligrosaRiesgo: "string (por qué es la más peligrosa)", masMovilizable: "string", masMovilizableEvidencia: "string (evidencia de que ya se está movilizando)", masDesaprovechada: "string", masDesaprovechadaEvidencia: "string (por qué está desaprovechada como activo narrativo)" },
+    dolores: [{ titulo: "string", score: 0, frase: "string (cita textual entre comillas)", tags: ["string"] }],
+    simbolos: [{ simbolo: "string (objeto/lugar/actor concreto)", emocion: "string", usoEstrategico: "string (cómo usarlo o evitarlo en comunicación)" }],
+    zonas: [{ nombre: "string", subzona: "string", dolor: "string", tension: 0 }],
+    enemigos: [{ nombre: "string (enemigo simbólico o fractura social)", riesgo: "string", neutralizacion: "string (acción concreta)" }],
+    segmentos: [{ titulo: "string", perfil: "string (composición del segmento)", dolor: "string", deseo: "string", miedo: "string", narrativa: "string" }],
+    actores: [{ nombre: "string", confianza: 0, emocion: "string (emoción asociada a este actor)", potencial: "string (potencial estratégico, explicado)" }],
+    narrativas: [{ tipo: "string (ej. 'Oficial / gubernamental', 'Crítica / opositora')", impulsor: "string (quién la impulsa)", frase: "string (entre comillas)", penetracion: 0, oportunidad: "string" }],
+    narrativaMadre: {
+      fraseRectora: "string (entre comillas)",
+      heridaCentral: "string", enemigoSimbolico: "string", promesaEmocional: "string",
+      protagonista: "string", futuroDeseado: "string", tonoNarrativo: "string",
+      simbolosUsar: "string", simbolosEvitar: "string",
+      mensajesFuerza: ["string (frase corta entre comillas, lista para usar en discurso/spot)"]
+    },
+    riesgos: [{ riesgo: "string", probabilidad: "Baja|Media|Media-alta|Alta", impacto: "Bajo|Medio|Alto|Muy alto", detonante: "string", recomendacion: "string" }],
+    oportunidades: [{ titulo: "string", texto: "string" }],
+    recomendaciones: [{ dimension: "string (ej. 'Comunicación', 'Forense', 'Económica')", accion: "string", publico: "string", atiende: "string (emoción/dolor que atiende)" }],
+    preguntas9: [{ pregunta: "string", respuesta: "string" }],
+    conclusionEjecutiva: "string (párrafo de 60-100 palabras, tono directo, cerrando el diagnóstico)"
+  }, null, 2),
+
   // NOTA IMPORTANTE SOBRE ESTE SCHEMA: los objetos "sentimientoGeneral",
   // "traSerie.series", "picosSerie.series" y "plataformasRadar.data" usan
   // como LLAVE el nombre EXACTO del actor (idéntico a "actores[].nombre").
@@ -818,13 +948,22 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
   } else {
     const bloque1 = resumirFuentes(datosActor1);
     const bloque2 = datosActor2 ? resumirFuentes(datosActor2) : null;
+    const etiquetaSujeto = (skill === 'tensiones' || skill === 'sesgo') ? 'Territorio/Entidad evaluada' : 'Personaje';
     contexto = actor2Name
       ? `Personaje A: ${actorName}\nPersonaje B: ${actor2Name}\n\n--- Datos crudos sobre ${actorName} ---\n${bloque1}\n\n--- Datos crudos sobre ${actor2Name} ---\n${bloque2}`
-      : `Personaje: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
+      : `${etiquetaSujeto}: ${actorName}\n\n--- Datos crudos extraídos ---\n${bloque1}`;
   }
 
   const guardarropaOpositor = skill === 'opositor'
     ? `\nReglas adicionales OBLIGATORIAS para este expediente de oposición:\n- Basa cualquier señalamiento grave ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas.\n- NO inventes números de expediente ni fechas falsas de documentos.\n- Si no hay suficiente información cruda, trátalo como "área de riesgo reputacional" y dilo explícitamente en el texto (no lo disfraces de hecho probado).\n- Este es un expediente de consultoría política pagado: CADA una de las 5 pestañas (Perfil, Vulnerabilidades, Contradicciones, Vectores de Ataque, Red de Poder) debe sentirse igual de investigada — está prohibido que una pestaña quede robusta y otra con 2-3 elementos genéricos.`
+    : '';
+
+  const guardarropaSesgo = skill === 'sesgo'
+    ? `\nReglas adicionales OBLIGATORIAS para este análisis de sesgos cognitivos electorales:\n- Marco teórico: analiza el electorado del territorio/entidad evaluado a través de sesgos cognitivos de psicología política (heurísticos de Kahneman-Tversky y afines) que la evidencia de las fuentes crudas sugiera que están activos, no un catálogo genérico repetido de análisis a análisis.\n- Catálogo de referencia (no exhaustivo, úsalo como guía de categorías y códigos S01-S26, pero adáptalo a lo que realmente sugieran las fuentes; puedes usar otros sesgos conocidos si encajan mejor):\n  · Categoría I — Heurísticos de disponibilidad y exposición: S08 Disponibilidad, S23 Mera exposición, S26 Verdad ilusoria.\n  · Categoría II — Sesgos de negatividad y pérdida: S11 Negatividad, S20 Aversión a la pérdida, S13 Víctima identificable.\n  · Categoría III — Sesgos identitarios y sociales: S15 Identidad social, S05 Efecto bandwagon, S17 Sesgo endogrupal.\n  · Categoría IV — Sesgos retrospectivos y de atribución: S18 Retrospectivo, S03 Atribución, S09 Sesgo de resultado.\n  · Categoría V — Sesgos de autoridad y confianza institucional: S25 Autoridad, S02 Halo, S06 Autoservicio institucional.\n  · Categoría VI — Sesgos de confirmación y consistencia: S07 Confirmación, S21 Disonancia cognitiva, S14 Consistencia interna.\n  · Categoría VII — Sesgos de anclaje y encuadre: S01 Anclaje inicial, S10 Encuadre/framing, S19 Proyección.\n  · Categoría VIII — Sesgos de statu quo y fatiga cívica: S12 Statu quo/fatiga, S24 Descuento hiperbólico, S16 Ilusión de control.\n- El SAS (Score de Activación de Sesgo) de cada elemento en "ranking" va de 0-100: 81-100 = Crítico, 61-80 = Alto, 41-60 = Medio, <41 = Bajo. Distribuye los scores de forma realista y variada (no todos en el mismo rango).\n- "metricas.sesgosCriticos.valor" y "metricas.sesgosAltos.valor" DEBEN coincidir exactamente con el conteo real de elementos de "ranking" en esos rangos de score — nunca un número inventado que no cuadre con el ranking.\n- "metricas.sri" (Riesgo Cognitivo de continuidad/actor en turno) interpreta qué tan expuesto está el actor/partido gobernante a que la oposición explote los sesgos activos.\n- Basa cualquier cifra o hecho concreto (número de negocios cerrados, meses de conflicto, medios que dieron cobertura, etc.) ÚNICAMENTE en las fuentes crudas proporcionadas; si no hay suficiente evidencia para un dato concreto, redacta el mecanismo del sesgo en términos cualitativos en vez de inventar una cifra.`
+    : '';
+
+  const guardarropaSocioafectiva = skill === 'socioafectiva'
+    ? `\nReglas adicionales OBLIGATORIAS para esta cartografía socioafectiva territorial:\n- NO generes la lista "fuentes": ese campo se construye por separado a partir de las URLs reales scrapeadas; si el esquema no la pide, no la incluyas ni inventes artículos/enlaces.\n- "issues" debe cubrir los problemas/temas realmente prioritarios que emergen de las fuentes crudas del territorio (seguridad, economía, servicios, salud, movilidad, etc. — los que apliquen), nunca una lista genérica copiada de otro territorio.\n- Cada "frase" (en issues, dolores, narrativas, narrativaMadre, mensajesFuerza) debe sonar a cita ciudadana real y específica del territorio, no a eslogan genérico de campaña.\n- "zonas[].tension" y "actores[].confianza" son escalas 0-10; ordena "zonas" de mayor a menor tensión.\n- "indice.valor" (Índice General Socioafectivo, 0-10, donde 10 = clima más deteriorado) debe ser coherente con el promedio implícito de "emociones[].score" y "zonas[].tension" — no un número desconectado del resto del reporte. NO incluyas emoji ni la palabra "Banda" dentro de "indice.lecturaBrutal", eso se calcula aparte en el frontend a partir del número.\n- Basa cualquier cifra concreta (empleos perdidos, homicidios, empresas cerradas, porcentajes de desconfianza, etc.) ÚNICAMENTE en las fuentes crudas proporcionadas; si no hay dato exacto, describe la magnitud en términos cualitativos verosímiles en vez de inventar una cifra precisa.`
     : '';
 
   const listaComparativo = (actoresNombres?.length ? actoresNombres : [actorName, actor2Name].filter(Boolean));
@@ -844,8 +983,12 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Comparativo, ${listaComparativo.length} actores):\n- LLAVES DINÁMICAS POR ACTOR: en "sentimientoGeneral", "traSerie.series", "picosSerie.series", "plataformasRadar.data" y "sentimientoCruces.*.data", las llaves del objeto deben ser EXACTAMENTE los ${listaComparativo.length} nombres reales listados arriba, NUNCA "NombreActor1"/"NombreActor2" ni variantes. Ejemplo real: {${ejemploLlaves}}. Cada uno de estos objetos debe traer entradas para TODOS los actores, no solo los primeros 2.\n- "npsPorActor" y "ratioPorActor" deben tener EXACTAMENTE ${listaComparativo.length} números, en el mismo orden que la lista de actores.\n- "sentimientoGeneral" y los arrays dentro de "sentimientoCruces.*.data.<actor>.<segmento>" son [positivo, neutro, negativo, polarizado] — 4 números que idealmente suman ~100.\n- "kpiCards": mínimo 4 tarjetas, "color" debe ser una de estas 4 letras exactas: "g" (verde/bueno), "a" (ámbar/atención), "r" (rojo/riesgo), "n" (neutro). NUNCA un color hex aquí.\n- "hashtags": cada fila es EXACTAMENTE 6 elementos en este orden: [hashtag (con #), nombre del actor al que más se asocia, tono ("Positivo"/"Negativo"/"Neutro"/"Polarizado"), plataforma principal donde circula, origen ("orgánico"/"inducido"), frecuencia relativa (número 0-100)].\n- "riesgos" y "oportunidades": cada fila es un array de 4 elementos [nivel, titulo, texto, bivariado]. Nivel de "riesgos" usa CRÍTICO/ALTO/MEDIO/BAJO; nivel de "oportunidades" usa ALTA/MEDIA/BAJA.\n- "narrativas.tipo" debe ser EXACTAMENTE uno de: "favorable", "critica", "ambivalente" (sin acentos, en minúsculas) — el frontend filtra por este valor literal. Debe haber narrativas para CADA uno de los ${listaComparativo.length} actores, no solo de los primeros 2.\n- "alertaTabla" debe tener EXACTAMENTE ${listaComparativo.length} filas, una por actor.\n- "topOfMindCruces.*.data" usa como llave el NOMBRE DEL TEMA (no del actor), con un array de números alineado a "segments".\n- "plataformasRadar.labels" siempre debe ser ["X (Twitter)", "Facebook", "Instagram", "Medios digitales"] y "plataformasRadar.data.<actor>" un array de 4 números alineados a esas labels, para CADA uno de los ${listaComparativo.length} actores.`
     : skill === 'opositor'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Opositor):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico, igual que en un reporte real): "perfil.ierPorCargo" debe tener una entrada por CADA etapa relevante de "perfil.cronologia" (mismo texto en "cargo" que en el "titulo" de esa etapa), para que la gráfica de barras "IER por Cargo" refleje exactamente los mismos eventos que se leen en la línea de tiempo — nunca uses cargos que no aparezcan en la cronología ni omitas etapas importantes de la cronología en la gráfica. "valor" es 0-10 donde valores bajos (0-3) marcan las etapas con escándalo/controversia y valores altos (7-10) las etapas limpias o exitosas.\n- "contradicciones.ranking" y "contradicciones.tabla" deben cubrir EXACTAMENTE las mismas contradicciones (mismo "codigo" C1, C2, C3... en ambas), en el mismo orden — nunca un ranking con más o menos elementos que filas en la tabla.\n- "vulnerabilidades[].descripcion": párrafo de 40-70 palabras que explique el MECANISMO de la vulnerabilidad (qué pasó, cuándo, quién estuvo involucrado) ANTES de los bullets, que a su vez deben aterrizar el dato duro (cifra, fecha, nombre, fuente). Nunca dejes "descripcion" vacía o como una sola frase genérica.\n- "vectoresAtaque[].argumento": párrafo de 40-80 palabras que plantee la contradicción central de forma ofensiva y citable (el "gancho" del ataque). "evidencias" debe tener 3-5 elementos, cada uno con formato "Evidencia (Fuente, fecha aproximada): hecho concreto con cifra/nombre" — igual de denso que en "tensiones.ranking[].evidencia". "fraseLista" es obligatoria en TODOS los vectores: una frase corta lista para usar en debate/spot, entre comillas.\n- "redDePoder.alertas[].categoria" y "redDePoder.tabla[].categoria" deben usar EXACTAMENTE una de: "Aliado", "Deuda Política", "Tensión Interna", "Vulnerabilidad de Red" (en alertas) o "Aliado"/"Deuda Política"/"Tensión Interna"/"Riesgo" (en tabla) — distribuye las 6+ filas de la tabla y las alertas entre las 4 categorías, no las concentres todas en una sola. "redDePoder.tabla[].riesgoOportunidad" debe ser una cláusula específica y accionable (qué gana o arriesga el actor por este vínculo), nunca una palabra suelta como "riesgo alto".\n- "perfil.rows": cubre como mínimo estos datos si existen en las fuentes (adapta etiqueta si aplica): Nacimiento, Formación académica, Posgrado/especialización, Trayectoria partidista, Padrino o mentor político, Deuda política (a quién le debe el cargo), Aspiración electoral, Patrimonio/declaración si es pública — cada "value" debe ser un dato concreto, no "Sin datos" salvo que realmente no exista evidencia.`
+    : skill === 'sesgo'
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Sesgo):\n- CONSISTENCIA NUMÉRICA (crítico): "metricas.sesgosCriticos.valor" debe ser EXACTAMENTE el número de elementos de "ranking" con score 81-100, y "metricas.sesgosAltos.valor" el número con score 61-80 — cuenta el array real, nunca un número aproximado o inventado.\n- "ranking[].categoria" usa EXACTAMENTE uno de los números romanos "I" a "VIII" del catálogo de referencia dado en las reglas adicionales; distribúyelos, no concentres todo en 1-2 categorías.\n- "ranking[].descripcion" siempre ancla el sesgo en un hecho/evidencia concreto de las fuentes (fecha, cifra, medio, actor), no una definición de libro de texto del sesgo — ej. "22 meses de conflicto armado saturan el frame emocional del electorado (cobertura CNN/Infobae, ago-sep 2026)", nunca solo "La gente reacciona más a lo negativo".\n- "segmentos[].perfil" debe cubrir el espectro completo del electorado del territorio evaluado (mínimo: base dura del partido en el poder, base blanda/decepcionada, persuadible/indeciso, abstencionista/fatigado) — nunca dupliques el mismo perfil dos veces. "color" debe ser EXACTAMENTE uno de "verde", "azul", "ambar", "gris".\n- "ventanasPersuasion[].segmento" debe ser un público específico y territorializado (ej. "Comerciantes de Culiacán", no "Ciudadanía en general"), y "recomendacion" una acción/mensaje concreto y accionable, nunca un consejo genérico tipo "comunicar mejor".\n- "arquitecturaMensajes[].etiqueta" debe ser EXACTAMENTE una de "Diferenciación", "Posicionamiento", "Lanzamiento", "Contención", "Movilización" — cubre al menos 3 etiquetas distintas entre los elementos, no repitas la misma etiqueta en todos.\n- "metricas.sistemaDominante.valor" debe ser EXACTAMENTE "Sistema 1" (procesamiento emocional/reactivo, típico cuando predominan sesgos de negatividad/disponibilidad/pérdida) o "Sistema 2" (procesamiento deliberativo, típico cuando predominan sesgos de confirmación/consistencia con baja intensidad emocional) — decide según qué categorías dominan el ranking.`
     : skill === 'tensiones'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico): "trayectoria" debe tener EXACTAMENTE las mismas tensiones que "ranking" (mismos "nombre", mismo orden), y "riesgos" también debe cubrir esas mismas tensiones en el mismo orden — un analista que lea las 3 pestañas debe reconocer que hablan de las mismas 6-10 tensiones, no de conjuntos distintos. El campo "ta" de cada fila en "trayectoria" debe ser IGUAL al "score" de esa misma tensión en "ranking".\n- "ranking[].emocion" formato EXACTO: "EmociónPrimaria + EmociónSecundaria · X/5" (ej. "Hartazgo + Desprotección · 4/5"), nunca solo una palabra suelta.\n- "ranking[].evidencia" es un párrafo (no una frase) que encadena 2-3 datos verificables (cifras, fechas, colonias) cada uno rematado con su fuente entre paréntesis, siguiendo este patrón: "Dato 1 con cifra y fecha (Fuente, ICF X.X) - Dato 2 (Fuente, ICF X.X)". Nunca lo dejes como una oración vaga sin cifras ni fuente.\n- "emociones[].descripcion" siempre debe indicar si la emoción es estructural/coyuntural y su tendencia (sostenida/en descenso/nueva), no solo repetir el nombre de la emoción.\n- "territorios[].color" debe ser EXACTAMENTE "Rojo", "Naranja" o "Amarillo" (no otros valores ni colores hex aquí).\n- "riesgos[].tipoSenal" debe ser EXACTAMENTE uno de: "Amplificada legítima", "Orgánica", "Inducida", "Aislada". "riesgos[].probEscalar" debe ser EXACTAMENTE "Alta", "Media" o "Baja".\n- "trayectoria[].delta" es un STRING con signo, ej. "+7" o "-3" (ta menos t3), nunca un número sin signo ni una palabra.\n- "alertas[].rows": cada alerta necesita mínimo 8 filas cubriendo Territorio, Emoción, Actor expuesto, Qué ocurrió (párrafo con fecha), Narrativa activa, Fuente verificadora, Riesgo, Escalamiento, Acción inmediata — usa esas etiquetas o muy similares, en ese orden.`
+    : skill === 'socioafectiva'
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Socioafectiva):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico): las emociones que aparecen en "sintesisEmocional" (dominante/secundaria/masPeligrosa/masMovilizable/masDesaprovechada) DEBEN ser nombres que también existan literalmente en el array "emociones" — nunca menciones ahí una emoción que no esté en el listado. Las "zonas" mencionadas en "enemigos[].riesgo" o en "segmentos" deben ser consistentes con los nombres usados en "zonas".\n- "indice.valor" es 0-10 (10 = clima socioafectivo más deteriorado/crítico); no escribas la banda ni el emoji en ningún campo de texto, eso lo calcula el frontend a partir del número.\n- "emociones[].color" debe ser EXACTAMENTE uno de: "critical" (miedo/terror/pánico), "serious" (ira/indignación/hartazgo), "violet" (impotencia/duelo/tristeza profunda), "warning" (desconfianza/incertidumbre), "muted" (resignación/apatía/fatiga), "accent" (orgullo/identidad), "good" (esperanza/vigilancia activa) — elige según la naturaleza real de cada emoción, distribuyendo varios colores, no todas "critical".\n- "issues[].score" y "emociones[].score" y "dolores[].score" son escalas 0-10; "narrativas[].penetracion" es 0-10; "actores[].confianza" es 0-10; "zonas[].tension" es 0-10 — nunca uses una escala 0-100 en estos campos.\n- "riesgos[].probabilidad" debe ser EXACTAMENTE "Baja", "Media", "Media-alta" o "Alta"; "riesgos[].impacto" debe ser EXACTAMENTE "Bajo", "Medio", "Alto" o "Muy alto".\n- "narrativaMadre.mensajesFuerza": mínimo 5 frases cortas, cada una entre comillas, listas para usar en un discurso o spot — no descripciones, sino la frase textual misma.\n- "preguntas9": exactamente 9 pares pregunta/respuesta, cubriendo un diagnóstico ejecutivo completo (qué está pasando, por qué, quién gana/pierde emocionalmente, qué hacer, qué NO hacer, ventana de tiempo, riesgo si no se actúa, activo narrativo desaprovechado, recomendación final) — adapta las preguntas exactas al territorio, pero cubre ese tipo de terreno.\n- "recomendaciones[].dimension" varía entre al menos 3 categorías distintas (ej. Comunicación, Forense/Datos, Económica, Territorial, Institucional) — no repitas la misma dimensión en todas las filas.`
     : '';
 
   // Antes solo decía "al menos un elemento" -> el modelo cumplía con el
@@ -867,7 +1010,7 @@ ${schema}
 - PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
 - Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
 - ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
-${requisitosCantidad}${guardarropaOpositor}${guardarropaComparativo}${instruccionesEstructura}`;
+${requisitosCantidad}${guardarropaOpositor}${guardarropaSesgo}${guardarropaSocioafectiva}${guardarropaComparativo}${instruccionesEstructura}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}
 Skill solicitada: ${skill}
@@ -953,6 +1096,36 @@ REQUISITOS MÍNIMOS DE CANTIDAD (OPOSITOR) — mínimo 6, ideal hasta 10, en: vu
 - redDePoder.alertas: mínimo 4, repartidas entre las 4 categorías (Aliado / Deuda Política / Tensión Interna / Vulnerabilidad de Red), cada una con mínimo 3 bullets con dato concreto.
 - redDePoder.tabla: mínimo 6 actores vinculados, repartidos entre las categorías Aliado/Deuda Política/Tensión Interna/Riesgo, "riesgoOportunidad" siempre como cláusula específica y accionable.
 - resumenEjecutivo: 80-140 palabras, mencionando explícitamente el hallazgo más grave y el activo político más defendible del actor.`,
+
+  sesgo: `
+REQUISITOS MÍNIMOS DE CANTIDAD (SESGO) — no entregues menos de esto:
+- ranking: mínimo 8, ideal hasta 14, cubriendo al menos 5 de las 8 categorías (I-VIII) del catálogo de referencia. Scores variados y realistas (no todos en el mismo rango).
+- segmentos: mínimo 4 perfiles de electorado distintos (ver instrucciones de estructura), cada uno con "lectura" de 20-40 palabras.
+- ventanasPersuasion: mínimo 4, cada "recomendacion" de 25-50 palabras, concreta y accionable.
+- arquitecturaMensajes: mínimo 4, cubriendo al menos 3 etiquetas distintas, cada "texto" de 25-50 palabras con canal/táctica concreta.
+- metricas: los 4 indicadores (sesgosCriticos, sesgosAltos, sri, sistemaDominante) siempre con "detalle" lleno (nunca vacío) y consistentes con el "ranking" (ver instrucciones de estructura).
+- resumenEjecutivo: 80-140 palabras, mencionando el sesgo más crítico, el segmento más persuadible y el riesgo cognitivo (SRI) para el actor/partido en el poder.`,
+
+  socioafectiva: `
+REQUISITOS MÍNIMOS DE CANTIDAD (SOCIOAFECTIVA) — no entregues menos de esto:
+- issues: mínimo 6, cada uno con "frase" (cita ciudadana textual) y "emocion" que activa.
+- radiografia: mínimo 6 filas de datos duros del territorio (población afectada, cifras económicas/de seguridad, etc.).
+- hallazgos: mínimo 5, cada "lectura" de 20-40 palabras interpretando el hallazgo.
+- emociones: mínimo 6, ideal hasta 9, cubriendo al menos 4 colores/categorías distintas (ver instrucciones de estructura). "detonante" siempre con hecho concreto.
+- sintesisEmocional: los 8 campos siempre llenos, nunca vacíos, y coherentes con el array "emociones".
+- dolores: mínimo 6, cada uno con "frase" (cita textual) y mínimo 2 "tags".
+- simbolos: mínimo 6, cada "usoEstrategico" de 15-30 palabras.
+- zonas: mínimo 6, ordenadas de mayor a menor "tension".
+- enemigos: mínimo 4, cada "neutralizacion" con acción concreta.
+- segmentos: mínimo 6, cubriendo el espectro completo del electorado/población (base afín, base crítica, persuadible, afectados directos, diáspora/migrantes si aplica, abstencionista/fatigado).
+- actores: mínimo 6, cada "potencial" de 20-40 palabras explicando por qué.
+- narrativas: mínimo 5, cubriendo al menos oficial/gubernamental, crítica/opositora y una tercera (social/ciudadana, mediática, etc.).
+- narrativaMadre: "mensajesFuerza" mínimo 5 frases citables.
+- riesgos: mínimo 6, cada "recomendacion" concreta y accionable.
+- oportunidades: mínimo 4.
+- recomendaciones: mínimo 6, cubriendo al menos 3 "dimension" distintas.
+- preguntas9: EXACTAMENTE 9 pares pregunta/respuesta, cada respuesta de 40-80 palabras.
+- conclusionEjecutiva: 60-100 palabras, tono directo, cerrando el diagnóstico con la recomendación más urgente.`,
 
   comparativo: `
 REQUISITOS MÍNIMOS DE CANTIDAD (COMPARATIVO) — no entregues menos de esto:
