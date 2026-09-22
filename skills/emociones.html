@@ -85,7 +85,36 @@
 #emo-root .cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72}
 #emo-root .cw{position:relative}
 #emo-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
-@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4{grid-template-columns:1fr}#emo-root .cnt{padding:1rem}#emo-root .hdr{padding:1rem}#emo-root .tabs{padding:0 1rem}}
+
+/* SEGMENTOS Y PERFILES (SEGMENTA) */
+#emo-root .segcard{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:12px;overflow:hidden;margin-bottom:1.1rem}
+#emo-root .seghdr{padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem}
+#emo-root .segname{font-size:16.5px;font-weight:800;color:var(--tx1)}
+#emo-root .segsub{font-size:11.5px;color:var(--tx2);margin-top:2px}
+#emo-root .segmeta{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+#emo-root .segweight{font-size:11px;font-weight:700;background:rgba(0,0,0,.1);color:var(--tx1);padding:3px 10px;border-radius:5px;white-space:nowrap}
+#emo-root .segpersu{font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;letter-spacing:.04em;white-space:nowrap;color:#fff}
+#emo-root .segquote{margin:0 1.2rem;padding:.7rem 1rem;border-left:3px solid;background:rgba(255,255,255,.4);font-style:italic;font-size:12.5px;color:var(--tx1)}
+#emo-root .segbody{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:1.1rem;padding:1.1rem 1.2rem}
+#emo-root .segcol-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:.55rem;padding-bottom:.3rem;border-bottom:1px solid var(--brd)}
+#emo-root .segrow{font-size:11.5px;color:var(--tx2);padding:4px 0;line-height:1.55}
+#emo-root .segrow b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);margin-bottom:1px;font-weight:700}
+#emo-root .segfoot{padding:.8rem 1.2rem;background:rgba(0,0,0,.04);border-top:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;font-size:11.5px;color:var(--tx2)}
+#emo-root .segtag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;background:#e2e0e0;border:1px solid var(--brd2);color:var(--tx2);margin:2px 4px 2px 0}
+
+/* SEMIÓTICA (arquetipos + rankings) */
+#emo-root .arqtbl{width:100%;border-collapse:collapse}
+#emo-root .arqtbl td{padding:7px 8px;font-size:12px;color:var(--tx2);border-bottom:1px solid var(--brd);vertical-align:top}
+#emo-root .arqtbl td:first-child{color:var(--tx3);width:34%;font-size:11px}
+#emo-root .arqtbl tr:last-child td{border-bottom:none}
+#emo-root .rkcard{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1rem 1.1rem;min-width:0}
+#emo-root .rkrow{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)}
+#emo-root .rkrow:last-child{border-bottom:none}
+#emo-root .rknum{font-size:13px;font-weight:800;color:var(--blue2);width:20px;flex-shrink:0}
+#emo-root .rkname{font-size:12px;font-weight:700;color:var(--tx1)}
+#emo-root .rkdesc{font-size:10.5px;color:var(--tx3);line-height:1.55;margin-top:2px}
+
+@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4,#emo-root .segbody{grid-template-columns:1fr}#emo-root .cnt{padding:1rem}#emo-root .hdr{padding:1rem}#emo-root .tabs{padding:0 1rem}}
 </style>
 
 <header class="hdr">
@@ -101,6 +130,8 @@
   <div class="tab" onclick="emST('diadas',this)">⚡ Díadas</div>
   <div class="tab" onclick="emST('identidad',this)">🏛 Identidad Política</div>
   <div class="tab" onclick="emST('actores',this)">👤 Actores</div>
+  <div class="tab" onclick="emST('segmentos',this)">🧩 Segmentos y Perfiles</div>
+  <div class="tab" onclick="emST('semiotica',this)">🎭 Semiótica</div>
 </div>
 
 <div class="cnt">
@@ -207,6 +238,45 @@
   <div class="card">
     <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
     <div class="cw" style="height:300px"><canvas id="em-ch-actores"></canvas></div>
+  </div>
+</div>
+
+<!-- SEGMENTOS Y PERFILES (SEGMENTA) -->
+<div class="pnl" id="empnl-segmentos">
+  <div class="card" style="margin-bottom:1rem">
+    <div class="sl">Segmentación N × E × I — Narrativa · Emoción · Identidad</div>
+    <div id="em-seg-intro" style="font-size:12.5px;color:var(--tx2);line-height:1.75"></div>
+  </div>
+  <div id="em-seg-cards"></div>
+</div>
+
+<!-- SEMIÓTICA (Arquetipo · Miedos/Deseos/Necesidades) -->
+<div class="pnl" id="empnl-semiotica">
+  <div class="gauto" style="margin-bottom:1rem">
+    <div class="card">
+      <div class="sl">Radar de Arquetipos Junguianos — Colectivo</div>
+      <div class="cw" style="height:320px"><canvas id="em-ch-arquetipos"></canvas></div>
+    </div>
+    <div>
+      <div class="card2" style="margin-bottom:.75rem">
+        <div class="sl">Arquetipo Colectivo (Módulo 9)</div>
+        <table class="arqtbl" id="em-arq-colectivo"></table>
+      </div>
+      <div class="card2">
+        <div class="sl">Arquetipo Político Ideal (Módulo 10)</div>
+        <table class="arqtbl" id="em-arq-politico"></table>
+        <div style="font-size:11.5px;color:var(--tx2);line-height:1.65;margin-top:.6rem" id="em-arq-evidencia"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="sl">Miedos vs. Deseos — Top 5 (Índice comparativo)</div>
+    <div class="cw" style="height:240px"><canvas id="em-ch-miedosdeseos"></canvas></div>
+  </div>
+  <div class="g3">
+    <div class="rkcard"><div class="sl">10 Miedos Colectivos</div><div id="em-rk-miedos"></div></div>
+    <div class="rkcard"><div class="sl">10 Deseos Colectivos</div><div id="em-rk-deseos"></div></div>
+    <div class="rkcard"><div class="sl">10 Necesidades Simbólicas</div><div id="em-rk-necesidades"></div></div>
   </div>
 </div>
 
