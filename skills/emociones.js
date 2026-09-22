@@ -15,6 +15,9 @@ const EMOTION_META = [
   {key:'sorpresa',     label:'Sorpresa',             sublabel:'Asombro · Distracción · Reencuadre',      deg:45,  color:['#DBEAFE','#93C5FD','#2563EB']},
 ];
 const RADAR_LABELS = ["Legitimidad ciudadana","Presencia territorial","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
+// 12 arquetipos junguianos: geometría/orden fijos, igual que EMOTION_META — la IA
+// solo entrega los 12 valores del radar (0-5) en este mismo orden.
+const ARCHETYPE_LABELS = ["Inocente","Explorador","Sabio","Héroe","Rebelde","Mago","Todos/Hombre común","Amante","Bufón","Cuidador","Gobernante","Guerrero"];
 const RISK_HEX = {"CRÍTICO":"#ef4444","ALTO":"#f97316","MEDIO":"#b45309","BAJO":"#64748b"};
 const RISK_BG  = {"CRÍTICO":"#fee2e2","ALTO":"#ffedd5","MEDIO":"#fef9c3","BAJO":"#f1f5f9"};
 const PALETTE = ['#3b82f6','#f97316','#22c55e','#a855f7','#06b6d4','#eab308','#ef4444','#64748b'];
@@ -40,7 +43,15 @@ const FALLBACK = {
   actores: [], actoresRadar: {labels:[], data:[], colors:[]},
   alertaEstrategica: '', alertaDesc: '',
   recs: [], evitar: [], gestionPrioridad: [['Sin datos', 0, '#94a3b8']],
-  resumenEjecutivo: ''
+  resumenEjecutivo: '',
+  segIntro: 'No se recibieron datos estructurados del backend.',
+  segmentos: [],
+  semiotica: {
+    arquetipoColectivo: { dominante: 'Sin datos', secundario: 'Sin datos', emergente: 'Sin datos', rechazado: 'Sin datos' },
+    arquetipoPolitico: { ideal: 'Sin datos', secundario: 'Sin datos', resonancia: '—', evidencia: 'Sin datos.' },
+    arquetiposRadar: ARCHETYPE_LABELS.map(()=>0),
+    miedos: [], deseos: [], necesidades: []
+  }
 };
 
 function pick(v, fb){
@@ -182,6 +193,85 @@ function init(){
       <div class="acb">${(a.rows||[]).map(r=>`<div class="acrow"><span class="ack">${r[0]}</span><span class="acv">${r[1]}</span></div>`).join('')}</div>
     </div>`).join('') || '<div class="ac"><div class="acb">Sin actores disponibles.</div></div>';
 
+  /* ---------- Segmentos y Perfiles (SEGMENTA) ---------- */
+  document.getElementById('em-seg-intro').innerHTML = D.segIntro || 'Sin datos.';
+  document.getElementById('em-seg-cards').innerHTML = (D.segmentos||[]).map(s=>`
+    <div class="segcard" style="border-top:3px solid ${s.color||'#64748b'}">
+      <div class="seghdr" style="background:rgba(0,0,0,.03)">
+        <div>
+          <div class="segname">${s.tipo||''} · ${s.nombre||''}</div>
+          <div class="segsub">${s.subtitulo||''}</div>
+        </div>
+        <div class="segmeta">
+          <span class="segweight">Peso: ${s.peso||'—'}</span>
+          <span class="segpersu" style="background:${s.persuColor||'#64748b'}">${s.persuabilidad||''}</span>
+        </div>
+      </div>
+      <div class="segquote" style="border-left-color:${s.color||'#64748b'}">${s.frase||''}</div>
+      <div class="segbody">
+        <div>
+          <div class="segcol-title">Perfil sociodemográfico</div>
+          <div class="segrow"><b>Edad y género</b>${(s.perfil||{}).edad||'—'}</div>
+          <div class="segrow"><b>Zona</b>${(s.perfil||{}).zona||'—'}</div>
+          <div class="segrow"><b>Ocupación</b>${(s.perfil||{}).ocupacion||'—'}</div>
+          <div class="segrow"><b>Escolaridad</b>${(s.perfil||{}).escolaridad||'—'}</div>
+          <div class="segrow"><b>Presencia digital</b>${(s.perfil||{}).digital||'—'}</div>
+          <div class="segrow"><b>Historia electoral</b>${(s.perfil||{}).historia||'—'}</div>
+        </div>
+        <div>
+          <div class="segcol-title">Mundo emocional y tensiones</div>
+          <div class="segrow"><b>Emoción Plutchik</b>${(s.emocional||{}).emocion||'—'}</div>
+          <div class="segrow"><b>Vida cotidiana</b>${(s.emocional||{}).cotidiana||'—'}</div>
+          <div class="segrow"><b>Tensión activa</b>${(s.emocional||{}).tension||'—'}</div>
+          <div class="segrow"><b>Dolor profundo</b>${(s.emocional||{}).dolor||'—'}</div>
+          <div class="segrow"><b>Miedo</b>${(s.emocional||{}).miedo||'—'}</div>
+          <div class="segrow"><b>Orgullo</b>${(s.emocional||{}).orgullo||'—'}</div>
+          <div class="segrow"><b>Narrativa maestra</b>${(s.emocional||{}).narrativa||'—'}</div>
+        </div>
+        <div>
+          <div class="segcol-title">Problemáticas, orgullos y palancas</div>
+          <div class="segrow"><b>Problemas críticos</b>${((s.palancas||{}).problemas||[]).map(p=>`<span class="segtag">${p}</span>`).join('')||'—'}</div>
+          <div class="segrow"><b>Orgullo comunitario</b>${(s.palancas||{}).orgullo||'—'}</div>
+          <div class="segrow"><b>Consumo digital</b>${(s.palancas||{}).consumo||'—'}</div>
+          <div class="segrow"><b>Qué lo acerca</b>${(s.palancas||{}).acerca||'—'}</div>
+          <div class="segrow"><b>Qué lo aleja</b>${(s.palancas||{}).aleja||'—'}</div>
+          <div class="segrow"><b>Frame cognitivo</b>${(s.palancas||{}).frame||'—'}</div>
+          <div class="segrow"><b>Palanca</b>${(s.palancas||{}).palanca||'—'}</div>
+        </div>
+      </div>
+      <div class="segfoot">
+        <div>📡 ${(s.vector||{}).canal||'—'} &nbsp;·&nbsp; 🎙 ${(s.vector||{}).tono||'—'} &nbsp;·&nbsp; 🎬 ${(s.vector||{}).formato||'—'}</div>
+        <div style="font-weight:700;color:${s.color||'#64748b'}">${s.objetivo||''}</div>
+      </div>
+    </div>`).join('') || '<div class="segcard"><div class="seghdr"><div class="segname">Sin segmentos disponibles.</div></div></div>';
+
+  /* ---------- Semiótica ---------- */
+  const SEM = D.semiotica || {};
+  const arqC = SEM.arquetipoColectivo || {};
+  const arqP = SEM.arquetipoPolitico || {};
+  document.getElementById('em-arq-colectivo').innerHTML = `
+    <tr><td>Dominante</td><td style="color:var(--tx1);font-weight:700">${arqC.dominante||'Sin datos.'}</td></tr>
+    <tr><td>Secundario</td><td>${arqC.secundario||'Sin datos.'}</td></tr>
+    <tr><td>Emergente</td><td>${arqC.emergente||'Sin datos.'}</td></tr>
+    <tr><td>Rechazado</td><td>${arqC.rechazado||'Sin datos.'}</td></tr>`;
+  document.getElementById('em-arq-politico').innerHTML = `
+    <tr><td>Arquetipo ideal</td><td style="color:var(--blue2);font-weight:700">${arqP.ideal||'Sin datos.'}</td></tr>
+    <tr><td>Resonancia</td><td>${arqP.resonancia||'—'}</td></tr>
+    <tr><td>Complementario</td><td>${arqP.secundario||'Sin datos.'}</td></tr>`;
+  document.getElementById('em-arq-evidencia').innerHTML = `<b style="color:var(--tx2);text-transform:uppercase;font-size:10px;letter-spacing:.05em">Evidencia y riesgo de sobreactuación</b><br>${arqP.evidencia||'Sin datos.'}`;
+
+  const rkList = (id, arr) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = (arr||[]).map(m=>`
+      <div class="rkrow"><div class="rknum">#${m.rank}</div>
+      <div><div class="rkname">${m.nombre}</div>
+      <div class="rkdesc"><b style="color:var(--tx2)">Evidencia:</b> ${m.evidencia}<br><b style="color:var(--tx2)">Lectura política:</b> ${m.significado}</div></div></div>`).join('') || '<div class="rkrow"><div class="rkname">Sin datos.</div></div>';
+  };
+  rkList('em-rk-miedos', SEM.miedos);
+  rkList('em-rk-deseos', SEM.deseos);
+  rkList('em-rk-necesidades', SEM.necesidades);
+
   document.getElementById('em-alerta-box').innerHTML = `<div class="cbox-label" style="color:var(--red-s)">Alerta Estratégica</div><div class="cbox-name" style="font-size:16px;color:var(--red-s)">${D.alertaEstrategica}</div><div class="cbox-text">${D.alertaDesc}</div>`;
   document.getElementById('em-recs-list').innerHTML = (D.recs||[]).map(r=>`<div class="ri"><span class="rb" style="background:${r.bg||'#e2e8f0'};color:${r.tx||'#1e293b'}">${r.label||r.urgencia||''}</span><span class="rt">${r.text}</span></div>`).join('') || '<div class="ri"><span class="rt">Sin recomendaciones disponibles.</span></div>';
   document.getElementById('em-evitar-list').innerHTML = (D.evitar||[]).map(e=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)"><span style="color:#ef4444;flex-shrink:0">✕</span>${e}</div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
@@ -251,6 +341,31 @@ function init(){
     new Chart(priorCanvas,{type:'bar',
       data:{labels:priorData.map(x=>x[0]),datasets:[{data:priorData.map(x=>x[1]),backgroundColor:priorData.map(x=>(x[2]||'#94a3b8')+'cc'),borderColor:priorData.map(x=>x[2]||'#94a3b8'),borderWidth:1,borderRadius:5,borderSkipped:false}]},
       options:{...CDf, indexAxis:'y', scales:{x:{...CDf.scales.x,min:0,max:100,ticks:{...CDf.scales.x.ticks,callback:v=>v+'/100'}},y:{...CDf.scales.y}}}
+    });
+  }
+
+  const arquetiposCanvas = document.getElementById('em-ch-arquetipos');
+  const arquetiposData = (SEM.arquetiposRadar||[]).length ? SEM.arquetiposRadar : ARCHETYPE_LABELS.map(()=>0);
+  if(arquetiposCanvas){
+    new Chart(arquetiposCanvas,{type:'radar',
+      data:{labels:ARCHETYPE_LABELS,datasets:[{label:'Arquetipo colectivo',data:arquetiposData,borderColor:'#1d4ed8',backgroundColor:'rgba(29,78,216,.18)',pointBackgroundColor:'#1d4ed8',pointRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{r:{min:0,max:5,ticks:{color:'#475569',font:{size:9},stepSize:1,backdropColor:'transparent'},grid:{color:'rgba(0,0,0,.1)'},pointLabels:{color:'#334155',font:{size:10}},angleLines:{color:'rgba(0,0,0,.1)'}}},
+        plugins:{legend:{display:false},tooltip:{...CDf.plugins.tooltip}}}
+    });
+  }
+
+  const miedosDeseosCanvas = document.getElementById('em-ch-miedosdeseos');
+  const top5M = (SEM.miedos||[]).slice(0,5), top5D = (SEM.deseos||[]).slice(0,5);
+  if(miedosDeseosCanvas && (top5M.length || top5D.length)){
+    new Chart(miedosDeseosCanvas,{type:'bar',
+      data:{labels:top5M.map((m,i)=>'#'+(i+1)),datasets:[
+        {label:'Miedos',data:top5M.map((m,i)=>5-i),backgroundColor:'#B91C1Caa',borderRadius:4,borderSkipped:false},
+        {label:'Deseos',data:top5D.map((m,i)=>5-i),backgroundColor:'#059669aa',borderRadius:4,borderSkipped:false},
+      ]},
+      options:{...CDf, plugins:{...CDf.plugins,legend:{display:true,labels:{color:'#334155',font:{size:10},boxWidth:10}},
+        tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>{ const arr=c.datasetIndex===0?top5M:top5D; return arr[c.dataIndex] ? ' '+arr[c.dataIndex].nombre : ''; }}}},
+        scales:{x:{...CDf.scales.x},y:{...CDf.scales.y,min:0,max:5,ticks:{...CDf.scales.y.ticks,stepSize:1}}}}
     });
   }
 }
