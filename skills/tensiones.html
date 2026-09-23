@@ -79,6 +79,40 @@
 #tensiones-root .hallazgo { margin-top: 1.1rem; padding: 1rem 1.25rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; border-left: 3px solid var(--org); }
 #tensiones-root .footer { background: var(--hdrblue); border-top: 1px solid rgba(255,255,255,.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; margin-top: 30px; border-radius: 0 0 8px 8px; }
 #tensiones-root canvas { max-height: 260px; }
+
+/* ── Pestañas SOCIOAFECTIVA ── */
+#tensiones-root .navdiv { width: 1px; background: rgba(255,255,255,.2); margin: 10px 10px; flex-shrink: 0; }
+#tensiones-root .navlbl { align-self: center; font-size: 9px; letter-spacing: 2px; color: var(--ac); font-family: monospace; padding: 0 8px 0 2px; flex-shrink: 0; white-space: nowrap; }
+#tensiones-root .nb.soc.on { border-bottom-color: var(--ac); }
+#tensiones-root .sdot.c, #tensiones-root .cdot.c { background: var(--ac); }
+#tensiones-root .zonac { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; }
+#tensiones-root .zonac-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+#tensiones-root .zonac-n { font-size: 12.5px; font-weight: 700; color: var(--hdrblue); }
+#tensiones-root .zonac-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+#tensiones-root .ias { font-size: 22px; font-weight: 800; font-family: monospace; text-align: right; line-height: 1; }
+#tensiones-root .iasl { font-size: 9px; color: var(--dim); text-align: right; font-family: monospace; letter-spacing: 1px; }
+#tensiones-root .zonac-lec { font-size: 12px; color: var(--muted); line-height: 1.55; }
+#tensiones-root .dolor { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+#tensiones-root .dolor:last-child { border-bottom: none; }
+#tensiones-root .dolorn { width: 24px; height: 24px; border-radius: 50%; background: var(--red-bg); color: var(--red); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; }
+#tensiones-root .dolorfrase { font-size: 12.5px; font-weight: 600; font-style: italic; color: var(--text); }
+#tensiones-root .dolormeta { font-size: 11px; color: var(--dim); margin-top: 3px; }
+#tensiones-root .enemcard { padding: 10px 0; border-bottom: 1px solid var(--border); }
+#tensiones-root .enemcard:last-child { border-bottom: none; }
+#tensiones-root .enemn { font-size: 12.5px; font-weight: 700; color: var(--red); margin-bottom: 3px; }
+#tensiones-root .enemd, #tensiones-root .fractrow { font-size: 12px; line-height: 1.55; color: var(--muted); }
+#tensiones-root .fractrow { padding: 10px 0; border-bottom: 1px solid var(--border); }
+#tensiones-root .fractrow:last-child { border-bottom: none; }
+#tensiones-root .fractrow b { color: var(--text); }
+#tensiones-root .r-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+#tensiones-root .r-table th { text-align: left; padding: 7px 10px; color: var(--muted); font-weight: 700; font-size: 10px; border-bottom: 1px solid var(--border2); font-family: monospace; }
+#tensiones-root .r-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+#tensiones-root .preg { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; cursor: pointer; }
+#tensiones-root .preg-h { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+#tensiones-root .preg-n { width: 22px; height: 22px; border-radius: 50%; background: var(--hdrblue); color: #fff; font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; }
+#tensiones-root .preg-q { font-size: 12.5px; font-weight: 700; flex: 1; color: var(--text); }
+#tensiones-root .preg-body { display: none; padding: 10px 14px 12px 44px; font-size: 12px; line-height: 1.6; color: var(--text); background: rgba(255,255,255,.6); border-top: 1px solid var(--border); }
+#tensiones-root .preg-body.op { display: block; }
 </style>
 
 <header class="hdr">
@@ -96,6 +130,11 @@
   <button class="nb" onclick="tensTab(this,'riesgos')">RIESGOS</button>
   <button class="nb" onclick="tensTab(this,'trayectoria')">TRAYECTORIA</button>
   <button class="nb" onclick="tensTab(this,'alertas')">ALERTAS</button>
+  <div class="navdiv"></div>
+  <div class="navlbl">SOCIOAFECTIVA</div>
+  <button class="nb soc" onclick="tensTab(this,'soc1')">RADIOGRAFÍA Y DOLORES</button>
+  <button class="nb soc" onclick="tensTab(this,'soc2')">ENEMIGOS Y SEGMENTACIÓN</button>
+  <button class="nb soc" onclick="tensTab(this,'soc3')">NARRATIVAS Y 9 PREGUNTAS</button>
 </div>
 
 <div class="ct">
@@ -164,6 +203,44 @@
   <div class="view" id="tv-alertas">
     <div class="stit"><span class="sdot"></span>ALERTAS PRIORITARIAS</div>
     <div id="t-alertas-list"></div>
+  </div>
+
+  <!-- SOCIOAFECTIVA 1: RADIOGRAFÍA + DOLORES -->
+  <div class="view" id="tv-soc1">
+    <div class="stit"><span class="sdot c"></span>SOCIOAFECTIVA · RADIOGRAFÍA TERRITORIAL SINTÉTICA</div>
+    <div id="t-rad-list" class="mb"></div>
+    <div class="card mb"><div class="ctit"><span class="cdot c"></span>ÍNDICE DE ACTIVACIÓN SOCIOAFECTIVA (IAS) POR ZONA · 0 A 100</div><canvas id="tc-ias"></canvas></div>
+    <div class="stit"><span class="sdot c"></span>SOCIOAFECTIVA · MAPA DE DOLORES SOCIALES</div>
+    <div class="card"><div id="t-dol-list"></div></div>
+  </div>
+
+  <!-- SOCIOAFECTIVA 2: ENEMIGOS + SEGMENTACIÓN -->
+  <div class="view" id="tv-soc2">
+    <div class="stit"><span class="sdot c"></span>SOCIOAFECTIVA · ENEMIGOS SIMBÓLICOS Y FRACTURAS SOCIALES</div>
+    <div class="g2 mb">
+      <div class="card"><div class="ctit"><span class="cdot c"></span>ENEMIGOS SIMBÓLICOS</div><div id="t-enem-list"></div></div>
+      <div class="card"><div class="ctit"><span class="cdot c"></span>FRACTURAS SOCIALES</div><div id="t-fract-list"></div></div>
+    </div>
+    <div class="stit"><span class="sdot c"></span>SOCIOAFECTIVA · SEGMENTACIÓN SOCIOAFECTIVA</div>
+    <div class="card" style="overflow-x:auto">
+      <table class="r-table">
+        <thead><tr><th>SEGMENTO</th><th>EMOCIÓN DOMINANTE</th><th>DETONANTE PRINCIPAL</th></tr></thead>
+        <tbody id="t-seg-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SOCIOAFECTIVA 3: NARRATIVAS + 9 PREGUNTAS -->
+  <div class="view" id="tv-soc3">
+    <div class="stit"><span class="sdot c"></span>SOCIOAFECTIVA · NARRATIVAS</div>
+    <div class="card mb" style="border-left:3px solid var(--ac)">
+      <div class="ctit"><span class="cdot c"></span>NARRATIVA MADRE SOCIOAFECTIVA</div>
+      <div style="font-size:13.5px;line-height:1.7;color:var(--text)" id="t-narmadre-frase"></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.55" id="t-narmadre-nota"></div>
+    </div>
+    <div id="t-narsoc-list" class="mb"></div>
+    <div class="stit"><span class="sdot c"></span>SOCIOAFECTIVA · LAS 9 PREGUNTAS — MARCO EJECUTIVO DE DIAGNÓSTICO</div>
+    <div id="t-preg-list"></div>
   </div>
 </div>
 
