@@ -5,9 +5,12 @@ const root = document.getElementById('tensiones-root');
 
 const FALLBACK = {
   actor: {entidad: 'Entidad', cargo: 'Servidor Público', periodo: (META.mes||'')+' '+(META.anio||'')},
-  ranking: [], emociones: [], narrativas: [], territorios: [], riesgos: [], trayectoria: [], alertas: [],
+  ranking: [], semaforo: [], emociones: [], emocionesTendencia: [], narrativas: [], territorios: [], riesgos: [],
+  trayectoriaMeses: ['Periodo 1','Periodo 2','Periodo 3','Periodo 4','Actual'], trayectoria: [], alertas: [],
+  aprobacionAlcalde: { valor: 0, periodo: 'Sin dato', fuente: '', nota: 'Sin dato de aprobación verificado.' },
   hallazgoEmocional: 'Sin datos de hallazgo emocional disponibles.',
   hallazgoTrayectoria: 'Sin datos de trayectoria disponibles.',
+  emocionesLectura: 'Sin lectura política estratégica disponible.',
   resumenEjecutivo: ''
 };
 
@@ -21,14 +24,19 @@ function pick(obj, fb) {
 const DATA = {
   actor: pick(D && D.actor, FALLBACK.actor),
   ranking: pick(D && D.ranking, FALLBACK.ranking),
+  semaforo: pick(D && D.semaforo, FALLBACK.semaforo),
   emociones: pick(D && D.emociones, FALLBACK.emociones),
+  emocionesTendencia: pick(D && D.emocionesTendencia, FALLBACK.emocionesTendencia),
   narrativas: pick(D && D.narrativas, FALLBACK.narrativas),
   territorios: pick(D && D.territorios, FALLBACK.territorios),
   riesgos: pick(D && D.riesgos, FALLBACK.riesgos),
+  trayectoriaMeses: pick(D && D.trayectoriaMeses, FALLBACK.trayectoriaMeses),
   trayectoria: pick(D && D.trayectoria, FALLBACK.trayectoria),
   alertas: pick(D && D.alertas, FALLBACK.alertas),
+  aprobacionAlcalde: pick(D && D.aprobacionAlcalde, FALLBACK.aprobacionAlcalde),
   hallazgoEmocional: (D && D.hallazgoEmocional) || FALLBACK.hallazgoEmocional,
   hallazgoTrayectoria: (D && D.hallazgoTrayectoria) || FALLBACK.hallazgoTrayectoria,
+  emocionesLectura: (D && D.emocionesLectura) || FALLBACK.emocionesLectura,
   resumenEjecutivo: (D && D.resumenEjecutivo) || FALLBACK.resumenEjecutivo
 };
 
