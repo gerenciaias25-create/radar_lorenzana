@@ -32,6 +32,20 @@ const DATA = {
   resumenEjecutivo: (D && D.resumenEjecutivo) || FALLBACK.resumenEjecutivo
 };
 
+// Bloque SOCIOAFECTIVA (pestañas soc1-soc3). Cada sub-lista se normaliza a
+// array para que un JSON incompleto del modelo nunca rompa el render.
+const S = Object.assign({}, (D && D.socio) || {});
+['radiografia','dolores','enemigos','fracturas','segmentacion','narrativas','preguntas9'].forEach(k=>{
+  if(!Array.isArray(S[k])) S[k] = [];
+});
+S.narrativaMadre = (S.narrativaMadre && typeof S.narrativaMadre === 'object') ? S.narrativaMadre : {};
+DATA.socio = S;
+
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// El color del IAS lo decide el frontend a partir del número (no el modelo).
+const iasColor = v => v>=75 ? '#C53030' : v>=55 ? '#C05621' : '#B7791F';
+const SEG_COLOR = { Rojo:'#C53030', Naranja:'#C05621', Amarillo:'#B7791F', Verde:'#2F855A' };
+
 // Header
 const nameParts = (META.actor || 'TENSIONES').split(' ');
 document.getElementById('t-hdr-name').innerHTML = (nameParts[0]||'').toUpperCase() + ' <span>' + nameParts.slice(1).join(' ').toUpperCase() + '</span>';
@@ -214,6 +228,98 @@ function drawCharts(tab){
         </div>
       </div>
     `).join('') || '<div class="card">Sin alertas registradas.</div>';
+  }
+
+  // ── SOCIOAFECTIVA 1: Radiografía + Dolores ──
+  if(tab==='soc1'){
+    const rad = DATA.socio.radiografia;
+    document.getElementById('t-rad-list').innerHTML = rad.map(r=>{
+      const ias = Number(r.ias)||0, c = iasColor(ias);
+      return `
+      <div class="zonac">
+        <div class="zonac-h">
+          <div>
+            <div class="zonac-n">${esc(r.nombre)}</div>
+            <div class="zonac-sub">${esc(r.nivel||'—')} &middot; Tensión dominante: ${esc(r.tensionDominante||'—')} &middot; Emoción: ${esc(r.emocion||'—')}</div>
+          </div>
+          <div><div class="ias" style="color:${c}">${ias}</div><div class="iasl">IAS</div></div>
+        </div>
+        <div class="zonac-lec">${esc(r.lectura||'')}</div>
+      </div>`;
+    }).join('') || '<div class="card">Sin radiografía territorial registrada.</div>';
+
+    document.getElementById('t-dol-list').innerHTML = DATA.socio.dolores.map((d,i)=>`
+      <div class="dolor">
+        <div class="dolorn">${i+1}</div>
+        <div><div class="dolorfrase">${esc(d.frase)}</div><div class="dolormeta">${esc(d.meta)}</div></div>
+      </div>`).join('') || 'Sin dolores sociales registrados.';
+
+    if(rad.length > 0){
+      mk('tc-ias', {
+        type:'bar',
+        data: {
+          labels: rad.map(r=>{ const n=String(r.nombre||''); return n.length>30 ? n.slice(0,30)+'…' : n; }),
+          datasets: [{ data: rad.map(r=>Number(r.ias)||0), backgroundColor: rad.map(r=>iasColor(Number(r.ias)||0)), borderRadius: 4 }]
+        },
+        options: {
+          indexAxis:'y', responsive:true,
+          plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:c=>rad[c[0].dataIndex].nombre, label:c=>' IAS: '+c.raw+'/100' } } },
+          scales:{ x:{ min:0, max:100 } }
+        }
+      });
+    }
+  }
+
+  // ── SOCIOAFECTIVA 2: Enemigos + Fracturas + Segmentación ──
+  if(tab==='soc2'){
+    document.getElementById('t-enem-list').innerHTML = DATA.socio.enemigos.map(e=>`
+      <div class="enemcard"><div class="enemn">${esc(e.nombre)}</div><div class="enemd">${esc(e.descripcion)}</div></div>
+    `).join('') || 'Sin enemigos simbólicos registrados.';
+
+    document.getElementById('t-fract-list').innerHTML = DATA.socio.fracturas.map(f=>`
+      <div class="fractrow"><b>${esc(f.titulo)}</b><br>${esc(f.descripcion)}</div>
+    `).join('') || 'Sin fracturas sociales registradas.';
+
+    document.getElementById('t-seg-body').innerHTML = DATA.socio.segmentacion.map(s=>`
+      <tr>
+        <td>${esc(s.segmento)}</td>
+        <td style="color:${SEG_COLOR[s.color]||'#4B5563'};font-weight:600">${esc(s.emocion)}</td>
+        <td>${esc(s.detonante)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="3">Sin segmentación registrada.</td></tr>';
+  }
+
+  // ── SOCIOAFECTIVA 3: Narrativas + 9 Preguntas ──
+  if(tab==='soc3'){
+    const nm = DATA.socio.narrativaMadre;
+    document.getElementById('t-narmadre-frase').textContent = nm.frase ? '"'+nm.frase+'"' : 'Sin narrativa madre registrada.';
+    document.getElementById('t-narmadre-nota').textContent = nm.nota || '';
+
+    document.getElementById('t-narsoc-list').innerHTML = DATA.socio.narrativas.map(n=>`
+      <div class="nar">
+        <div class="nar-h" onclick="this.nextElementSibling.classList.toggle('op')">
+          <div class="nar-info">
+            <div class="nar-name">${esc(n.nombre)}</div>
+            <div class="nar-meta">${esc(n.tema)} &middot; ${esc(n.actor)}</div>
+          </div>
+        </div>
+        <div class="nar-body">
+          <p><strong>Potencial de propagación:</strong> ${esc(n.potencial)}</p>
+          <p style="margin-top:4px;font-style:italic;color:var(--cyan)">${esc(n.frase)}</p>
+          ${n.fuente ? `<p style="margin-top:4px;font-size:10.5px;color:var(--dim)">${esc(n.fuente)}</p>` : ''}
+        </div>
+      </div>
+    `).join('') || '<div class="card">Sin narrativas socioafectivas registradas.</div>';
+
+    document.getElementById('t-preg-list').innerHTML = DATA.socio.preguntas9.map((p,i)=>`
+      <div class="preg">
+        <div class="preg-h" onclick="this.nextElementSibling.classList.toggle('op')">
+          <div class="preg-n">${i+1}</div>
+          <div class="preg-q">${esc(p.pregunta)}</div>
+        </div>
+        <div class="preg-body">${esc(p.respuesta)}</div>
+      </div>
+    `).join('') || '<div class="card">Sin preguntas registradas.</div>';
   }
 }
 
