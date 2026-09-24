@@ -1,99 +1,163 @@
 <div id="tensiones-root">
 <style>
-#tensiones-root {
-  --bg:#FFFFFF; --header-bg:#1C2738; --card-bg:#d5d1d1; --border:rgba(0,0,0,.08); --border2:rgba(0,0,0,.15);
-  --text:#1F2937; --muted:#4B5563; --dim:#6B7280; --ac:#00C2D4; --hdrblue:#1C2738;
-  --red:#C53030; --red-bg:rgba(197,48,48,.1); --red-br:rgba(197,48,48,.3);
-  --org:#C05621; --org-bg:rgba(192,86,33,.1); --org-br:rgba(192,86,33,.3);
-  --yel:#B7791F; --yel-bg:rgba(183,121,31,.08); --yel-br:rgba(183,121,31,.25);
-  --grn:#2F855A; --grn-bg:rgba(47,133,90,.08); --grn-br:rgba(47,133,90,.25);
-  --cyan:#2B6CB0; --acc:#4C51BF; --acc-bg:rgba(76,81,191,.1);
-  background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif;
-}
-#tensiones-root * { box-sizing: border-box; margin: 0; padding: 0; }
-#tensiones-root .hdr { background: var(--hdrblue); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; }
-#tensiones-root .hdr-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1.2; }
-#tensiones-root .hdr-name span { color: var(--ac); }
-#tensiones-root .hsub { font-size: 11px; color: #94A3B8; margin-top: 4px; font-weight: 500; }
-
-#tensiones-root .nav { background: var(--header-bg); border-top: 1px solid rgba(255,255,255,.1); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; overflow-x: auto; gap: 0; scrollbar-width: none; }
-#tensiones-root .nav::-webkit-scrollbar { display: none; }
-#tensiones-root .nb { padding: 12px 16px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); cursor: pointer; border: none; border-bottom: 3px solid transparent; white-space: nowrap; transition: all .15s; background: none; font-family: monospace; }
-#tensiones-root .nb:hover { color: #FFFFFF; }
-#tensiones-root .nb.on { color: #FFFFFF; border-bottom-color: var(--ac); background: rgba(255,255,255,0.05); }
-
-#tensiones-root .ct { padding: 1.5rem; }
-#tensiones-root .view { display: none; }
-#tensiones-root .view.on { display: block; animation: tfi .2s ease; }
-@keyframes tfi { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-#tensiones-root .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media(max-width: 768px){ #tensiones-root .g2 { grid-template-columns: 1fr; } }
-#tensiones-root .mb { margin-bottom: 1.25rem; }
-#tensiones-root .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1.1rem 1.25rem; color: var(--text); }
-
-#tensiones-root .ctit { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .9rem; display: flex; align-items: center; gap: 6px; }
-#tensiones-root .cdot { width: 5px; height: 5px; border-radius: 50%; background: var(--org); flex-shrink: 0; }
-#tensiones-root .stit { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--hdrblue); margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-family: monospace; }
-#tensiones-root .sdot { width: 5px; height: 5px; border-radius: 50%; background: var(--org); flex-shrink: 0; }
-
-#tensiones-root .trow { display: flex; align-items: center; gap: 9px; padding: 8px 11px; border-radius: 4px; cursor: pointer; transition: background .15s; margin-bottom: 3px; border: 1px solid transparent; background: rgba(255,255,255,.4); }
-#tensiones-root .trow:hover { background: rgba(255,255,255,.7); }
-#tensiones-root .trow.sel { background: #FFFFFF; border-color: var(--border2); box-shadow: 0 2px 4px rgba(0,0,0,.04); }
-#tensiones-root .tnum { font-size: 11px; color: var(--dim); width: 14px; text-align: center; flex-shrink: 0; font-family: monospace; }
-#tensiones-root .tname { font-size: 12px; flex: 1; color: var(--text); font-weight: 600; }
-#tensiones-root .tbar { width: 80px; height: 6px; background: rgba(0,0,0,.08); border-radius: 3px; flex-shrink: 0; }
-#tensiones-root .tbar-f { height: 6px; border-radius: 3px; }
-#tensiones-root .tsco { font-size: 12px; font-weight: 700; width: 26px; text-align: right; flex-shrink: 0; font-family: monospace; }
-#tensiones-root .tniv { font-size: 9px; padding: 2px 6px; border-radius: 2px; font-weight: 700; flex-shrink: 0; font-family: monospace; }
-
-#tensiones-root .dg { display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: 12px; }
-#tensiones-root .dk { color: var(--muted); font-weight: 700; }
-#tensiones-root .dv { color: var(--text); line-height: 1.4; }
-#tensiones-root .drec { margin-top: .85rem; padding: .8rem; background: #FFFFFF; border-radius: 4px; font-size: 12px; line-height: 1.5; border-left: 3px solid var(--org); }
-
-#tensiones-root .ebar { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-#tensiones-root .ebar:last-child { border-bottom: none; }
-#tensiones-root .enam { font-size: 12px; width: 110px; flex-shrink: 0; color: var(--text); font-weight: 600; }
-#tensiones-root .ebg { flex: 1; height: 8px; background: rgba(0,0,0,.08); border-radius: 4px; overflow: hidden; }
-#tensiones-root .efill { height: 8px; border-radius: 4px; }
-
-#tensiones-root .ter, #tensiones-root .nar { background: var(--card-bg); border-radius: 4px; margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; }
-#tensiones-root .ter-h, #tensiones-root .nar-h { padding: 10px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-#tensiones-root .ter-info, #tensiones-root .nar-info { flex: 1; }
-#tensiones-root .ter-name, #tensiones-root .nar-name { font-size: 12.5px; font-weight: 700; }
-#tensiones-root .ter-sub, #tensiones-root .nar-meta { font-size: 11px; opacity: .8; margin-top: 2px; color: var(--muted); }
-#tensiones-root .ter-body, #tensiones-root .nar-body { display: none; padding: 10px 12px; font-size: 12px; line-height: 1.5; color: var(--text); background: rgba(255,255,255,.6); border-top: 1px solid var(--border); }
-#tensiones-root .ter-body.op, #tensiones-root .nar-body.op { display: block; }
-
-#tensiones-root .abox { background: var(--red-bg); border: 1px solid var(--red-br); border-radius: 4px; padding: 1rem; margin-bottom: .8rem; cursor: pointer; }
-#tensiones-root .abox-h { display: flex; align-items: center; justify-content: space-between; }
-#tensiones-root .abox-t { font-size: 12.5px; font-weight: 700; color: var(--red); }
-#tensiones-root .abox-body { display: none; margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--red-br); }
-#tensiones-root .abox-body.op { display: block; }
-
-#tensiones-root .traj-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-#tensiones-root .traj-table th { text-align: left; padding: 7px 10px; color: var(--muted); font-weight: 700; font-size: 10px; border-bottom: 1px solid var(--border2); font-family: monospace; }
-#tensiones-root .traj-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-
-#tensiones-root .hallazgo { margin-top: 1.1rem; padding: 1rem 1.25rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; border-left: 3px solid var(--org); }
-#tensiones-root .footer { background: var(--hdrblue); border-top: 1px solid rgba(255,255,255,.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; margin-top: 30px; border-radius: 0 0 8px 8px; }
-#tensiones-root canvas { max-height: 260px; }
-
-#tensiones-root .navdiv { width: 1px; background: var(--border2); margin: 10px 6px; flex-shrink: 0; align-self: stretch; }
-#tensiones-root .navlbl { display: flex; align-items: center; font-size: 9px; letter-spacing: .12em; color: var(--dim); font-weight: 700; padding: 0 6px; white-space: nowrap; font-family: monospace; }
-#tensiones-root .nb.soc { color: var(--cyan); }
-#tensiones-root .nb.soc.on { color: #FFFFFF; border-bottom-color: var(--cyan); background: rgba(255,255,255,.05); }
-
-#tensiones-root .dolor { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--border); }
-#tensiones-root .dolor:last-child { border-bottom: none; }
-#tensiones-root .dolorn { width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,.06); color: var(--muted); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; }
-#tensiones-root .dolorfrase { font-size: 13px; font-style: italic; color: var(--cyan); }
-#tensiones-root .dolormeta { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
-
-#tensiones-root .r-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-#tensiones-root .r-table th { text-align: left; padding: 7px 9px; background: var(--card-bg); color: var(--muted); font-weight: 700; border: 1px solid var(--border); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; font-family: monospace; }
-#tensiones-root .r-table td { padding: 8px 9px; border: 1px solid var(--border); vertical-align: top; color: var(--text); }
+#tensiones-root{--bg:#FFFFFF;--bg3:#d5d1d1;--bg4:#c2bebe;--border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.15);--text:#1E293B;--muted:#475569;--dim:#64748B;--red:#E24B4A;--red-bg:rgba(226,75,74,.15);--red-br:rgba(226,75,74,.4);--org:#D97706;--yel:#B45309;--grn:#15803D;--cyan:#0891B2;--cyan-bg:rgba(8,145,178,.12);--cyan-br:rgba(8,145,178,.35);--ac:#00C2D4;--hdrblue:#1C2738;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;display:block}
+#tensiones-root *{box-sizing:border-box;margin:0;padding:0}
+@keyframes tfi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#tensiones-root .hdr{background:var(--hdrblue);border-bottom:1px solid rgba(255,255,255,.1);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0}
+#tensiones-root .hdr-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1.2}
+#tensiones-root .hdr-name span{color:var(--ac)}
+#tensiones-root .hsub{font-size:11px;color:#94A3B8;margin-top:4px;font-weight:500}
+#tensiones-root .nav{background:#f1f5f9;border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;overflow-x:auto;gap:0}
+#tensiones-root .nb{padding:14px 16px;font-size:11.5px;font-weight:500;color:var(--dim);cursor:pointer;border:none;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;background:none;font-family:inherit}
+#tensiones-root .nb:hover{color:var(--text)}
+#tensiones-root .nb.on{color:#0F172A;border-bottom-color:var(--red);font-weight:700}
+#tensiones-root .nb.soc{color:var(--cyan)}
+#tensiones-root .nb.soc.on{border-bottom-color:var(--cyan)}
+#tensiones-root .navdiv{width:1px;background:var(--border2);margin:10px 8px;flex-shrink:0}
+#tensiones-root .navlbl{display:flex;align-items:center;font-size:9px;letter-spacing:.14em;color:var(--dim);font-weight:700;padding:0 6px 0 2px;white-space:nowrap}
+#tensiones-root .ct{padding:1.5rem}
+#tensiones-root .view{display:none}
+#tensiones-root .view.on{display:block;animation:tfi .2s ease}
+#tensiones-root .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}
+#tensiones-root .mb{margin-bottom:1.25rem}
+#tensiones-root .card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;color:var(--text)}
+#tensiones-root .ctit{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.9rem;display:flex;align-items:center;gap:6px}
+#tensiones-root .cdot, #tensiones-root .sdot{width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;display:inline-block}
+#tensiones-root .cdot.c, #tensiones-root .sdot.c{background:var(--cyan)}
+#tensiones-root .stit{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+#tensiones-root .chw{position:relative;width:100%}
+#tensiones-root .empty{font-size:12px;color:var(--dim);line-height:1.7;padding:.4rem 0}
+#tensiones-root .note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:.8rem;padding-top:.7rem;border-top:1px solid var(--border)}
+#tensiones-root .advert{background:rgba(217,119,6,.15);border:1px solid rgba(217,119,6,.4);color:#92400E;border-radius:8px;padding:.7rem 1rem;font-size:12px;margin-bottom:1rem;line-height:1.5}
+#tensiones-root .resumen{font-size:12.5px;line-height:1.75;color:var(--text)}
+#tensiones-root .semstrip{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+#tensiones-root .sembox{border-radius:10px;padding:.85rem .8rem;text-align:center;border:1px solid}
+#tensiones-root .seml{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+#tensiones-root .semv{font-size:22px;font-weight:700;line-height:1.15}
+#tensiones-root .semv.t{font-size:17px}
+#tensiones-root .sems{font-size:10.5px;margin-top:5px;opacity:.85;line-height:1.4}
+#tensiones-root .trow{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:3px;border:1px solid transparent}
+#tensiones-root .trow:hover{background:var(--bg3)}
+#tensiones-root .trow.sel{background:var(--bg3);border-color:var(--border2)}
+#tensiones-root .tnum{font-size:11px;color:var(--dim);width:16px;text-align:center;flex-shrink:0}
+#tensiones-root .tname{font-size:12.5px;flex:1;color:var(--text);line-height:1.35}
+#tensiones-root .tbar{width:80px;height:6px;background:var(--bg4);border-radius:3px;flex-shrink:0}
+#tensiones-root .tbar-f{height:6px;border-radius:3px}
+#tensiones-root .tsco{font-size:12px;font-weight:700;width:26px;text-align:right;flex-shrink:0}
+#tensiones-root .tniv{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0;border:1px solid;white-space:nowrap;min-width:78px;text-align:center}
+#tensiones-root .dg{display:grid;grid-template-columns:104px 1fr;gap:6px 10px;font-size:12.5px}
+#tensiones-root .dk{color:var(--muted);font-weight:600}
+#tensiones-root .dv{color:var(--text);line-height:1.55}
+#tensiones-root .drec{margin-top:.9rem;padding:.85rem 1rem;background:rgba(255,255,255,.55);border-radius:8px;font-size:12.5px;line-height:1.7;border-left:3px solid var(--red)}
+#tensiones-root .drec b{color:var(--text)}
+#tensiones-root .dtit{font-size:14px;font-weight:700;color:var(--red);margin-bottom:.8rem;line-height:1.35}
+#tensiones-root .voces{margin-top:.9rem;padding-top:.7rem;border-top:1px dashed var(--border2)}
+#tensiones-root .voces-t{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);margin-bottom:.5rem}
+#tensiones-root .voz{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;font-size:12px;line-height:1.5}
+#tensiones-root .voz-f{flex-shrink:0;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px;background:var(--cyan-bg);color:var(--cyan);border:1px solid var(--cyan-br);margin-top:1px}
+#tensiones-root .voz-x{color:var(--muted);font-style:italic}
+#tensiones-root .eitem{padding:9px 0;border-bottom:1px solid var(--border)}
+#tensiones-root .eitem:last-child{border-bottom:none}
+#tensiones-root .ebar{display:flex;align-items:center;gap:10px}
+#tensiones-root .edesc{font-size:11px;color:var(--dim);margin:5px 0 0 140px;line-height:1.45}
+#tensiones-root .enam{font-size:12.5px;width:130px;flex-shrink:0;color:var(--text);line-height:1.3}
+#tensiones-root .ebg{flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden}
+#tensiones-root .efill{height:8px;border-radius:4px}
+#tensiones-root .epts{font-size:10px;width:64px;text-align:right;flex-shrink:0;letter-spacing:1px;white-space:nowrap}
+#tensiones-root .evrow{padding:9px 0;border-bottom:1px solid var(--border)}
+#tensiones-root .evrow:last-child{border-bottom:none}
+#tensiones-root .evh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+#tensiones-root .evn{font-size:12.5px;font-weight:600;color:var(--text)}
+#tensiones-root .evt{font-size:11px;font-weight:700;text-align:right}
+#tensiones-root .evd{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:3px}
+#tensiones-root .lecp{font-size:12.5px;line-height:1.75;color:var(--text);margin-bottom:.9rem}
+#tensiones-root .lecp:last-child{margin-bottom:0}
+#tensiones-root .hallazgo{margin-top:1.1rem;padding:1rem 1.25rem;background:rgba(217,119,6,.14);border:1px solid rgba(217,119,6,.4);border-left:3px solid var(--org);border-radius:8px}
+#tensiones-root .hallazgo-t{font-size:11.5px;font-weight:700;color:#92400E;margin-bottom:.4rem}
+#tensiones-root .hallazgo-x{font-size:12.5px;line-height:1.75;color:#7C2D12}
+#tensiones-root .madre{border-left:3px solid var(--cyan)}
+#tensiones-root .madre-f{font-size:14px;line-height:1.7;color:var(--text)}
+#tensiones-root .madre-n{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.65}
+#tensiones-root .nar, #tensiones-root .preg{background:var(--bg3);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:8px}
+#tensiones-root .nar-h{padding:11px 13px;display:flex;align-items:flex-start;gap:8px}
+#tensiones-root .nar-info{flex:1}
+#tensiones-root .nar-name{font-size:12.5px;font-weight:700;color:var(--text);line-height:1.35}
+#tensiones-root .nar-meta{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+#tensiones-root .arr{font-size:11px;color:var(--dim);flex-shrink:0;margin-top:2px;transition:transform .2s}
+#tensiones-root .arr.op{transform:rotate(180deg)}
+#tensiones-root .nar-body{display:none;padding:11px 13px;border-top:1px solid var(--border);font-size:12.5px;color:var(--muted);line-height:1.65;background:rgba(255,255,255,.35);border-radius:0 0 10px 10px}
+#tensiones-root .nar-body.op{display:block;animation:tfi .2s ease}
+#tensiones-root .nfrase{font-size:12.5px;font-style:italic;color:var(--cyan);margin-top:6px;line-height:1.55}
+#tensiones-root .nfuente{font-size:11px;color:var(--dim);margin-top:5px}
+#tensiones-root .chip{display:inline-block;font-size:10px;font-weight:700;padding:1px 8px;border-radius:9px;border:1px solid;margin-left:6px;vertical-align:middle}
+#tensiones-root .cols{display:flex;gap:1rem;align-items:flex-start}
+#tensiones-root .col{flex:1;min-width:0}
+#tensiones-root .leg{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:.9rem}
+#tensiones-root .leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+#tensiones-root .ter{border-radius:10px;margin-bottom:8px;border:1px solid;cursor:pointer;overflow:hidden}
+#tensiones-root .ter-h{padding:11px 13px;display:flex;align-items:flex-start;gap:8px}
+#tensiones-root .ter-info{flex:1}
+#tensiones-root .ter-name{font-size:13px;font-weight:700;line-height:1.35}
+#tensiones-root .ter-sub{font-size:11px;opacity:.85;margin-top:3px;line-height:1.4}
+#tensiones-root .ter-body{display:none;padding:0 13px 12px;font-size:12.5px;line-height:1.7;color:var(--text)}
+#tensiones-root .ter-body.op{display:block;animation:tfi .2s ease}
+#tensiones-root .ter-meta{font-size:11.5px;color:var(--muted);margin-bottom:6px}
+#tensiones-root .abox{background:var(--red-bg);border:1px solid var(--red-br);border-radius:12px;padding:1rem 1.25rem;margin-bottom:.9rem;cursor:pointer}
+#tensiones-root .abox-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#tensiones-root .abox-t{font-size:13px;font-weight:700;color:var(--red);display:flex;align-items:center;gap:8px;line-height:1.35}
+#tensiones-root .abox .arr{color:var(--red)}
+#tensiones-root .abox-body{display:none;margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--red-br);cursor:default}
+#tensiones-root .abox-body.op{display:block;animation:tfi .2s ease}
+#tensiones-root .ag{display:grid;grid-template-columns:130px 1fr;gap:7px 10px;font-size:12.5px}
+#tensiones-root .ak{color:#B91C1C;font-weight:700}
+#tensiones-root .av{color:#7F1D1D;line-height:1.65}
+#tensiones-root .abox .voces{border-top-color:var(--red-br)}
+#tensiones-root .r-table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px}
+#tensiones-root .r-table th{text-align:left;padding:8px 10px;background:var(--bg4);color:var(--dim);font-weight:700;border:1px solid var(--border);font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+#tensiones-root .r-table td{padding:9px 10px;border:1px solid var(--border);vertical-align:top;color:var(--text);line-height:1.55}
+#tensiones-root .r-table tr:nth-child(even) td{background:rgba(255,255,255,.3)}
+#tensiones-root .tray-table{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
+#tensiones-root .tray-table th{text-align:center;padding:7px 8px;color:var(--dim);font-weight:700;border-bottom:1px solid var(--border2);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+#tensiones-root .tray-table th:first-child{text-align:left}
+#tensiones-root .tray-table td{padding:8px;border-bottom:1px solid var(--border);text-align:center;color:var(--muted)}
+#tensiones-root .tray-table td:first-child{text-align:left;color:var(--text);font-weight:600}
+#tensiones-root .tray-table tr:last-child td{border-bottom:none}
+#tensiones-root .xs{overflow-x:auto}
+#tensiones-root .zonac{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:10px}
+#tensiones-root .zonac-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+#tensiones-root .zonac-n{font-size:13px;font-weight:700;color:var(--text)}
+#tensiones-root .zonac-sub{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+#tensiones-root .ias{font-size:22px;font-weight:800;text-align:right;line-height:1}
+#tensiones-root .iasl{font-size:9px;color:var(--dim);text-align:right;letter-spacing:.08em}
+#tensiones-root .zonac-lec{font-size:12.5px;color:var(--muted);line-height:1.7}
+#tensiones-root .dolor{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border)}
+#tensiones-root .dolor:last-child{border-bottom:none}
+#tensiones-root .dolorn{width:24px;height:24px;border-radius:50%;background:var(--bg4);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#tensiones-root .dolorfrase{font-size:13px;font-style:italic;color:var(--cyan);line-height:1.5}
+#tensiones-root .dolormeta{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+#tensiones-root .enemcard{border-bottom:1px solid var(--border);padding:.75rem 0}
+#tensiones-root .enemcard:last-child{border-bottom:none}
+#tensiones-root .enemn{font-size:12.5px;font-weight:700;color:var(--red)}
+#tensiones-root .enemd, #tensiones-root .fractrow{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.65}
+#tensiones-root .fractrow{margin-top:0;padding:.75rem 0;border-bottom:1px solid var(--border)}
+#tensiones-root .fractrow:last-child{border-bottom:none}
+#tensiones-root .fractrow b{color:var(--text)}
+#tensiones-root .preg{border-color:var(--cyan-br);background:var(--cyan-bg)}
+#tensiones-root .preg-h{padding:11px 14px;display:flex;gap:10px;align-items:flex-start}
+#tensiones-root .preg-n{width:22px;height:22px;border-radius:50%;background:rgba(8,145,178,.22);color:var(--cyan);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+#tensiones-root .preg-q{font-size:13px;font-weight:600;color:var(--text);flex:1;line-height:1.4}
+#tensiones-root .preg .arr{color:var(--cyan)}
+#tensiones-root .preg-body{display:none;padding:0 14px 13px 46px;font-size:12.5px;color:var(--muted);line-height:1.7}
+#tensiones-root .preg-body.op{display:block;animation:tfi .2s ease}
+#tensiones-root .footer{background:var(--hdrblue);border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:30px;border-radius:0 0 8px 8px}
+@media(max-width:768px){#tensiones-root .g2{grid-template-columns:1fr}
+#tensiones-root .cols{flex-direction:column;gap:0;align-items:stretch}
+#tensiones-root .edesc{margin-left:0}
+#tensiones-root .semstrip{grid-template-columns:repeat(2,1fr)}
+#tensiones-root .ct{padding:1rem}
+#tensiones-root .dg{grid-template-columns:90px 1fr}
+#tensiones-root .ag{grid-template-columns:100px 1fr}
+#tensiones-root .enam{width:100px}}
 </style>
 
 <header class="hdr">
@@ -104,128 +168,165 @@
 </header>
 
 <div class="nav">
-  <button class="nb on" onclick="tensTab(this,'tensiones')">TENSIONES</button>
-  <button class="nb" onclick="tensTab(this,'emociones')">EMOCIONES</button>
-  <button class="nb" onclick="tensTab(this,'narrativas')">NARRATIVAS</button>
-  <button class="nb" onclick="tensTab(this,'territorios')">TERRITORIOS</button>
-  <button class="nb" onclick="tensTab(this,'riesgos')">RIESGOS</button>
-  <button class="nb" onclick="tensTab(this,'trayectoria')">TRAYECTORIA</button>
-  <button class="nb" onclick="tensTab(this,'alertas')">ALERTAS</button>
+  <button class="nb on" onclick="tensTab(this,'tensiones')">Tensiones</button>
+  <button class="nb" onclick="tensTab(this,'emociones')">Emociones</button>
+  <button class="nb" onclick="tensTab(this,'narrativas')">Narrativas</button>
+  <button class="nb" onclick="tensTab(this,'territorios')">Territorios</button>
+  <button class="nb" onclick="tensTab(this,'riesgos')">Riesgos</button>
+  <button class="nb" onclick="tensTab(this,'trayectoria')">Trayectoria</button>
+  <button class="nb" onclick="tensTab(this,'alertas')">Alertas prioritarias</button>
   <div class="navdiv"></div>
   <div class="navlbl">SOCIOAFECTIVA</div>
-  <button class="nb soc" onclick="tensTab(this,'soc1')">RADIOGRAFÍA Y DOLORES</button>
-  <button class="nb soc" onclick="tensTab(this,'soc2')">ENEMIGOS Y SEGMENTACIÓN</button>
-  <button class="nb soc" onclick="tensTab(this,'soc3')">NARRATIVAS Y 9 PREGUNTAS</button>
+  <button class="nb soc" onclick="tensTab(this,'soc1')">Radiografía y dolores</button>
+  <button class="nb soc" onclick="tensTab(this,'soc2')">Enemigos y segmentación</button>
+  <button class="nb soc" onclick="tensTab(this,'soc3')">Narrativas y 9 preguntas</button>
 </div>
 
 <div class="ct">
-  <!-- TENSIONES -->
+
+  <!-- 1. TENSIONES -->
   <div class="view on" id="tv-tensiones">
-    <div class="stit"><span class="sdot"></span>RANKING DE TENSIONES SOCIALES</div>
+    <div id="t-advert"></div>
+    <div class="card mb" id="t-resumen-card" style="display:none">
+      <div class="ctit"><span class="cdot"></span>Resumen ejecutivo</div>
+      <div class="resumen" id="t-resumen"></div>
+    </div>
+    <div class="stit"><span class="sdot"></span>Ranking de tensiones sociales · clic en cualquier fila para ver análisis completo</div>
     <div class="g2 mb">
       <div id="t-tens-list"></div>
-      <div id="t-tens-detail"><div class="card"><div style="font-size:12px;color:var(--dim)">Selecciona una tensión para ver el detalle.</div></div></div>
+      <div id="t-tens-detail"><div class="card"><div class="empty">Selecciona una tensión para ver el detalle.</div></div></div>
+    </div>
+    <div class="card mb">
+      <div class="ctit"><span class="cdot"></span>Semáforo de inteligencia</div>
+      <div class="semstrip" id="t-sem"></div>
     </div>
     <div class="card">
-      <div class="ctit"><span class="cdot"></span>SCORES DE TENSIÓN SOCIAL</div>
-      <canvas id="tc-tens"></canvas>
+      <div class="ctit"><span class="cdot"></span>Scores de tensión social</div>
+      <div class="chw" id="tc-tens-w"><canvas id="tc-tens"></canvas></div>
     </div>
   </div>
 
-  <!-- EMOCIONES -->
+  <!-- 2. EMOCIONES -->
   <div class="view" id="tv-emociones">
-    <div class="stit"><span class="sdot"></span>MAPA EMOCIONAL</div>
+    <div class="stit"><span class="sdot"></span>Mapa emocional del municipio</div>
     <div class="g2 mb">
-      <div class="card"><div class="ctit"><span class="cdot"></span>INTENSIDAD EMOCIONAL</div><div id="t-emo-bars"></div></div>
-      <div class="card"><div class="ctit"><span class="cdot"></span>DISTRIBUCIÓN %</div><canvas id="tc-emo"></canvas></div>
+      <div class="card"><div class="ctit"><span class="cdot"></span>Intensidad emocional 1–5 · escala política</div><div id="t-emo-bars"></div></div>
+      <div class="card"><div class="ctit"><span class="cdot"></span>Distribución porcentual estimada</div><div class="chw" style="height:300px"><canvas id="tc-emo"></canvas></div></div>
+    </div>
+    <div class="g2 mb">
+      <div class="card"><div class="ctit"><span class="cdot"></span>Evolución vs. periodo anterior</div><div id="t-emo-evol"></div></div>
+      <div class="card"><div class="ctit"><span class="cdot"></span>Lectura política estratégica</div><div id="t-emo-lect"></div></div>
     </div>
     <div class="hallazgo">
-      <div style="font-size:10px;font-weight:700;color:var(--org);margin-bottom:.3rem;font-family:monospace">HALLAZGO ESTRATÉGICO EMOCIONAL</div>
-      <div style="font-size:12px;line-height:1.6;color:var(--text)" id="t-hallazgo-emo"></div>
+      <div class="hallazgo-t">Hallazgo estratégico emocional</div>
+      <div class="hallazgo-x" id="t-hallazgo-emo"></div>
     </div>
   </div>
 
-  <!-- NARRATIVAS -->
+  <!-- 3. NARRATIVAS -->
   <div class="view" id="tv-narrativas">
-    <div class="stit"><span class="sdot"></span>NARRATIVAS EMERGENTES</div>
-    <div id="t-nar-list"></div>
+    <div class="stit"><span class="sdot"></span>Narrativas emergentes · clic para ver potencial político y frase ciudadana</div>
+    <div class="card madre mb">
+      <div class="ctit"><span class="cdot c"></span>Narrativa madre (síntesis Tensiones + Socioafectiva)</div>
+      <div class="madre-f" id="t-madre-f"></div>
+      <div class="madre-n" id="t-madre-n"></div>
+    </div>
+    <div class="mb" id="t-nar-list"></div>
+    <div class="card">
+      <div class="ctit"><span class="cdot"></span>Potencial político de cada narrativa — índice de 0 a 100</div>
+      <div class="chw" id="tc-nar-w"><canvas id="tc-nar"></canvas></div>
+    </div>
   </div>
 
-  <!-- TERRITORIOS -->
+  <!-- 4. TERRITORIOS -->
   <div class="view" id="tv-territorios">
-    <div class="stit"><span class="sdot"></span>TERRITORIOS SENSIBLES</div>
+    <div class="stit"><span class="sdot"></span>Territorios sensibles · clic para expandir análisis</div>
+    <div class="leg">
+      <span><i style="background:#E24B4A"></i>Rojo · sensibilidad crítica (75-100)</span>
+      <span><i style="background:#D97706"></i>Naranja · sensibilidad alta (55-74)</span>
+      <span><i style="background:#B45309"></i>Amarillo · sensibilidad media (0-54)</span>
+    </div>
     <div id="t-ter-list"></div>
   </div>
 
-  <!-- RIESGOS -->
+  <!-- 5. RIESGOS -->
   <div class="view" id="tv-riesgos">
-    <div class="stit"><span class="sdot"></span>SCORE DE RIESGO REPUTACIONAL (SRR)</div>
-    <div class="card mb"><canvas id="tc-srr"></canvas></div>
-    <div id="t-riesgo-list"></div>
+    <div class="stit"><span class="sdot"></span>Riesgos reputacionales — actores expuestos y SRR</div>
+    <div class="card mb xs"><table class="r-table">
+      <thead><tr><th>Tensión</th><th>Actor expuesto</th><th>SRR</th><th>Tipo de señal</th><th>Prob. escalamiento</th><th>Consecuencia si no se atiende</th><th>Acción recomendada</th></tr></thead>
+      <tbody id="t-riesgo-body"></tbody>
+    </table></div>
+    <div class="card">
+      <div class="ctit"><span class="cdot"></span>SRR por tensión — score de riesgo reputacional</div>
+      <div class="chw" style="height:300px"><canvas id="tc-srr"></canvas></div>
+    </div>
   </div>
 
-  <!-- TRAYECTORIA -->
+  <!-- 6. TRAYECTORIA -->
   <div class="view" id="tv-trayectoria">
-    <div class="stit"><span class="sdot"></span>EVOLUCIÓN TEMPORAL</div>
-    <div class="card mb" style="overflow-x:auto">
-      <table class="traj-table">
-        <thead><tr><th>TENSIÓN</th><th>T-3</th><th>T-2</th><th>T-1</th><th>ACTUAL</th><th>DELTA</th><th>TIPO</th><th>VELOCIDAD</th></tr></thead>
-        <tbody id="t-traj-body"></tbody>
-      </table>
+    <div class="stit"><span class="sdot"></span>Evolución temporal</div>
+    <div class="card mb">
+      <div class="ctit"><span class="cdot"></span><span id="t-traj-titulo">Trayectoria de tensiones</span></div>
+      <div class="xs"><table class="tray-table"><thead id="t-traj-head"></thead><tbody id="t-traj-body"></tbody></table></div>
     </div>
-    <div class="card mb"><canvas id="tc-traj"></canvas></div>
-    <div class="hallazgo">
-      <div style="font-size:10px;font-weight:700;color:var(--org);margin-bottom:.3rem;font-family:monospace">HALLAZGO DE TRAYECTORIA</div>
-      <div style="font-size:12px;line-height:1.6;color:var(--text)" id="t-hallazgo-traj"></div>
+    <div class="card mb">
+      <div class="ctit"><span class="cdot"></span><span id="t-traj-gtitulo">Gráfica de trayectoria</span></div>
+      <div class="chw" style="height:340px"><canvas id="tc-traj"></canvas></div>
+      <div class="hallazgo">
+        <div class="hallazgo-t">Hallazgo estratégico de trayectoria</div>
+        <div class="hallazgo-x" id="t-hallazgo-traj"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctit"><span class="cdot"></span><span id="t-aprob-titulo">Aprobación — dato verificado en encuesta pública (no interpolado)</span></div>
+      <div id="t-aprob-chart"><div class="chw" style="height:240px"><canvas id="tc-aprob"></canvas></div></div>
+      <div class="note" id="t-aprob-nota"></div>
     </div>
   </div>
 
-  <!-- ALERTAS -->
+  <!-- 7. ALERTAS -->
   <div class="view" id="tv-alertas">
-    <div class="stit"><span class="sdot"></span>ALERTAS PRIORITARIAS</div>
+    <div class="stit"><span class="sdot"></span>Alertas prioritarias · análisis completo · clic para expandir / colapsar</div>
     <div id="t-alertas-list"></div>
   </div>
 
-  <!-- SOCIOAFECTIVA 1: RADIOGRAFÍA + DOLORES -->
+  <!-- 8-10. SOCIOAFECTIVA -->
   <div class="view" id="tv-soc1">
-    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Índice de Activación Socioafectiva (IAS) por zona</div>
-    <div class="card mb"><canvas id="tc-ias"></canvas></div>
-    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Mapa de dolores sociales</div>
+    <div class="stit"><span class="sdot c"></span>Socioafectiva · radiografía territorial sintética</div>
+    <div id="t-rad-list" class="mb"></div>
+    <div class="card mb"><div class="ctit"><span class="cdot c"></span>Índice de activación socioafectiva (IAS) por zona · 0 a 100</div><div class="chw" id="tc-ias-w"><canvas id="tc-ias"></canvas></div></div>
+    <div class="stit"><span class="sdot c"></span>Socioafectiva · mapa de dolores sociales</div>
     <div class="card"><div id="t-dol-list"></div></div>
   </div>
 
-  <!-- SOCIOAFECTIVA 2: ENEMIGOS + SEGMENTACIÓN -->
   <div class="view" id="tv-soc2">
-    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Enemigos simbólicos y fracturas sociales</div>
+    <div class="stit"><span class="sdot c"></span>Socioafectiva · enemigos simbólicos y fracturas sociales</div>
     <div class="g2 mb">
-      <div class="card"><div class="ctit"><span class="cdot"></span>ENEMIGOS SIMBÓLICOS</div><div id="t-enem-list"></div></div>
-      <div class="card"><div class="ctit"><span class="cdot"></span>FRACTURAS SOCIALES</div><div id="t-fract-list"></div></div>
+      <div class="card"><div class="ctit"><span class="cdot c"></span>Enemigos simbólicos</div><div id="t-enem-list"></div></div>
+      <div class="card"><div class="ctit"><span class="cdot c"></span>Fracturas sociales</div><div id="t-fract-list"></div></div>
     </div>
-    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Segmentación socioafectiva</div>
-    <div class="card" style="overflow-x:auto">
-      <table class="r-table">
-        <thead><tr><th>Segmento</th><th>Emoción dominante</th><th>Detonante principal</th></tr></thead>
-        <tbody id="t-segsoc-tbl"></tbody>
-      </table>
-    </div>
+    <div class="stit"><span class="sdot c"></span>Socioafectiva · segmentación socioafectiva</div>
+    <div class="card xs"><table class="r-table" style="min-width:640px">
+      <thead><tr><th>Segmento</th><th>Emoción dominante</th><th>Detonante principal</th></tr></thead>
+      <tbody id="t-seg-body"></tbody>
+    </table></div>
   </div>
 
-  <!-- SOCIOAFECTIVA 3: NARRATIVAS + 9 PREGUNTAS -->
   <div class="view" id="tv-soc3">
-    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Narrativa madre</div>
-    <div class="card mb" style="border-left:3px solid var(--cyan)">
-      <div class="ctit"><span class="cdot"></span>NARRATIVA MADRE SOCIOAFECTIVA</div>
-      <div style="font-size:13px;line-height:1.6;color:var(--text)" id="t-narsoc-madre-t"></div>
-      <div style="font-size:11.5px;color:var(--muted);margin-top:8px" id="t-narsoc-madre-d"></div>
+    <div class="stit"><span class="sdot c"></span>Socioafectiva · narrativas</div>
+    <div class="card madre mb">
+      <div class="ctit"><span class="cdot c"></span>Narrativa madre socioafectiva</div>
+      <div class="madre-f" id="t-narmadre-frase"></div>
+      <div class="madre-n" id="t-narmadre-nota"></div>
     </div>
-    <div id="t-narsoc-list" class="mb"></div>
-    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Las 9 Preguntas — marco ejecutivo de diagnóstico</div>
+    <div class="mb" id="t-narsoc-list"></div>
+    <div class="stit"><span class="sdot c"></span>Socioafectiva · las 9 preguntas — marco ejecutivo de diagnóstico</div>
     <div id="t-preg-list"></div>
   </div>
 </div>
 
 <div class="footer">
-  <span id="t-ftr-l">RADAR DE TENSIONES</span>
+  <span id="t-ftr-l">Radar de Tensiones</span>
   <span>CONFIDENCIAL &middot; Uso estratégico exclusivo</span>
 </div>
 </div>
