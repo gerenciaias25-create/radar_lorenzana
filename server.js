@@ -334,25 +334,35 @@ function normalizeResponse(data, skill, ctx = {}) {
   // TENSIONES
   if (skill === 'tensiones') {
     ensureObject(data, 'actor', { entidad: 'Sin entidad', cargo: 'Servidor(a) Público(a)', periodo: '' });
+    ensureArray(data, 'semaforo', []);
     ensureArray(data, 'ranking', []);
     ensureArray(data, 'emociones', []);
+    if (!data.lecturaPoliticaEmociones) data.lecturaPoliticaEmociones = '';
+    ensureObject(data, 'narrativaMadreSintesis', { texto: '', descripcion: '' });
     ensureArray(data, 'narrativas', []);
     ensureArray(data, 'territorios', []);
     ensureArray(data, 'riesgos', []);
+    ensureArray(data, 'trayectoriaLabels', []);
     ensureArray(data, 'trayectoria', []);
+    ensureObject(data, 'aprobacion', { cortes: [], nota: '' });
+    ensureArray(data.aprobacion, 'cortes', []);
     ensureArray(data, 'alertas', []);
     if (!data.hallazgoEmocional) data.hallazgoEmocional = 'Sin datos de hallazgo emocional disponibles.';
     if (!data.hallazgoTrayectoria) data.hallazgoTrayectoria = 'Sin datos de trayectoria disponibles.';
     if (!data.resumenEjecutivo) data.resumenEjecutivo = '';
-    ensureArray(data, 'radiografia', []);
-    ensureArray(data, 'dolores', []);
-    ensureArray(data, 'enemigos', []);
-    ensureArray(data, 'fracturas', []);
-    ensureArray(data, 'segmentacion', []);
-    if (!data.narrativaMadreSocio) data.narrativaMadreSocio = '';
-    if (!data.comparacionNarrativas) data.comparacionNarrativas = '';
-    ensureArray(data, 'narrativasSocio', []);
-    ensureArray(data, 'preguntas9', []);
+    ensureObject(data, 'cartografiaSocioafectiva', {
+      iasPorZona: [], dolores: [], enemigosSimbolicos: [], fracturasSociales: [], segmentacion: [],
+      narrativaMadre: '', narrativaMadreDesc: '', narrativas: [], preguntas: []
+    });
+    ensureArray(data.cartografiaSocioafectiva, 'iasPorZona', []);
+    ensureArray(data.cartografiaSocioafectiva, 'dolores', []);
+    ensureArray(data.cartografiaSocioafectiva, 'enemigosSimbolicos', []);
+    ensureArray(data.cartografiaSocioafectiva, 'fracturasSociales', []);
+    ensureArray(data.cartografiaSocioafectiva, 'segmentacion', []);
+    ensureArray(data.cartografiaSocioafectiva, 'narrativas', []);
+    ensureArray(data.cartografiaSocioafectiva, 'preguntas', []);
+    if (!data.cartografiaSocioafectiva.narrativaMadre) data.cartografiaSocioafectiva.narrativaMadre = '';
+    if (!data.cartografiaSocioafectiva.narrativaMadreDesc) data.cartografiaSocioafectiva.narrativaMadreDesc = '';
   }
 
   // OPOSITOR
@@ -840,6 +850,13 @@ const SCHEMAS = {
 
   tensiones: JSON.stringify({
     actor: { entidad: "string", cargo: "string", periodo: "string" },
+    semaforo: [
+      { etiqueta: "string (EXACTAMENTE: 'Tensión social')", valor: "string (número 0-100)", nivel: "critico|alto|medio|bajo", sub: "string (ej. 'Roja / Crítica')" },
+      { etiqueta: "string (EXACTAMENTE: 'Reputacional')", valor: "string (número 0-100, usa el SRR más alto de 'riesgos')", nivel: "critico|alto|medio|bajo", sub: "string (ej. 'Riesgo alto sostenido')" },
+      { etiqueta: "string (EXACTAMENTE: 'Escalamiento')", valor: "string (número 0-100)", nivel: "critico|alto|medio|bajo", sub: "string (ej. 'Aceleración en 3 de 6 focos')" },
+      { etiqueta: "string (EXACTAMENTE: 'Confianza institucional')", valor: "string (ej. 'MEDIA-BAJA', puede ser texto, no siempre numérico)", nivel: "critico|alto|medio|bajo", sub: "string (ej. 'Aprobación 50.5% (ago 2026)')" },
+      { etiqueta: "string (EXACTAMENTE: 'Movilización social')", valor: "string (ej. 'MEDIA', 'ALTA', 'BAJA')", nivel: "critico|alto|medio|bajo", sub: "string (ej. 'Sin protesta de calle documentada')" }
+    ],
     ranking: [
       {
         nombre: "string",
@@ -852,53 +869,66 @@ const SCHEMAS = {
         territorio: "string (colonias/zonas específicas afectadas)",
         politica: "string (potencial político/de movilización: riesgo de bloqueos, paro, viralización, etc., específico y accionable)",
         evidencia: "string (párrafo de evidencia documentada con cifras y fuente entre paréntesis, ej. 'Corte de hasta 96h en mayo por rehabilitación planta X (La Silla Rota, ICF 4.3)')",
+        lecturaEstrategica: "string (párrafo de 50-90 palabras, DISTINTO de 'evidencia': conecta esta tensión con el contexto regional/histórico más amplio, con otras tensiones del ranking, o con la respuesta institucional — es el análisis, no el hecho)",
         recomendacion: "string (acción concreta y específica, no genérica)"
       }
     ],
     emociones: [
-      { nombre: "string", intensidad: 0, color: "#hex", porcentaje: 0, descripcion: "string (una línea explicando el tipo/origen/tendencia de esta emoción, ej. 'Estructural, multi-frente · Agua, tarifa de transporte y comercio informal se acumulan sin resolución visible')" }
+      { nombre: "string", intensidad: 0, color: "#hex", porcentaje: 0, descripcion: "string (una línea explicando el tipo/origen/tendencia de esta emoción, ej. 'Estructural, multi-frente · Agua, tarifa de transporte y comercio informal se acumulan sin resolución visible')", tendencia: "string (ej. '↑ Fuerte ascenso', '— Estable alto', '↑ Sostenida alta', '↑ Creciente', '— Estable frágil', '↓ En descenso')", tendenciaDesc: "string (una línea explicando la causa concreta de esa evolución, con hecho/fecha)" }
     ],
+    lecturaPoliticaEmociones: "string (párrafo de 100-160 palabras interpretando el conjunto de emociones en clave político-estratégica, mencionando cada emoción relevante por nombre con su intensidad)",
+    narrativaMadreSintesis: {
+      texto: "string (frase corta entrecomillada que sintetiza en UNA sola narrativa el conjunto de TODAS las tensiones activas — la síntesis más amplia y potente del período)",
+      descripcion: "string (párrafo explicando qué tensiones conecta esta narrativa y por qué es el hilo común del periodo)"
+    },
     narrativas: [
-      { nombre: "string", tema: "string", actor: "string", politica: "string (impacto/potencial político de esta narrativa)", frase: "string (cita textual representativa)", fuente: "string (medio y fecha aproximada, ej. 'La Silla Rota, mayo-julio 2026')" }
+      { nombre: "string", tema: "string", actor: "string", politica: "string (impacto/potencial político de esta narrativa)", potencial: 0, frase: "string (cita textual representativa)", fuente: "string (medio y fecha aproximada, ej. 'La Silla Rota, mayo-julio 2026')" }
     ],
     territorios: [
       { nombre: "string", tension: "string", emocion: "string", color: "Rojo|Naranja|Amarillo", observaciones: "string (evidencia documentada con cifras concretas: número de afectados, fechas, montos, y fuente entre paréntesis)" }
     ],
     riesgos: [
-      { nombre: "string", srr: 0, accion: "string", color: "#hex", actorExpuesto: "string", tipoSenal: "Amplificada legítima|Orgánica|Inducida|Aislada", probEscalar: "Alta|Media|Baja" }
+      { nombre: "string", srr: 0, accion: "string", consecuencia: "string (párrafo de 30-60 palabras: qué pasa concretamente si esta tensión NO se atiende — proyección de consecuencia, no una acción a tomar)", color: "#hex", actorExpuesto: "string", tipoSenal: "Amplificada legítima|Orgánica|Inducida|Aislada", probEscalar: "Alta|Media|Baja" }
     ],
+    trayectoriaLabels: ["string (nombres reales de los periodos del corte, ej. 'Mayo','Junio','Julio','Agosto','Sept (corte 14)' — usa los meses reales de la ventana de análisis evaluada, no genéricos)"],
     trayectoria: [
-      { nombre: "string", t3: 0, t2: 0, t1: 0, ta: 0, delta: "string (ej. '+7' o '-3', con signo)", tipo: "Persistente|Nueva|Emergente", velocidad: "Creciendo|Estable|Bajando" }
+      { nombre: "string", valores: [0], ta: 0, delta: "string (ej. '+7' o '-3', con signo)", tipo: "Persistente|Nueva|Emergente", velocidad: "Creciendo|Estable|Bajando" }
     ],
+    aprobacion: {
+      cortes: [{ label: "string (ej. 'Agosto 2026')", valor: 0 }],
+      nota: "string (explica cuántos cortes hay, de qué encuestadora, y por qué no se interpolan los meses sin dato — ej. 'Solo se identificó un corte con dato público verificado...')"
+    },
     alertas: [
       { titulo: "string", rows: [["clave", "valor"]] }
     ],
     hallazgoEmocional: "string",
     hallazgoTrayectoria: "string",
     resumenEjecutivo: "string",
-    radiografia: [
-      { nombre: "string (nombre de la zona/territorio)", nivel: "string (tipo de zona, ej. 'Urbano-comercial', 'Rural / corredor carretero')", ias: 0, color: "#hex", tension: "string (tensión dominante de esa zona, tomada del ranking)", emocion: "string (emoción(es) dominante(s) en esa zona)", lectura: "string (párrafo interpretando por qué esa zona activa esa carga socioafectiva)" }
-    ],
-    dolores: [
-      { frase: "string (cita ciudadana textual entre comillas)", meta: "string (hecho que la origina + intensidad X/5 + fecha, ej. 'Corte de agua de 96h en mayo · Intensidad 4/5 · La Silla Rota')" }
-    ],
-    enemigos: [
-      { nombre: "string (nombre evocador del enemigo simbólico, ej. 'El que no rinde cuentas')", descripcion: "string (párrafo explicando a quién/qué representa y por qué concentra la carga emocional negativa)" }
-    ],
-    fracturas: [
-      { titulo: "string (fractura o contradicción social/política específica)", descripcion: "string (párrafo explicando la tensión entre los dos polos de esa fractura, con evidencia concreta)" }
-    ],
-    segmentacion: [
-      { segmento: "string (grupo poblacional específico)", emocion: "string (emoción dominante de ese segmento)", detonante: "string (hecho concreto que la activa)" }
-    ],
-    narrativaMadreSocio: "string (frase rectora socioafectiva, entre comillas, distinta a las narrativas de 'narrativas' — agrupa la vivencia emocional por segmento en vez del contraste discurso oficial vs. realidad)",
-    comparacionNarrativas: "string (una-dos líneas explicando en qué se diferencia esta narrativa madre socioafectiva de la lógica de las narrativas de la pestaña Narrativas)",
-    narrativasSocio: [
-      { nombre: "string (frase/título de la narrativa, en primera persona o cita ciudadana)", tema: "string (a qué segmento pertenece, ej. 'Segmento: comerciantes y sector agroindustrial')", actor: "string (hecho/actor que la detona)", potencial: "string (potencial de propagación/viralización de esta narrativa)", frase: "string (cita textual corta representativa)", fuente: "string (fuente/reconstrucción analítica y fecha)" }
-    ],
-    preguntas9: [
-      { pregunta: "string", respuesta: "string (respuesta ejecutiva de 40-80 palabras con evidencia concreta del territorio)" }
-    ]
+    cartografiaSocioafectiva: {
+      iasPorZona: [
+        { zona: "string (colonia/zona/corredor específico)", ias: 0 }
+      ],
+      dolores: [
+        { frase: "string (frase ciudadana en primera persona o muy cercana al habla local, sin comillas)", meta: "string (una línea de contexto: quién lo dice, por qué, con qué evidencia)" }
+      ],
+      enemigosSimbolicos: [
+        { nombre: "string (persona, institución o fenómeno señalado como responsable simbólico)", descripcion: "string (por qué se le atribuye la culpa, con evidencia concreta)" }
+      ],
+      fracturasSociales: [
+        { titulo: "string (nombre corto de la fractura/división social)", descripcion: "string (entre quiénes, por qué, con evidencia)" }
+      ],
+      segmentacion: [
+        { segmento: "string (grupo social/económico específico del territorio)", emocionDominante: "string (1-2 emociones, ej. 'Miedo + Desconfianza')", detonante: "string (hecho concreto que activa esa emoción en ese segmento, con fecha)" }
+      ],
+      narrativaMadre: "string (frase corta entrecomillada que resume el sentir colectivo transversal a todos los segmentos)",
+      narrativaMadreDesc: "string (párrafo explicando en qué se diferencia esta narrativa de la narrativa madre de TENSIONES, y qué aporta la mirada socioafectiva)",
+      narrativas: [
+        { nombre: "string", tema: "string", actor: "string", potencial: "string (potencial de propagación/impacto, específico)", frase: "string (cita textual representativa)", fuente: "string (medio + fecha aproximada)" }
+      ],
+      preguntas: [
+        { pregunta: "string", respuesta: "string (respuesta ejecutiva de 2-4 líneas)" }
+      ]
+    }
   }, null, 2),
 
   opositor: JSON.stringify({
@@ -1135,7 +1165,7 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
     : skill === 'sesgo'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Sesgo):\n- CONSISTENCIA NUMÉRICA (crítico): "metricas.sesgosCriticos.valor" debe ser EXACTAMENTE el número de elementos de "ranking" con score 81-100, y "metricas.sesgosAltos.valor" el número con score 61-80 — cuenta el array real, nunca un número aproximado o inventado.\n- "ranking[].categoria" usa EXACTAMENTE uno de los números romanos "I" a "VIII" del catálogo de referencia dado en las reglas adicionales; distribúyelos, no concentres todo en 1-2 categorías.\n- "ranking[].descripcion" siempre ancla el sesgo en un hecho/evidencia concreto de las fuentes (fecha, cifra, medio, actor), no una definición de libro de texto del sesgo — ej. "22 meses de conflicto armado saturan el frame emocional del electorado (cobertura CNN/Infobae, ago-sep 2026)", nunca solo "La gente reacciona más a lo negativo".\n- "segmentos[].perfil" debe cubrir el espectro completo del electorado del territorio evaluado (mínimo: base dura del partido en el poder, base blanda/decepcionada, persuadible/indeciso, abstencionista/fatigado) — nunca dupliques el mismo perfil dos veces. "color" debe ser EXACTAMENTE uno de "verde", "azul", "ambar", "gris".\n- "ventanasPersuasion[].segmento" debe ser un público específico y territorializado (ej. "Comerciantes de Culiacán", no "Ciudadanía en general"), y "recomendacion" una acción/mensaje concreto y accionable, nunca un consejo genérico tipo "comunicar mejor".\n- "arquitecturaMensajes[].etiqueta" debe ser EXACTAMENTE una de "Diferenciación", "Posicionamiento", "Lanzamiento", "Contención", "Movilización" — cubre al menos 3 etiquetas distintas entre los elementos, no repitas la misma etiqueta en todos.\n- "metricas.sistemaDominante.valor" debe ser EXACTAMENTE "Sistema 1" (procesamiento emocional/reactivo, típico cuando predominan sesgos de negatividad/disponibilidad/pérdida) o "Sistema 2" (procesamiento deliberativo, típico cuando predominan sesgos de confirmación/consistencia con baja intensidad emocional) — decide según qué categorías dominan el ranking.`
     : skill === 'tensiones'
-    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico): "trayectoria" debe tener EXACTAMENTE las mismas tensiones que "ranking" (mismos "nombre", mismo orden), y "riesgos" también debe cubrir esas mismas tensiones en el mismo orden — un analista que lea las 3 pestañas debe reconocer que hablan de las mismas 6-10 tensiones, no de conjuntos distintos. El campo "ta" de cada fila en "trayectoria" debe ser IGUAL al "score" de esa misma tensión en "ranking".\n- "ranking[].emocion" formato EXACTO: "EmociónPrimaria + EmociónSecundaria · X/5" (ej. "Hartazgo + Desprotección · 4/5"), nunca solo una palabra suelta.\n- "ranking[].evidencia" es un párrafo (no una frase) que encadena 2-3 datos verificables (cifras, fechas, colonias) cada uno rematado con su fuente entre paréntesis, siguiendo este patrón: "Dato 1 con cifra y fecha (Fuente, ICF X.X) - Dato 2 (Fuente, ICF X.X)". Nunca lo dejes como una oración vaga sin cifras ni fuente.\n- "emociones[].descripcion" siempre debe indicar si la emoción es estructural/coyuntural y su tendencia (sostenida/en descenso/nueva), no solo repetir el nombre de la emoción.\n- "territorios[].color" debe ser EXACTAMENTE "Rojo", "Naranja" o "Amarillo" (no otros valores ni colores hex aquí).\n- "riesgos[].tipoSenal" debe ser EXACTAMENTE uno de: "Amplificada legítima", "Orgánica", "Inducida", "Aislada". "riesgos[].probEscalar" debe ser EXACTAMENTE "Alta", "Media" o "Baja".\n- "trayectoria[].delta" es un STRING con signo, ej. "+7" o "-3" (ta menos t3), nunca un número sin signo ni una palabra.\n- "alertas[].rows": cada alerta necesita mínimo 8 filas cubriendo Territorio, Emoción, Actor expuesto, Qué ocurrió (párrafo con fecha), Narrativa activa, Fuente verificadora, Riesgo, Escalamiento, Acción inmediata — usa esas etiquetas o muy similares, en ese orden.\n- "radiografia" (pestaña "Radiografía y dolores"): cada zona es un territorio/colonia/corredor específico del área evaluada (no el municipio completo como una sola zona). "ias" (Índice de Activación Socioafectiva) es 0-100 y debe ser coherente con el "score" de la tensión dominante de esa zona en "ranking" — ordena "radiografia" de mayor a menor "ias". "tension" y "emocion" deben ser consistentes con los nombres usados en "ranking" y "emociones". "lectura" es un párrafo (no una frase) interpretando el mecanismo socioafectivo de esa zona.\n- "dolores" (Mapa de dolores sociales): cada "frase" es una cita ciudadana textual y verosímil (no una paráfrasis institucional) entre comillas; "meta" encadena el hecho que la origina + intensidad X/5 + fuente/fecha, mismo patrón de densidad que "ranking[].evidencia".\n- "enemigos" (Enemigos simbólicos, pestaña "Enemigos y segmentación"): son figuras o encarnaciones simbólicas (no necesariamente personas identificadas por nombre) que concentran la carga emocional negativa del territorio — nunca repitas literalmente el nombre de una tensión del ranking como si fuera un enemigo; el enemigo es la ENCARNACIÓN narrativa de esa tensión.\n- "fracturas" (Fracturas sociales): cada una describe una contradicción o tensión entre DOS polos concretos (ej. discurso oficial vs. evidencia documentada, un grupo social vs. otro, una institución vs. su base) con evidencia específica de ambos lados.\n- "segmentacion": cada fila es un segmento poblacional real y distinto (no genérico como "ciudadanía en general"), con su emoción dominante y el detonante concreto (hecho/fecha) que la activa — usa segmentos distintos a los ya cubiertos en "territorios", pensando en población/gremio/identidad en vez de geografía.\n- "narrativaMadreSocio" y "comparacionNarrativas" (pestaña "Narrativas y 9 preguntas"): la narrativa madre socioafectiva agrupa la vivencia emocional POR SEGMENTO poblacional (a diferencia de las "narrativas" del ranking principal, que se organizan por tensión/tema) — "comparacionNarrativas" debe explicar explícitamente esa diferencia de enfoque, no repetir la frase rectora.\n- "narrativasSocio": cada una debe estar anclada a un segmento de "segmentacion" (usa el mismo nombre de segmento en "tema"), con "potencial" describiendo si ya circula, es emergente o de bajo perfil mediático.\n- "preguntas9": EXACTAMENTE 9 pares pregunta/respuesta, cubriendo un diagnóstico ejecutivo completo del territorio: qué le duele más hoy, a quién culpa la ciudadanía, en quién confía todavía, qué emoción domina y hacia dónde se dirige, qué símbolo podría unir a la comunidad, qué narrativa puede movilizarla, qué actor ocupa el rol de enemigo simbólico, qué segmento está más activado emocionalmente, y una novena pregunta de cierre ejecutivo (recomendación/ventana de acción) — adapta la redacción exacta al territorio, pero cubre ese arco completo de 9 preguntas.`
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico): "trayectoria" debe tener EXACTAMENTE las mismas tensiones que "ranking" (mismos "nombre", mismo orden), y "riesgos" también debe cubrir esas mismas tensiones en el mismo orden — un analista que lea las 3 pestañas debe reconocer que hablan de las mismas 8-10 tensiones, no de conjuntos distintos. El último elemento de "trayectoria[].valores" debe ser IGUAL al "score" de esa misma tensión en "ranking", y también igual a "trayectoria[].ta". "trayectoriaLabels" y cada "trayectoria[].valores" deben tener la MISMA longitud.\n- "ranking[].lecturaEstrategica" es un campo adicional y DISTINTO de "evidencia": mientras "evidencia" lista hechos verificables, "lecturaEstrategica" es la interpretación — conecta esta tensión con otras del ranking o con el contexto regional. Obligatorio en TODAS las tensiones del ranking, no solo en la primera.\n- "emociones[].tendencia" (flecha ↑/↓/— + palabra corta) y "emociones[].tendenciaDesc" (una línea con el hecho que explica esa evolución) son obligatorios en TODAS las emociones.\n- "riesgos[].accion" (qué hacer) y "riesgos[].consecuencia" (qué pasa si no se hace) son campos distintos y ambos obligatorios.\n- "narrativaMadreSintesis" (síntesis general de TODO el ranking) y "cartografiaSocioafectiva.narrativaMadre" (síntesis por segmento social) deben ser textos DIFERENTES entre sí.\n- "narrativas[].potencial" es un número 0-100, adicional al texto de "narrativas[].politica".\n- "aprobacion.cortes" normalmente trae 1 solo dato real verificado — nunca inventes puntos intermedios interpolados.\n- "ranking[].emocion" formato EXACTO: "EmociónPrimaria + EmociónSecundaria · X/5" (ej. "Hartazgo + Desprotección · 4/5"), nunca solo una palabra suelta.\n- "ranking[].evidencia" es un párrafo (no una frase) que encadena 2-3 datos verificables (cifras, fechas, colonias) cada uno rematado con su fuente entre paréntesis, siguiendo este patrón: "Dato 1 con cifra y fecha (Fuente, ICF X.X) - Dato 2 (Fuente, ICF X.X)". Nunca lo dejes como una oración vaga sin cifras ni fuente.\n- "emociones[].descripcion" siempre debe indicar si la emoción es estructural/coyuntural y su tendencia (sostenida/en descenso/nueva), no solo repetir el nombre de la emoción.\n- "territorios[].color" debe ser EXACTAMENTE "Rojo", "Naranja" o "Amarillo" (no otros valores ni colores hex aquí).\n- "riesgos[].tipoSenal" debe ser EXACTAMENTE uno de: "Amplificada legítima", "Orgánica", "Inducida", "Aislada". "riesgos[].probEscalar" debe ser EXACTAMENTE "Alta", "Media" o "Baja".\n- "trayectoria[].delta" es un STRING con signo, ej. "+7" o "-3" (último valor menos primer valor de "valores"), nunca un número sin signo ni una palabra.\n- "alertas[].rows": cada alerta necesita mínimo 8 filas cubriendo Territorio, Emoción, Actor expuesto, Qué ocurrió (párrafo con fecha, incorporando reacciones reales de medios/redes si las fuentes las traen), Narrativa activa, Riesgo, Qué puede pasar, Acción inmediata — usa esas etiquetas o muy similares, en ese orden.\n- "cartografiaSocioafectiva" es un módulo COMPLEMENTARIO a tensiones (no lo dupliques): mientras "ranking"/"narrativas"/"territorios" leen el conflicto institucional, "cartografiaSocioafectiva" lee la vivencia emocional por SEGMENTO social. "iasPorZona[].ias" es 0-100 (Índice de Activación Socioafectiva), nunca copies aquí los mismos números de "riesgos[].srr". "segmentacion[].emocionDominante" usa formato corto "EmociónA + EmociónB" (sin el "· X/5" que sí llevan las emociones de "ranking"). "preguntas" debe ser un array de EXACTAMENTE 9 objetos {pregunta, respuesta}, ni 8 ni 10.`
     : skill === 'socioafectiva'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Socioafectiva):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico): las emociones que aparecen en "sintesisEmocional" (dominante/secundaria/masPeligrosa/masMovilizable/masDesaprovechada) DEBEN ser nombres que también existan literalmente en el array "emociones" — nunca menciones ahí una emoción que no esté en el listado. Las "zonas" mencionadas en "enemigos[].riesgo" o en "segmentos" deben ser consistentes con los nombres usados en "zonas".\n- "indice.valor" es 0-10 (10 = clima socioafectivo más deteriorado/crítico); no escribas la banda ni el emoji en ningún campo de texto, eso lo calcula el frontend a partir del número.\n- "emociones[].color" debe ser EXACTAMENTE uno de: "critical" (miedo/terror/pánico), "serious" (ira/indignación/hartazgo), "violet" (impotencia/duelo/tristeza profunda), "warning" (desconfianza/incertidumbre), "muted" (resignación/apatía/fatiga), "accent" (orgullo/identidad), "good" (esperanza/vigilancia activa) — elige según la naturaleza real de cada emoción, distribuyendo varios colores, no todas "critical".\n- "issues[].score" y "emociones[].score" y "dolores[].score" son escalas 0-10; "narrativas[].penetracion" es 0-10; "actores[].confianza" es 0-10; "zonas[].tension" es 0-10 — nunca uses una escala 0-100 en estos campos.\n- "riesgos[].probabilidad" debe ser EXACTAMENTE "Baja", "Media", "Media-alta" o "Alta"; "riesgos[].impacto" debe ser EXACTAMENTE "Bajo", "Medio", "Alto" o "Muy alto".\n- "narrativaMadre.mensajesFuerza": mínimo 5 frases cortas, cada una entre comillas, listas para usar en un discurso o spot — no descripciones, sino la frase textual misma.\n- "preguntas9": exactamente 9 pares pregunta/respuesta, cubriendo un diagnóstico ejecutivo completo (qué está pasando, por qué, quién gana/pierde emocionalmente, qué hacer, qué NO hacer, ventana de tiempo, riesgo si no se actúa, activo narrativo desaprovechado, recomendación final) — adapta las preguntas exactas al territorio, pero cubre ese tipo de terreno.\n- "recomendaciones[].dimension" varía entre al menos 3 categorías distintas (ej. Comunicación, Forense/Datos, Económica, Territorial, Institucional) — no repitas la misma dimensión en todas las filas.`
     : '';
@@ -1208,40 +1238,53 @@ REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
 - semiotica.miedos, semiotica.deseos, semiotica.necesidades: EXACTAMENTE 10 elementos cada lista (rank 1 a 10), nunca menos.`,
 
   tensiones: `
-REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES) — mínimo 6, ideal hasta 10, en TODAS estas listas: ranking, emociones, narrativas, territorios, riesgos, trayectoria, alertas. Nunca entregues menos de 6 en ninguna.
+REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES) — mínimo 8, ideal hasta 10, en TODAS estas listas: ranking, emociones, narrativas, territorios, riesgos, trayectoria, alertas. Nunca entregues menos de 8 en ninguna.
 
-- ranking: 6-10 tensiones sociales distintas, cada una completa (nunca "—" en ningún campo):
+- semaforo: EXACTAMENTE 5 indicadores, en este orden y con estas etiquetas EXACTAS: "Tensión social" (= score de la tensión #1 del ranking), "Reputacional" (= SRR más alto de "riesgos"), "Escalamiento" (= score de escalamiento agregado, coherente con cuántas tensiones tienen velocidad "Creciendo"), "Confianza institucional" (puede ser texto como "MEDIA-BAJA" si no hay encuesta numérica, con "sub" citando el dato de aprobación si existe), "Movilización social" (ALTA/MEDIA/BAJA con "sub" explicando evidencia o ausencia de movilización de calle). Los 5 "nivel" deben ser coherentes con sus "valor" (nunca un valor de 87 con nivel "bajo").
+
+- ranking: 8-10 tensiones sociales distintas, cada una completa (nunca "—" en ningún campo):
   · "emocion" en formato EXACTO "EmociónPrimaria + EmociónSecundaria · X/5" (ej. "Hartazgo + Desprotección · 4/5").
   · "narrativa" es una frase corta que resume el sentir ciudadano (irá entrecomillada en la plantilla, no la entrecomilles tú).
   · "politica" (etiqueta en pantalla: "Potencial") describe el riesgo/potencial de movilización concreto (ej. "Movilización sectorial recurrente — riesgo de bloqueos en temporada de estiaje"), nunca genérico tipo "riesgo alto".
-  · "evidencia" es OBLIGATORIO y es lo más importante de esta sección: un párrafo con 2-4 datos verificables (cifras, fechas, nombres de colonias) rematando cada dato con la fuente entre paréntesis, ej: "Corte de hasta 96h en mayo por rehabilitación planta Tezontle y acueducto Tizayuca (La Silla Rota, ICF 4.3) - Colonias Carboneras, El Saucillo... (ICF 4.0)". Encadena 2-3 datos con guiones " - " como en el ejemplo, no lo dejes en una sola oración vaga.
+  · "evidencia" es OBLIGATORIO: un párrafo con 2-4 datos verificables (cifras, fechas, nombres de colonias) rematando cada dato con la fuente entre paréntesis, ej: "Corte de hasta 96h en mayo por rehabilitación planta Tezontle y acueducto Tizayuca (La Silla Rota, ICF 4.3) - Colonias Carboneras, El Saucillo... (ICF 4.0)". Encadena 2-3 datos con guiones " - " como en el ejemplo, no lo dejes en una sola oración vaga.
+  · "lecturaEstrategica" es OBLIGATORIO en las 8-10 tensiones (no solo en la primera): 50-90 palabras conectando ESTA tensión con el panorama regional/histórico más amplio, con otra(s) tensión(es) del mismo ranking, o con la respuesta institucional — nunca repitas el contenido de "evidencia", esto es interpretación, no hechos.
   · "recomendacion" debe ser una acción específica y ejecutable en el corto plazo, no un consejo genérico.
 
 - emociones: 6-8 emociones (ej. Hartazgo, Indignación, Desconfianza, Miedo, Ansiedad, Resignación, Esperanza — usa las que apliquen al territorio), cada una con:
-  · "descripcion": una línea que explique el TIPO de la emoción (estructural/coyuntural/en descenso/sostenida) y su origen, ej. "Estructural, multi-frente · Agua, tarifa de transporte y comercio informal se acumulan sin resolución visible".
+  · "descripcion": una línea que explique el TIPO de la emoción (estructural/coyuntural/en descenso/sostenida) y su origen.
   · "intensidad" en escala 1-5, VARIADA entre emociones (no todas en 4-5).
+  · "tendencia" y "tendenciaDesc" en TODAS las emociones (para el cuadro "Evolución vs. periodo anterior") — la flecha (↑/↓/—) debe ser coherente con la palabra que sigue.
 
-- narrativas: 6-10, cada una con "politica" (impacto/potencial político específico, no genérico) y "fuente" (medio + rango de fechas, ej. "La Silla Rota, mayo-julio 2026").
+- lecturaPoliticaEmociones: párrafo de 100-160 palabras (para el cuadro "Lectura política estratégica"), mencionando por nombre cada emoción relevante y su intensidad, y conectándolas entre sí (nunca una lista de definiciones sueltas).
 
-- territorios: 6-10 zonas/colonias específicas (nunca el municipio genérico completo), cada una con:
-  · "color": "Rojo" (crítico), "Naranja" (alto) o "Amarillo" (medio) según severidad.
-  · "observaciones" con AL MENOS una cifra concreta (número de personas/colonias/pesos) y fuente entre paréntesis — nunca solo descriptivo sin datos, ej: "Más de 200 comerciantes retirados de plaza Constitución en abril 2026 y reubicados en obra de 5.6 mdp junto al mercado Benito Juárez. Protesta en junio por baja afluencia (Criterio Hidalgo / La Silla Rota, ICF 4.0-4.3)".
+- narrativaMadreSintesis: OBLIGATORIA — "texto" es la síntesis narrativa MÁS AMPLIA del periodo (conecta TODAS las tensiones, no solo 2), "descripcion" explica el hilo común. Debe ser claramente distinta de "cartografiaSocioafectiva.narrativaMadre" (esa es la lectura por segmento social; esta es la lectura institucional/general).
 
-- riesgos: 6-10, EN EL MISMO ORDEN Y CANTIDAD que las tensiones del ranking (cada tensión del ranking debe tener su fila de riesgo correspondiente), cada uno con "actorExpuesto", "tipoSenal" y "probEscalar" llenos (nunca vacíos) y "accion" concreta.
+- narrativas: 8-10, cada una con "politica" (impacto/potencial político específico, no genérico), "potencial" (número 0-100, con variación real entre narrativas, ordenable de mayor a menor) y "fuente" (medio + rango de fechas).
 
-- trayectoria: DEBE cubrir las MISMAS 6-10 tensiones que aparecen en "ranking" (mismos nombres, mismo orden) — no un subconjunto reducido. "ta" (actual) debe coincidir con el "score" de esa tensión en "ranking". "delta" = ta - t3, con signo (+/-).
+- territorios: 8-10 zonas/colonias específicas (nunca el municipio genérico completo), cada una con:
+  · "color": "Rojo" (crítico), "Naranja" (alto) o "Amarillo" (medio) según severidad — este color YA marca el nivel de sensibilidad, es obligatorio y debe ser coherente con la gravedad real del texto.
+  · "observaciones": párrafo de 40-70 palabras (no una línea) con el acontecimiento específico narrado con hora/fecha si existe, actores involucrados, y AL MENOS una cifra concreta con fuente entre paréntesis.
 
-- alertas: 6-10 alertas (como las demás secciones), y cada alerta debe ser MUY explicativa: usa estas filas en "rows" como mínimo (adapta la etiqueta si hace falta, pero cubre el fondo): "Territorio", "Emoción" (con intensidad X/5), "Actor expuesto", "Qué ocurrió" (párrafo de 40-80 palabras con fecha y hechos concretos), "Narrativa activa", "Fuente verificadora" (medio + fecha + ICF), "Riesgo" (nivel + SRR + contexto), "Escalamiento" (probabilidad + qué lo activaría), "Acción inmediata" (específica, no genérica). Mínimo 8 rows por alerta.
+- riesgos: 8-10, EN EL MISMO ORDEN Y CANTIDAD que las tensiones del ranking, cada uno con "actorExpuesto", "tipoSenal" y "probEscalar" llenos, "accion" (qué hacer) Y "consecuencia" (qué pasa si no se hace, 30-60 palabras) ambos obligatorios y claramente diferenciados entre sí.
+
+- trayectoriaLabels: EXACTAMENTE tantos elementos como columnas mensuales tenga la ventana de análisis real (mínimo 4, típicamente 5), con los NOMBRES REALES de esos periodos (ej. "Mayo","Junio","Julio","Agosto","Sept (corte 14)") — nunca "Periodo 1"/"T-3" genéricos.
+- trayectoria: DEBE cubrir las MISMAS 8-10 tensiones que aparecen en "ranking" (mismos nombres, mismo orden). "valores" debe tener EXACTAMENTE el mismo número de elementos que "trayectoriaLabels", en el mismo orden cronológico. "ta" = último elemento de "valores" y DEBE coincidir con el "score" de esa tensión en "ranking". "delta" = ta - valores[0], con signo (+/-).
+
+- aprobacion: "cortes" normalmente tiene 1 solo elemento (dato real verificado, no interpolado) salvo que las fuentes den más de un corte real — NUNCA inventes cortes intermedios solo para rellenar la gráfica. "nota" debe explicar cuántos cortes hay y por qué no se interpolan los demás meses.
+
+- alertas: 8-10 alertas, y cada alerta debe ser MUY explicativa: usa estas filas en "rows" como mínimo (adapta la etiqueta si hace falta, pero cubre el fondo): "Territorio", "Emoción" (con intensidad X/5), "Actor expuesto", "Qué ocurrió" (párrafo de 40-80 palabras con fecha y hechos concretos, incluyendo cualquier comentario o reacción real de medios/redes sociales presente en las fuentes crudas), "Narrativa activa", "Riesgo" (nivel + contexto), "Qué puede pasar" (proyección concreta de escalamiento), "Acción inmediata" (específica, no genérica). Mínimo 8 rows por alerta.
 
 - hallazgoEmocional y hallazgoTrayectoria: párrafos de 80-140 palabras con razonamiento estratégico específico (no una frase suelta) — ejemplo de la profundidad esperada: explicar POR QUÉ el patrón importa políticamente y qué lo hace distinto a otros casos (ej. "hartazgo distribuido en varios frentes es más difícil de gestionar comunicacionalmente que una crisis única con un solo culpable simbólico").
 
-- radiografia: mínimo 5 zonas/territorios específicos, ordenadas de mayor a menor "ias".
-- dolores: mínimo 5 citas ciudadanas distintas, cada una con su "meta" completa (hecho + intensidad + fuente).
-- enemigos: mínimo 4 enemigos simbólicos distintos.
-- fracturas: mínimo 3 fracturas sociales/políticas distintas.
-- segmentacion: mínimo 5 segmentos poblacionales distintos, cada uno con emoción y detonante propios (no repetidos entre segmentos).
-- narrativasSocio: mínimo 4, cada una anclada a un segmento real de "segmentacion".
-- preguntas9: EXACTAMENTE 9 pares pregunta/respuesta, sin excepción.`,
+REQUISITOS MÍNIMOS — cartografiaSocioafectiva (pestañas "Radiografía y dolores", "Enemigos y segmentación", "Narrativas y 9 preguntas"):
+- iasPorZona: 6-8 zonas/corredores específicos del territorio (nunca el municipio genérico), "ias" 0-100 con variación real entre zonas (no todas en el mismo rango).
+- dolores: 6-8 frases de dolor social, cada una anclada en un hecho o patrón real documentado en "meta" (quién lo vive, evidencia).
+- enemigosSimbolicos: 4-6 elementos — a quién o qué culpa la ciudadanía de forma simbólica, con evidencia concreta en "descripcion".
+- fracturasSociales: 4-6 divisiones sociales reales y específicas del territorio (nunca genéricas tipo "ricos contra pobres" sin contexto local).
+- segmentacion: 6-8 segmentos sociales/económicos específicos (comerciantes, familias de una colonia, gremio, militancia de un partido, etc.), cada uno con "emocionDominante" y "detonante" concreto y fechado.
+- narrativaMadre/narrativaMadreDesc: debe ser DISTINTA a "narrativaMadreSintesis" — agrupa la vivencia emocional por segmento, no el discurso institucional.
+- narrativas (dentro de cartografiaSocioafectiva): 6-8 narrativas propias de esta cartografía, mismo nivel de detalle que las narrativas generales de tensiones (con "fuente").
+- preguntas: EXACTAMENTE 9 pares pregunta/respuesta — diagnóstico ejecutivo completo (qué pasa, por qué, quién gana/pierde emocionalmente, qué hacer, qué NO hacer, ventana de tiempo, riesgo si no se actúa, activo desaprovechado, recomendación final).`,
 
   opositor: `
 REQUISITOS MÍNIMOS DE CANTIDAD (OPOSITOR) — mínimo 6, ideal hasta 10, en: vulnerabilidades, contradicciones.ranking, contradicciones.tabla, vectoresAtaque, redDePoder.tabla. Nunca entregues menos de 6 en ninguna de estas.
