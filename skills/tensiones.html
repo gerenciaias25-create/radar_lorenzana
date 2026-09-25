@@ -80,16 +80,10 @@
 #tensiones-root .footer { background: var(--hdrblue); border-top: 1px solid rgba(255,255,255,.1); padding: 14px 24px; font-size: 11px; color: #94A3B8; display: flex; justify-content: space-between; margin-top: 30px; border-radius: 0 0 8px 8px; }
 #tensiones-root canvas { max-height: 260px; }
 
-/* pestañas socioafectivas (radiografía, enemigos, narrativas) */
+#tensiones-root .navdiv { width: 1px; background: var(--border2); margin: 10px 6px; flex-shrink: 0; align-self: stretch; }
+#tensiones-root .navlbl { display: flex; align-items: center; font-size: 9px; letter-spacing: .12em; color: var(--dim); font-weight: 700; padding: 0 6px; white-space: nowrap; font-family: monospace; }
 #tensiones-root .nb.soc { color: var(--cyan); }
-#tensiones-root .nb.soc.on { border-bottom-color: var(--cyan); }
-
-#tensiones-root .zonac { border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.1rem; margin-bottom: 10px; background: rgba(255,255,255,.4); }
-#tensiones-root .zonac-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
-#tensiones-root .zonac-n { font-size: 13px; font-weight: 700; color: var(--text); }
-#tensiones-root .zonac-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-#tensiones-root .ias { font-size: 20px; font-weight: 700; flex-shrink: 0; text-align: right; }
-#tensiones-root .iasl { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; text-align: right; font-family: monospace; }
+#tensiones-root .nb.soc.on { color: #FFFFFF; border-bottom-color: var(--cyan); background: rgba(255,255,255,.05); }
 
 #tensiones-root .dolor { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--border); }
 #tensiones-root .dolor:last-child { border-bottom: none; }
@@ -97,27 +91,23 @@
 #tensiones-root .dolorfrase { font-size: 13px; font-style: italic; color: var(--cyan); }
 #tensiones-root .dolormeta { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
 
-#tensiones-root .enemcard { border: 1px solid var(--border); border-radius: 6px; padding: .85rem 1rem; margin-bottom: 8px; background: rgba(255,255,255,.4); }
-#tensiones-root .enemn { font-size: 12.5px; font-weight: 700; color: var(--red); }
-#tensiones-root .enemd { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.55; }
-
-#tensiones-root .fractrow { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); line-height: 1.6; }
-#tensiones-root .fractrow:last-child { border-bottom: none; }
-#tensiones-root .fractrow b { color: var(--text); }
-
-#tensiones-root .r-table { width: 100%; border-collapse: collapse; font-size: 11.8px; }
-#tensiones-root .r-table th { text-align: left; padding: 7px 9px; background: rgba(0,0,0,.05); color: var(--dim); font-weight: 600; border: 1px solid var(--border); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+#tensiones-root .r-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+#tensiones-root .r-table th { text-align: left; padding: 7px 9px; background: var(--card-bg); color: var(--muted); font-weight: 700; border: 1px solid var(--border); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; font-family: monospace; }
 #tensiones-root .r-table td { padding: 8px 9px; border: 1px solid var(--border); vertical-align: top; color: var(--text); }
-#tensiones-root .r-table tr:nth-child(even) td { background: rgba(0,0,0,.02); }
 
-#tensiones-root .nfrase { font-size: 12px; font-style: italic; color: var(--cyan); margin-top: 6px; }
+#tensiones-root .semaf-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+@media(max-width: 900px){ #tensiones-root .semaf-grid { grid-template-columns: repeat(2, 1fr); } }
+#tensiones-root .semaf-item { border: 1px solid var(--border2); border-radius: 6px; padding: .9rem .7rem; text-align: center; }
+#tensiones-root .semaf-lbl { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+#tensiones-root .semaf-val { font-size: 19px; font-weight: 800; }
+#tensiones-root .semaf-sub { font-size: 10px; color: var(--dim); margin-top: 4px; line-height: 1.3; }
 
-#tensiones-root .preg { border: 1px solid var(--acc); border-radius: 4px; margin-bottom: 8px; background: var(--acc-bg); }
-#tensiones-root .preg-h { padding: 11px 14px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
-#tensiones-root .preg-n { width: 22px; height: 22px; border-radius: 50%; background: rgba(76,81,191,.18); color: var(--acc); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; font-family: monospace; }
-#tensiones-root .preg-q { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
-#tensiones-root .preg-body { display: none; padding: 0 14px 13px 46px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
-#tensiones-root .preg-body.op { display: block; }
+#tensiones-root .evolrow { display: grid; grid-template-columns: 130px 130px 1fr; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+#tensiones-root .evolrow:last-child { border-bottom: none; }
+#tensiones-root .evolnam { font-weight: 700; color: var(--text); }
+#tensiones-root .evoltr { font-weight: 700; color: var(--org); }
+#tensiones-root .evoldesc { color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+@media(max-width: 700px){ #tensiones-root .evolrow { grid-template-columns: 1fr; gap: 3px; } }
 </style>
 
 <header class="hdr">
@@ -135,6 +125,8 @@
   <button class="nb" onclick="tensTab(this,'riesgos')">RIESGOS</button>
   <button class="nb" onclick="tensTab(this,'trayectoria')">TRAYECTORIA</button>
   <button class="nb" onclick="tensTab(this,'alertas')">ALERTAS</button>
+  <div class="navdiv"></div>
+  <div class="navlbl">SOCIOAFECTIVA</div>
   <button class="nb soc" onclick="tensTab(this,'soc1')">RADIOGRAFÍA Y DOLORES</button>
   <button class="nb soc" onclick="tensTab(this,'soc2')">ENEMIGOS Y SEGMENTACIÓN</button>
   <button class="nb soc" onclick="tensTab(this,'soc3')">NARRATIVAS Y 9 PREGUNTAS</button>
@@ -152,6 +144,8 @@
       <div class="ctit"><span class="cdot"></span>SCORES DE TENSIÓN SOCIAL</div>
       <canvas id="tc-tens"></canvas>
     </div>
+    <div class="stit" style="margin-top:1.25rem"><span class="sdot"></span>SEMÁFORO DE INTELIGENCIA</div>
+    <div class="semaf-grid" id="t-semaforo"></div>
   </div>
 
   <!-- EMOCIONES -->
@@ -160,6 +154,10 @@
     <div class="g2 mb">
       <div class="card"><div class="ctit"><span class="cdot"></span>INTENSIDAD EMOCIONAL</div><div id="t-emo-bars"></div></div>
       <div class="card"><div class="ctit"><span class="cdot"></span>DISTRIBUCIÓN %</div><canvas id="tc-emo"></canvas></div>
+    </div>
+    <div class="g2 mb">
+      <div class="card"><div class="ctit"><span class="cdot"></span>EVOLUCIÓN VS. PERIODO ANTERIOR</div><div id="t-emo-evol"></div></div>
+      <div class="card"><div class="ctit"><span class="cdot"></span>LECTURA POLÍTICA ESTRATÉGICA</div><div style="font-size:12px;line-height:1.6;color:var(--text)" id="t-emo-lectura"></div></div>
     </div>
     <div class="hallazgo">
       <div style="font-size:10px;font-weight:700;color:var(--org);margin-bottom:.3rem;font-family:monospace">HALLAZGO ESTRATÉGICO EMOCIONAL</div>
@@ -170,7 +168,16 @@
   <!-- NARRATIVAS -->
   <div class="view" id="tv-narrativas">
     <div class="stit"><span class="sdot"></span>NARRATIVAS EMERGENTES</div>
-    <div id="t-nar-list"></div>
+    <div class="card mb" style="border-left:3px solid var(--cyan)">
+      <div class="ctit"><span class="cdot"></span>NARRATIVA MADRE (SÍNTESIS TENSIONES + SOCIOAFECTIVA)</div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text);font-style:italic" id="t-narmadre-t"></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:8px" id="t-narmadre-d"></div>
+    </div>
+    <div id="t-nar-list" class="mb"></div>
+    <div class="card">
+      <div class="ctit"><span class="cdot"></span>POTENCIAL POLÍTICO DE CADA NARRATIVA — ÍNDICE DE 0 A 100</div>
+      <canvas id="tc-narpot"></canvas>
+    </div>
   </div>
 
   <!-- TERRITORIOS -->
@@ -183,7 +190,12 @@
   <div class="view" id="tv-riesgos">
     <div class="stit"><span class="sdot"></span>SCORE DE RIESGO REPUTACIONAL (SRR)</div>
     <div class="card mb"><canvas id="tc-srr"></canvas></div>
-    <div id="t-riesgo-list"></div>
+    <div class="card" style="overflow-x:auto">
+      <table class="r-table">
+        <thead><tr><th>Tensión</th><th>Actor expuesto</th><th>SRR</th><th>Tipo de señal</th><th>Prob. escalamiento</th><th>Consecuencia si no se atiende</th></tr></thead>
+        <tbody id="t-riesgo-tbl"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- TRAYECTORIA -->
@@ -191,7 +203,7 @@
     <div class="stit"><span class="sdot"></span>EVOLUCIÓN TEMPORAL</div>
     <div class="card mb" style="overflow-x:auto">
       <table class="traj-table">
-        <thead><tr><th>TENSIÓN</th><th>T-3</th><th>T-2</th><th>T-1</th><th>ACTUAL</th><th>DELTA</th><th>TIPO</th><th>VELOCIDAD</th></tr></thead>
+        <thead><tr id="t-traj-thead"></tr></thead>
         <tbody id="t-traj-body"></tbody>
       </table>
     </div>
@@ -200,6 +212,9 @@
       <div style="font-size:10px;font-weight:700;color:var(--org);margin-bottom:.3rem;font-family:monospace">HALLAZGO DE TRAYECTORIA</div>
       <div style="font-size:12px;line-height:1.6;color:var(--text)" id="t-hallazgo-traj"></div>
     </div>
+    <div class="stit" style="margin-top:1.25rem"><span class="sdot"></span>APROBACIÓN DEL ALCALDE — DATO VERIFICADO EN ENCUESTA PÚBLICA (NO INTERPOLADO)</div>
+    <div class="card mb"><canvas id="tc-aprob"></canvas></div>
+    <div style="font-size:11px;color:var(--dim);line-height:1.5" id="t-aprob-nota"></div>
   </div>
 
   <!-- ALERTAS -->
@@ -210,36 +225,38 @@
 
   <!-- SOCIOAFECTIVA 1: RADIOGRAFÍA + DOLORES -->
   <div class="view" id="tv-soc1">
-    <div class="stit"><span class="sdot"></span>RADIOGRAFÍA TERRITORIAL SOCIOAFECTIVA</div>
-    <div id="t-rad-list" class="mb"></div>
-    <div class="card mb">
-      <div class="ctit"><span class="cdot"></span>ÍNDICE DE ACTIVACIÓN SOCIOAFECTIVA (IAS) POR ZONA</div>
-      <canvas id="tc-ias"></canvas>
-    </div>
-    <div class="stit"><span class="sdot"></span>MAPA DE DOLORES SOCIALES</div>
+    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Índice de Activación Socioafectiva (IAS) por zona</div>
+    <div class="card mb"><canvas id="tc-ias"></canvas></div>
+    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Mapa de dolores sociales</div>
     <div class="card"><div id="t-dol-list"></div></div>
   </div>
 
   <!-- SOCIOAFECTIVA 2: ENEMIGOS + SEGMENTACIÓN -->
   <div class="view" id="tv-soc2">
-    <div class="stit"><span class="sdot"></span>ENEMIGOS SIMBÓLICOS Y FRACTURAS SOCIALES</div>
+    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Enemigos simbólicos y fracturas sociales</div>
     <div class="g2 mb">
       <div class="card"><div class="ctit"><span class="cdot"></span>ENEMIGOS SIMBÓLICOS</div><div id="t-enem-list"></div></div>
       <div class="card"><div class="ctit"><span class="cdot"></span>FRACTURAS SOCIALES</div><div id="t-fract-list"></div></div>
     </div>
-    <div class="stit"><span class="sdot"></span>SEGMENTACIÓN SOCIOAFECTIVA</div>
-    <div class="card" style="overflow-x:auto"><table class="r-table" id="t-seg-tabla"></table></div>
+    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Segmentación socioafectiva</div>
+    <div class="card" style="overflow-x:auto">
+      <table class="r-table">
+        <thead><tr><th>Segmento</th><th>Emoción dominante</th><th>Detonante principal</th></tr></thead>
+        <tbody id="t-segsoc-tbl"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- SOCIOAFECTIVA 3: NARRATIVAS + 9 PREGUNTAS -->
   <div class="view" id="tv-soc3">
-    <div class="stit"><span class="sdot"></span>NARRATIVA MADRE SOCIOAFECTIVA</div>
+    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Narrativa madre</div>
     <div class="card mb" style="border-left:3px solid var(--cyan)">
-      <div style="font-size:13.5px;line-height:1.7;color:var(--text)" id="t-narsoc-madre"></div>
-      <div style="font-size:11.5px;color:var(--muted);margin-top:8px" id="t-narsoc-comparacion"></div>
+      <div class="ctit"><span class="cdot"></span>NARRATIVA MADRE SOCIOAFECTIVA</div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text)" id="t-narsoc-madre-t"></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:8px" id="t-narsoc-madre-d"></div>
     </div>
     <div id="t-narsoc-list" class="mb"></div>
-    <div class="stit"><span class="sdot"></span>LAS 9 PREGUNTAS — MARCO EJECUTIVO DE DIAGNÓSTICO</div>
+    <div class="stit"><span class="sdot"></span>SOCIOAFECTIVA · Las 9 Preguntas — marco ejecutivo de diagnóstico</div>
     <div id="t-preg-list"></div>
   </div>
 </div>
