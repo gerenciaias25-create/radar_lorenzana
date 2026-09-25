@@ -5,14 +5,18 @@ const root = document.getElementById('tensiones-root');
 
 const FALLBACK = {
   actor: {entidad: 'Entidad', cargo: 'Servidor Público', periodo: (META.mes||'')+' '+(META.anio||'')},
-  ranking: [], emociones: [], narrativas: [], territorios: [], riesgos: [], trayectoria: [], alertas: [],
+  semaforo: [],
+  ranking: [], emociones: [], narrativas: [], territorios: [], riesgos: [], trayectoriaLabels: [], trayectoria: [], alertas: [],
+  lecturaPoliticaEmociones: '',
+  narrativaMadreSintesis: {texto: '', descripcion: ''},
+  aprobacion: {cortes: [], nota: ''},
   hallazgoEmocional: 'Sin datos de hallazgo emocional disponibles.',
   hallazgoTrayectoria: 'Sin datos de trayectoria disponibles.',
   resumenEjecutivo: '',
-  radiografia: [], dolores: [], enemigos: [], fracturas: [], segmentacion: [],
-  narrativaMadreSocio: 'Sin narrativa madre socioafectiva disponible.',
-  comparacionNarrativas: '',
-  narrativasSocio: [], preguntas9: []
+  cartografiaSocioafectiva: {
+    iasPorZona: [], dolores: [], enemigosSimbolicos: [], fracturasSociales: [], segmentacion: [],
+    narrativaMadre: '', narrativaMadreDesc: '', narrativas: [], preguntas: []
+  }
 };
 
 function pick(obj, fb) { 
@@ -24,25 +28,22 @@ function pick(obj, fb) {
 
 const DATA = {
   actor: pick(D && D.actor, FALLBACK.actor),
+  semaforo: pick(D && D.semaforo, FALLBACK.semaforo),
   ranking: pick(D && D.ranking, FALLBACK.ranking),
   emociones: pick(D && D.emociones, FALLBACK.emociones),
   narrativas: pick(D && D.narrativas, FALLBACK.narrativas),
   territorios: pick(D && D.territorios, FALLBACK.territorios),
   riesgos: pick(D && D.riesgos, FALLBACK.riesgos),
+  trayectoriaLabels: pick(D && D.trayectoriaLabels, FALLBACK.trayectoriaLabels),
   trayectoria: pick(D && D.trayectoria, FALLBACK.trayectoria),
   alertas: pick(D && D.alertas, FALLBACK.alertas),
+  lecturaPoliticaEmociones: (D && D.lecturaPoliticaEmociones) || FALLBACK.lecturaPoliticaEmociones,
+  narrativaMadreSintesis: pick(D && D.narrativaMadreSintesis, FALLBACK.narrativaMadreSintesis),
+  aprobacion: pick(D && D.aprobacion, FALLBACK.aprobacion),
   hallazgoEmocional: (D && D.hallazgoEmocional) || FALLBACK.hallazgoEmocional,
   hallazgoTrayectoria: (D && D.hallazgoTrayectoria) || FALLBACK.hallazgoTrayectoria,
   resumenEjecutivo: (D && D.resumenEjecutivo) || FALLBACK.resumenEjecutivo,
-  radiografia: pick(D && D.radiografia, FALLBACK.radiografia),
-  dolores: pick(D && D.dolores, FALLBACK.dolores),
-  enemigos: pick(D && D.enemigos, FALLBACK.enemigos),
-  fracturas: pick(D && D.fracturas, FALLBACK.fracturas),
-  segmentacion: pick(D && D.segmentacion, FALLBACK.segmentacion),
-  narrativaMadreSocio: (D && D.narrativaMadreSocio) || FALLBACK.narrativaMadreSocio,
-  comparacionNarrativas: (D && D.comparacionNarrativas) || FALLBACK.comparacionNarrativas,
-  narrativasSocio: pick(D && D.narrativasSocio, FALLBACK.narrativasSocio),
-  preguntas9: pick(D && D.preguntas9, FALLBACK.preguntas9)
+  cartografiaSocioafectiva: pick(D && D.cartografiaSocioafectiva, FALLBACK.cartografiaSocioafectiva)
 };
 
 // Header
@@ -101,15 +102,31 @@ window.showDetail = function(idx, el){
         <span class="dk">Potencial:</span><span class="dv">${t.politica || '—'}</span>
         <span class="dk">Evidencia:</span><span class="dv">${t.evidencia || '—'}</span>
       </div>
+      ${t.lecturaEstrategica ? `<div class="drec"><strong>Lectura estratégica:</strong> ${t.lecturaEstrategica}</div>` : ''}
       ${t.recomendacion ? `<div class="drec">${t.recomendacion}</div>` : ''}
     </div>
   `;
+}
+
+function renderSemaforo(){
+  const el = document.getElementById('t-semaforo');
+  if(!el) return;
+  const NIVEL_COLOR = { critico: '#C53030', alto: '#C05621', medio: '#B7791F', bajo: '#2F855A' };
+  const NIVEL_BG = { critico: 'var(--red-bg)', alto: 'var(--org-bg)', medio: 'var(--yel-bg)', bajo: 'var(--grn-bg)' };
+  el.innerHTML = (DATA.semaforo||[]).map(s=>`
+    <div class="semaf-item" style="background:${NIVEL_BG[s.nivel]||'var(--card-bg)'};border-color:${NIVEL_COLOR[s.nivel]||'var(--border2)'}">
+      <div class="semaf-lbl">${s.etiqueta}</div>
+      <div class="semaf-val" style="color:${NIVEL_COLOR[s.nivel]||'var(--text)'}">${s.valor}</div>
+      <div class="semaf-sub">${s.sub||''}</div>
+    </div>
+  `).join('') || '<div class="card">Sin datos de semáforo disponibles.</div>';
 }
 
 // Render Charts & Data
 function drawCharts(tab){
   if(tab==='tensiones'){
     renderRanking();
+    renderSemaforo();
     if(DATA.ranking.length > 0){
       mk('tc-tens', {
         type:'bar',
@@ -131,16 +148,25 @@ function drawCharts(tab){
     `).join('');
     document.getElementById('t-hallazgo-emo').textContent = DATA.hallazgoEmocional;
     if(DATA.emociones.length > 0){
-      // Barras horizontales en vez de dona: más legible para comparar
-      // magnitudes entre emociones que un porcentaje circular.
       mk('tc-emo', {
-        type:'bar',
-        data: { labels: DATA.emociones.map(x=>x.nombre), datasets: [{ data: DATA.emociones.map(x=>x.porcentaje||10), backgroundColor: DATA.emociones.map(x=>x.color||'#C05621'), borderRadius: 3 }] },
-        options: { indexAxis:'y', plugins:{legend:{display:false}}, responsive:true, scales:{ x:{beginAtZero:true} } }
+        type:'doughnut',
+        data: { labels: DATA.emociones.map(x=>x.nombre), datasets: [{ data: DATA.emociones.map(x=>x.porcentaje||10), backgroundColor: DATA.emociones.map(x=>x.color||'#C05621'), borderColor:'#FFFFFF', borderWidth:2 }] },
+        options: { plugins:{legend:{position:'right', labels:{boxWidth:11, font:{size:11}}}}, responsive:true, cutout:'55%' }
       });
     }
+    document.getElementById('t-emo-evol').innerHTML = DATA.emociones.map(e=>`
+      <div class="evolrow">
+        <div class="evolnam">${e.nombre}</div>
+        <div class="evoltr">${e.tendencia || '—'}</div>
+        <div class="evoldesc">${e.tendenciaDesc || ''}</div>
+      </div>
+    `).join('') || '<div class="card">Sin datos de evolución disponibles.</div>';
+    document.getElementById('t-emo-lectura').textContent = DATA.lecturaPoliticaEmociones || 'Sin lectura política estratégica disponible.';
   }
   if(tab==='narrativas'){
+    const nms = DATA.narrativaMadreSintesis || {};
+    document.getElementById('t-narmadre-t').textContent = nms.texto ? `"${nms.texto}"` : 'Sin narrativa madre disponible.';
+    document.getElementById('t-narmadre-d').textContent = nms.descripcion || '';
     document.getElementById('t-nar-list').innerHTML = DATA.narrativas.map(n=>`
       <div class="nar">
         <div class="nar-h" onclick="this.nextElementSibling.classList.toggle('op')">
@@ -156,6 +182,13 @@ function drawCharts(tab){
         </div>
       </div>
     `).join('') || '<div class="card">Sin narrativas registradas.</div>';
+    if(DATA.narrativas.length > 0){
+      mk('tc-narpot', {
+        type:'bar',
+        data: { labels: DATA.narrativas.map(x=>x.nombre), datasets: [{ data: DATA.narrativas.map(x=>x.potencial||0), backgroundColor: '#C05621', borderRadius: 3 }] },
+        options: { indexAxis:'y', plugins:{legend:{display:false}}, responsive:true, scales:{ x:{beginAtZero:true, max:100} } }
+      });
+    }
   }
   if(tab==='territorios'){
     const COLOR_MAP = { Rojo: '#C53030', Naranja: '#C05621', Amarillo: '#B7791F' };
@@ -180,37 +213,50 @@ function drawCharts(tab){
         options: { plugins:{legend:{display:false}}, responsive:true }
       });
     }
-    document.getElementById('t-riesgo-list').innerHTML = DATA.riesgos.map(r=>`
-      <div class="card mb">
-        <div style="font-weight:700;color:var(--hdrblue);margin-bottom:6px">${r.nombre} (SRR: ${r.srr})</div>
-        <div class="dg">
-          <span class="dk">Actor expuesto:</span><span class="dv">${r.actorExpuesto || '—'}</span>
-          <span class="dk">Tipo de señal:</span><span class="dv">${r.tipoSenal || '—'}</span>
-          <span class="dk">Prob. de escalar:</span><span class="dv">${r.probEscalar || '—'}</span>
-        </div>
-        <div class="drec" style="margin-top:.7rem">${r.accion}</div>
-      </div>
-    `).join('') || '<div class="card">Sin riesgos registrados.</div>';
+    document.getElementById('t-riesgo-tbl').innerHTML = DATA.riesgos.map(r=>`
+      <tr>
+        <td><strong style="color:${r.color||'var(--org)'}">${r.nombre}</strong></td>
+        <td>${r.actorExpuesto || '—'}</td>
+        <td style="text-align:center;font-weight:700">${r.srr}</td>
+        <td>${r.tipoSenal || '—'}</td>
+        <td>${r.probEscalar || '—'}</td>
+        <td>${r.consecuencia || r.accion || '—'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="6">Sin riesgos registrados.</td></tr>';
   }
   if(tab==='trayectoria'){
     document.getElementById('t-hallazgo-traj').textContent = DATA.hallazgoTrayectoria;
-    document.getElementById('t-traj-body').innerHTML = DATA.trayectoria.map(tr=>`
+    const labels = (DATA.trayectoriaLabels && DATA.trayectoriaLabels.length) ? DATA.trayectoriaLabels : ['T-3','T-2','T-1','Actual'];
+    document.getElementById('t-traj-thead').innerHTML = `<th>TENSIÓN</th>${labels.map(l=>`<th>${l.toUpperCase()}</th>`).join('')}<th>Δ PERIODO</th><th>VELOCIDAD</th>`;
+    document.getElementById('t-traj-body').innerHTML = DATA.trayectoria.map(tr=>{
+      const valores = (tr.valores && tr.valores.length) ? tr.valores : [tr.t3, tr.t2, tr.t1, tr.ta];
+      const ta = tr.ta != null ? tr.ta : valores[valores.length-1];
+      const delta = tr.delta || (((ta - valores[0]) >= 0 ? '+' : '') + (ta - valores[0]));
+      return `
       <tr>
         <td><strong>${tr.nombre}</strong></td>
-        <td>${tr.t3}</td><td>${tr.t2}</td><td>${tr.t1}</td>
-        <td><strong>${tr.ta}</strong></td>
-        <td>${tr.delta || ((tr.ta - tr.t3) >= 0 ? '+' : '') + (tr.ta - tr.t3)}</td>
-        <td>${tr.tipo}</td><td>${tr.velocidad}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="8">Sin datos de trayectoria.</td></tr>';
+        ${valores.map((v,i)=>`<td${i===valores.length-1?' style="font-weight:700"':''}>${v}</td>`).join('')}
+        <td>${delta}</td>
+        <td>${tr.velocidad}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8">Sin datos de trayectoria.</td></tr>';
     if(DATA.trayectoria.length > 0){
       mk('tc-traj', {
         type:'line',
         data: {
-          labels: ['Periodo 1', 'Periodo 2', 'Periodo 3', 'Actual'],
-          datasets: DATA.trayectoria.map(tr=>({ label: tr.nombre, data: [tr.t3, tr.t2, tr.t1, tr.ta], fill:false, tension:0.3 }))
+          labels: labels,
+          datasets: DATA.trayectoria.map(tr=>({ label: tr.nombre, data: (tr.valores && tr.valores.length) ? tr.valores : [tr.t3, tr.t2, tr.t1, tr.ta], fill:false, tension:0.3 }))
         },
         options: { plugins:{legend:{position:'bottom'}}, responsive:true }
+      });
+    }
+    const cortes = (DATA.aprobacion && DATA.aprobacion.cortes) || [];
+    document.getElementById('t-aprob-nota').textContent = (DATA.aprobacion && DATA.aprobacion.nota) || '';
+    if(cortes.length > 0){
+      mk('tc-aprob', {
+        type:'bar',
+        data: { labels: cortes.map(c=>c.label), datasets: [{ data: cortes.map(c=>c.valor), backgroundColor: 'var(--cyan)', maxBarThickness: 70 }] },
+        options: { plugins:{legend:{display:false}}, responsive:true, scales:{ y:{beginAtZero:true, max:100} } }
       });
     }
   }
@@ -229,72 +275,55 @@ function drawCharts(tab){
     `).join('') || '<div class="card">Sin alertas registradas.</div>';
   }
   if(tab==='soc1'){
-    document.getElementById('t-rad-list').innerHTML = DATA.radiografia.map(r=>`
-      <div class="zonac">
-        <div class="zonac-h">
-          <div><div class="zonac-n">${r.nombre}</div><div class="zonac-sub">${r.nivel||''} &middot; Tensión dominante: ${r.tension||'—'} &middot; Emoción: ${r.emocion||'—'}</div></div>
-          <div><div class="ias" style="color:${r.color||'#C05621'}">${r.ias}</div><div class="iasl">IAS</div></div>
-        </div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.55">${r.lectura||''}</div>
-      </div>
-    `).join('') || '<div class="card">Sin radiografía territorial registrada.</div>';
-
-    document.getElementById('t-dol-list').innerHTML = DATA.dolores.map((d,i)=>`
-      <div class="dolor">
-        <div class="dolorn">${i+1}</div>
-        <div><div class="dolorfrase">${d.frase}</div><div class="dolormeta">${d.meta||''}</div></div>
-      </div>
-    `).join('') || '<div style="font-size:12px;color:var(--dim)">Sin dolores sociales registrados.</div>';
-
-    if(DATA.radiografia.length > 0){
+    const CS = DATA.cartografiaSocioafectiva;
+    document.getElementById('t-dol-list').innerHTML = (CS.dolores||[]).map((d,i)=>`
+      <div class="dolor"><div class="dolorn">${i+1}</div><div><div class="dolorfrase">${d.frase}</div><div class="dolormeta">${d.meta}</div></div></div>
+    `).join('') || '<div class="card">Sin dolores registrados.</div>';
+    if((CS.iasPorZona||[]).length > 0){
       mk('tc-ias', {
         type:'bar',
-        data: { labels: DATA.radiografia.map(r=>r.nombre), datasets: [{ label:'IAS', data: DATA.radiografia.map(r=>r.ias), backgroundColor: DATA.radiografia.map(r=>r.color||'#C05621'), borderRadius: 5, borderSkipped: false }] },
-        options: { plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>' IAS: '+c.raw+'/100'}}}, responsive:true, scales:{ y:{ beginAtZero:true, max:100 } } }
+        data: { labels: CS.iasPorZona.map(z=>z.zona), datasets: [{ data: CS.iasPorZona.map(z=>z.ias), backgroundColor: CS.iasPorZona.map(z=>z.ias>=75?'#C53030':z.ias>=55?'#C05621':'#B7791F') }] },
+        options: { plugins:{legend:{display:false}}, responsive:true, scales:{ y:{beginAtZero:true,max:100} } }
       });
     }
   }
   if(tab==='soc2'){
-    document.getElementById('t-enem-list').innerHTML = DATA.enemigos.map(e=>`
-      <div class="enemcard"><div class="enemn">${e.nombre}</div><div class="enemd">${e.descripcion}</div></div>
-    `).join('') || '<div style="font-size:12px;color:var(--dim)">Sin enemigos simbólicos registrados.</div>';
-
-    document.getElementById('t-fract-list').innerHTML = DATA.fracturas.map(f=>`
-      <div class="fractrow"><b>${f.titulo}</b><br>${f.descripcion}</div>
-    `).join('') || '<div style="font-size:12px;color:var(--dim)">Sin fracturas sociales registradas.</div>';
-
-    document.getElementById('t-seg-tabla').innerHTML = `
-      <tr><th>Segmento</th><th>Emoción dominante</th><th>Detonante principal</th></tr>
-      ${DATA.segmentacion.map(s=>`<tr><td>${s.segmento}</td><td>${s.emocion}</td><td>${s.detonante}</td></tr>`).join('') || '<tr><td colspan="3">Sin datos de segmentación.</td></tr>'}
-    `;
+    const CS = DATA.cartografiaSocioafectiva;
+    document.getElementById('t-enem-list').innerHTML = (CS.enemigosSimbolicos||[]).map(e=>`
+      <div class="ter" style="cursor:default"><div class="ter-h"><div class="ter-info"><div class="ter-name">${e.nombre}</div></div></div><div class="ter-body op" style="display:block">${e.descripcion}</div></div>
+    `).join('') || '<div class="card">Sin enemigos simbólicos registrados.</div>';
+    document.getElementById('t-fract-list').innerHTML = (CS.fracturasSociales||[]).map(f=>`
+      <div class="ter" style="cursor:default"><div class="ter-h"><div class="ter-info"><div class="ter-name">${f.titulo}</div></div></div><div class="ter-body op" style="display:block">${f.descripcion}</div></div>
+    `).join('') || '<div class="card">Sin fracturas sociales registradas.</div>';
+    document.getElementById('t-segsoc-tbl').innerHTML = (CS.segmentacion||[]).map(s=>`
+      <tr><td>${s.segmento}</td><td style="font-weight:600">${s.emocionDominante}</td><td>${s.detonante}</td></tr>
+    `).join('') || '<tr><td colspan="3">Sin segmentación registrada.</td></tr>';
   }
   if(tab==='soc3'){
-    document.getElementById('t-narsoc-madre').textContent = DATA.narrativaMadreSocio;
-    document.getElementById('t-narsoc-comparacion').textContent = DATA.comparacionNarrativas;
-
-    document.getElementById('t-narsoc-list').innerHTML = DATA.narrativasSocio.map(n=>`
+    const CS = DATA.cartografiaSocioafectiva;
+    document.getElementById('t-narsoc-madre-t').textContent = CS.narrativaMadre || 'Sin narrativa madre registrada.';
+    document.getElementById('t-narsoc-madre-d').textContent = CS.narrativaMadreDesc || '';
+    document.getElementById('t-narsoc-list').innerHTML = (CS.narrativas||[]).map(n=>`
       <div class="nar">
         <div class="nar-h" onclick="this.nextElementSibling.classList.toggle('op')">
           <div class="nar-info">
-            <div class="nar-name">${n.nombre}</div>
-            <div class="nar-meta">${n.tema||''} &middot; ${n.actor||''}</div>
+            <div class="nar-name">"${n.nombre}"</div>
+            <div class="nar-meta">Tema: ${n.tema} &middot; Actor: ${n.actor}</div>
           </div>
         </div>
         <div class="nar-body">
-          <p><strong>Potencial de propagación:</strong> ${n.potencial||'—'}</p>
-          <p class="nfrase">${n.frase||''}</p>
+          <p><strong>Potencial de propagación:</strong> ${n.potencial}</p>
+          <p style="margin-top:4px;font-style:italic;color:var(--cyan)">${n.frase}</p>
           ${n.fuente ? `<p style="margin-top:4px;font-size:10.5px;color:var(--dim)">${n.fuente}</p>` : ''}
         </div>
       </div>
     `).join('') || '<div class="card">Sin narrativas socioafectivas registradas.</div>';
-
-    document.getElementById('t-preg-list').innerHTML = DATA.preguntas9.map((p,i)=>`
-      <div class="preg">
-        <div class="preg-h" onclick="this.nextElementSibling.classList.toggle('op')">
-          <div class="preg-n">${i+1}</div>
-          <div class="preg-q">${p.pregunta}</div>
+    document.getElementById('t-preg-list').innerHTML = (CS.preguntas||[]).map((p,i)=>`
+      <div class="nar">
+        <div class="nar-h" onclick="this.nextElementSibling.classList.toggle('op')">
+          <div class="nar-info"><div class="nar-name">${i+1}. ${p.pregunta}</div></div>
         </div>
-        <div class="preg-body">${p.respuesta}</div>
+        <div class="nar-body">${p.respuesta}</div>
       </div>
     `).join('') || '<div class="card">Sin preguntas registradas.</div>';
   }
