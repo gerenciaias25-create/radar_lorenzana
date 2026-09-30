@@ -486,6 +486,14 @@ function resetToSearch() {
   document.getElementById('skillContainer').innerHTML = '';
   window.DATA = null;
   window.DATA_META = null;
+  window.addEventListener('message', (event) => {
+  // Validar origen de confianza
+  if (!event.origin.includes('sielorenzana.com')) return;
+
+  if (event.data && event.data.type === 'SIE_INIT') {
+    console.log("Módulo cargado exitosamente en SIE por el investigador:", event.data.investigador);
+  }
+});
 }
 </script>
 </body>
