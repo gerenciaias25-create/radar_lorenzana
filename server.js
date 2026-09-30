@@ -8,7 +8,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
+// server.js (Node.js/Express)
+app.use((req, res, next) => {
+  // Permite que la plataforma SIE incruste la aplicación
+  res.setHeader("X-Frame-Options", "ALLOW-FROM https://sielorenzana.com"); 
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'self' https://sielorenzana.com https://*.sielorenzana.com");
+  next();
+});
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
