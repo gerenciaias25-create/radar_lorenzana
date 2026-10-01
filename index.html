@@ -259,7 +259,7 @@
   <!-- VISTA 3: DASHBOARD -->
   <div class="dashboard-view" id="view3">
     <div class="dashboard-toolbar">
-      <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte</button>
+      <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte (HTML)</button>
       <button class="btn-action" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
     </div>
 
@@ -477,7 +477,85 @@ async function loadSelectedSkill() {
   }
 }
 
-function downloadReport() { window.print(); }
+// Exporta el dashboard actualmente renderizado como un archivo .html
+// autocontenido e interactivo (misma plantilla + misma lógica + los mismos
+// datos ya cargados en pantalla), en vez de abrir el diálogo de impresión
+// del navegador. El archivo resultante abre standalone, con pestañas,
+// gráficas (Chart.js vía CDN) y acordeones funcionando igual que aquí.
+async function downloadReport() {
+  const skill = document.getElementById('skillSelect').value;
+  const skillPath = SKILL_FILES[skill];
+  const container = document.getElementById('skillContainer');
+
+  if (!skillPath || !container || !container.innerHTML.trim() || !window.DATA) {
+    return showError('No hay un reporte generado todavía para descargar.');
+  }
+
+  try {
+    // Misma lógica .js que ya se ejecutó en pantalla, para incrustarla inline
+    // (un archivo standalone no puede depender de rutas relativas al servidor).
+    const jsResp = await fetch(`${skillPath}.js?v=${Date.now()}`, { cache: 'no-store' });
+    if (!jsResp.ok) throw new Error(`No se pudo obtener la lógica de la skill (${skillPath}.js) para el export.`);
+    const jsCodeRaw = await jsResp.text();
+
+    // Escapa cualquier cierre de tag script literal (código o datos) para
+    // que no rompa el tag contenedor al incrustarlo como texto plano en HTML.
+    const escapeCierreScript = (str) => String(str).replace(/<\/script/gi, '<\\/script');
+
+    const jsCode = escapeCierreScript(jsCodeRaw);
+    const dataJson = escapeCierreScript(JSON.stringify(window.DATA || {}));
+    const metaJson = escapeCierreScript(JSON.stringify(window.DATA_META || {}));
+
+    const actorLabel = (window.DATA_META && window.DATA_META.actor) || 'Reporte';
+    const actorSlug = actorLabel.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita acentos
+      .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'reporte';
+    const fecha = new Date().toLocaleString('es-MX');
+    const fileName = `radar-${skill}-${actorSlug}.html`;
+
+    const standalone = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RADAR INTELLIGENCE · ${actorLabel.toUpperCase()}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;margin:0;padding:24px}
+  .export-wrap{max-width:1200px;margin:0 auto}
+  .export-note{font-size:11px;color:#64748b;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="export-wrap" id="skillContainer">
+${container.innerHTML}
+</div>
+<div class="export-note">Reporte exportado de RADAR INTELLIGENCE v2.1 &middot; ${fecha}</div>
+<script>
+window.DATA = ${dataJson};
+window.DATA_META = ${metaJson};
+<\/script>
+<script>
+${jsCode}
+<\/script>
+</body>
+</html>`;
+
+    const blob = new Blob([standalone], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('[RADAR] Error exportando reporte:', err);
+    showError('No se pudo generar el archivo HTML del reporte: ' + (err.message || 'error desconocido'));
+  }
+}
 
 function resetToSearch() {
   document.getElementById('view3').style.display = 'none';
