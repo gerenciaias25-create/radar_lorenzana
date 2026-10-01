@@ -913,28 +913,28 @@ const SCHEMAS = {
     hallazgoTrayectoria: "string",
     resumenEjecutivo: "string",
     cartografiaSocioafectiva: {
-      iasPorZona: [
-        { zona: "string (colonia/zona/corredor específico)", tipo: "string (tipo de zona, ej. 'Corredor carretero / rural', 'Urbano-comercial', 'Ribereño / agroindustrial', 'Institucional / político')", ias: 0, color: "#hex (rojo si ias>=75, naranja si 55-74, ámbar si <55)", tensionDominante: "string (nombre de la tensión dominante en esa zona, idealmente tomado de 'ranking')", emocionDominante: "string (formato corto 'EmociónA + EmociónB', sin '· X/5')", lectura: "string (párrafo de 30-55 palabras interpretando el mecanismo socioafectivo concreto de esa zona — qué la activa y por qué)" }
+      preguntas: [
+        { pregunta: "string", respuesta: "string (respuesta ejecutiva de 2-4 líneas)" }
       ],
-      dolores: [
-        { frase: "string (frase ciudadana en primera persona o muy cercana al habla local, sin comillas)", meta: "string (una línea de contexto: quién lo dice, por qué, con qué evidencia)" }
+      narrativas: [
+        { nombre: "string", tema: "string", actor: "string", potencial: "string (potencial de propagación/impacto, específico)", frase: "string (cita textual representativa)", fuente: "string (medio + fecha aproximada)" }
       ],
-      enemigosSimbolicos: [
-        { nombre: "string (persona, institución o fenómeno señalado como responsable simbólico)", descripcion: "string (por qué se le atribuye la culpa, con evidencia concreta)" }
+      narrativaMadre: "string (frase corta entrecomillada que resume el sentir colectivo transversal a todos los segmentos)",
+      narrativaMadreDesc: "string (párrafo explicando en qué se diferencia esta narrativa de la narrativa madre de TENSIONES, y qué aporta la mirada socioafectiva)",
+      segmentacion: [
+        { segmento: "string (grupo social/económico específico del territorio)", emocionDominante: "string (1-2 emociones, ej. 'Miedo + Desconfianza')", detonante: "string (hecho concreto que activa esa emoción en ese segmento, con fecha)" }
       ],
       fracturasSociales: [
         { titulo: "string (nombre corto de la fractura/división social)", descripcion: "string (entre quiénes, por qué, con evidencia)" }
       ],
-      segmentacion: [
-        { segmento: "string (grupo social/económico específico del territorio)", emocionDominante: "string (1-2 emociones, ej. 'Miedo + Desconfianza')", detonante: "string (hecho concreto que activa esa emoción en ese segmento, con fecha)" }
+      enemigosSimbolicos: [
+        { nombre: "string (persona, institución o fenómeno señalado como responsable simbólico)", descripcion: "string (por qué se le atribuye la culpa, con evidencia concreta)" }
       ],
-      narrativaMadre: "string (frase corta entrecomillada que resume el sentir colectivo transversal a todos los segmentos)",
-      narrativaMadreDesc: "string (párrafo explicando en qué se diferencia esta narrativa de la narrativa madre de TENSIONES, y qué aporta la mirada socioafectiva)",
-      narrativas: [
-        { nombre: "string", tema: "string", actor: "string", potencial: "string (potencial de propagación/impacto, específico)", frase: "string (cita textual representativa)", fuente: "string (medio + fecha aproximada)" }
+      dolores: [
+        { frase: "string (frase ciudadana en primera persona o muy cercana al habla local, sin comillas)", meta: "string (una línea de contexto: quién lo dice, por qué, con qué evidencia)" }
       ],
-      preguntas: [
-        { pregunta: "string", respuesta: "string (respuesta ejecutiva de 2-4 líneas)" }
+      iasPorZona: [
+        { zona: "string (colonia/zona/corredor específico)", tipo: "string (tipo de zona, ej. 'Corredor carretero / rural', 'Urbano-comercial', 'Ribereño / agroindustrial', 'Institucional / político')", ias: 0, color: "#hex (rojo si ias>=75, naranja si 55-74, ámbar si <55)", tensionDominante: "string (nombre de la tensión dominante en esa zona, idealmente tomado de 'ranking')", emocionDominante: "string (formato corto 'EmociónA + EmociónB', sin '· X/5')", lectura: "string (párrafo de 30-55 palabras interpretando el mecanismo socioafectivo concreto de esa zona — qué la activa y por qué)" }
       ]
     }
   }, null, 2),
@@ -1246,6 +1246,8 @@ REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
 - semiotica.miedos, semiotica.deseos, semiotica.necesidades: EXACTAMENTE 10 elementos cada lista (rank 1 a 10), nunca menos.`,
 
   tensiones: `
+REGLA ANTI-CORTE (OBLIGATORIA, lee esto primero): este reporte tiene MUCHOS campos. Está PROHIBIDO dejar sin generar o vacíos los campos finales del JSON (especialmente "cartografiaSocioafectiva.preguntas" y "cartografiaSocioafectiva.narrativas") por quedarte sin espacio. Si notas que el contenido se está extendiendo demasiado, PRIORIZA ASÍ: primero asegura que TODOS los campos y TODAS las pestañas existan con contenido completo (nunca un array vacío ni un string vacío), y solo si hace falta recortar, acorta la longitud de los párrafos más largos (ej. "lecturaEstrategica", "observaciones", "descripcion") en vez de omitir un campo o una tensión completa. Un reporte con 8 tensiones y párrafos de 40 palabras es MEJOR que uno con 10 tensiones donde "preguntas" o "narrativas" quedaron vacíos.
+
 REQUISITOS MÍNIMOS DE CANTIDAD (TENSIONES) — mínimo 8, ideal hasta 10, en TODAS estas listas: ranking, emociones, narrativas, territorios, riesgos, trayectoria, alertas. Nunca entregues menos de 8 en ninguna.
 
 - semaforo: EXACTAMENTE 5 indicadores, en este orden y con estas etiquetas EXACTAS: "Tensión social" (= score de la tensión #1 del ranking), "Reputacional" (= SRR más alto de "riesgos"), "Escalamiento" (= score de escalamiento agregado, coherente con cuántas tensiones tienen velocidad "Creciendo"), "Confianza institucional" (puede ser texto como "MEDIA-BAJA" si no hay encuesta numérica, con "sub" citando el dato de aprobación si existe), "Movilización social" (ALTA/MEDIA/BAJA con "sub" explicando evidencia o ausencia de movilización de calle). Los 5 "nivel" deben ser coherentes con sus "valor" (nunca un valor de 87 con nivel "bajo").
@@ -1400,7 +1402,7 @@ async function callOpenRouter({ system, user }, apiKey) {
         { role: 'user', content: user },
       ],
       temperature: 0.3,
-      max_tokens: 16000,
+      max_tokens: 28000,
       response_format: { type: 'json_object' },
     }),
   });
