@@ -161,7 +161,9 @@ function drawCharts(tab){
         <div class="evoldesc">${e.tendenciaDesc || ''}</div>
       </div>
     `).join('') || '<div class="card">Sin datos de evolución disponibles.</div>';
-    document.getElementById('t-emo-lectura').textContent = DATA.lecturaPoliticaEmociones || 'Sin lectura política estratégica disponible.';
+    document.getElementById('t-emo-lectura').innerHTML = (DATA.lecturaPoliticaEmociones||[]).map(l=>`
+      <p style="margin-bottom:8px"><strong style="color:${l.color||'#C05621'}">${l.emocion}</strong> <span style="font-size:11px;color:var(--dim)">(${l.porcentaje}% &middot; ${l.intensidad}/5)</span> — ${l.texto}</p>
+    `).join('') || '<p>Sin lectura política estratégica disponible.</p>';
   }
   if(tab==='narrativas'){
     const nms = DATA.narrativaMadreSintesis || {};
@@ -276,6 +278,18 @@ function drawCharts(tab){
   }
   if(tab==='soc1'){
     const CS = DATA.cartografiaSocioafectiva;
+    document.getElementById('t-rad-list').innerHTML = (CS.iasPorZona||[]).map(z=>`
+      <div class="ter" style="cursor:default">
+        <div class="ter-h">
+          <div class="ter-info">
+            <div class="ter-name">${z.zona}</div>
+            <div class="ter-sub">${z.tipo||''} &middot; Tensión dominante: ${z.tensionDominante||'—'} &middot; Emoción: ${z.emocionDominante||'—'}</div>
+          </div>
+          <span class="tniv" style="background:${z.color||'#C05621'};color:#fff;align-self:flex-start">${z.ias} IAS</span>
+        </div>
+        <div class="ter-body op" style="display:block">${z.lectura||''}</div>
+      </div>
+    `).join('') || '<div class="card">Sin radiografía territorial registrada.</div>';
     document.getElementById('t-dol-list').innerHTML = (CS.dolores||[]).map((d,i)=>`
       <div class="dolor"><div class="dolorn">${i+1}</div><div><div class="dolorfrase">${d.frase}</div><div class="dolormeta">${d.meta}</div></div></div>
     `).join('') || '<div class="card">Sin dolores registrados.</div>';
