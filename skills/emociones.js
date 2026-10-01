@@ -65,11 +65,17 @@ const D = {};
 Object.keys(FALLBACK).forEach(k => { D[k] = pick(D_RAW && D_RAW[k], FALLBACK[k]); });
 
 // ---------- header ----------
-const nameParts = (D.territory || '').split(' ');
+// El nombre real siempre es el que el usuario escribió en la búsqueda
+// (META.actor) -- nunca el campo "territory" generado por la IA, que puede
+// inventar un valor genérico (ej. "México") en vez del nombre de la persona.
+// "territory" solo se usa como contexto adicional (entidad/estado) cuando
+// está disponible, nunca como el nombre principal del encabezado.
+const nombrePrincipal = META.actor || D.territory || 'Sin datos';
+const nameParts = nombrePrincipal.split(' ');
 document.getElementById('em-hdr-name').innerHTML = (nameParts[0]||'').toUpperCase() + ' <span>' + nameParts.slice(1).join(' ').toUpperCase() + '</span>';
 document.getElementById('em-hdr-sub').textContent = D.subtitle || D.date || '';
-document.getElementById('em-whl-territory').textContent = D.territory || '';
-document.getElementById('em-ftr-l').textContent = 'RADAR - Emociones · ' + (D.territory||'');
+document.getElementById('em-whl-territory').textContent = nombrePrincipal;
+document.getElementById('em-ftr-l').textContent = 'RADAR - Emociones · ' + nombrePrincipal;
 
 // ---------- tabs ----------
 window.emST = function(id, el){
