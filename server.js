@@ -138,6 +138,28 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
     const normalized = normalizeResponse(structured, skill, { actorName, actor2Name, actoresNombres: listaActores });
 
+    // "tensiones" es el esquema más grande de todos (ranking+emociones+narrativas+
+    // territorios+riesgos+trayectoria+alertas+cartografiaSocioafectiva juntos).
+    // Con modelos de salida limitada (p. ej. gpt-4o-mini, tope ~16K tokens de
+    // salida) los ÚLTIMOS campos del JSON ("cartografiaSocioafectiva.narrativas"
+    // y ".preguntas") pueden quedar vacíos por corte de tokens aunque el resto
+    // del reporte esté completo. Si eso pasa, se piden en una SEGUNDA llamada
+    // pequeña y dedicada (nunca se queda sin espacio) en vez de tocar el
+    // esquema principal o el modelo por defecto.
+    if (skill === 'tensiones' && normalized.cartografiaSocioafectiva &&
+        (!normalized.cartografiaSocioafectiva.narrativas?.length || !normalized.cartografiaSocioafectiva.preguntas?.length)) {
+      try {
+        JOBS.set(jobId, { status: 'processing', progreso: 'Completando narrativas socioafectivas y las 9 preguntas...' });
+        const promptExtra = buildPromptCartografiaNarrativas({ actorName, mes, anio, datosActor1, cartografia: normalized.cartografiaSocioafectiva });
+        const extra = await callOpenRouter(promptExtra, OPENROUTER_KEY);
+        if (Array.isArray(extra?.narrativas) && extra.narrativas.length) normalized.cartografiaSocioafectiva.narrativas = extra.narrativas;
+        if (Array.isArray(extra?.preguntas) && extra.preguntas.length) normalized.cartografiaSocioafectiva.preguntas = extra.preguntas;
+      } catch (e) {
+        console.error('[-] No se pudo completar narrativas/preguntas de cartografiaSocioafectiva:', e.message);
+        // Se deja lo que ya había (posiblemente vacío); no se interrumpe el reporte completo por esto.
+      }
+    }
+
     // "socioafectiva" tiene una pestaña de Fuentes con enlaces citables: se
     // reemplaza lo que haya devuelto el modelo (que podría inventar URLs)
     // por la lista real construida a partir de las URLs efectivamente
@@ -1386,7 +1408,47 @@ function resumirFuentes(bloque) {
     .join('\n');
 }
 
-async function callOpenRouter({ system, user }, apiKey) {
+// Llamada de respaldo, SOLO para "tensiones": pide exclusivamente las 6-8
+// narrativas socioafectivas y las 9 preguntas, cuando la llamada principal
+// las dejó vacías por límite de tokens de salida del modelo. Esquema chico
+// a propósito para que nunca se quede sin espacio.
+function buildPromptCartografiaNarrativas({ actorName, mes, anio, datosActor1, cartografia }) {
+  const contextoSegmentos = (cartografia.segmentacion || []).map(s => `- ${s.segmento}: ${s.emocionDominante} (detonante: ${s.detonante})`).join('\n') || '(sin segmentación previa disponible)';
+  const contextoDolores = (cartografia.dolores || []).map(d => `- "${d.frase}" — ${d.meta}`).join('\n') || '(sin dolores previos disponibles)';
+  const fuentesTexto = resumirFuentes(datosActor1);
+
+  const system = `Eres un analista de inteligencia político-electoral en México. Ya existe un estudio de "cartografía socioafectiva" para ${actorName} (${mes} ${anio}), con esta narrativa madre ya definida: "${cartografia.narrativaMadre || ''}" (${cartografia.narrativaMadreDesc || ''}).
+
+Tu única tarea es generar DOS listas que complementan ese estudio, coherentes con la narrativa madre y la segmentación ya existentes. Responde EXCLUSIVAMENTE con un objeto JSON válido, sin texto adicional, sin markdown, con EXACTAMENTE esta forma:
+{
+  "narrativas": [
+    { "nombre": "string (frase corta que resume la narrativa, en minúsculas salvo nombres propios)", "tema": "string", "actor": "string", "politica": "string (impacto/potencial político específico)", "potencial": "string (párrafo de 25-45 palabras: alcance de propagación — si ya circula, en qué círculo social, con qué velocidad — y si es posible, cita o referencia un comentario/reacción real de medios o redes)", "frase": "string (cita textual representativa, en primera persona ciudadana)", "fuente": "string (medio + fecha aproximada)" }
+  ],
+  "preguntas": [
+    { "pregunta": "string", "respuesta": "string (respuesta ejecutiva de 4-6 líneas, con razonamiento específico del territorio, no genérico)" }
+  ]
+}
+
+Reglas:
+- "narrativas": EXACTAMENTE 6 a 8 elementos, cada uno anclado en un segmento social o dolor real (usa los que te doy abajo como base, parafraseados a nivel de narrativa, no los repitas literalmente).
+- "preguntas": EXACTAMENTE 9 elementos, en este orden temático: (1) qué le duele más al territorio hoy, (2) a quién culpa la ciudadanía, (3) en quién confía todavía, (4) qué emoción domina y hacia dónde se dirige, (5) qué símbolo podría unir a la comunidad, (6) qué narrativa puede movilizarla, (7) qué actor ocupa el rol de enemigo simbólico, (8) qué segmento está más activado emocionalmente, (9) qué tema puede detonar la próxima crisis. Cada "respuesta" debe ser específica del territorio evaluado, nunca una definición genérica de la pregunta.
+- Todo en español de México, tono de consultoría política profesional.
+
+Segmentación socioafectiva ya existente (úsala como base):
+${contextoSegmentos}
+
+Dolores sociales ya existentes (úsalos como base):
+${contextoDolores}
+
+Fragmento de fuentes crudas del territorio (para anclar citas/comentarios reales si existen):
+${fuentesTexto}`;
+
+  const user = `Genera ahora el JSON con "narrativas" (6-8) y "preguntas" (EXACTAMENTE 9) para ${actorName}, periodo ${mes} ${anio}.`;
+
+  return { system, user };
+}
+
+
   const model = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 
   const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
