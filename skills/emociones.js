@@ -41,6 +41,8 @@ const FALLBACK = {
   govSemaforo: [],
   partidos: [], partidosChart: [],
   actores: [], actoresRadar: {labels:[], data:[], colors:[]},
+  alertaEstrategica: '', alertaDesc: '',
+  recs: [], evitar: [], gestionPrioridad: [['Sin datos', 0, '#94a3b8']],
   resumenEjecutivo: '',
   segIntro: 'No se recibieron datos estructurados del backend.',
   segmentos: [],
@@ -63,17 +65,11 @@ const D = {};
 Object.keys(FALLBACK).forEach(k => { D[k] = pick(D_RAW && D_RAW[k], FALLBACK[k]); });
 
 // ---------- header ----------
-// El nombre real siempre es el que el usuario escribió en la búsqueda
-// (META.actor) -- nunca el campo "territory" generado por la IA, que puede
-// inventar un valor genérico (ej. "México") en vez del nombre de la persona.
-// "territory" solo se usa como contexto adicional (entidad/estado) cuando
-// está disponible, nunca como el nombre principal del encabezado.
-const nombrePrincipal = META.actor || D.territory || 'Sin datos';
-const nameParts = nombrePrincipal.split(' ');
+const nameParts = (D.territory || '').split(' ');
 document.getElementById('em-hdr-name').innerHTML = (nameParts[0]||'').toUpperCase() + ' <span>' + nameParts.slice(1).join(' ').toUpperCase() + '</span>';
 document.getElementById('em-hdr-sub').textContent = D.subtitle || D.date || '';
-document.getElementById('em-whl-territory').textContent = nombrePrincipal;
-document.getElementById('em-ftr-l').textContent = 'RADAR - Emociones · ' + nombrePrincipal;
+document.getElementById('em-whl-territory').textContent = D.territory || '';
+document.getElementById('em-ftr-l').textContent = 'RADAR - Emociones · ' + (D.territory||'');
 
 // ---------- tabs ----------
 window.emST = function(id, el){
@@ -276,6 +272,10 @@ function init(){
   rkList('em-rk-deseos', SEM.deseos);
   rkList('em-rk-necesidades', SEM.necesidades);
 
+  document.getElementById('em-alerta-box').innerHTML = `<div class="cbox-label" style="color:var(--red-s)">Alerta Estratégica</div><div class="cbox-name" style="font-size:16px;color:var(--red-s)">${D.alertaEstrategica}</div><div class="cbox-text">${D.alertaDesc}</div>`;
+  document.getElementById('em-recs-list').innerHTML = (D.recs||[]).map(r=>`<div class="ri"><span class="rb" style="background:${r.bg||'#e2e8f0'};color:${r.tx||'#1e293b'}">${r.label||r.urgencia||''}</span><span class="rt">${r.text}</span></div>`).join('') || '<div class="ri"><span class="rt">Sin recomendaciones disponibles.</span></div>';
+  document.getElementById('em-evitar-list').innerHTML = (D.evitar||[]).map(e=>`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)"><span style="color:#ef4444;flex-shrink:0">✕</span>${e}</div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
+
   /* CHARTS */
   const CDf = {responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{backgroundColor:'#ffffff',titleColor:'#1e293b',bodyColor:'#475569',borderColor:'#cbd5e1',borderWidth:1,padding:10}},
@@ -332,6 +332,15 @@ function init(){
       options:{responsive:true,maintainAspectRatio:false,
         scales:{r:{ticks:{color:'#475569',font:{size:9},stepSize:20},grid:{color:'rgba(0,0,0,.08)'},pointLabels:{color:'#334155',font:{size:10}},angleLines:{color:'rgba(0,0,0,.08)'},min:0,max:100}},
         plugins:{legend:{display:true,labels:{color:'#334155',font:{size:11},boxWidth:10}},tooltip:{...CDf.plugins.tooltip}}}
+    });
+  }
+
+  const priorCanvas = document.getElementById('em-ch-prior');
+  const priorData = (D.gestionPrioridad||[]).filter(x=>Array.isArray(x)&&x.length>=2);
+  if(priorCanvas && priorData.length > 0){
+    new Chart(priorCanvas,{type:'bar',
+      data:{labels:priorData.map(x=>x[0]),datasets:[{data:priorData.map(x=>x[1]),backgroundColor:priorData.map(x=>(x[2]||'#94a3b8')+'cc'),borderColor:priorData.map(x=>x[2]||'#94a3b8'),borderWidth:1,borderRadius:5,borderSkipped:false}]},
+      options:{...CDf, indexAxis:'y', scales:{x:{...CDf.scales.x,min:0,max:100,ticks:{...CDf.scales.x.ticks,callback:v=>v+'/100'}},y:{...CDf.scales.y}}}
     });
   }
 
