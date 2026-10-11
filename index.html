@@ -242,7 +242,15 @@
         <option value="mes">Un mes</option><option value="rango">Intervalo de meses</option>
         <option value="semana">Una semana</option><option value="fechas">Fechas exactas</option>
       </select>
-      <div id="rangeControls" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+      <div id="rangeMonthControls" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+        <label for="mesInicio">Desde</label><input type="month" id="mesInicio" class="filter-select">
+        <label for="mesFin">Hasta</label><input type="month" id="mesFin" class="filter-select">
+      </div>
+      <div id="weekControls" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+        <label for="semanaInicio">Semana que inicia el</label><input type="date" id="semanaInicio" class="filter-select">
+        <span id="semanaTexto" style="font-size:12px;color:#475569"></span>
+      </div>
+      <div id="dateControls" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
         <label for="fechaInicio">Desde</label><input type="date" id="fechaInicio" class="filter-select">
         <label for="fechaFin">Hasta</label><input type="date" id="fechaFin" class="filter-select">
       </div>
@@ -330,24 +338,87 @@ function hideError() {
   document.getElementById('errorBox').style.display = 'none';
 }
 
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const pad2 = n => String(n).padStart(2, '0');
+const isoFecha = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;          // m: 0-11
+const ultimoDiaMes = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate(); // m: 0-11
+
+function sumarDias(iso, dias) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const f = new Date(Date.UTC(y, m - 1, d + dias));
+  return isoFecha(f.getUTCFullYear(), f.getUTCMonth(), f.getUTCDate());
+}
+function formatoLargo(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${MESES_ES[m - 1].toLowerCase()} ${y}`;
+}
+
+// Cada modo muestra SOLO sus controles: "Un mes" usa los selectores de mes y
+// año; los demás modos usan sus propios campos y ocultan esos selectores.
 function updatePeriodMode() {
   const mode = document.getElementById('periodMode').value;
-  document.getElementById('rangeControls').style.display = mode === 'mes' ? 'none' : 'flex';
+  const mostrar = (id, visible) => { document.getElementById(id).style.display = visible ? (id.endsWith('Select') ? '' : 'flex') : 'none'; };
+  mostrar('monthSelect', mode === 'mes');
+  mostrar('yearSelect', mode === 'mes');
+  mostrar('rangeMonthControls', mode === 'rango');
+  mostrar('weekControls', mode === 'semana');
+  mostrar('dateControls', mode === 'fechas');
+
+  // Valores iniciales útiles: parte del mes/año que ya estaban elegidos.
+  const anio = document.getElementById('yearSelect').value;
+  const mm = pad2(MESES_ES.indexOf(document.getElementById('monthSelect').value) + 1);
+  if (mode === 'rango') {
+    const ini = document.getElementById('mesInicio'), fin = document.getElementById('mesFin');
+    if (!ini.value) ini.value = `${anio}-${mm}`;
+    if (!fin.value) fin.value = `${anio}-${mm}`;
+  }
+  if (mode === 'semana') actualizarTextoSemana();
 }
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('semanaInicio').addEventListener('change', actualizarTextoSemana);
+  document.getElementById('periodMode').addEventListener('change', hideError);
+  updatePeriodMode();
+});
+function actualizarTextoSemana() {
+  const ini = document.getElementById('semanaInicio').value;
+  document.getElementById('semanaTexto').textContent = ini ? `→ del ${formatoLargo(ini)} al ${formatoLargo(sumarDias(ini, 6))} (7 días)` : '';
+}
+
+// Devuelve { fechaInicio, fechaFin, mes, anio } según el modo elegido.
+// "mes" y "anio" son el mes/año de la fecha inicial (los usa el servidor
+// solo como respaldo; el periodo real viaja en fechaInicio/fechaFin).
 function obtenerFechas() {
   const mode = document.getElementById('periodMode').value;
-  const anio = Number(document.getElementById('yearSelect').value);
-  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const mes = meses.indexOf(document.getElementById('monthSelect').value);
-  const iso = (y,m,d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  if (mode === 'mes') return {fechaInicio:iso(anio,mes,1),fechaFin:iso(anio,mes,new Date(anio,mes+1,0).getDate())};
-  const fechaInicio = document.getElementById('fechaInicio').value;
-  const fechaFin = document.getElementById('fechaFin').value;
-  if (!fechaInicio || !fechaFin || fechaInicio > fechaFin) throw new Error('Selecciona fechas válidas: inicio no puede ser posterior al fin.');
-  const dias = Math.round((Date.parse(fechaFin)-Date.parse(fechaInicio))/86400000)+1;
-  if (mode === 'semana' && dias !== 7) throw new Error('El intervalo semanal debe contener exactamente 7 días.');
-  if (mode === 'rango' && (fechaInicio.slice(8)!=='01' || Number(fechaFin.slice(8))!==new Date(Number(fechaFin.slice(0,4)),Number(fechaFin.slice(5,7)),0).getDate())) throw new Error('Para un intervalo mensual elige el primer día del mes inicial y el último día del mes final.');
-  return {fechaInicio,fechaFin};
+  let fechaInicio, fechaFin;
+
+  if (mode === 'mes') {
+    const anio = Number(document.getElementById('yearSelect').value);
+    const m = MESES_ES.indexOf(document.getElementById('monthSelect').value);
+    fechaInicio = isoFecha(anio, m, 1);
+    fechaFin = isoFecha(anio, m, ultimoDiaMes(anio, m));
+  } else if (mode === 'rango') {
+    const ini = document.getElementById('mesInicio').value; // YYYY-MM
+    const fin = document.getElementById('mesFin').value;
+    if (!ini || !fin) throw new Error('Elige el mes inicial y el mes final del intervalo.');
+    if (ini > fin) throw new Error('El mes inicial no puede ser posterior al mes final.');
+    const [yi, mi] = ini.split('-').map(Number);
+    const [yf, mf] = fin.split('-').map(Number);
+    fechaInicio = isoFecha(yi, mi - 1, 1);
+    fechaFin = isoFecha(yf, mf - 1, ultimoDiaMes(yf, mf - 1));
+  } else if (mode === 'semana') {
+    const ini = document.getElementById('semanaInicio').value;
+    if (!ini) throw new Error('Elige el día en que inicia la semana.');
+    fechaInicio = ini;
+    fechaFin = sumarDias(ini, 6);
+  } else { // fechas exactas
+    fechaInicio = document.getElementById('fechaInicio').value;
+    fechaFin = document.getElementById('fechaFin').value;
+    if (!fechaInicio || !fechaFin) throw new Error('Elige la fecha inicial y la fecha final.');
+    if (fechaInicio > fechaFin) throw new Error('La fecha inicial no puede ser posterior a la fecha final.');
+  }
+
+  const [y, m] = fechaInicio.split('-').map(Number);
+  return { fechaInicio, fechaFin, mes: MESES_ES[m - 1], anio: String(y) };
 }
 
 async function loadSelectedSkill() {
@@ -355,10 +426,10 @@ async function loadSelectedSkill() {
   const skill = document.getElementById('skillSelect').value;
   const actor = document.getElementById('targetProfile').value.trim();
   const actor2 = document.getElementById('targetProfile2').value.trim();
-  const mes = document.getElementById('monthSelect').value;
-  const anio = document.getElementById('yearSelect').value;
   let fechas;
   try { fechas = obtenerFechas(); } catch(e) { return showError(e.message); }
+  hideError();
+  const { mes, anio } = fechas; // mes/año de la fecha inicial (respaldo para el servidor)
 
   // Actores 3-6: solo aplica a "comparativo", separados por coma en un solo campo.
   let actoresExtra = [];
