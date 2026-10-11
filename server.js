@@ -370,15 +370,91 @@ function normalizeResponse(data, skill, ctx = {}) {
     if (!data.cartografiaSocioafectiva.narrativaMadreDesc) data.cartografiaSocioafectiva.narrativaMadreDesc = '';
   }
 
-  // OPOSITOR
+   // OPOSITOR
   if (skill === 'opositor') {
     ensureObject(data, 'actor', { cargo: 'Servidor(a) Público(a)', partido: '—', periodo: '', aspiracion: '' });
     ensureArray(data, 'vulnerabilidades', []);
     ensureArray(data, 'fortalezas', []);
-    ensureObject(data, 'perfil', { rows: [], cronologia: [], ierPorCargo: [] });
+    ensureObject(data, 'perfil', { rows: [], cronologia: [], ierPorCargo: [], disc: {} });
+    ensureArray(data.perfil, 'rows', []);
+    ensureArray(data.perfil, 'cronologia', []);
+    ensureArray(data.perfil, 'ierPorCargo', []);
+    ensureObject(data.perfil, 'disc', {});
     ensureObject(data, 'contradicciones', { ranking: [], destacados: [], tabla: [] });
     ensureArray(data, 'vectoresAtaque', []);
     ensureObject(data, 'redDePoder', { radar: [0, 0, 0, 0, 0, 0], alertas: [], tabla: [] });
+    ensureArray(data.redDePoder, 'alertas', []);
+    ensureArray(data.redDePoder, 'tabla', []);
+
+    const numAcotado = (v, min, max) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : 0;
+    };
+
+    // IER por cargo: cada etapa trae cargo, periodo, promesa, resultado y valor 0-10.
+    data.perfil.ierPorCargo = data.perfil.ierPorCargo
+      .filter(x => x && typeof x === 'object' && x.cargo)
+      .map(x => ({
+        cargo: String(x.cargo).trim(),
+        periodo: String(x.periodo || '').trim(),
+        promesa: String(x.promesa || '').trim(),
+        resultado: String(x.resultado || '').trim(),
+        valor: Math.round(numAcotado(x.valor, 0, 10) * 10) / 10,
+      }));
+
+    // Perfil psicopolítico DISC (hipótesis de trabajo, no diagnóstico).
+    const DISC_LETRAS = ['D', 'I', 'S', 'C'];
+    const disc = data.perfil.disc;
+    const letraDisc = (v) => {
+      const l = String(v || '').trim().charAt(0).toUpperCase();
+      return DISC_LETRAS.includes(l) ? l : '';
+    };
+    disc.dominante = letraDisc(disc.dominante);
+    disc.secundario = letraDisc(disc.secundario);
+    ['estilo', 'confianza', 'evidencia', 'implicacionDebate', 'egoTrigger', 'patronBajoPresion', 'nota'].forEach(k => {
+      if (typeof disc[k] !== 'string') disc[k] = '';
+    });
+    if (!disc.confianza) disc.confianza = 'preliminar';
+    ensureArray(disc, 'temasEvasion', []);
+    ensureObject(disc, 'scores', {});
+    DISC_LETRAS.forEach(k => { disc.scores[k] = Math.round(numAcotado(disc.scores[k], 0, 100)); });
+
+    // Red de poder: radar de 6 ejes + alertas y tabla clasificadas por categoría.
+    const radar = data.redDePoder.radar;
+    data.redDePoder.radar = (Array.isArray(radar) && radar.length === 6)
+      ? radar.map(v => numAcotado(v, 0, 10))
+      : [0, 0, 0, 0, 0, 0];
+
+    const CATS_ALERTA = ['Aliado', 'Deuda Política', 'Tensión Interna', 'Vulnerabilidad de Red'];
+    const CATS_TABLA = ['Aliado', 'Deuda Política', 'Tensión Interna', 'Riesgo'];
+    const NIVELES_RED = ['CRÍTICO', 'ALTO', 'MEDIO', 'BAJO'];
+    const catAlerta = (c) => {
+      c = String(c || '').trim();
+      if (c === 'Riesgo') return 'Vulnerabilidad de Red';
+      return CATS_ALERTA.includes(c) ? c : '';
+    };
+    const catTabla = (c) => {
+      c = String(c || '').trim();
+      if (c === 'Vulnerabilidad de Red') return 'Riesgo';
+      return CATS_TABLA.includes(c) ? c : '';
+    };
+    data.redDePoder.alertas = data.redDePoder.alertas
+      .filter(a => a && typeof a === 'object')
+      .map(a => ({
+        ...a,
+        nivel: NIVELES_RED.includes(a.nivel) ? a.nivel : 'MEDIO',
+        categoria: catAlerta(a.categoria),
+        bullets: Array.isArray(a.bullets) ? a.bullets : [],
+      }));
+    data.redDePoder.tabla = data.redDePoder.tabla
+      .filter(t => t && typeof t === 'object')
+      .map(t => ({
+        ...t,
+        categoria: catTabla(t.categoria),
+        relevancia: ['Alta', 'Media', 'Baja'].includes(t.relevancia) ? t.relevancia : 'Media',
+        compromete: String(t.compromete || '').trim(),
+      }));
+
     if (!data.resumenEjecutivo) data.resumenEjecutivo = '';
   }
 
@@ -395,32 +471,6 @@ function normalizeResponse(data, skill, ctx = {}) {
     ensureArray(data, 'ventanasPersuasion', []);
     ensureArray(data, 'arquitecturaMensajes', []);
     if (!data.resumenEjecutivo) data.resumenEjecutivo = '';
-  }
-
-  // SOCIOAFECTIVA (cartografía socioafectiva territorial)
-  if (skill === 'socioafectiva') {
-    ensureObject(data, 'meta', { territorio: actorName, ventana: '', modalidad: '', fuentesRevisadas: 0, corte: '' });
-    ensureObject(data, 'indice', { valor: 0, lecturaBrutal: '' });
-    ensureArray(data, 'issues', []);
-    ensureArray(data, 'radiografia', []);
-    ensureArray(data, 'hallazgos', []);
-    ensureArray(data, 'emociones', []);
-    ensureObject(data, 'sintesisEmocional', { dominante: '', secundaria: '', masPeligrosa: '', masPeligrosaRiesgo: '', masMovilizable: '', masMovilizableEvidencia: '', masDesaprovechada: '', masDesaprovechadaEvidencia: '' });
-    ensureArray(data, 'dolores', []);
-    ensureArray(data, 'simbolos', []);
-    ensureArray(data, 'zonas', []);
-    ensureArray(data, 'enemigos', []);
-    ensureArray(data, 'segmentos', []);
-    ensureArray(data, 'actores', []);
-    ensureArray(data, 'narrativas', []);
-    ensureObject(data, 'narrativaMadre', { fraseRectora: '', heridaCentral: '', enemigoSimbolico: '', promesaEmocional: '', protagonista: '', futuroDeseado: '', tonoNarrativo: '', simbolosUsar: '', simbolosEvitar: '', mensajesFuerza: [] });
-    ensureArray(data.narrativaMadre, 'mensajesFuerza', []);
-    ensureArray(data, 'riesgos', []);
-    ensureArray(data, 'oportunidades', []);
-    ensureArray(data, 'recomendaciones', []);
-    ensureArray(data, 'preguntas9', []);
-    ensureArray(data, 'fuentes', []);
-    if (!data.conclusionEjecutiva) data.conclusionEjecutiva = '';
   }
 
   // COMPARATIVO
@@ -535,39 +585,6 @@ function normalizeResponse(data, skill, ctx = {}) {
     ensureArray(data, 'territorialTabla', []);
     if (data.territorialAlerta && typeof data.territorialAlerta !== 'object') data.territorialAlerta = null;
   }
-
-  // SEMIOTICA (semiótica política digital territorial)
-  if (skill === 'semiotica') {
-    ensureObject(data, 'territorio', { nombre: actorName, ventana: '', corte: '', fuentesRevisadas: 0, metodologiaModulos: '13 módulos' });
-    ensureObject(data, 'kpis', { arquetipoColectivo: 'Sin datos', arquetipoColectivoDesc: '', arquetipoIdeal: 'Sin datos', arquetipoIdealDesc: '', tensionDominante: 'Sin datos', tensionDominanteDesc: '', irsTopActor: 'Sin datos', irsTopScore: 0, irsTopEstado: 'warning' });
-    if (!data.codigoSimbolico) data.codigoSimbolico = 'No se recibieron datos estructurados del backend.';
-    ensureArray(data, 'signos', []);
-    ensureArray(data, 'poblacion', []);
-    ensureArray(data, 'significacion', []);
-    ensureArray(data, 'narrativas', []);
-    ensureObject(data, 'frameDominante', { titulo: 'Frame dominante (Lakoff)', bullets: [] });
-    ensureArray(data.frameDominante, 'bullets', []);
-    ensureObject(data, 'fundacionesMorales', { titulo: 'Fundaciones morales activas (Haidt)', bullets: [] });
-    ensureArray(data.fundacionesMorales, 'bullets', []);
-    ensureArray(data, 'miedos', []);
-    ensureArray(data, 'deseos', []);
-    ensureArray(data, 'necesidades', []);
-    ensureArray(data, 'simbolosPoder', []);
-    ensureArray(data, 'mapaMemetico', []);
-    ensureArray(data, 'cosmovision', []);
-    ensureArray(data, 'arquetipos', []);
-    ensureObject(data, 'arquetipoIdealPrincipal', { rol: '', nombre: '', texto: '', riesgo: '' });
-    ensureObject(data, 'arquetipoIdealSecundario', { rol: '', nombre: '', texto: '', riesgo: '' });
-    ensureArray(data, 'tensiones', []);
-    ensureArray(data, 'matrizEstrategica', []);
-    ensureObject(data, 'irs', { actores: [], nota1: '', nota2: '' });
-    ensureArray(data.irs, 'actores', []);
-    ensureArray(data, 'fuentes', []);
-  }
-
-  return data;
-}
-
 // =========================================================
 // APIFY: SCRAPING
 // =========================================================
