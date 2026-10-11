@@ -56,9 +56,16 @@ app.post('/api/analizar', (req, res) => {
     actor6 = '',
     mes = 'Agosto',
     anio = '2026',
+    fechaInicio = '',
+    fechaFin = '',
   } = params;
 
   const actorName = String(actor).trim();
+  // Fechas del intervalo (YYYY-MM-DD). Si llegan mal formadas se ignoran y se
+  // usa mes/año, para no tumbar la búsqueda por un dato opcional.
+  const reFecha = /^\d{4}-\d{2}-\d{2}$/;
+  const fIni = reFecha.test(String(fechaInicio)) ? String(fechaInicio) : '';
+  const fFin = reFecha.test(String(fechaFin)) ? String(fechaFin) : '';
   const actor2Name = String(actor2 || '').trim();
   // Actores 3-6 son EXCLUSIVOS de "comparativo" (hasta 6 en total). Para el
   // resto de skills se ignoran aunque lleguen en el body.
@@ -90,7 +97,7 @@ app.post('/api/analizar', (req, res) => {
 
   // Se procesa en segundo plano; NO se espera (no "await") para
   // poder responder al cliente de inmediato.
-  procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, APIFY_TOKEN, OPENROUTER_KEY });
+  procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, fechaInicio: fIni, fechaFin: fFin, APIFY_TOKEN, OPENROUTER_KEY });
 
   return res.status(202).json({ jobId });
 });
@@ -104,7 +111,7 @@ app.get('/api/estado/:jobId', (req, res) => {
   return res.status(200).json(job);
 });
 
-async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, APIFY_TOKEN, OPENROUTER_KEY }) {
+async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, fechaInicio, fechaFin, APIFY_TOKEN, OPENROUTER_KEY }) {
   try {
     const listaActores = skill === 'comparativo' && actoresNombres?.length ? actoresNombres : [actorName, actor2Name].filter(Boolean);
     console.log(`[+] Iniciando análisis (${jobId}) para: ${listaActores.join(' vs ')} (${skill})`);
@@ -146,35 +153,10 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
   datosActor2,
   schema
 });
-    const periodoAnalisis = fechaInicio && fechaFin
-    ? `Del ${fechaInicio} al ${fechaFin}`
-    : `${mes} ${anio}`;
-
-  const reglasTemporales = `
-PERIODO DE ANÁLISIS: ${periodoAnalisis}
-
-REGLAS TEMPORALES OBLIGATORIAS:
-- Analiza únicamente los registros incluidos en los datos proporcionados.
-- No presentes acontecimientos fuera del intervalo como hallazgos del periodo.
-- Diferencia la fecha de publicación de la fecha del acontecimiento.
-- Si no existen registros suficientes, indica que la evidencia es insuficiente.
-- No inventes publicaciones, fechas, cifras ni fuentes.
-- Las comparaciones históricas deben identificarse como antecedentes,
-  no como resultados del intervalo seleccionado.
-`;
     const structured = await callOpenRouter(prompt, OPENROUTER_KEY);
 
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
     const normalized = normalizeResponse(structured, skill, { actorName, actor2Name, actoresNombres: listaActores });
-
-    // "socioafectiva" tiene una pestaña de Fuentes con enlaces citables: se
-    // reemplaza lo que haya devuelto el modelo (que podría inventar URLs)
-    // por la lista real construida a partir de las URLs efectivamente
-    // scrapeadas, para no exponer citas falsas.
-    if (skill === 'socioafectiva' || skill === 'semiotica') {
-      const fuentesReales = construirFuentesReales(datosActor1);
-      if (fuentesReales.length) normalized.fuentes = fuentesReales;
-    }
 
     const fuentesEncontradas = skill === 'comparativo'
       ? (datosPorActor || []).reduce((sum, d) => sum + (d?.count || 0), 0)
@@ -187,7 +169,7 @@ REGLAS TEMPORALES OBLIGATORIAS:
         actor: actorName,
         actor2: actor2Name || null,
         actores: skill === 'comparativo' ? listaActores : undefined,
-        periodo: `${mes} ${anio}`,
+        periodo: (fechaInicio && fechaFin) ? `${fechaInicio} a ${fechaFin}` : `${mes} ${anio}`,
         fuentesEncontradas,
         data: normalized,
       },
@@ -614,6 +596,10 @@ function normalizeResponse(data, skill, ctx = {}) {
     ensureArray(data, 'territorialTabla', []);
     if (data.territorialAlerta && typeof data.territorialAlerta !== 'object') data.territorialAlerta = null;
   }
+
+  return data;
+}
+
 // =========================================================
 // APIFY: SCRAPING
 // =========================================================
@@ -856,7 +842,26 @@ const SCHEMAS = {
         vector: { canal: "string (canal recomendado)", tono: "string (tono de comunicación recomendado)", formato: "string (formato de contenido recomendado)" }
       }
     ],
-    
+    semiotica: {
+      arquetipoColectivo: {
+        dominante: "string (arquetipo junguiano dominante + evidencia concreta que lo sustenta)",
+        secundario: "string (arquetipo secundario + por qué emerge)",
+        emergente: "string (arquetipo emergente + qué lo impulsa)",
+        rechazado: "string (arquetipo que la ciudadanía rechaza + por qué es riesgoso para un candidato)"
+      },
+      arquetipoPolitico: {
+        ideal: "string (arquetipo político ideal que busca la ciudadanía, ej. 'Guerrero')",
+        secundario: "string (arquetipo complementario, ej. 'Cuidador')",
+        resonancia: "string (ej. '4.2 / 5')",
+        evidencia: "string (párrafo: por qué ese arquetipo es el ideal y el riesgo de sobreactuación si un candidato lo fuerza sin resultados reales)"
+      },
+      arquetiposRadar: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      miedos: [{ rank: 0, nombre: "string", evidencia: "string (hecho/fuente concreta)", significado: "string (lectura política)" }],
+      deseos: [{ rank: 0, nombre: "string", evidencia: "string", significado: "string" }],
+      necesidades: [{ rank: 0, nombre: "string", evidencia: "string", significado: "string" }]
+    }
+  }, null, 2),
+
 //TENSIONES
   tensiones: JSON.stringify({
     actor: { entidad: "string", cargo: "string", periodo: "string" },
@@ -1067,7 +1072,9 @@ const SCHEMAS = {
 // PROMPTS
 // =========================================================
 
-function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, datosActor1, datosActor2, schema }) {
+function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, fechaInicio, fechaFin, datosActor1, datosActor2, schema }) {
+  const periodoAnalisis = (fechaInicio && fechaFin) ? `Del ${fechaInicio} al ${fechaFin}` : `${mes} ${anio}`;
+  const reglasTemporales = `\nPERIODO DE ANÁLISIS: ${periodoAnalisis}\nREGLAS TEMPORALES OBLIGATORIAS:\n- Analiza únicamente los registros incluidos en los datos proporcionados y ubícalos dentro de este periodo.\n- No presentes acontecimientos fuera del intervalo como hallazgos del periodo; los antecedentes históricos deben identificarse como tales.\n- Diferencia la fecha de publicación de la fecha del acontecimiento.\n- Si no hay registros suficientes del periodo, dilo con prudencia en vez de inventar publicaciones, fechas, cifras o fuentes.\n- Los nombres de los periodos y meses de gráficas y tablas deben corresponder a este intervalo.\n`;
   let contexto;
 
   if (skill === 'comparativo' && actoresNombres?.length) {
@@ -1144,7 +1151,8 @@ ${schema}
 - ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
 ${requisitosCantidad}${guardarropaEmociones}${guardarropaOpositor}${guardarropaSesgo}${guardarropaComparativo}${instruccionesEstructura}`;
 
-  const user = `Periodo evaluado: ${mes} ${anio}
+  const user = `Periodo evaluado: ${periodoAnalisis}
+${reglasTemporales}
 Skill solicitada: ${skill}
 
 ${contexto}
