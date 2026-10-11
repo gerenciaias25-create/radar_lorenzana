@@ -187,7 +187,7 @@
 </head>
 <body>
 
-<div class="top-brand">RADAR INTELLIGENCE v2.1</div>
+<div class="top-brand">RADAR INTELLIGENCE</div>
 
 <div class="app-viewport">
 
@@ -206,8 +206,6 @@
         <option value="opositor">Skill: Opositor (comparativo)</option>
         <option value="comparativo">Skill: Comparativo (2 a 6 actores)</option>
         <option value="sesgo">Skill: SESGO (Sesgos Cognitivos)</option>
-        <option value="semiotica">Skill: SEMIÓTICA (Política Digital)</option>
-        <option value="socioafectiva">Skill: SOCIOAFECTIVA (Cartografía Territorial)</option>
       </select>
 
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
@@ -240,6 +238,14 @@
         <option value="2021">2021</option>
       </select>
 
+      <select id="periodMode" class="filter-select" onchange="updatePeriodMode()">
+        <option value="mes">Un mes</option><option value="rango">Intervalo de meses</option>
+        <option value="semana">Una semana</option><option value="fechas">Fechas exactas</option>
+      </select>
+      <div id="rangeControls" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+        <label for="fechaInicio">Desde</label><input type="date" id="fechaInicio" class="filter-select">
+        <label for="fechaFin">Hasta</label><input type="date" id="fechaFin" class="filter-select">
+      </div>
       <button type="button" class="btn-analyze" id="btnAnalyze" onclick="loadSelectedSkill()">Analizar</button>
     </div>
 
@@ -276,13 +282,11 @@ const SKILL_FILES = {
   opositor: 'skills/opositor',
   comparativo: 'skills/comparativo',
   sesgo: 'skills/sesgo',
-  semiotica: 'skills/semiotica',
-  socioafectiva: 'skills/socioafectiva',
 };
 
 // Skills cuyo "objeto de análisis" es un territorio/entidad, no un personaje
 // (afecta solo el texto del placeholder del campo de búsqueda).
-const SKILLS_TERRITORIO = ['tensiones', 'sesgo', 'semiotica', 'socioafectiva'];
+const SKILLS_TERRITORIO = ['tensiones', 'sesgo'];
 
 // Skills que necesitan un segundo personaje para generar la comparativa.
 const SKILLS_DOS_ACTORES = ['opositor', 'comparativo'];
@@ -326,6 +330,26 @@ function hideError() {
   document.getElementById('errorBox').style.display = 'none';
 }
 
+function updatePeriodMode() {
+  const mode = document.getElementById('periodMode').value;
+  document.getElementById('rangeControls').style.display = mode === 'mes' ? 'none' : 'flex';
+}
+function obtenerFechas() {
+  const mode = document.getElementById('periodMode').value;
+  const anio = Number(document.getElementById('yearSelect').value);
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const mes = meses.indexOf(document.getElementById('monthSelect').value);
+  const iso = (y,m,d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  if (mode === 'mes') return {fechaInicio:iso(anio,mes,1),fechaFin:iso(anio,mes,new Date(anio,mes+1,0).getDate())};
+  const fechaInicio = document.getElementById('fechaInicio').value;
+  const fechaFin = document.getElementById('fechaFin').value;
+  if (!fechaInicio || !fechaFin || fechaInicio > fechaFin) throw new Error('Selecciona fechas válidas: inicio no puede ser posterior al fin.');
+  const dias = Math.round((Date.parse(fechaFin)-Date.parse(fechaInicio))/86400000)+1;
+  if (mode === 'semana' && dias !== 7) throw new Error('El intervalo semanal debe contener exactamente 7 días.');
+  if (mode === 'rango' && (fechaInicio.slice(8)!=='01' || Number(fechaFin.slice(8))!==new Date(Number(fechaFin.slice(0,4)),Number(fechaFin.slice(5,7)),0).getDate())) throw new Error('Para un intervalo mensual elige el primer día del mes inicial y el último día del mes final.');
+  return {fechaInicio,fechaFin};
+}
+
 async function loadSelectedSkill() {
   hideError();
   const skill = document.getElementById('skillSelect').value;
@@ -333,6 +357,8 @@ async function loadSelectedSkill() {
   const actor2 = document.getElementById('targetProfile2').value.trim();
   const mes = document.getElementById('monthSelect').value;
   const anio = document.getElementById('yearSelect').value;
+  let fechas;
+  try { fechas = obtenerFechas(); } catch(e) { return showError(e.message); }
 
   // Actores 3-6: solo aplica a "comparativo", separados por coma en un solo campo.
   let actoresExtra = [];
@@ -387,7 +413,7 @@ async function loadSelectedSkill() {
     const startResp = await fetch('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ skill, actor, actor2, actor3, actor4, actor5, actor6, mes, anio }),
+      body: JSON.stringify({ skill, actor, actor2, actor3, actor4, actor5, actor6, mes, anio, ...fechas }),
     });
     const startJson = await parseJsonSeguro(startResp);
     if (!startResp.ok) {
