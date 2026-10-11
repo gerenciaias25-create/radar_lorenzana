@@ -187,7 +187,7 @@
 </head>
 <body>
 
-<div class="top-brand">RADAR INTELLIGENCE</div>
+<div class="top-brand">RADAR INTELLIGENCE v2.1</div>
 
 <div class="app-viewport">
 
@@ -476,6 +476,9 @@ async function loadSelectedSkill() {
       actor6: actor6 || null,
       mes,
       anio,
+      periodo: apiJson.periodo,
+      fechaInicio: fechas.fechaInicio,
+      fechaFin: fechas.fechaFin,
       fuentesEncontradas: apiJson.fuentesEncontradas
     };
 
