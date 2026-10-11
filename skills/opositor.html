@@ -61,7 +61,24 @@
 #op-root .td{font-size:.8rem;color:var(--text);line-height:1.5}
 #op-root .cc{position:relative;height:240px}
 #op-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:0;border-radius:0 0 8px 8px}
-@media(max-width:768px){#op-root .sec{padding:16px 12px}#op-root .g2{grid-template-columns:1fr}#op-root .pg{grid-template-columns:1fr}}
+#op-root .chip{display:inline-block;font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.1);color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-left:6px;vertical-align:middle}
+#op-root .tb{background:var(--blue);color:#fff}#op-root .tn{background:#78909c;color:#fff}
+#op-root .tbl td.ctr{text-align:center;white-space:nowrap}
+#op-root .tw.sx{overflow-x:auto}
+#op-root .disc-wrap{display:grid;grid-template-columns:1fr 2fr;gap:20px}
+#op-root .disc-badge{display:flex;gap:8px;margin-bottom:10px}
+#op-root .disc-l{width:46px;height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;background:rgba(0,0,0,.08);color:var(--muted)}
+#op-root .disc-l.dom{background:var(--header-bg);color:#fff}
+#op-root .disc-l.sec{background:var(--ac);color:#fff}
+#op-root .disc-est{font-size:.82rem;color:var(--muted);margin-bottom:14px;font-weight:600}
+#op-root .catgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+#op-root .catbox{background:var(--card);border:1px solid var(--border);border-top:4px solid var(--border);border-radius:11px;padding:12px 14px}
+#op-root .catbox .l{font-size:.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:6px}
+#op-root .catbox .n{font-size:1.7rem;font-weight:800;color:var(--header-bg);line-height:1}
+#op-root .catbox .s{font-size:.74rem;color:var(--muted);margin-top:6px;line-height:1.4}
+#op-root .cat-g{border-top-color:var(--green)}#op-root .cat-o{border-top-color:var(--orange)}#op-root .cat-y{border-top-color:var(--yellow)}#op-root .cat-r{border-top-color:var(--red2)}
+#op-root .grp{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:700;margin:4px 0 8px}
+@media(max-width:768px){#op-root .sec{padding:16px 12px}#op-root .g2{grid-template-columns:1fr}#op-root .pg{grid-template-columns:1fr}#op-root .disc-wrap{grid-template-columns:1fr}#op-root .catgrid{grid-template-columns:1fr 1fr}}
 </style>
 
 <header class="hdr">
@@ -109,7 +126,28 @@
       <div class="tl" id="op-pf-cron"></div>
     </div>
   </div>
-  <div class="c"><div class="ch" style="margin-bottom:12px">📊 IER por Cargo</div><div class="cc"><canvas id="op-ierChart"></canvas></div></div>
+  <div class="c"><div class="ch" style="margin-bottom:12px">📊 IER por Cargo <span class="chip">Experiencia vs. Resultado</span></div><div class="cc"><canvas id="op-ierChart"></canvas></div></div>
+
+  <div class="tw sx" style="margin-top:20px">
+    <table class="tbl">
+      <thead><tr><th>Cargo</th><th>Periodo</th><th>Promesa / narrativa</th><th>Resultado verificable</th><th>IER</th></tr></thead>
+      <tbody id="op-ier-tbl"></tbody>
+    </table>
+  </div>
+  <div class="ss" id="op-ier-note" style="margin-top:-8px"></div>
+
+  <div class="c" id="op-disc-card" style="margin-top:20px">
+    <div class="ch" style="margin-bottom:12px">🧠 Perfil psicopolítico (DISC observado) <span class="chip" id="op-disc-conf">preliminar</span></div>
+    <div class="disc-wrap">
+      <div>
+        <div class="disc-badge" id="op-disc-badge"></div>
+        <div class="disc-est" id="op-disc-estilo"></div>
+        <div id="op-disc-bars"></div>
+      </div>
+      <div class="tw sx" style="margin-bottom:0"><table class="tbl"><tbody id="op-disc-tbl"></tbody></table></div>
+    </div>
+    <div class="al al-y" style="margin:14px 0 0" id="op-disc-nota-wrap"><p id="op-disc-nota"></p></div>
+  </div>
 </div>
 
 <!-- CONTRADICCIONES -->
@@ -138,13 +176,14 @@
 <div class="sec" id="op-red">
   <div class="st">Red de Poder y Vínculos</div>
   <div class="ss">Mapa de actores clave: aliados, deudas, tensiones y vulnerabilidades derivadas de la red.</div>
+  <div class="catgrid" id="op-red-cats"></div>
   <div class="g2" style="margin-bottom:20px">
     <div class="c"><div class="ch" style="margin-bottom:12px">📡 Evaluación Dimensional (Radar)</div><div class="cc"><canvas id="op-radarChart"></canvas></div></div>
     <div id="op-red-alertas"></div>
   </div>
-  <div class="tw">
+  <div class="tw sx">
     <table class="tbl">
-      <thead><tr><th>Actor</th><th>Vínculo</th><th>Tipo</th><th>Riesgo / Oportunidad Estratégica</th></tr></thead>
+      <thead><tr><th>Actor</th><th>Vínculo</th><th>Tipo</th><th>Relevancia</th><th>¿Compromete?</th><th>Riesgo / Oportunidad Estratégica</th></tr></thead>
       <tbody id="op-red-tbl"></tbody>
     </table>
   </div>
