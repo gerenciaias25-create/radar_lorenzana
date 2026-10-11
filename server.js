@@ -732,7 +732,7 @@ function construirFuentesReales(bloque, max = 24) {
 // =========================================================
 // SCHEMAS LIMPIOS (coinciden 1:1 con las plantillas HTML)
 // =========================================================
-
+//RADAR
 const SCHEMAS = {
   radar: JSON.stringify({
     actor: { cargo: "string", entidad: "string", partido: "string", periodo: "string" },
@@ -778,7 +778,7 @@ const SCHEMAS = {
     },
     resumenEjecutivo: "string"
   }, null, 2),
-
+//EMOCIONES
   emociones: JSON.stringify({
     territory: "string (NUNCA el nombre del país ni del personaje: el estado/entidad y cargo/partido específico de contexto, ej. 'Michoacán · Candidata a Diputación Local')",
     subtitle: "string",
@@ -845,26 +845,8 @@ const SCHEMAS = {
         vector: { canal: "string (canal recomendado)", tono: "string (tono de comunicación recomendado)", formato: "string (formato de contenido recomendado)" }
       }
     ],
-    semiotica: {
-      arquetipoColectivo: {
-        dominante: "string (arquetipo junguiano dominante + evidencia concreta que lo sustenta)",
-        secundario: "string (arquetipo secundario + por qué emerge)",
-        emergente: "string (arquetipo emergente + qué lo impulsa)",
-        rechazado: "string (arquetipo que la ciudadanía rechaza + por qué es riesgoso para un candidato)"
-      },
-      arquetipoPolitico: {
-        ideal: "string (nombre del arquetipo político ideal que busca la ciudadanía, ej. 'Guerrero')",
-        secundario: "string (arquetipo complementario, ej. 'Cuidador')",
-        resonancia: "string (ej. '4.2 / 5')",
-        evidencia: "string (párrafo explicando por qué ese arquetipo es el ideal y el riesgo de sobreactuación si un candidato lo fuerza sin resultados reales)"
-      },
-      arquetiposRadar: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      miedos: [{ rank: 0, nombre: "string", evidencia: "string (hecho/fuente concreta)", significado: "string (lectura política)" }],
-      deseos: [{ rank: 0, nombre: "string", evidencia: "string", significado: "string" }],
-      necesidades: [{ rank: 0, nombre: "string", evidencia: "string", significado: "string" }]
-    }
-  }, null, 2),
-
+    
+//TENSIONES
   tensiones: JSON.stringify({
     actor: { entidad: "string", cargo: "string", periodo: "string" },
     semaforo: [
@@ -949,15 +931,34 @@ const SCHEMAS = {
       ]
     }
   }, null, 2),
-
-  opositor: JSON.stringify({
+//OPOSITOR
+    opositor: JSON.stringify({
     actor: { cargo: "string", partido: "string", periodo: "string", aspiracion: "string" },
     vulnerabilidades: [{ titulo: "string", nivel: "CRÍTICO|ALTO|MEDIO", bullets: ["string"], score: 0, descripcion: "string (párrafo de contexto/mecanismo antes de los bullets)" }],
     fortalezas: [{ titulo: "string", texto: "string" }],
     perfil: {
       rows: [{ label: "string", value: "string" }],
       cronologia: [{ periodo: "string", titulo: "string", descripcion: "string" }],
-      ierPorCargo: [{ cargo: "string (DEBE coincidir textualmente con el 'titulo' de la etapa correspondiente en perfil.cronologia)", valor: 0 }]
+      ierPorCargo: [{
+        cargo: "string (DEBE coincidir textualmente con el 'titulo' de la etapa correspondiente en perfil.cronologia)",
+        periodo: "string (mismo periodo de esa etapa en perfil.cronologia, ej. '2021-2024')",
+        promesa: "string (promesa o narrativa pública del actor en ese cargo)",
+        resultado: "string (resultado verificable con cifra/fecha/fuente; marca [FUENTE ÚNICA] si solo hay una fuente)",
+        valor: 0
+      }],
+      disc: {
+        dominante: "D|I|S|C",
+        secundario: "D|I|S|C (distinta a la dominante)",
+        estilo: "string (rasgo en 3-8 palabras, ej. 'procedimental, perfil de funcionario de actas')",
+        confianza: "preliminar|moderada|alta",
+        scores: { D: 0, I: 0, S: 0, C: 0 },
+        evidencia: "string (qué material público sustenta la lectura: actas, informes, entrevistas, comunicados, redes)",
+        implicacionDebate: "string (cómo conviene confrontarlo en un debate y en qué terreno pierde)",
+        egoTrigger: "string (qué lo desestabiliza, basado SOLO en conducta pública)",
+        patronBajoPresion: "string (cómo reacciona cuando lo presionan, con ejemplo observado)",
+        temasEvasion: ["string"],
+        nota: "string (aclara que es hipótesis de trabajo y qué material audiovisual la validaría)"
+      }
     },
     contradicciones: {
       ranking: [{ codigo: "string (ej. C1, DEBE reutilizarse igual en contradicciones.tabla)", titulo: "string", score: 0, nivel: "CRÍTICO|ALTO|MEDIO" }],
@@ -968,11 +969,11 @@ const SCHEMAS = {
     redDePoder: {
       radar: [0, 0, 0, 0, 0, 0],
       alertas: [{ nivel: "CRÍTICO|ALTO|MEDIO", categoria: "Aliado|Deuda Política|Tensión Interna|Vulnerabilidad de Red", titulo: "string", bullets: ["string"] }],
-      tabla: [{ actor: "string", vinculo: "string", categoria: "Aliado|Deuda Política|Tensión Interna|Riesgo", riesgoOportunidad: "string" }]
+      tabla: [{ actor: "string", vinculo: "string", categoria: "Aliado|Deuda Política|Tensión Interna|Riesgo", relevancia: "Alta|Media|Baja", compromete: "string (¿el vínculo compromete al actor? Sí/No/Parcialmente + razón breve)", riesgoOportunidad: "string" }]
     },
     resumenEjecutivo: "string"
   }, null, 2),
-
+//SESGO
   sesgo: JSON.stringify({
     meta: {
       entidad: "string (territorio/entidad evaluada)",
@@ -995,44 +996,7 @@ const SCHEMAS = {
     resumenEjecutivo: "string"
   }, null, 2),
 
-  socioafectiva: JSON.stringify({
-    meta: {
-      territorio: "string",
-      ventana: "string (ej. 'mar–sep 2026 (6 meses)')",
-      modalidad: "string (ej. 'Multitemática · 6 issues')",
-      fuentesRevisadas: 0,
-      corte: "string (fecha de corte del análisis)"
-    },
-    indice: {
-      valor: 0,
-      lecturaBrutal: "string (párrafo de 60-100 palabras, tono directo y sin eufemismos, resumiendo el estado emocional colectivo del territorio con al menos 2 hechos concretos — NO incluyas emoji de banda ni la palabra 'Banda', eso se calcula aparte)"
-    },
-    issues: [{ titulo: "string (problema estatal/municipal prioritario)", frase: "string (frase ciudadana textual representativa, entre comillas)", emocion: "string (emoción dominante que activa)", score: 0 }],
-    radiografia: [{ label: "string", valor: "string" }],
-    hallazgos: [{ hallazgo: "string (hecho concreto con cifra/fecha/fuente)", lectura: "string (interpretación socioafectiva de ese hallazgo, 20-40 palabras)" }],
-    emociones: [{ nombre: "string", score: 0, grupo: "string (segmento donde aparece con mayor fuerza)", detonante: "string (hecho concreto que la activa)", color: "critical|serious|violet|warning|muted|accent|good" }],
-    sintesisEmocional: { dominante: "string", secundaria: "string", masPeligrosa: "string", masPeligrosaRiesgo: "string (por qué es la más peligrosa)", masMovilizable: "string", masMovilizableEvidencia: "string (evidencia de que ya se está movilizando)", masDesaprovechada: "string", masDesaprovechadaEvidencia: "string (por qué está desaprovechada como activo narrativo)" },
-    dolores: [{ titulo: "string", score: 0, frase: "string (cita textual entre comillas)", tags: ["string"] }],
-    simbolos: [{ simbolo: "string (objeto/lugar/actor concreto)", emocion: "string", usoEstrategico: "string (cómo usarlo o evitarlo en comunicación)" }],
-    zonas: [{ nombre: "string", subzona: "string", dolor: "string", tension: 0 }],
-    enemigos: [{ nombre: "string (enemigo simbólico o fractura social)", riesgo: "string", neutralizacion: "string (acción concreta)" }],
-    segmentos: [{ titulo: "string", perfil: "string (composición del segmento)", dolor: "string", deseo: "string", miedo: "string", narrativa: "string" }],
-    actores: [{ nombre: "string", confianza: 0, emocion: "string (emoción asociada a este actor)", potencial: "string (potencial estratégico, explicado)" }],
-    narrativas: [{ tipo: "string (ej. 'Oficial / gubernamental', 'Crítica / opositora')", impulsor: "string (quién la impulsa)", frase: "string (entre comillas)", penetracion: 0, oportunidad: "string" }],
-    narrativaMadre: {
-      fraseRectora: "string (entre comillas)",
-      heridaCentral: "string", enemigoSimbolico: "string", promesaEmocional: "string",
-      protagonista: "string", futuroDeseado: "string", tonoNarrativo: "string",
-      simbolosUsar: "string", simbolosEvitar: "string",
-      mensajesFuerza: ["string (frase corta entre comillas, lista para usar en discurso/spot)"]
-    },
-    riesgos: [{ riesgo: "string", probabilidad: "Baja|Media|Media-alta|Alta", impacto: "Bajo|Medio|Alto|Muy alto", detonante: "string", recomendacion: "string" }],
-    oportunidades: [{ titulo: "string", texto: "string" }],
-    recomendaciones: [{ dimension: "string (ej. 'Comunicación', 'Forense', 'Económica')", accion: "string", publico: "string", atiende: "string (emoción/dolor que atiende)" }],
-    preguntas9: [{ pregunta: "string", respuesta: "string" }],
-    conclusionEjecutiva: "string (párrafo de 60-100 palabras, tono directo, cerrando el diagnóstico)"
-  }, null, 2),
-
+  //COMPARATIVO
   // NOTA IMPORTANTE SOBRE ESTE SCHEMA: los objetos "sentimientoGeneral",
   // "traSerie.series", "picosSerie.series" y "plataformasRadar.data" usan
   // como LLAVE el nombre EXACTO del actor (idéntico a "actores[].nombre").
@@ -1086,45 +1050,6 @@ const SCHEMAS = {
     territorialTabla: [["región/municipio", "actor con mayor presencia", "nota"]],
     territorialAlerta: { titulo: "string", texto: "string" }
   }, null, 2),
-
-  semiotica: JSON.stringify({
-    territorio: { nombre: "string", ventana: "string (ej. 'mar–sep 2026 (6 meses)')", corte: "string (fecha de corte del análisis)", fuentesRevisadas: 0, metodologiaModulos: "string (ej. '13 módulos')" },
-    kpis: {
-      arquetipoColectivo: "string (nombre del arquetipo junguiano dominante)",
-      arquetipoColectivoDesc: "string (una línea explicando por qué domina)",
-      arquetipoIdeal: "string (nombre del arquetipo político ideal para resonar)",
-      arquetipoIdealDesc: "string (una línea explicando por qué resonaría)",
-      tensionDominante: "string (ej. 'Orgullo identitario vs. estigma narco')",
-      tensionDominanteDesc: "string (una línea de contexto)",
-      irsTopActor: "string (nombre del aspirante con IRS más alto)",
-      irsTopScore: 0,
-      irsTopEstado: "good|warning|serious|critical (según banda del IRS: 81-100 good, 61-80 warning, 41-60 serious, 0-40 critical)"
-    },
-    codigoSimbolico: "string (párrafo de síntesis de 100-160 palabras, tono de consultoría, con al menos 2 hechos concretos del territorio)",
-    signos: [{ categoria: "string (ej. 'Naturales', 'Económicos', 'Culturales', 'Religiosos', 'Digitales', 'Históricos', 'Arquitectónicos', 'Signos de población — dominantes')", items: [{ titulo: "string", texto: "string" }] }],
-    poblacion: [{ titulo: "string", estado: "dominante|emergente", texto: "string" }],
-    significacion: [{ tema: "string", manifiesto: "string (lo que se dice textualmente)", latente: "string (lo que se sugiere)", inconsciente: "string (lo que se proyecta sin notarlo)" }],
-    narrativas: [{ tipo: "dominante|emergente|aspiracional|enojo|miedo|esperanza", texto: "string" }],
-    frameDominante: { titulo: "string (fijo: 'Frame dominante (Lakoff)')", bullets: ["string"] },
-    fundacionesMorales: { titulo: "string (fijo: 'Fundaciones morales activas (Haidt)')", bullets: ["string"] },
-    miedos: ["string"],
-    deseos: ["string"],
-    necesidades: ["string"],
-    simbolosPoder: [{ titulo: "string", texto: "string" }],
-    mapaMemetico: [{ tipo: "admira|ridiculiza|castiga|rechaza|legitima", texto: "string" }],
-    cosmovision: [{ concepto: "string (ej. 'Cambio', 'Orden', 'Libertad', 'Autoridad', 'Futuro')", texto: "string" }],
-    arquetipos: [{ rol: "Dominante|Secundario|Emergente|Rechazado", nombre: "string (nombre del arquetipo junguiano)", texto: "string" }],
-    arquetipoIdealPrincipal: { rol: "string (fijo: 'Arquetipo político ideal — 1er lugar')", nombre: "string", texto: "string (párrafo explicando por qué resuena más)", riesgo: "string (riesgo de sobreactuación, corto)" },
-    arquetipoIdealSecundario: { rol: "string (fijo: '2° lugar')", nombre: "string", texto: "string", riesgo: "string" },
-    tensiones: [{ poloA: "string", poloB: "string", intensidad: 0, texto: "string" }],
-    matrizEstrategica: [{ decir: "string", noDecir: "string", simbolosUsar: "string", simbolosEvitar: "string", emocionesMovilizan: "string", emocionesBloquean: "string", narrativaGanadora: "string", narrativaPerdedora: "string" }],
-    irs: {
-      actores: [{ nombre: "string", cargo: "string (partido/posición actual o aspiración)", narrativa: 0, simbolos: 0, arquetipo: 0, estado: "good|warning|serious|critical" }],
-      nota1: "string (explica qué mide cada capa A/B/C)",
-      nota2: "string (conclusión sobre el rango de resonancia alcanzado por los actores evaluados)"
-    },
-    fuentes: []
-  }, null, 2)
 };
 
 // =========================================================
@@ -1155,16 +1080,12 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
     ? `\nReglas adicionales OBLIGATORIAS para este análisis emocional de ${actorName}:\n- ANCLAJE AL CONTEXTO REAL: antes de redactar, identifica en las fuentes crudas (a) el cargo o aspiración actual de ${actorName}, (b) el municipio/estado/región donde ejerce o compite, y (c) los hechos recientes más repetidos (fechas, lugares, cifras, obras, escándalos, declaraciones, medios que los reportan). TODO el reporte debe girar alrededor de ESOS hechos concretos, no de generalidades sobre "la política en México".\n- PROHIBIDO el texto intercambiable: si una frase podría pegarse tal cual en el reporte de otro político o de otro municipio, está mal. Cada párrafo (subtitle, resumenEjecutivo, dyadInterp, preguntaDesc, textos de díadas, segmentos, semiótica, actores) debe nombrar al menos un hecho, lugar, actor, cifra o medio tomado de las fuentes crudas. Cita el medio o la fecha cuando exista (ej. "según [medio], [mes]").\n- ACTORES REALES DEL TERRITORIO: en "actores", el primer elemento es ${actorName}; los demás deben ser las personas que REALMENTE intervienen en la contienda o en el gobierno de ESE municipio/región: rivales de otros partidos, titular saliente o en turno, dirigentes locales/estatales de los partidos relevantes, o figuras que las fuentes crudas mencionan junto a ${actorName}. Prioriza los nombres que aparecen literalmente en las fuentes crudas. Si las fuentes no dan nombres suficientes, completa SOLO con figuras públicas que conozcas con certeza para ese cargo y territorio. Nunca inventes nombres de personas ni uses actores de otra región; si no puedes asegurar un nombre, usa el cargo y partido (ej. "Candidatura del PRI a la alcaldía de [municipio]").\n- "territory" y "subtitle" deben reflejar el municipio/estado y cargo reales detectados (ej. "Michoacán · Candidata a ..."), nunca el país genérico "México".\n- "quotes", "problematics", "fears" y "prides" deben provenir de lo que la ciudadanía y los medios dicen sobre ESE territorio en las fuentes crudas; si una fuente trae una frase textual, úsala (acortada) en vez de parafrasear en genérico.\n- Si las fuentes crudas son escasas para un campo, dilo en el texto en términos cualitativos y prudentes ("las fuentes disponibles apuntan a...") en vez de rellenar con frases de manual o inventar cifras.`
     : '';
 
-  const guardarropaOpositor = skill === 'opositor'
-    ? `\nReglas adicionales OBLIGATORIAS para este expediente de oposición:\n- Basa cualquier señalamiento grave ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas.\n- NO inventes números de expediente ni fechas falsas de documentos.\n- Si no hay suficiente información cruda, trátalo como "área de riesgo reputacional" y dilo explícitamente en el texto (no lo disfraces de hecho probado).\n- Este es un expediente de consultoría política pagado: CADA una de las 5 pestañas (Perfil, Vulnerabilidades, Contradicciones, Vectores de Ataque, Red de Poder) debe sentirse igual de investigada — está prohibido que una pestaña quede robusta y otra con 2-3 elementos genéricos.`
+   const guardarropaOpositor = skill === 'opositor'
+    ? `\nReglas adicionales OBLIGATORIAS para este expediente de oposición:\n- Basa cualquier señalamiento grave ÚNICAMENTE en lo que aparezca en las fuentes crudas proporcionadas.\n- NO inventes números de expediente ni fechas falsas de documentos.\n- Si no hay suficiente información cruda, trátalo como "área de riesgo reputacional" y dilo explícitamente en el texto (no lo disfraces de hecho probado).\n- Regla de doble fuente: cuando un dato descanse en UNA sola fuente (p. ej. el autoinforme del propio actor) márcalo con [FUENTE ÚNICA]; cuando no pudo verificarse márcalo con [NO VERIFICADO] y NO lo uses como base de ataque ni de cálculo.\n- "perfil.disc" es una HIPÓTESIS DE TRABAJO inferida únicamente de conducta pública observable (actas, informes, discursos, comunicados, entrevistas, redes); NUNCA un diagnóstico clínico ni psicológico. Si hay poca exposición pública, usa confianza "preliminar" y dilo en "nota". "egoTrigger", "patronBajoPresion" y "temasEvasion" NO deben apoyarse en género, familia, origen, salud ni vida privada: solo en conducta pública y trayectoria.\n- Este es un expediente de consultoría política pagado: CADA una de las 5 pestañas (Perfil, Vulnerabilidades, Contradicciones, Vectores de Ataque, Red de Poder) debe sentirse igual de investigada — está prohibido que una pestaña quede robusta y otra con 2-3 elementos genéricos.`
     : '';
 
   const guardarropaSesgo = skill === 'sesgo'
     ? `\nReglas adicionales OBLIGATORIAS para este análisis de sesgos cognitivos electorales:\n- Marco teórico: analiza el electorado del territorio/entidad evaluado a través de sesgos cognitivos de psicología política (heurísticos de Kahneman-Tversky y afines) que la evidencia de las fuentes crudas sugiera que están activos, no un catálogo genérico repetido de análisis a análisis.\n- Catálogo de referencia (no exhaustivo, úsalo como guía de categorías y códigos S01-S26, pero adáptalo a lo que realmente sugieran las fuentes; puedes usar otros sesgos conocidos si encajan mejor):\n  · Categoría I — Heurísticos de disponibilidad y exposición: S08 Disponibilidad, S23 Mera exposición, S26 Verdad ilusoria.\n  · Categoría II — Sesgos de negatividad y pérdida: S11 Negatividad, S20 Aversión a la pérdida, S13 Víctima identificable.\n  · Categoría III — Sesgos identitarios y sociales: S15 Identidad social, S05 Efecto bandwagon, S17 Sesgo endogrupal.\n  · Categoría IV — Sesgos retrospectivos y de atribución: S18 Retrospectivo, S03 Atribución, S09 Sesgo de resultado.\n  · Categoría V — Sesgos de autoridad y confianza institucional: S25 Autoridad, S02 Halo, S06 Autoservicio institucional.\n  · Categoría VI — Sesgos de confirmación y consistencia: S07 Confirmación, S21 Disonancia cognitiva, S14 Consistencia interna.\n  · Categoría VII — Sesgos de anclaje y encuadre: S01 Anclaje inicial, S10 Encuadre/framing, S19 Proyección.\n  · Categoría VIII — Sesgos de statu quo y fatiga cívica: S12 Statu quo/fatiga, S24 Descuento hiperbólico, S16 Ilusión de control.\n- El SAS (Score de Activación de Sesgo) de cada elemento en "ranking" va de 0-100: 81-100 = Crítico, 61-80 = Alto, 41-60 = Medio, <41 = Bajo. Distribuye los scores de forma realista y variada (no todos en el mismo rango).\n- "metricas.sesgosCriticos.valor" y "metricas.sesgosAltos.valor" DEBEN coincidir exactamente con el conteo real de elementos de "ranking" en esos rangos de score — nunca un número inventado que no cuadre con el ranking.\n- "metricas.sri" (Riesgo Cognitivo de continuidad/actor en turno) interpreta qué tan expuesto está el actor/partido gobernante a que la oposición explote los sesgos activos.\n- Basa cualquier cifra o hecho concreto (número de negocios cerrados, meses de conflicto, medios que dieron cobertura, etc.) ÚNICAMENTE en las fuentes crudas proporcionadas; si no hay suficiente evidencia para un dato concreto, redacta el mecanismo del sesgo en términos cualitativos en vez de inventar una cifra.`
-    : '';
-
-  const guardarropaSocioafectiva = skill === 'socioafectiva'
-    ? `\nReglas adicionales OBLIGATORIAS para esta cartografía socioafectiva territorial:\n- NO generes la lista "fuentes": ese campo se construye por separado a partir de las URLs reales scrapeadas; si el esquema no la pide, no la incluyas ni inventes artículos/enlaces.\n- "issues" debe cubrir los problemas/temas realmente prioritarios que emergen de las fuentes crudas del territorio (seguridad, economía, servicios, salud, movilidad, etc. — los que apliquen), nunca una lista genérica copiada de otro territorio.\n- Cada "frase" (en issues, dolores, narrativas, narrativaMadre, mensajesFuerza) debe sonar a cita ciudadana real y específica del territorio, no a eslogan genérico de campaña.\n- "zonas[].tension" y "actores[].confianza" son escalas 0-10; ordena "zonas" de mayor a menor tensión.\n- "indice.valor" (Índice General Socioafectivo, 0-10, donde 10 = clima más deteriorado) debe ser coherente con el promedio implícito de "emociones[].score" y "zonas[].tension" — no un número desconectado del resto del reporte. NO incluyas emoji ni la palabra "Banda" dentro de "indice.lecturaBrutal", eso se calcula aparte en el frontend a partir del número.\n- Basa cualquier cifra concreta (empleos perdidos, homicidios, empresas cerradas, porcentajes de desconfianza, etc.) ÚNICAMENTE en las fuentes crudas proporcionadas; si no hay dato exacto, describe la magnitud en términos cualitativos verosímiles en vez de inventar una cifra precisa.`
     : '';
 
   const listaComparativo = (actoresNombres?.length ? actoresNombres : [actorName, actor2Name].filter(Boolean));
@@ -1178,17 +1099,12 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
     ? `\nReglas adicionales OBLIGATORIAS para este comparativo de ${listaComparativo.length} actores:\n- Los actores a comparar son EXACTAMENTE (en este orden): ${nombresComillas}. Usa estos nombres tal cual, sin abreviar ni traducir, en TODOS los campos donde se requiera el nombre de un actor.\n- El array "actores" del JSON debe tener EXACTAMENTE ${listaComparativo.length} elementos, uno por cada nombre listado arriba, en el mismo orden.\n- Sé BALANCEADO: dedica volumen y profundidad comparable a TODOS los actores en cada sección (KPIs, sentimiento, narrativas, riesgos) — no conviertas esto en un perfil de un solo actor con menciones ocasionales del resto.${reglaEscalado}`
     : '';
 
-  const guardarropaSemiotica = skill === 'semiotica'
-    ? `\nReglas adicionales OBLIGATORIAS para este estudio de semiótica política digital:\n- NO generes el array "fuentes": ese campo se construye por separado a partir de las URLs reales scrapeadas; déjalo como array vacío si el esquema lo pide.\n- "signos" debe cubrir un mínimo de 6 categorías distintas (usa las sugeridas en el esquema como guía, adáptalas al territorio real), con 1-2 "items" cada una, y cada "texto" debe anclarse en un hecho digital verificable-style (fecha, cifra, medio, colonia) tomado de las fuentes crudas cuando exista evidencia.\n- "significacion" (Sistema de significación) debe cubrir mínimo 5 temas centrales del territorio (seguridad, autoridad/gobierno, futuro, trabajo/dinero, identidad regional u otros que apliquen), cada uno con sus tres capas (manifiesto/latente/inconsciente) claramente diferenciadas — nunca repitas el mismo texto en dos capas.\n- "narrativas": mínimo 6, cubriendo al menos 4 de los 6 tipos disponibles (dominante, emergente, aspiracional, enojo, miedo, esperanza) — nunca las concentres todas en "dominante".\n- "miedos", "deseos" y "necesidades": EXACTAMENTE 10 elementos cada uno, ordenados de mayor a menor intensidad/recurrencia, cada uno una frase corta y específica del territorio (no genérica).\n- "mapaMemetico": EXACTAMENTE 5 elementos, uno por cada "tipo" (admira, ridiculiza, castiga, rechaza, legitima), sin repetir tipo.\n- "cosmovision": EXACTAMENTE 5 elementos (Cambio, Orden, Libertad, Autoridad, Futuro o equivalentes conceptuales), cada uno con un "texto" que interprete cómo lo vive el territorio evaluado, no una definición genérica del concepto.\n- "arquetipos": EXACTAMENTE 4 elementos, uno por cada "rol" (Dominante, Secundario, Emergente, Rechazado), sin repetir rol. "arquetipoIdealPrincipal" y "arquetipoIdealSecundario" deben ser arquetipos DISTINTOS entre sí y coherentes con el "arquetipoIdeal" reportado en "kpis".\n- "tensiones": mínimo 5, ordenadas de mayor a menor "intensidad" (0-100), cada "texto" explicando por qué esa tensión es estratégicamente relevante (no solo describir los dos polos).\n- "matrizEstrategica": EXACTAMENTE 2 filas, cada una completa en las 8 columnas, con contenido específico y accionable (nunca "N/A" ni una palabra suelta).\n- "irs.actores": mínimo 3 aspirantes/actores políticos reales o verosímiles del territorio evaluado, con las 3 capas de puntaje (narrativa 0-40, símbolos 0-30, arquetipo 0-30) coherentes entre sí y con "estado" calculado según el total (81-100 good, 61-80 warning, 41-60 serious, 0-40 critical) — nunca dejes que ningún actor supere 80 salvo que la evidencia lo respalde con claridad excepcional.\n- Todos los "texto"/"descripcion" de una sola frase deben tener 25-50 palabras; los párrafos más largos (codigoSimbolico, textos de tensiones y del código simbólico) 60-160 palabras según se indique.`
-    : '';
-
   const instruccionesEstructura = skill === 'emociones'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "emotions.intensity" es un ENTERO de escala fija 0-3, NUNCA otro rango: 0 = inactiva (no se detecta evidencia real de esta emoción), 1 = baja, 2 = media, 3 = alta. Debes DISTRIBUIR intensidades realistas y VARIADAS entre las 8 emociones según la evidencia — está PROHIBIDO poner intensity:3 a todas las emociones activas; eso es un error, no un signo de análisis completo. Como referencia, en un territorio típico: 1-2 emociones en intensidad 3 (las dominantes), 2-3 en intensidad 2, el resto en 1 o 0 (inactivas). Refleja la mezcla real de las fuentes, no un maximalismo genérico.\n- "dyads" (Díadas Emocionales) — NUNCA lo dejes vacío, es OBLIGATORIO que tenga mínimo 3 elementos, sin excepción. Una díada emocional es la COMBINACIÓN de dos de las 8 emociones activas que juntas producen una dinámica política específica y nombrable. Estructura de cada díada: "name" = nombre corto de la dinámica combinada (ej. "Indignación Resignada", "Miedo Desconfiado", "Esperanza Cautelosa"); "formula" = las dos emociones que se combinan, formato "EmociónA + EmociónB" (ej. "Ira + Tristeza"); "type" = "Primaria" si es la combinación dominante en el territorio o "Secundaria" si es una dinámica emergente menor; "text" = párrafo explicando el mecanismo político-emocional de esa combinación y su implicación estratégica; "risk" = CRÍTICO/ALTO/MEDIO/BAJO; "score" = número 0-100 de intensidad de riesgo. Ejemplo completo: {"name":"Indignación Resignada","formula":"Ira + Tristeza","type":"Primaria","text":"La ciudadanía combina enojo activo por el desabasto de agua con una tristeza resignada ante la falta de respuesta institucional, generando apatía electoral disfrazada de crítica...","risk":"ALTO","score":78}. Construye las díadas a partir de las emociones con mayor "intensity" en el array "emotions" — siempre hay al menos 3 combinaciones detectables en cualquier territorio político real.\n- "dyadInterp" debe ser un párrafo (60-120 palabras) interpretando el conjunto de díadas en términos de estrategia política, no una frase genérica.\n- "actores" (comparación de actores políticos, pestaña "Actores") — PROHIBIDO usar placeholders genéricos como "Competidor A", "Competidor B", "Oponente 1": "actores[0].name" debe ser EXACTAMENTE "${actorName}" (el personaje principal evaluado), y los siguientes 2-3 actores deben ser sus rivales/contrapartes políticos REALES de ese mismo proceso electoral o cargo, con su NOMBRE REAL identificable por el contexto político público de la entidad/cargo (candidatos rivales conocidos, titular saliente, líder de oposición, etc.) — básate en lo que sea de conocimiento público sobre esa elección/cargo aunque las fuentes crudas no lo mencionen explícitamente. Únicamente si es genuinamente imposible identificar ningún nombre real de ningún rival (cargo muy local y sin contexto electoral claro), usa como alternativa el nombre del PARTIDO u organización que representaría cada rival (ej. "Candidatura del PRI", "Oposición del PAN") en vez de un placeholder tipo "Competidor A".\n- "actores.rows" (comparación de actores políticos) — cada actor debe traer MÍNIMO 6 filas, usando estas categorías de análisis como referencia (puedes adaptar la etiqueta exacta pero cubre el fondo de cada una): "Emoción dominante que activa", "Rol narrativo (Westen)", "Capital emocional positivo/diferencial", "Fundación moral que activa (Haidt)", "Principal vulnerabilidad", "Ventana estratégica 30 días" o "Riesgo para [el otro actor]". El VALOR de cada fila NUNCA debe ser una etiqueta corta o palabra suelta — debe ser una CLÁUSULA COMPLETA Y ESPECÍFICA con evidencia concreta (cifras, nombres de proyectos/lugares, fechas), del mismo nivel de detalle que: "78 Huellas de la Transformación, 250+ patrullas, Mexicable al 68%" o "Brecha entre cifras oficiales y experiencia cotidiana en colonias periféricas" — nunca algo tan corto como "Popularidad alta" o "Buena imagen".\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "secondary" debe incluir color (hex) para cada emoción secundaria.\n- "segmentos" (Segmentación N×E×I — Narrativa × Emoción × Identidad, pestaña "Segmentos y Perfiles"): cada segmento representa un bloque real y reconocible del electorado/población del territorio (ej. base leal de un actor, indeciso evaluador de otro, base ideológica de un tercero, segmento transversal no partidista/desconectado). "peso" es un porcentaje ESTIMADO (marca [ESTIMACIÓN] si no hay encuesta de campo real en las fuentes); "persuabilidad" clasifica qué tan movible es ("YA ES NUESTRO"/"MUY ALTA"/"ALTA"/"MEDIA"/"BAJA") y debe ser coherente con "objetivo" (MOVILIZAR si ya es nuestro, PERSUADIR si es persuadible, CONTENER si es hostil pero relevante, IGNORAR si es irrelevante). "frase" debe sonar a cita ciudadana real de ese segmento específico, no a eslogan genérico. Cada uno de los 4 sub-bloques (perfil, emocional, palancas, vector) debe llenarse por completo, con datos concretos del territorio, nunca genéricos intercambiables entre segmentos.\n- "semiotica" (pestaña "Semiótica"): aplica el modelo de los 12 arquetipos junguianos (Inocente, Explorador, Sabio, Héroe, Rebelde, Mago, Todos/Hombre común, Amante, Bufón, Cuidador, Gobernante, Guerrero) sobre el imaginario colectivo del territorio. "arquetipoColectivo" describe qué arquetipo vive la ciudadanía de sí misma/su comunidad (dominante/secundario/emergente/rechazado), siempre con evidencia concreta del territorio. "arquetipoPolitico" describe qué arquetipo espera la ciudadanía de SU LIDERAZGO político (puede ser distinto al colectivo) y su "evidencia" debe explicar también el riesgo de sobreactuación si un candidato fuerza ese arquetipo sin resultados reales. "arquetiposRadar" es un ARRAY DE EXACTAMENTE 12 NÚMEROS (escala 0-5, pueden llevar un decimal) EN ESTE ORDEN EXACTO: [Inocente, Explorador, Sabio, Héroe, Rebelde, Mago, Todos/Hombre común, Amante, Bufón, Cuidador, Gobernante, Guerrero] — refleja qué tanto resuena cada arquetipo en el imaginario colectivo, con variación real entre valores (nunca todos iguales ni todos en el máximo). "miedos", "deseos" y "necesidades" son 3 rankings INDEPENDIENTES de EXACTAMENTE 10 elementos cada uno, ordenados de "rank":1 (el más fuerte/prioritario) a "rank":10, cada uno con "evidencia" (hecho/fuente concreta del corpus, o [inferencia razonable] si no hay evidencia digital directa) y "significado" (lectura política de por qué importa ese miedo/deseo/necesidad).`
     : skill === 'comparativo'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Comparativo, ${listaComparativo.length} actores):\n- LLAVES DINÁMICAS POR ACTOR: en "sentimientoGeneral", "traSerie.series", "picosSerie.series", "plataformasRadar.data" y "sentimientoCruces.*.data", las llaves del objeto deben ser EXACTAMENTE los ${listaComparativo.length} nombres reales listados arriba, NUNCA "NombreActor1"/"NombreActor2" ni variantes. Ejemplo real: {${ejemploLlaves}}. Cada uno de estos objetos debe traer entradas para TODOS los actores, no solo los primeros 2.\n- "npsPorActor" y "ratioPorActor" deben tener EXACTAMENTE ${listaComparativo.length} números, en el mismo orden que la lista de actores.\n- "sentimientoGeneral" y los arrays dentro de "sentimientoCruces.*.data.<actor>.<segmento>" son [positivo, neutro, negativo, polarizado] — 4 números que idealmente suman ~100.\n- "kpiCards": mínimo 4 tarjetas, "color" debe ser una de estas 4 letras exactas: "g" (verde/bueno), "a" (ámbar/atención), "r" (rojo/riesgo), "n" (neutro). NUNCA un color hex aquí.\n- "hashtags": cada fila es EXACTAMENTE 6 elementos en este orden: [hashtag (con #), nombre del actor al que más se asocia, tono ("Positivo"/"Negativo"/"Neutro"/"Polarizado"), plataforma principal donde circula, origen ("orgánico"/"inducido"), frecuencia relativa (número 0-100)].\n- "riesgos" y "oportunidades": cada fila es un array de 4 elementos [nivel, titulo, texto, bivariado]. Nivel de "riesgos" usa CRÍTICO/ALTO/MEDIO/BAJO; nivel de "oportunidades" usa ALTA/MEDIA/BAJA.\n- "narrativas.tipo" debe ser EXACTAMENTE uno de: "favorable", "critica", "ambivalente" (sin acentos, en minúsculas) — el frontend filtra por este valor literal. Debe haber narrativas para CADA uno de los ${listaComparativo.length} actores, no solo de los primeros 2.\n- "alertaTabla" debe tener EXACTAMENTE ${listaComparativo.length} filas, una por actor.\n- "topOfMindCruces.*.data" usa como llave el NOMBRE DEL TEMA (no del actor), con un array de números alineado a "segments".\n- "plataformasRadar.labels" siempre debe ser ["X (Twitter)", "Facebook", "Instagram", "Medios digitales"] y "plataformasRadar.data.<actor>" un array de 4 números alineados a esas labels, para CADA uno de los ${listaComparativo.length} actores.`
     : skill === 'opositor'
-    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Opositor):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico, igual que en un reporte real): "perfil.ierPorCargo" debe tener una entrada por CADA etapa relevante de "perfil.cronologia" (mismo texto en "cargo" que en el "titulo" de esa etapa), para que la gráfica de barras "IER por Cargo" refleje exactamente los mismos eventos que se leen en la línea de tiempo — nunca uses cargos que no aparezcan en la cronología ni omitas etapas importantes de la cronología en la gráfica. "valor" es 0-10 donde valores bajos (0-3) marcan las etapas con escándalo/controversia y valores altos (7-10) las etapas limpias o exitosas.\n- "contradicciones.ranking" y "contradicciones.tabla" deben cubrir EXACTAMENTE las mismas contradicciones (mismo "codigo" C1, C2, C3... en ambas), en el mismo orden — nunca un ranking con más o menos elementos que filas en la tabla.\n- "vulnerabilidades[].descripcion": párrafo de 40-70 palabras que explique el MECANISMO de la vulnerabilidad (qué pasó, cuándo, quién estuvo involucrado) ANTES de los bullets, que a su vez deben aterrizar el dato duro (cifra, fecha, nombre, fuente). Nunca dejes "descripcion" vacía o como una sola frase genérica.\n- "vectoresAtaque[].argumento": párrafo de 40-80 palabras que plantee la contradicción central de forma ofensiva y citable (el "gancho" del ataque). "evidencias" debe tener 3-5 elementos, cada uno con formato "Evidencia (Fuente, fecha aproximada): hecho concreto con cifra/nombre" — igual de denso que en "tensiones.ranking[].evidencia". "fraseLista" es obligatoria en TODOS los vectores: una frase corta lista para usar en debate/spot, entre comillas.\n- "redDePoder.alertas[].categoria" y "redDePoder.tabla[].categoria" deben usar EXACTAMENTE una de: "Aliado", "Deuda Política", "Tensión Interna", "Vulnerabilidad de Red" (en alertas) o "Aliado"/"Deuda Política"/"Tensión Interna"/"Riesgo" (en tabla) — distribuye las 6+ filas de la tabla y las alertas entre las 4 categorías, no las concentres todas en una sola. "redDePoder.tabla[].riesgoOportunidad" debe ser una cláusula específica y accionable (qué gana o arriesga el actor por este vínculo), nunca una palabra suelta como "riesgo alto".\n- "perfil.rows": cubre como mínimo estos datos si existen en las fuentes (adapta etiqueta si aplica): Nacimiento, Formación académica, Posgrado/especialización, Trayectoria partidista, Padrino o mentor político, Deuda política (a quién le debe el cargo), Aspiración electoral, Patrimonio/declaración si es pública — cada "value" debe ser un dato concreto, no "Sin datos" salvo que realmente no exista evidencia.`
-    : skill === 'sesgo'
+        ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Opositor):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico, igual que en un reporte real): "perfil.ierPorCargo" debe tener una entrada por CADA etapa relevante de "perfil.cronologia" (mismo texto en "cargo" que en el "titulo" de esa etapa y mismo "periodo"), para que la gráfica y la tabla "IER por Cargo" reflejen exactamente los mismos eventos que se leen en la línea de tiempo — nunca uses cargos que no aparezcan en la cronología ni omitas etapas importantes de la cronología.\n- "perfil.ierPorCargo[]" (Índice de Experiencia vs. Resultado) contrasta lo prometido con lo logrado en cada cargo: "promesa" = narrativa pública del actor en ese cargo; "resultado" = resultado verificable con cifra/fecha/fuente (marca [FUENTE ÚNICA] si descansa en una sola fuente, p. ej. un autoinforme); "valor" es 0-10 donde valores bajos (0-3) marcan etapas con escándalo, controversia o gran brecha entre promesa y resultado, 4-6 las mixtas y 7-10 las limpias o exitosas. Un cargo [NO VERIFICADO] NO entra a "ierPorCargo": menciónalo en "perfil.rows".\n- "perfil.disc" (perfil psicopolítico DISC observado) es OBLIGATORIO: "dominante" y "secundario" son UNA letra (D, I, S o C) y deben ser distintas; "scores" son 4 enteros 0-100 estimados con la letra dominante como la más alta y la secundaria como la segunda; "estilo" resume el rasgo en 3-8 palabras; "evidencia" cita el material público que sustenta la lectura; "implicacionDebate" dice cómo confrontarlo y en qué terreno pierde; "egoTrigger" y "patronBajoPresion" se basan en conducta pública observada (con un ejemplo concreto); "temasEvasion" lista 2-4 temas que evita; "nota" aclara que es hipótesis de trabajo y qué material audiovisual la validaría.\n- "contradicciones.ranking" y "contradicciones.tabla" deben cubrir EXACTAMENTE las mismas contradicciones (mismo "codigo" C1, C2, C3... en ambas), en el mismo orden — nunca un ranking con más o menos elementos que filas en la tabla.\n- "vulnerabilidades[].descripcion": párrafo de 40-70 palabras que explique el MECANISMO de la vulnerabilidad (qué pasó, cuándo, quién estuvo involucrado) ANTES de los bullets, que a su vez deben aterrizar el dato duro (cifra, fecha, nombre, fuente). Nunca dejes "descripcion" vacía o como una sola frase genérica.\n- "vectoresAtaque[].argumento": párrafo de 40-80 palabras que plantee la contradicción central de forma ofensiva y citable (el "gancho" del ataque). "evidencias" debe tener 3-5 elementos, cada uno con formato "Evidencia (Fuente, fecha aproximada): hecho concreto con cifra/nombre" — igual de denso que en "tensiones.ranking[].evidencia". "fraseLista" es obligatoria en TODOS los vectores: una frase corta lista para usar en debate/spot, entre comillas.\n- "redDePoder.alertas[].categoria" debe ser EXACTAMENTE una de: "Aliado", "Deuda Política", "Tensión Interna" o "Vulnerabilidad de Red"; "redDePoder.tabla[].categoria" EXACTAMENTE una de: "Aliado", "Deuda Política", "Tensión Interna" o "Riesgo". Distribuye alertas y filas de la tabla entre las 4 categorías, no las concentres en una sola.\n- "redDePoder.tabla[].relevancia" es EXACTAMENTE "Alta", "Media" o "Baja" (qué tanto pesa ese vínculo en la contienda); "compromete" responde si el vínculo compromete al actor ("Sí", "No" o "Parcialmente" + razón breve con hecho); "riesgoOportunidad" debe ser una cláusula específica y accionable (qué gana o arriesga el actor por este vínculo), nunca una palabra suelta como "riesgo alto".\n- "redDePoder.radar": EXACTAMENTE 6 números 0-10, en este orden fijo: Trayectoria, Consistencia Ética, Fortaleza Territorial, Control Narrativo, Vulnerabilidad Reputacional, Riesgo de Fractura Interna.\n- "perfil.rows": cubre como mínimo estos datos si existen en las fuentes (adapta etiqueta si aplica): Nacimiento, Formación académica, Posgrado/especialización, Trayectoria partidista, Padrino o mentor político, Deuda política (a quién le debe el cargo), Aspiración electoral, Patrimonio/declaración si es pública — cada "value" debe ser un dato concreto, no "Sin datos" salvo que realmente no exista evidencia.` : skill === 'sesgo'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Sesgo):\n- CONSISTENCIA NUMÉRICA (crítico): "metricas.sesgosCriticos.valor" debe ser EXACTAMENTE el número de elementos de "ranking" con score 81-100, y "metricas.sesgosAltos.valor" el número con score 61-80 — cuenta el array real, nunca un número aproximado o inventado.\n- "ranking[].categoria" usa EXACTAMENTE uno de los números romanos "I" a "VIII" del catálogo de referencia dado en las reglas adicionales; distribúyelos, no concentres todo en 1-2 categorías.\n- "ranking[].descripcion" siempre ancla el sesgo en un hecho/evidencia concreto de las fuentes (fecha, cifra, medio, actor), no una definición de libro de texto del sesgo — ej. "22 meses de conflicto armado saturan el frame emocional del electorado (cobertura CNN/Infobae, ago-sep 2026)", nunca solo "La gente reacciona más a lo negativo".\n- "segmentos[].perfil" debe cubrir el espectro completo del electorado del territorio evaluado (mínimo: base dura del partido en el poder, base blanda/decepcionada, persuadible/indeciso, abstencionista/fatigado) — nunca dupliques el mismo perfil dos veces. "color" debe ser EXACTAMENTE uno de "verde", "azul", "ambar", "gris".\n- "ventanasPersuasion[].segmento" debe ser un público específico y territorializado (ej. "Comerciantes de Culiacán", no "Ciudadanía en general"), y "recomendacion" una acción/mensaje concreto y accionable, nunca un consejo genérico tipo "comunicar mejor".\n- "arquitecturaMensajes[].etiqueta" debe ser EXACTAMENTE una de "Diferenciación", "Posicionamiento", "Lanzamiento", "Contención", "Movilización" — cubre al menos 3 etiquetas distintas entre los elementos, no repitas la misma etiqueta en todos.\n- "metricas.sistemaDominante.valor" debe ser EXACTAMENTE "Sistema 1" (procesamiento emocional/reactivo, típico cuando predominan sesgos de negatividad/disponibilidad/pérdida) o "Sistema 2" (procesamiento deliberativo, típico cuando predominan sesgos de confirmación/consistencia con baja intensidad emocional) — decide según qué categorías dominan el ranking.`
     : skill === 'tensiones'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico): "trayectoria" debe tener EXACTAMENTE las mismas tensiones que "ranking" (mismos "nombre", mismo orden), y "riesgos" también debe cubrir esas mismas tensiones en el mismo orden — un analista que lea las 3 pestañas debe reconocer que hablan de las mismas 8-10 tensiones, no de conjuntos distintos. El último elemento de "trayectoria[].valores" debe ser IGUAL al "score" de esa misma tensión en "ranking", y también igual a "trayectoria[].ta". "trayectoriaLabels" y cada "trayectoria[].valores" deben tener la MISMA longitud.\n- "ranking[].lecturaEstrategica" es un campo adicional y DISTINTO de "evidencia": mientras "evidencia" lista hechos verificables, "lecturaEstrategica" es la interpretación — conecta esta tensión con otras del ranking o con el contexto regional. Obligatorio en TODAS las tensiones del ranking, no solo en la primera.\n- "emociones[].tendencia" (flecha ↑/↓/— + palabra corta) y "emociones[].tendenciaDesc" (una línea con el hecho que explica esa evolución) son obligatorios en TODAS las emociones.\n- "riesgos[].accion" (qué hacer) y "riesgos[].consecuencia" (qué pasa si no se hace) son campos distintos y ambos obligatorios.\n- "narrativaMadreSintesis" (síntesis general de TODO el ranking) y "cartografiaSocioafectiva.narrativaMadre" (síntesis por segmento social) deben ser textos DIFERENTES entre sí.\n- "narrativas[].potencial" es un número 0-100, adicional al texto de "narrativas[].politica".\n- "aprobacion.cortes" normalmente trae 1 solo dato real verificado — nunca inventes puntos intermedios interpolados.\n- "ranking[].nivel" tiene SOLO 4 valores posibles y se asigna ÚNICAMENTE por el "score" de esa misma tensión, sin excepción: "Crítico" si score ≥80, "Alto" si score 65-79, "Relevante" si score 50-64, "Emergente" si score <50. Nunca uses "Medio" ni "Bajo" ni ningún otro texto — y nunca asignes "Crítico" a un score menor a 80 ni "Emergente" a uno de 50 o más.\n- "ranking[].emocion" formato EXACTO: "EmociónPrimaria + EmociónSecundaria · X/5" (ej. "Hartazgo + Desprotección · 4/5"), nunca solo una palabra suelta.\n- "ranking[].evidencia" es un párrafo (no una frase) que encadena 2-3 datos verificables (cifras, fechas, colonias) cada uno rematado con su fuente entre paréntesis, siguiendo este patrón: "Dato 1 con cifra y fecha (Fuente, ICF X.X) - Dato 2 (Fuente, ICF X.X)". Nunca lo dejes como una oración vaga sin cifras ni fuente.\n- "emociones[].descripcion" siempre debe indicar si la emoción es estructural/coyuntural y su tendencia (sostenida/en descenso/nueva), no solo repetir el nombre de la emoción.\n- "territorios[].color" debe ser EXACTAMENTE "Rojo", "Naranja" o "Amarillo" (no otros valores ni colores hex aquí).\n- "riesgos[].tipoSenal" debe ser EXACTAMENTE uno de: "Amplificada legítima", "Orgánica", "Inducida", "Aislada". "riesgos[].probEscalar" debe ser EXACTAMENTE "Alta", "Media" o "Baja".\n- "trayectoria[].delta" es un STRING con signo, ej. "+7" o "-3" (último valor menos primer valor de "valores"), nunca un número sin signo ni una palabra.\n- "trayectoria[].velocidad" tiene SOLO 3 valores posibles, asignados por la magnitud de "delta" (en valor absoluto): "Acelerada" si el cambio es ≥25 puntos, "Moderada" si es de 11 a 24 puntos, "Gradual" si es de 10 puntos o menos. PROHIBIDO usar "Creciendo", "Estable", "Bajando" u otro texto, y PROHIBIDO repetir el mismo valor de "velocidad" en todas las filas si los "delta" son distintos entre sí — cada fila refleja SU PROPIA magnitud de cambio.\n- "alertas[].rows": cada alerta necesita mínimo 8 filas cubriendo Territorio, Emoción, Actor expuesto, Qué ocurrió (párrafo con fecha, incorporando reacciones reales de medios/redes si las fuentes las traen), Narrativa activa, Riesgo, Qué puede pasar, Acción inmediata — usa esas etiquetas o muy similares, en ese orden. NINGÚN valor de estas filas puede ser una palabra o frase corta genérica (ej. "Culiacán", "Gobierno del Estado", "Miedo (5/5)"): cada valor debe ser una CLÁUSULA COMPLETA con contexto propio — ej. en vez de "Culiacán" escribe "Culiacán y su zona metropolitana, epicentro de los enfrentamientos de agosto"; en vez de "Gobierno del Estado" escribe "Gobierno del Estado de Sinaloa, por la Secretaría de Seguridad Pública estatal"; "Riesgo" siempre lleva nivel + por qué ("Alto — la ausencia de control territorial puede derivar en..."); "Qué puede pasar" y "Acción inmediata" nunca van en una sola línea genérica, sino con un escenario o acción específica y verificable.\n- "cartografiaSocioafectiva" es un módulo COMPLEMENTARIO a tensiones (no lo dupliques): mientras "ranking"/"narrativas"/"territorios" leen el conflicto institucional, "cartografiaSocioafectiva" lee la vivencia emocional por SEGMENTO social. "iasPorZona[].ias" es 0-100 (Índice de Activación Socioafectiva), nunca copies aquí los mismos números de "riesgos[].srr". "segmentacion[].emocionDominante" usa formato corto "EmociónA + EmociónB" (sin el "· X/5" que sí llevan las emociones de "ranking"). "preguntas" debe ser un array de EXACTAMENTE 9 objetos {pregunta, respuesta}, ni 8 ni 10.\n- "iasPorZona[].color" debe ser coherente con "ias": rojo (#C53030 o similar) si ias≥75, naranja (#C05621) si 55-74, ámbar (#B7791F) si <55 — y cada "lectura" debe nombrar el mecanismo propio de esa zona, nunca una frase intercambiable con otra. "territorios[].color" (Rojo/Naranja/Amarillo) se asigna por nivel de impacto real: "Rojo" = hecho violento, pérdida de vidas o tensión con score≥75 en "ranking"; "Naranja" = tensión activa con score 55-74 o riesgo institucional/económico sostenido; "Amarillo" = tensión latente o score<55 sin escalamiento agudo todavía.`
@@ -1311,20 +1227,21 @@ REQUISITOS MÍNIMOS — cartografiaSocioafectiva (pestañas "Radiografía y dolo
 - narrativas (dentro de cartografiaSocioafectiva): 6-8 narrativas propias de esta cartografía, mismo nivel de detalle que las narrativas generales de tensiones. "potencial" debe ser un párrafo (no una etiqueta) de 25-45 palabras describiendo específicamente su alcance de propagación (si ya circula, en qué círculo, con qué velocidad) y, cuando las fuentes lo permitan, mencionar un comentario o reacción real de medios/redes sociales que la ejemplifique; "fuente" siempre presente (medio + fecha aproximada).
 - preguntas: EXACTAMENTE 9 pares pregunta/respuesta — diagnóstico ejecutivo completo (qué pasa, por qué, quién gana/pierde emocionalmente, qué hacer, qué NO hacer, ventana de tiempo, riesgo si no se actúa, activo desaprovechado, recomendación final). Cada "respuesta" debe ser un párrafo ejecutivo de 80-130 palabras (nunca 2-4 líneas cortas), con al menos un dato o hecho concreto del territorio que la sustente.`,
 
-  opositor: `
+    opositor: `
 REQUISITOS MÍNIMOS DE CANTIDAD (OPOSITOR) — mínimo 6, ideal hasta 10, en: vulnerabilidades, contradicciones.ranking, contradicciones.tabla, vectoresAtaque, redDePoder.tabla. Nunca entregues menos de 6 en ninguna de estas.
 
 - vulnerabilidades: 6-10, cada una con "descripcion" (párrafo de mecanismo, ver instrucciones de estructura) + mínimo 3 bullets con dato duro (cifra/fecha/nombre/fuente) cada uno. Distribuye niveles de forma realista (no todas "CRÍTICO").
 - fortalezas: mínimo 4, cada "texto" con al menos un dato concreto (cifra, proyecto, resultado medible), no un elogio genérico.
 - perfil.rows: mínimo 8 filas (ver categorías sugeridas en instrucciones de estructura).
 - perfil.cronologia: mínimo 6 eventos cronológicos relevantes, cubriendo toda la trayectoria pública del actor (no solo el cargo actual).
-- perfil.ierPorCargo: EXACTAMENTE una entrada por cada etapa de perfil.cronologia que tenga un cargo evaluable (ver regla de consistencia en instrucciones de estructura) — mínimo 6.
+- perfil.ierPorCargo: EXACTAMENTE una entrada por cada etapa de perfil.cronologia que tenga un cargo evaluable y verificado (ver regla de consistencia en instrucciones de estructura) — mínimo 4 y hasta 8; cada una con "periodo", "promesa" (15-40 palabras) y "resultado" (20-60 palabras con cifra/fecha/fuente).
+- perfil.disc: objeto COMPLETO, sin campos vacíos: dominante, secundario, estilo, confianza, scores (D/I/S/C), evidencia (30-60 palabras), implicacionDebate (30-60 palabras), egoTrigger (20-40 palabras), patronBajoPresion (20-40 palabras), temasEvasion (2-4 temas) y nota (20-40 palabras).
 - contradicciones.ranking: mínimo 6, mismos códigos que contradicciones.tabla. contradicciones.destacados: mínimo 3, cada "texto" de 40-70 palabras explicando por qué es un hallazgo único (no repetir el título). contradicciones.tabla: mínimo 6 filas, "declaracion" y "realidad" ambas con cifra/fecha/fuente cuando exista evidencia.
 - vectoresAtaque: mínimo 6, cada uno con "argumento" (40-80 palabras), mínimo 3 "evidencias" densas y "fraseLista" obligatoria.
-- redDePoder.alertas: mínimo 4, repartidas entre las 4 categorías (Aliado / Deuda Política / Tensión Interna / Vulnerabilidad de Red), cada una con mínimo 3 bullets con dato concreto.
-- redDePoder.tabla: mínimo 6 actores vinculados, repartidos entre las categorías Aliado/Deuda Política/Tensión Interna/Riesgo, "riesgoOportunidad" siempre como cláusula específica y accionable.
+- redDePoder.alertas: mínimo 4, repartidas entre las 4 categorías (Aliado / Deuda Política / Tensión Interna / Vulnerabilidad de Red) con al menos una por categoría, cada una con mínimo 3 bullets con dato concreto.
+- redDePoder.tabla: mínimo 6 actores vinculados, repartidos entre las categorías Aliado/Deuda Política/Tensión Interna/Riesgo (al menos uno por categoría), cada fila con "relevancia" y "compromete" llenos y "riesgoOportunidad" siempre como cláusula específica y accionable.
 - resumenEjecutivo: 80-140 palabras, mencionando explícitamente el hallazgo más grave y el activo político más defendible del actor.`,
-
+  
   sesgo: `
 REQUISITOS MÍNIMOS DE CANTIDAD (SESGO) — no entregues menos de esto:
 - ranking: mínimo 8, ideal hasta 14, cubriendo al menos 5 de las 8 categorías (I-VIII) del catálogo de referencia. Scores variados y realistas (no todos en el mismo rango).
@@ -1333,27 +1250,6 @@ REQUISITOS MÍNIMOS DE CANTIDAD (SESGO) — no entregues menos de esto:
 - arquitecturaMensajes: mínimo 4, cubriendo al menos 3 etiquetas distintas, cada "texto" de 25-50 palabras con canal/táctica concreta.
 - metricas: los 4 indicadores (sesgosCriticos, sesgosAltos, sri, sistemaDominante) siempre con "detalle" lleno (nunca vacío) y consistentes con el "ranking" (ver instrucciones de estructura).
 - resumenEjecutivo: 80-140 palabras, mencionando el sesgo más crítico, el segmento más persuadible y el riesgo cognitivo (SRI) para el actor/partido en el poder.`,
-
-  socioafectiva: `
-REQUISITOS MÍNIMOS DE CANTIDAD (SOCIOAFECTIVA) — no entregues menos de esto:
-- issues: mínimo 6, cada uno con "frase" (cita ciudadana textual) y "emocion" que activa.
-- radiografia: mínimo 6 filas de datos duros del territorio (población afectada, cifras económicas/de seguridad, etc.).
-- hallazgos: mínimo 5, cada "lectura" de 20-40 palabras interpretando el hallazgo.
-- emociones: mínimo 6, ideal hasta 9, cubriendo al menos 4 colores/categorías distintas (ver instrucciones de estructura). "detonante" siempre con hecho concreto.
-- sintesisEmocional: los 8 campos siempre llenos, nunca vacíos, y coherentes con el array "emociones".
-- dolores: mínimo 6, cada uno con "frase" (cita textual) y mínimo 2 "tags".
-- simbolos: mínimo 6, cada "usoEstrategico" de 15-30 palabras.
-- zonas: mínimo 6, ordenadas de mayor a menor "tension".
-- enemigos: mínimo 4, cada "neutralizacion" con acción concreta.
-- segmentos: mínimo 6, cubriendo el espectro completo del electorado/población (base afín, base crítica, persuadible, afectados directos, diáspora/migrantes si aplica, abstencionista/fatigado).
-- actores: mínimo 6, cada "potencial" de 20-40 palabras explicando por qué.
-- narrativas: mínimo 5, cubriendo al menos oficial/gubernamental, crítica/opositora y una tercera (social/ciudadana, mediática, etc.).
-- narrativaMadre: "mensajesFuerza" mínimo 5 frases citables.
-- riesgos: mínimo 6, cada "recomendacion" concreta y accionable.
-- oportunidades: mínimo 4.
-- recomendaciones: mínimo 6, cubriendo al menos 3 "dimension" distintas.
-- preguntas9: EXACTAMENTE 9 pares pregunta/respuesta, cada respuesta de 40-80 palabras.
-- conclusionEjecutiva: 60-100 palabras, tono directo, cerrando el diagnóstico con la recomendación más urgente.`,
 
   comparativo: `
 REQUISITOS MÍNIMOS DE CANTIDAD (COMPARATIVO) — no entregues menos de esto:
@@ -1373,22 +1269,6 @@ REQUISITOS MÍNIMOS DE CANTIDAD (COMPARATIVO) — no entregues menos de esto:
 - territorialTabla: mínimo 5 regiones/municipios.
 - resumenKpis: mínimo 100 palabras comparando explícitamente a ambos actores.`,
 
-  semiotica: `
-REQUISITOS MÍNIMOS DE CANTIDAD (SEMIÓTICA) — no entregues menos de esto:
-- signos: mínimo 6 categorías, cada una con 1-2 "items" (mínimo 8 items en total).
-- poblacion: mínimo 3 elementos, mezclando estado "dominante" y "emergente".
-- significacion: mínimo 5 temas, con las tres capas (manifiesto/latente/inconsciente) siempre diferenciadas entre sí.
-- narrativas: mínimo 6, cubriendo al menos 4 tipos distintos de los 6 disponibles.
-- frameDominante.bullets: mínimo 2. fundacionesMorales.bullets: mínimo 3.
-- miedos, deseos, necesidades: EXACTAMENTE 10 elementos cada lista.
-- simbolosPoder: mínimo 5.
-- mapaMemetico: EXACTAMENTE 5 (uno por tipo: admira/ridiculiza/castiga/rechaza/legitima).
-- cosmovision: EXACTAMENTE 5 conceptos.
-- arquetipos: EXACTAMENTE 4 (uno por rol: Dominante/Secundario/Emergente/Rechazado).
-- tensiones: mínimo 5, ordenadas de mayor a menor intensidad.
-- matrizEstrategica: EXACTAMENTE 2 filas completas en las 8 columnas.
-- irs.actores: mínimo 3 aspirantes/actores, con las 3 capas de puntaje siempre llenas.
-- codigoSimbolico: 100-160 palabras. irs.nota2: 40-80 palabras.`,
 };
 
 function resumirFuentes(bloque) {
@@ -1421,7 +1301,13 @@ async function callOpenRouter({ system, user }, apiKey) {
       response_format: { type: 'json_object' },
     }),
   });
-
+  // Solo skills activas (semiotica y socioafectiva ya no existen): evita gastar
+  // créditos de Apify/OpenRouter si un frontend viejo manda una skill eliminada.
+  const SKILLS_VALIDAS = ['radar', 'emociones', 'tensiones', 'opositor', 'comparativo', 'sesgo'];
+  if (!SKILLS_VALIDAS.includes(skill)) {
+    return res.status(400).json({ error: `Skill no soportada: "${skill}".` });
+  }
+  
   if (!r.ok) {
     const errText = await r.text().catch(() => '');
     throw new Error(`OpenRouter error ${r.status}: ${errText.slice(0, 300)}`);
