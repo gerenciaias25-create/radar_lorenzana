@@ -132,7 +132,36 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
 
     // 2. Estructuración con OpenRouter
     const schema = SCHEMAS[skill] || SCHEMAS.radar;
-    const prompt = buildPrompt({ skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, datosActor1, datosActor2, schema });
+    const prompt = buildPrompt({
+  skill,
+  actorName,
+  actor2Name,
+  actoresNombres: listaActores,
+  datosPorActor,
+  mes,
+  anio,
+  fechaInicio,
+  fechaFin,
+  datosActor1,
+  datosActor2,
+  schema
+});
+    const periodoAnalisis = fechaInicio && fechaFin
+    ? `Del ${fechaInicio} al ${fechaFin}`
+    : `${mes} ${anio}`;
+
+  const reglasTemporales = `
+PERIODO DE ANÁLISIS: ${periodoAnalisis}
+
+REGLAS TEMPORALES OBLIGATORIAS:
+- Analiza únicamente los registros incluidos en los datos proporcionados.
+- No presentes acontecimientos fuera del intervalo como hallazgos del periodo.
+- Diferencia la fecha de publicación de la fecha del acontecimiento.
+- Si no existen registros suficientes, indica que la evidencia es insuficiente.
+- No inventes publicaciones, fechas, cifras ni fuentes.
+- Las comparaciones históricas deben identificarse como antecedentes,
+  no como resultados del intervalo seleccionado.
+`;
     const structured = await callOpenRouter(prompt, OPENROUTER_KEY);
 
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
@@ -710,24 +739,6 @@ function tag(items, fuente) {
   return (items || []).map(i => ({ ...i, __fuente: fuente }));
 }
 
-// Construye la pestaña "Fuentes" (solo usada por "socioafectiva") a partir de
-// metadatos REALES del scraping — nunca del modelo — para evitar que
-// OpenRouter invente títulos de artículos o URLs que parezcan reales pero
-// sean falsas. Deduplica por URL y descarta cualquier item sin URL (mejor
-// pocas fuentes reales que una lista larga con enlaces inventados).
-function construirFuentesReales(bloque, max = 24) {
-  if (!bloque || !bloque.items) return [];
-  const vistos = new Set();
-  const out = [];
-  for (const item of bloque.items) {
-    if (!item.url || vistos.has(item.url)) continue;
-    vistos.add(item.url);
-    const titulo = (item.texto || '').replace(/\s+/g, ' ').trim().slice(0, 140) || `Publicación en ${item.fuente}`;
-    out.push({ titulo, url: item.url, fuente: item.fuente });
-    if (out.length >= max) break;
-  }
-  return out;
-}
 
 // =========================================================
 // SCHEMAS LIMPIOS (coinciden 1:1 con las plantillas HTML)
@@ -1131,7 +1142,7 @@ ${schema}
 - PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
 - Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
 - ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
-${requisitosCantidad}${guardarropaEmociones}${guardarropaOpositor}${guardarropaSesgo}${guardarropaSocioafectiva}${guardarropaComparativo}${guardarropaSemiotica}${instruccionesEstructura}`;
+${requisitosCantidad}${guardarropaEmociones}${guardarropaOpositor}${guardarropaSesgo}${guardarropaComparativo}${instruccionesEstructura}`;
 
   const user = `Periodo evaluado: ${mes} ${anio}
 Skill solicitada: ${skill}
