@@ -1640,7 +1640,7 @@ function resumirFuentes(bloque) {
   }
   return bloque.items
     .slice(0, 90)
-    .map(i => `[${i.fuente}${i.fecha ? ' · ' + String(i.fecha).slice(0, 10) : ''}] ${i.texto.slice(0, 280)}`)
+    .map(i => `[${i.fuente}${i.fecha ? ' · ' + String(i.fecha).slice(0, 10) : ''}] ${Array.from(String(i.texto)).slice(0, 280).join('')}`)
     .join('\n');
 }
 
@@ -1676,8 +1676,23 @@ function repararJSONCortado(txt) {
   return s.slice(ini, ultimoCorte) + pilaEnCorte.slice().reverse().join('');
 }
 
+// Limpia el texto que se manda al modelo. Los textos de redes (X, TikTok,
+// Instagram...) traen emojis; al recortarlos con .slice() un emoji puede
+// quedar partido a la mitad ("surrogate" suelto). JSON.stringify lo escribe
+// como \udXXX y el proveedor rechaza el cuerpo con:
+//   400 "Invalid body: failed to parse JSON value".
+// También se quitan caracteres de control invisibles.
+function limpiarTextoParaModelo(t) {
+  return String(t || '')
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '$1')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F￾￿]/g, ' ');
+}
+
 async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
   const model = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  system = limpiarTextoParaModelo(system);
+  user = limpiarTextoParaModelo(user);
   let ultimoError;
 
   for (let intento = 1; intento <= intentos; intento++) {
