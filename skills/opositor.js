@@ -52,6 +52,9 @@ const NIVEL = {
 const nivelDe = (n) => NIVEL[String(n || '').toUpperCase()] || NIVEL.MEDIA;
 const vacio = (cols, msg) => `<tr><td colspan="${cols}" class="muted">${msg || 'Sin datos para el periodo.'}</td></tr>`;
 const ivaDe = (k) => O(D.iva[k]);
+/* Respaldo: un vector o contradicción con código "A-…"/"B-…" pertenece a ese adversario. */
+const porCodigo = (x) => { const c = String(x.codigo || '').trim().toUpperCase(); if (/^A[-\s]/.test(c)) x.a = 'a'; else if (/^B[-\s]/.test(c)) x.a = 'b'; return x; };
+D.vectores.forEach(porCodigo); D.contradicciones.forEach(porCodigo);
 
 /* ---------- HEADER ---------- */
 $('op-tag-terr').textContent = D.meta.territorio || 'Territorio';
