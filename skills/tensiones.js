@@ -237,19 +237,42 @@ function drawCharts(tab){
       return `
       <tr>
         <td><strong>${tr.nombre}</strong></td>
-        ${valores.map((v,i)=>`<td${i===valores.length-1?' style="font-weight:700"':''}>${v}</td>`).join('')}
+        ${valores.map((v,i)=>`<td${i===valores.length-1?' style="font-weight:700"':''}>${(v===null||v===undefined||v==='')?'—':v}</td>`).join('')}
         <td>${delta}</td>
         <td>${tr.velocidad}</td>
       </tr>`;
     }).join('') || '<tr><td colspan="8">Sin datos de trayectoria.</td></tr>';
     if(DATA.trayectoria.length > 0){
+      // Mismo estilo que el dashboard de referencia: una línea por tensión con
+      // color propio (alternando continua/punteada), puntos visibles, eje 0-100
+      // y leyenda abajo. Los cortes sin dato (null) se saltan sin cortar la línea.
+      const PAL = ['#E24B4A','#F28B82','#D97706','#2B9CB0','#C05621','#2F855A','#7C3AED','#B7791F','#2B6CB0','#9CA3AF'];
+      const DASH = [[], [4,4], [], [], [6,4], [2,3], [], [4,4], [], [6,4]];
       mk('tc-traj', {
         type:'line',
         data: {
           labels: labels,
-          datasets: DATA.trayectoria.map(tr=>({ label: tr.nombre, data: (tr.valores && tr.valores.length) ? tr.valores : [tr.t3, tr.t2, tr.t1, tr.ta], fill:false, tension:0.3 }))
+          datasets: DATA.trayectoria.map((tr,i)=>({
+            label: tr.nombre,
+            data: ((tr.valores && tr.valores.length) ? tr.valores : [tr.t3, tr.t2, tr.t1, tr.ta]).map(v => (v===null||v===undefined||v==='') ? null : Number(v)),
+            borderColor: PAL[i % PAL.length], backgroundColor: PAL[i % PAL.length],
+            borderDash: DASH[i % DASH.length], borderWidth: i === 0 ? 2.5 : 2,
+            pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: '#FFFFFF', pointBorderWidth: 2,
+            fill: false, tension: 0.35, spanGaps: true
+          }))
         },
-        options: { plugins:{legend:{position:'bottom'}}, responsive:true }
+        options: {
+          responsive: true,
+          interaction: { mode: 'nearest', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10.5 } } },
+            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}` } }
+          },
+          scales: {
+            y: { min: 0, max: 100, ticks: { stepSize: 20 }, grid: { color: 'rgba(0,0,0,.06)' } },
+            x: { grid: { color: 'rgba(0,0,0,.04)' } }
+          }
+        }
       });
     }
     const cortes = (DATA.aprobacion && DATA.aprobacion.cortes) || [];
