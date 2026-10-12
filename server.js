@@ -552,13 +552,65 @@ function normalizeResponse(data, skill, ctx = {}) {
     data.digital = arr(data.digital).map(d => ({ indicador: txt(d.indicador), a: txt(d.a), b: txt(d.b) }));
     data.digitalNota = txt(data.digitalNota);
     const LEGAL = (v) => { const x = String(v || '').trim().toLowerCase().charAt(0); return ['g', 'y', 'r'].includes(x) ? x : (x === 'v' ? 'g' : x === 'a' ? 'y' : 'y'); };
-    data.vectores = arr(data.vectores).map((v, i) => ({
-      a: claveA(v.a), codigo: txt(v.codigo) || `V${i + 1}`, tipo: txt(v.tipo), argumento: txt(v.argumento), evidencia: txt(v.evidencia),
-      audiencia: txt(v.audiencia), canal: txt(v.canal), rebote: txt(v.rebote), legal: LEGAL(v.legal),
-      calumnia: txt(v.calumnia), vpg: txt(v.vpg), datos: txt(v.datos), vidaPrivada: txt(v.vidaPrivada), ajuste: txt(v.ajuste),
-    }));
+    // --- Atribución a/b ---
+    // El código del vector/contradicción manda: "A-…" es del Adversario A y
+    // "B-…" del B (el modelo a veces marca "all" en los descartados).
+    const porCodigo = (codigo, actual) => {
+      const c = String(codigo || '').trim().toUpperCase();
+      if (/^A[-\s]/.test(c)) return 'a';
+      if (/^B[-\s]/.test(c)) return 'b';
+      return actual;
+    };
+    // En Defensa no hay código: se infiere quién lanzaría el ataque por las
+    // menciones a cada adversario (nombre, apellido o código de vector A-V/B-V).
+    const tokensDe = (nombre) => String(nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .split(/\s+/).filter(w => w.length > 3);
+    // Además del nombre, se usan partido y cargo actual de cada adversario
+    // (ej. "Morena", "Secretario del Ayuntamiento") como pistas.
+    const GENERICAS = ['municipal', 'presidencia', 'presidente', 'presidenta', 'candidato', 'candidata', 'gobierno', 'distrito', 'estatal', 'federal', 'actual'];
+    const pistasDe = (k, nombre) => {
+      const adv = (data.adversarios || []).find(x => x.clave === k) || {};
+      const cargo = tokensDe(adv.cargoActual).filter(w => w.length > 6 && !GENERICAS.includes(w));
+      const partido = tokensDe(adv.partido).concat(String(adv.partido || '').toLowerCase().length <= 4 && adv.partido ? [` ${String(adv.partido).toLowerCase()} `] : []);
+      return [...new Set([...tokensDe(nombre), ...cargo, ...partido])];
+    };
+    const TOK = { a: pistasDe('a', actorName), b: pistasDe('b', actor2Name) };
+    const inferirA = (texto, actual) => {
+      if (actual === 'a' || actual === 'b') return actual;
+      const t = ' ' + String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ñ\s-]/g, ' ') + ' ';
+      const cuenta = (k) => TOK[k].reduce((n, w) => n + (t.split(w).length - 1), 0) + (t.match(new RegExp(`\\b${k}-v\\d`, 'g')) || []).length * 2;
+      const ca = cuenta('a'), cb = cuenta('b');
+      if (ca > cb) return 'a';
+      if (cb > ca) return 'b';
+      return 'all';
+    };
+    data.contradicciones.forEach(c => { c.a = porCodigo(c.codigo, c.a); });
+
+    // --- Verificación 6E: nunca dejar "N/A" o vacío; si el modelo no la
+    // explicó, se escribe la lectura estándar según el semáforo legal. ---
+    const esVacio = (v) => /^\s*(n\/?a|na|no aplica|—|-|sin datos?|ninguno)?\s*\.?\s*$/i.test(String(v || ''));
+    const FALLBACK_6E = {
+      calumnia: { g: 'Sin riesgo: el argumento se apoya en hechos públicos verificables y citables.', y: 'Riesgo moderado: formular como pregunta, citar la fuente y no atribuir responsabilidad personal no acreditada.', r: 'Riesgo alto: no hay evidencia verificable; difundirlo podría constituir calumnia electoral.' },
+      vpg: { g: 'Sin riesgo de VPG: el argumento se basa en conducta pública, no en género, familia ni vida privada.', y: 'Riesgo bajo: cuidar tono y no aludir a rol de género, familia o apariencia.', r: 'Revisar con jurídico: el encuadre podría leerse como ataque basado en género o en vínculos personales.' },
+      datos: { g: 'Sin riesgo: fuente pública (prensa, actas o portales oficiales).', y: 'Riesgo moderado: verificar la fuente original y la fecha antes de usar.', r: 'Sin fuente verificable o basada en rumor: no utilizar ningún dato.' },
+      vidaPrivada: { g: 'Interés público claro: conducta en el ejercicio de un cargo o aspiración pública.', y: 'Interés público, pero evitar aspectos personales o familiares.', r: 'Sin interés público acreditado: zona de vida privada o rumor.' },
+      ajuste: { g: '', y: 'Usar con matiz: formular como pregunta de transparencia, citar la fuente y no afirmar responsabilidad personal.', r: 'Descartado: no usar. Si aparece en redes de terceros, deslindarse públicamente.' },
+    };
+    data.vectores = arr(data.vectores).map((v, i) => {
+      const legal = LEGAL(v.legal);
+      const codigo = txt(v.codigo) || `V${i + 1}`;
+      const out = {
+        a: porCodigo(codigo, inferirA([v.argumento, v.evidencia].join(' '), claveA(v.a))), codigo, tipo: txt(v.tipo), argumento: txt(v.argumento), evidencia: txt(v.evidencia),
+        audiencia: txt(v.audiencia), canal: txt(v.canal), rebote: txt(v.rebote), legal,
+      };
+      ['calumnia', 'vpg', 'datos', 'vidaPrivada', 'ajuste'].forEach(k => {
+        out[k] = esVacio(v[k]) ? FALLBACK_6E[k][legal] : txt(v[k]);
+      });
+      return out;
+    });
     data.defensa = arr(data.defensa).map(d => ({
-      a: claveA(d.a), titulo: txt(d.titulo), evidencia: txt(d.evidencia), probabilidad: txt(d.probabilidad) || 'Media',
+      a: inferirA([d.titulo, d.evidencia, d.bloqueo, d.reencuadre, d.contraataque, d.pendiente].join(' '), claveA(d.a)),
+      titulo: txt(d.titulo), evidencia: txt(d.evidencia), probabilidad: txt(d.probabilidad) || 'Media',
       bloqueo: txt(d.bloqueo), reencuadre: txt(d.reencuadre), contraataque: txt(d.contraataque), pendiente: txt(d.pendiente),
     }));
     data.comparativo = arr(data.comparativo).map(c => ({ dimension: txt(c.dimension), cliente: txt(c.cliente), a: txt(c.a), b: txt(c.b), ventaja: txt(c.ventaja) }));
@@ -1276,7 +1328,10 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
 - "digital": mínimo 6 indicadores con valor para a y b; si no hay métrica verificada escribe "Sin dato verificado" (no inventes seguidores). Usa "estimación RADAR" para share of voice estimado.
 - "puntajes": debilidad narrativa y vulnerabilidad digital de cada adversario en escala 0-100 (más alto = más vulnerable). Si no hay errores digitales documentados, el digital debe ser bajo (30-45).
 - "vectores": mínimo 8 en total (4+ por adversario). "legal": "g" = verde (usable), "y" = amarillo (usable con ajuste: llena "ajuste"), "r" = rojo (NO recomendado, se muestra solo como hallazgo con advertencia: llena "ajuste" con la reformulación o "Descartado de forma definitiva"). Incluye al menos 1 vector "y". Los campos de verificación 6E ("calumnia", "vpg", "datos", "vidaPrivada") siempre llenos.
+- VERIFICACIÓN 6E (OBLIGATORIA en CADA vector, también en los rojos/descartados): "calumnia", "datos" y "vidaPrivada" SIEMPRE con una explicación de 10-25 palabras del riesgo concreto (ej. "Riesgo moderado si se afirma desvío: la ASF solo emitió observación preliminar"); está PROHIBIDO responder "N/A", "—" o dejarlos vacíos. "vpg": explica el riesgo de violencia política de género; solo si el adversario es hombre escribe "N/A (adversario hombre; argumento sobre conducta pública)". "ajuste": obligatorio en amarillos y rojos con la reformulación concreta.
+- Cada vector pertenece a UN adversario: "a" debe ser "a" o "b" (nunca "all"), coherente con su código (A-… = "a", B-… = "b"), incluso los descartados (A-X / B-X).
 - "defensa": mínimo 5 ataques previsibles CONTRA el cliente ${etiquetaCliente}, con el protocolo de 3 pasos: "bloqueo" (neutraliza), "reencuadre" (cambia el marco) y "contraataque" (puede remitir a un código de vector, ej. "Vector A-V1"). "pendiente" = verificación que el cliente debe hacer antes de usar la línea.
+- "defensa[].a" indica QUÉ adversario lanzaría ese ataque contra el cliente: "a" o "b". Reparte: mínimo 2 ataques de "a" y 2 de "b". Usa "all" como máximo en 1 ataque y solo si ambos lo usarían por igual.
 - "comparativo": mínimo 8 dimensiones (Trayectoria, Propuesta central, Consistencia pública, Credibilidad en seguridad, Credibilidad en transparencia, Share of voice, Red de alianzas, Conexión territorial...) comparando cliente vs. a vs. b, y en "ventaja" quién gana esa dimensión. NO incluyas la fila IVA (se calcula aparte).
 - "indicadores9C": mínimo 5 indicadores cuantitativos de contexto con fuente y fecha reales; si falta encuesta escribe "Sin datos cuantitativos disponibles".
 - "bolsillo": EXACTAMENTE 2 tarjetas (a y b), cada una con 3 "meAtacara" (ataque → respuesta del cliente) y 3 "misAtaques" con su semáforo "legal". "noDebo" = líneas rojas (calumnia/VPG).
