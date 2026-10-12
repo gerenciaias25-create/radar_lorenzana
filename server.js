@@ -164,6 +164,19 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
         callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor2, parteOpositor: 2 }), OPENROUTER_KEY),
       ]);
       structured = { ...(p2 || {}), ...(p1 || {}) };
+    } else if (skill === 'emociones') {
+      // Emociones genera MUCHOS campos; gpt-4o-mini se salta algunos cuando la
+      // respuesta es larga (díadas, pregunta política...). Se divide en dos
+      // llamadas en paralelo y después se piden solo los campos que faltaron.
+      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
+      const [pA, pB] = await Promise.all([
+        callOpenRouter(buildPrompt({ ...base, schema: subEsquema('emociones', CAMPOS_EMOCIONES_A), parteEmociones: 'A' }), OPENROUTER_KEY),
+        callOpenRouter(buildPrompt({ ...base, schema: subEsquema('emociones', CAMPOS_EMOCIONES_B), parteEmociones: 'B' }), OPENROUTER_KEY)
+          .catch(e => { console.warn('[!] Emociones parte B falló:', e.message); return {}; }),
+      ]);
+      structured = { ...(pA || {}), ...(pB || {}) };
+      JOBS.set(jobId, { status: 'processing', progreso: 'Verificando que todas las pestañas tengan datos...' });
+      structured = await completarFaltantes('emociones', structured, base, OPENROUTER_KEY);
     } else if (skill === 'tensiones') {
       const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
       const p1 = await callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.tensiones, parteTensiones: 1 }), OPENROUTER_KEY);
@@ -199,6 +212,11 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
 
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
     const normalized = normalizeResponse(structured, skill, { actorName, actor2Name, actoresNombres: listaActores, clienteName, periodo });
+
+    // Emociones: verificación de actores contra las fuentes reales (ver
+    // verificarActoresEmociones). Evita figuras que el modelo "trae de memoria"
+    // y que no tienen relación con el territorio analizado.
+    if (skill === 'emociones') verificarActoresEmociones(normalized, { territorio: actorName, fuentes: datosActor1, actoresRef });
 
     const fuentesEncontradas = skill === 'comparativo'
       ? (datosPorActor || []).reduce((sum, d) => sum + (d?.count || 0), 0)
@@ -341,6 +359,138 @@ function construirPeriodo(params = {}) {
   p.cortesTrayectoria = cortesDeTrayectoria(p);
   p.instruccion += ` TRAYECTORIA (Tensiones): "trayectoriaLabels" debe ser EXACTAMENTE ${JSON.stringify(p.cortesTrayectoria)} (${p.cortesTrayectoria.length} cortes; los anteriores al periodo son contexto de comparación) y cada "trayectoria[].valores" debe traer EXACTAMENTE ${p.cortesTrayectoria.length} números (uno por corte, en ese orden), con el último igual al "score" del ranking.`;
   return p;
+}
+
+// =========================================================
+// VERIFICACIÓN DE ACTORES (Emociones)
+// Un actor solo se acepta si:
+//   a) lo indicó el analista en "Actores de referencia", o
+//   b) su nombre aparece en alguna fuente scrapeada que TAMBIÉN menciona el
+//      territorio/persona buscado (co-ocurrencia).
+// Si el analista dio actores de referencia, las tarjetas son exactamente esos
+// actores (en ese orden); los que el modelo agregó por su cuenta se quitan.
+// =========================================================
+const normTxt = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ñ ]/g, ' ').replace(/\s+/g, ' ').trim();
+const STOP_NOMBRE = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'san', 'santa']);
+const tokensNombre = (n) => normTxt(n).split(' ').filter(w => w.length > 2 && !STOP_NOMBRE.has(w));
+
+function nombreCoincide(nombre, texto) {
+  const tk = tokensNombre(nombre);
+  if (!tk.length) return false;
+  const t = ' ' + texto + ' ';
+  const presentes = tk.filter(w => t.includes(' ' + w + ' ')).length;
+  return tk.length === 1 ? presentes === 1 : presentes >= 2;
+}
+
+function verificarActoresEmociones(data, { territorio, fuentes, actoresRef = [] }) {
+  if (!data || !Array.isArray(data.actores)) return;
+  const textos = ((fuentes && fuentes.items) || []).map(i => normTxt(i.texto));
+  const terr = tokensNombre(territorio);
+  const mencionaTerritorio = (t) => terr.length && terr.some(w => (' ' + t + ' ').includes(' ' + w + ' '));
+  const verificado = (nombre) => textos.some(t => mencionaTerritorio(t) && nombreCoincide(nombre, t));
+  const esRef = (nombre) => actoresRef.some(r => nombreCoincide(r, normTxt(nombre)) || nombreCoincide(nombre, normTxt(r)));
+  const PAL = ['#C9980A', '#2563eb', '#9d1c3a', '#16a34a', '#7c3aed', '#0891b2'];
+
+  const modelo = data.actores.filter(a => a && a.name);
+  const verificados = modelo.filter(a => verificado(a.name));
+  const descartados = modelo.filter(a => !verificado(a.name) && !esRef(a.name)).map(a => a.name);
+  let actores = [];
+  // 1) Primero los actores de referencia del analista (con lo que el modelo escribió de cada uno).
+  actoresRef.forEach((ref, i) => {
+    const delModelo = modelo.find(a => nombreCoincide(ref, normTxt(a.name)) || nombreCoincide(a.name, normTxt(ref)));
+    actores.push(delModelo
+      ? { ...delModelo, name: ref }
+      : { name: ref, role: 'Actor de referencia indicado por el analista', rows: [['Nota', 'Sin información suficiente en las fuentes del periodo para este actor.']], borderColor: PAL[i % PAL.length] });
+  });
+  // 2) Después, los actores del modelo que SÍ aparecen en fuentes del territorio (hasta 4 tarjetas en total).
+  verificados.forEach(a => {
+    if (actores.length >= Math.max(4, actoresRef.length)) return;
+    if (!actores.some(x => nombreCoincide(x.name, normTxt(a.name)) || nombreCoincide(a.name, normTxt(x.name)))) actores.push(a);
+  });
+  if (descartados.length) console.warn('[!] Actores descartados por no aparecer en fuentes del territorio:', descartados.join(', '));
+  // 3) Si no quedó ninguno, se conservan los del modelo pero marcados, para no dejar la pestaña vacía.
+  if (!actores.length) actores = modelo.map(a => ({ ...a, role: `${a.role || ''} · [NO VERIFICADO en fuentes]`.replace(/^ · /, '') }));
+  data.actores = actores;
+
+  // Radar alineado con las tarjetas finales.
+  const ar = data.actoresRadar || {};
+  const previo = new Map((ar.labels || []).map((l, i) => [normTxt(l), (ar.data || [])[i]]));
+  data.actoresRadar = {
+    labels: actores.map(a => a.name),
+    colors: actores.map((a, i) => a.borderColor || PAL[i % PAL.length]),
+    data: actores.map(a => {
+      const fila = previo.get(normTxt(a.name)) || [...previo.entries()].find(([k]) => nombreCoincide(a.name, k))?.[1] || [];
+      return Array.from({ length: 6 }, (_, k) => Math.max(0, Math.min(100, Number(fila[k]) || 0)));
+    }),
+  };
+}
+
+// =========================================================
+// EMOCIONES EN DOS PARTES + COMPLETAR CAMPOS FALTANTES
+// =========================================================
+const CAMPOS_EMOCIONES_B = ['segIntro', 'segmentos', 'semiotica'];
+let CAMPOS_EMOCIONES_A = null; // se calcula al primer uso (todo lo demás del esquema)
+
+function subEsquema(skill, campos) {
+  const full = JSON.parse(SCHEMAS[skill]);
+  if (skill === 'emociones' && !CAMPOS_EMOCIONES_A) CAMPOS_EMOCIONES_A = Object.keys(full).filter(k => !CAMPOS_EMOCIONES_B.includes(k));
+  const lista = campos || CAMPOS_EMOCIONES_A;
+  const sub = {};
+  lista.forEach(k => { if (k in full) sub[k] = full[k]; });
+  return JSON.stringify(sub, null, 2);
+}
+
+// Reglas mínimas por campo: si no se cumplen, el campo se vuelve a pedir.
+const CHEQUEOS_FALTANTES = {
+  emociones: {
+    concept: d => !!String(d.concept || '').trim(),
+    conceptDesc: d => String(d.conceptDesc || '').trim().length > 40,
+    emotions: d => Array.isArray(d.emotions) && d.emotions.filter(e => e && Number(e.intensity) > 0).length >= 3,
+    secondary: d => Array.isArray(d.secondary) && d.secondary.length >= 2,
+    problematics: d => Array.isArray(d.problematics) && d.problematics.length >= 4,
+    fears: d => Array.isArray(d.fears) && d.fears.length >= 4,
+    prides: d => Array.isArray(d.prides) && d.prides.length >= 3,
+    quotes: d => Array.isArray(d.quotes) && d.quotes.length >= 4,
+    temasChart: d => Array.isArray(d.temasChart) && d.temasChart.length >= 3,
+    semaforo: d => Array.isArray(d.semaforo) && d.semaforo.length >= 4,
+    dyads: d => Array.isArray(d.dyads) && d.dyads.filter(x => x && x.name && x.text).length >= 3,
+    dyadInterp: d => String(d.dyadInterp || '').trim().length > 40,
+    preguntaPolitica: d => String(d.preguntaPolitica || '').trim().length > 8,
+    preguntaDesc: d => String(d.preguntaDesc || '').trim().length > 40,
+    govSemaforo: d => Array.isArray(d.govSemaforo) && d.govSemaforo.length >= 4,
+    partidos: d => Array.isArray(d.partidos) && d.partidos.length >= 3,
+    actores: d => Array.isArray(d.actores) && d.actores.filter(a => a && (a.name || a.nombre)).length >= 3,
+    segmentos: d => Array.isArray(d.segmentos) && d.segmentos.length >= 3,
+    semiotica: d => d.semiotica && Array.isArray(d.semiotica.miedos) && d.semiotica.miedos.length >= 5 && Array.isArray(d.semiotica.arquetiposRadar) && d.semiotica.arquetiposRadar.length >= 12,
+  },
+};
+// Campos que se piden juntos (si falta uno, se pide también su pareja).
+const PAREJAS_FALTANTES = { dyads: ['dyadInterp'], dyadInterp: ['dyads'], preguntaPolitica: ['preguntaDesc'], preguntaDesc: ['preguntaPolitica'], partidos: ['partidosChart'], actores: ['actoresRadar'], concept: ['conceptDesc'] };
+
+async function completarFaltantes(skill, data, base, apiKey) {
+  const chequeos = CHEQUEOS_FALTANTES[skill];
+  if (!chequeos) return data;
+  let faltan = Object.keys(chequeos).filter(k => { try { return !chequeos[k](data); } catch (_) { return true; } });
+  if (!faltan.length) return data;
+  faltan = [...new Set(faltan.flatMap(k => [k, ...(PAREJAS_FALTANTES[k] || [])]))];
+  console.warn(`[!] ${skill}: campos incompletos, se vuelven a pedir:`, faltan.join(', '));
+  const contexto = [
+    data.concept ? `Concepto central ya definido: "${data.concept}"` : '',
+    Array.isArray(data.emotions) ? `Emociones detectadas: ${data.emotions.filter(e => e && Number(e.intensity) > 0).map(e => `${e.key} (${e.intensity}/3)`).join(', ')}` : '',
+    Array.isArray(data.actores) && data.actores.length ? `Actores ya identificados: ${data.actores.map(a => a && (a.name || a.nombre)).filter(Boolean).join(', ')}` : '',
+  ].filter(Boolean).join('\n');
+  try {
+    const extra = await callOpenRouter(buildPrompt({
+      ...base, schema: subEsquema(skill, faltan), parteEmociones: 'FALTANTES',
+      contextoTensiones: `Este es un COMPLEMENTO: genera ÚNICAMENTE estos campos, completos y con la densidad pedida: ${faltan.join(', ')}.\n${contexto}`,
+    }), apiKey);
+    if (extra && typeof extra === 'object') {
+      faltan.forEach(k => { if (extra[k] !== undefined && extra[k] !== null) data[k] = extra[k]; });
+    }
+  } catch (e) {
+    console.warn(`[!] No se pudieron completar campos de ${skill}:`, e.message);
+  }
+  return data;
 }
 
 // Health Check
@@ -1486,7 +1636,7 @@ const SCHEMAS = {
 // PROMPTS
 // =========================================================
 
-function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, periodo, clienteName = '', parteOpositor = 1, parteTensiones = 1, contextoTensiones = '', actoresRef = [], datosActor1, datosActor2, schema }) {
+function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, periodo, clienteName = '', parteOpositor = 1, parteTensiones = 1, parteEmociones = '', contextoTensiones = '', actoresRef = [], datosActor1, datosActor2, schema }) {
   periodo = periodo || construirPeriodo({ mes, anio });
   let contexto;
 
@@ -1602,6 +1752,14 @@ ${contextoTensiones ? '\nCONTEXTO DE LA PARTE 1 (Tensiones ya generadas — mant
     ? txt.split('\n').filter(l => !l.includes('cartografiaSocioafectiva') && !l.includes('iasPorZona')).join('\n')
       + '\n- NO generes "cartografiaSocioafectiva" en esta respuesta: se genera en una llamada aparte. Usa todo tu espacio para las 7 pestañas de Tensiones.'
     : txt;
+  // Emociones en partes: cada llamada solo recibe las reglas de SUS campos
+  // (A = Flor/Mapa/Díadas/Identidad/Actores, B = Segmentos/Semiótica), para
+  // no gastar tokens de salida en campos que no le tocan.
+  const esLineaB = (l) => /segment|semiotica|semiótica|arquetip|miedos|deseos|necesidades|segIntro/i.test(l);
+  const filtrarEmociones = (txt) => {
+    if (skill !== 'emociones' || !parteEmociones || parteEmociones === 'FALTANTES') return txt;
+    return txt.split('\n').filter(l => !/^\s*-\s/.test(l) || (parteEmociones === 'B' ? esLineaB(l) : !esLineaB(l))).join('\n');
+  };
   const requisitosCantidad = REQUISITOS_MINIMOS[(skill === 'opositor' && parteOpositor === 2) ? 'opositor2' : (skill === 'tensiones' && parteTensiones === 2) ? 'tensionesCartografia' : skill] || '';
 
   const system = `Eres un analista de inteligencia político-electoral en México. Produce un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
@@ -1617,7 +1775,7 @@ ${schema}
 - PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
 - Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
 - ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
-${requisitosCantidad}${guardarropaEmociones}${guardarropaOpositor}${guardarropaSesgo}${guardarropaComparativo}${instruccionesTensionesP1(instruccionesEstructura)}`;
+${filtrarEmociones(requisitosCantidad)}${guardarropaEmociones}${guardarropaOpositor}${guardarropaSesgo}${guardarropaComparativo}${filtrarEmociones(instruccionesTensionesP1(instruccionesEstructura))}${skill === 'emociones' && contextoTensiones ? '\n\n' + contextoTensiones : ''}`;
 
   const bloqueActoresRef = (actoresRef && actoresRef.length)
     ? `\nACTORES POLÍTICOS DE REFERENCIA (indicados por el analista; son los actores REALES de la contienda — úsalos con estos nombres exactos en "actores", "partidos", "segmentos", "ranking" y donde aplique; NO los sustituyas por otros): ${actoresRef.join(' · ')}\n`
