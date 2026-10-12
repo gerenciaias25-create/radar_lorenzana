@@ -143,6 +143,82 @@
 
 #radar-root .hdr{position:relative;top:auto}
 #radar-root .ic.ne{border-left:3px solid var(--ne)}
+
+/* ===== Paleta clara de RADAR (misma que la versión anterior): fondo blanco, encabezado navy, tarjetas grises ===== */
+#radar-root{--navy:#1C2738;--ne:#556B82;--card:#d5d1d1;--border:rgba(0,0,0,0.1);color-scheme:light;background:#ffffff;color:#1e293b}
+#radar-root .hdr{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:none}
+#radar-root .logo{color:#fff}
+#radar-root .meta{color:#94A3B8}
+#radar-root .hero{background:var(--navy);color:#fff;margin:0 -20px;padding:22px 20px 20px;border-radius:0 0 4px 4px}
+#radar-root .hero-n{color:#fff}
+#radar-root .hero-s{color:#94A3B8}
+#radar-root .method{color:#cbd5e1;border-left-color:rgba(255,255,255,.2)}
+#radar-root .method b,#radar-root .method strong{color:#fff}
+#radar-root .hero .ev{background:rgba(255,255,255,.12);color:#cbd5e1}
+#radar-root .tn{color:#cbd5e1}
+#radar-root .tabs{border-bottom:2px solid #e2e8f0;padding-top:10px}
+#radar-root .tb{color:#64748b;font-weight:600}
+#radar-root .tb:hover{color:var(--navy)}
+#radar-root .tb.act{color:var(--navy);border-bottom-color:var(--navy);font-weight:800}
+#radar-root .tb:focus-visible,#radar-root .bb:focus-visible{outline-color:var(--navy)}
+#radar-root .stitle{color:var(--navy)}
+#radar-root .stitle::after{background:linear-gradient(90deg,#cbd5e1,transparent)}
+#radar-root .kpi,#radar-root .card,#radar-root .ic,#radar-root .nc,#radar-root .tq,#radar-root .hz{background:var(--card);color:#1e293b}
+#radar-root .mb{background:var(--card)}
+#radar-root .kl{color:#475569;font-weight:700}
+#radar-root .kpi.ac .kv{color:#007A87}#radar-root .kpi.su .kv{color:#0E7C71}#radar-root .kpi.da .kv{color:#B91C1C}#radar-root .kpi.go .kv{color:#B45309}#radar-root .kpi.bl .kv{color:var(--bl)}#radar-root .kpi.ne .kv{color:#475569}
+#radar-root .kn{color:#475569}
+#radar-root .ev{background:rgba(0,0,0,.08);color:#334155}
+#radar-root .ct{color:#0f172a}
+#radar-root .cs{color:#475569}
+#radar-root .blbl{color:var(--navy);font-weight:700}
+#radar-root .bb{border:1px solid #cbd5e1;background:#fff;color:#475569}
+#radar-root .bb:hover{border-color:var(--navy);color:var(--navy)}
+#radar-root .bb.act{background:var(--navy);border-color:var(--navy);color:#fff}
+#radar-root .ic.bl{border-left-color:var(--bl)}
+#radar-root .ic.ne{border-left:3px solid #64748b}
+#radar-root .ih{color:#0f172a}
+#radar-root .ib{color:#334155}
+#radar-root .ib strong{color:#0f172a}
+#radar-root .im{color:var(--navy);font-weight:700}
+#radar-root .nh.fav{background:rgba(46,196,182,.25);color:#0E7C71;border-bottom:1px solid rgba(46,196,182,.3)}
+#radar-root .nh.crit{background:rgba(230,57,70,.25);color:#B91C1C;border-bottom:1px solid rgba(230,57,70,.3)}
+#radar-root .nh.neu{background:rgba(143,163,177,.25);color:#334155;border-bottom:1px solid rgba(0,0,0,.1)}
+#radar-root .ni{border-bottom:1px solid rgba(0,0,0,.08)}
+#radar-root .nit{color:#0f172a;font-weight:700}
+#radar-root .nd{color:#334155}
+#radar-root .bgen{background:rgba(0,194,212,.2);color:#005F69;border:1px solid rgba(0,194,212,.4)}
+#radar-root .bage{background:rgba(244,196,48,.25);color:#78350F;border:1px solid rgba(244,196,48,.4)}
+#radar-root .bpar{background:rgba(46,196,182,.2);color:#0E7C71;border:1px solid rgba(46,196,182,.4)}
+#radar-root .bpla{background:rgba(27,79,138,.2);color:var(--bl);border:1px solid rgba(27,79,138,.3)}
+#radar-root .bsrc{background:rgba(230,57,70,.2);color:#B91C1C;border:1px solid rgba(230,57,70,.3)}
+#radar-root .bi{background:rgba(255,255,255,.5);color:#1e293b}
+#radar-root .bi strong{color:#005F69}
+#radar-root .bi.neg{background:rgba(255,255,255,.5)}#radar-root .bi.neg strong{color:#B91C1C}
+#radar-root .bi.ntr{border-left-color:#64748b;background:rgba(255,255,255,.5)}#radar-root .bi.ntr strong{color:#334155}
+#radar-root .mh.risk{background:rgba(230,57,70,.25);color:#B91C1C;border:1px solid rgba(230,57,70,.3);border-bottom:none}
+#radar-root .mh.opp{background:rgba(46,196,182,.25);color:#0E7C71;border:1px solid rgba(46,196,182,.3);border-bottom:none}
+#radar-root .mr{border-bottom:1px solid rgba(0,0,0,.08)}
+#radar-root .mn{color:#0f172a;font-weight:700}
+#radar-root .md{color:#334155}
+#radar-root .lc{background:#B91C1C;color:#fff}#radar-root .la{background:#C2410C;color:#fff}#radar-root .lm{background:#B45309;color:#fff}#radar-root .lb{background:#64748b;color:#fff}#radar-root .lo{background:#0E7C71;color:#fff}#radar-root .lom{background:var(--navy);color:#fff}
+#radar-root .esc ul{color:#334155}
+#radar-root .esc li{border-bottom:1px solid rgba(0,0,0,.08)}
+#radar-root .hz.fav{background:rgba(46,196,182,.2)}#radar-root .hz.adv{background:rgba(230,57,70,.2)}#radar-root .hz.ine{background:rgba(244,196,48,.2)}#radar-root .hz.nd{background:rgba(143,163,177,.25);border-color:#64748b}
+#radar-root .hzn{color:#0f172a;font-weight:700}
+#radar-root .hz.fav .hzs,#radar-root .hz.fav .hzl{color:#0E7C71}#radar-root .hz.adv .hzs,#radar-root .hz.adv .hzl{color:#B91C1C}#radar-root .hz.ine .hzs,#radar-root .hz.ine .hzl{color:#B45309}#radar-root .hz.nd .hzs,#radar-root .hz.nd .hzl{color:#475569}
+#radar-root .hzl{font-weight:700}
+#radar-root .hzd{color:#334155}
+#radar-root .tqd{color:#007A87}
+#radar-root .tq.neg .tqn{color:#B91C1C}#radar-root .tq.pos .tqn{color:#0E7C71}#radar-root .tq.mix .tqn{color:#B45309}
+#radar-root .tqt{color:#0f172a;font-weight:700}
+#radar-root .tqb{color:#334155}
+#radar-root .lgd{color:#475569}
+#radar-root th,#radar-root td{border-bottom:1px solid rgba(0,0,0,.08)}
+#radar-root th{color:#475569}
+#radar-root td{color:#1e293b}
+#radar-root .ftr{background:var(--navy);border-top:1px solid rgba(255,255,255,.1);color:#94A3B8;margin:30px -20px 0;padding:14px 24px}
+#radar-root .ftr .fl{margin-bottom:0;color:#94A3B8}
 </style>
 
 <header class="hdr">
@@ -247,7 +323,7 @@
   <div class="tsec" id="rtab-nube">
     <div class="stitle">NUBE DE PALABRAS DEL ACTOR</div>
     <div class="card" style="margin-bottom:18px"><div class="cloud" id="r-cloud"></div>
-      <div class="lgd"><span><i style="background:#2EC4B6"></i>POSITIVO</span><span><i style="background:#E63946"></i>NEGATIVO</span><span><i style="background:#8FA3B1"></i>NEUTRO</span><span><i style="background:#F4C430"></i>POLARIZADO</span></div>
+      <div class="lgd"><span><i style="background:#0D9488"></i>POSITIVO</span><span><i style="background:#DC2626"></i>NEGATIVO</span><span><i style="background:#64748B"></i>NEUTRO</span><span><i style="background:#D97706"></i>POLARIZADO</span></div>
       <div class="bi neg" style="margin-top:14px" id="r-cloud-lect"></div>
     </div>
     <div class="stitle">ANÁLISIS DE HASHTAGS</div>
@@ -278,8 +354,8 @@
     <div class="stitle">NIVEL DE ALERTA — ESCENARIOS DE MOVIMIENTO</div>
     <div class="ic go" style="margin-bottom:12px" id="r-alerta-box"><div class="ib" id="r-alerta-txt"></div></div>
     <div class="esc">
-      <div class="card"><div class="ct" style="color:var(--da)" id="r-sube-t">▲ Lo subiría</div><ul id="r-sube"></ul></div>
-      <div class="card"><div class="ct" style="color:var(--su)" id="r-baja-t">▼ Lo bajaría</div><ul id="r-baja"></ul></div>
+      <div class="card"><div class="ct" style="color:#B91C1C" id="r-sube-t">▲ Lo subiría</div><ul id="r-sube"></ul></div>
+      <div class="card"><div class="ct" style="color:#0E7C71" id="r-baja-t">▼ Lo bajaría</div><ul id="r-baja"></ul></div>
     </div>
   </div>
 
@@ -295,8 +371,7 @@
   </div>
 
   <footer class="ftr">
-    <div class="fl" id="r-ftr-l">RADAR v2.0 · ANÁLISIS BIVARIADO · ESTUDIO CONFIDENCIAL</div>
-    <ul id="r-fuentes"></ul>
+    <div class="fl" id="r-ftr-l">RADAR Estudio confidencial</div>
   </footer>
 </main>
 </div>
