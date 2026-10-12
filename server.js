@@ -488,7 +488,9 @@ const CHEQUEOS_FALTANTES = {
     riesgos: d => Array.isArray(d.riesgos) && d.riesgos.length >= 3,
     oportunidades: d => Array.isArray(d.oportunidades) && d.oportunidades.length >= 3,
     alertaNivel: d => d.alertaNivel && String(d.alertaNivel.texto || '').length > 40,
-    territorial: d => d.territorial && Array.isArray(d.territorial.zonas) && d.territorial.zonas.length >= 4,
+    territorial: d => d.territorial && Array.isArray(d.territorial.zonas) && d.territorial.zonas.length >= 4
+      && d.territorial.zonas.filter(z => z && /\d/.test(String(z.nps ?? ''))).length >= Math.min(4, d.territorial.zonas.length - 1)
+      && Array.isArray(d.territorial.volumen) && d.territorial.volumen.length >= 3,
   },
 
 };
@@ -621,8 +623,8 @@ function normalizeResponse(data, skill, ctx = {}) {
   if (skill === 'radar') {
     // Estructura RADAR v2.0 (Kino Ruiz · Xonacatlán): segmentos con 4 tonos
     // [positivo, neutro, negativo, polarizado], quincenas, audiencia, etc.
-    const n0 = (v) => { const x = Number(String(v ?? '').replace(/[^0-9.+-]/g, '')); return Number.isFinite(x) ? x : 0; };
-    const nOrNull = (v) => (v === null || v === undefined || v === '' || /n\/?d|—/i.test(String(v))) ? null : n0(v);
+    const n0 = (v) => { if (typeof v === 'number') return Number.isFinite(v) ? v : 0; const m = String(v ?? '').replace(/[\u2212\u2013\u2014]/g, '-').replace(/,/g, '').match(/[+-]?\d+(\.\d+)?/); const x = m ? Number(m[0]) : NaN; return Number.isFinite(x) ? x : 0; };
+    const nOrNull = (v) => { if (v === null || v === undefined || v === '') return null; if (typeof v === 'number') return Number.isFinite(v) ? v : null; const t = String(v).replace(/[\u2212\u2013]/g, '-'); return /\d/.test(t) ? n0(t) : null; };
     const arrO = (v) => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
     const txt = (v) => (v === undefined || v === null) ? '' : String(v);
     const cuatro = (v) => { const a = Array.isArray(v) ? v.map(n0) : []; while (a.length < 4) a.push(0); return a.slice(0, 4); };
@@ -695,8 +697,11 @@ function normalizeResponse(data, skill, ctx = {}) {
 
     ensureObject(data, 'territorial', { zonas: [], volumen: [], lectura: '' });
     data.territorial.zonas = arrO(data.territorial.zonas).map(z => {
-      const nps = nOrNull(z.nps);
-      const cl = nps === null ? 'sin_datos' : (['favorable', 'adversa', 'inercial', 'sin_datos'].includes(txt(z.clasificacion).toLowerCase()) ? txt(z.clasificacion).toLowerCase() : (nps >= 5 ? 'favorable' : nps <= -15 ? 'adversa' : 'inercial'));
+      const crudo = [z.nps, z.npsP, z.nps_p, z['NPS-P'], z.NPS, z.valor, z.score, z.aprobacion].find(v => v !== undefined && v !== null && v !== '');
+      const nps = nOrNull(typeof crudo === 'object' && crudo ? (crudo.valor ?? crudo.nps) : crudo);
+      const clTxt = txt(z.clasificacion).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const clM = /sin.?dato/.test(clTxt) ? 'sin_datos' : /advers/.test(clTxt) ? 'adversa' : /favor/.test(clTxt) ? 'favorable' : /inerc/.test(clTxt) ? 'inercial' : '';
+      const cl = nps === null ? (clM || 'sin_datos') : (clM && clM !== 'sin_datos' ? clM : (nps >= 5 ? 'favorable' : nps <= -15 ? 'adversa' : 'inercial'));
       return { nombre: txt(z.nombre), nps, clasificacion: cl, etiqueta: txt(z.etiqueta), nota: txt(z.nota) };
     });
     data.territorial.volumen = arrO(data.territorial.volumen || data.territorial.volumenPorZona).map(v => ({ zona: txt(v.zona), valor: n0(v.valor ?? v.volumen) }));
@@ -1906,7 +1911,7 @@ REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
 - hashtags: mínimo 8 con "apariciones" reales de la muestra (si casi no hay hashtags, dilo en hashtagsLectura).
 - narrativas: favorables 3, criticas 3 (marca "alerta": true en las 2 más dañinas), neutras 3; cada una con 2-3 tags y "bivariado".
 - riesgos: mínimo 5. oportunidades: mínimo 4. alertaNivel: texto + 5 "sube" + 5 "baja".
-- territorial.zonas: 6 localidades reales del municipio (usa "sin_datos" y nps null si no hay conversación); territorial.volumen: mismas zonas en %; territorial.lectura obligatoria.`,
+- territorial.zonas: 6 localidades reales del municipio. "nps" es OBLIGATORIO y NUMÉRICO (entero de -100 a 100, estimación [I] a partir del tono de las menciones de esa localidad) en toda zona que tenga volumen de conversación; la "clasificacion" debe ser coherente con ese número (favorable ≥ +5, inercial entre -14 y +4, adversa ≤ -15). Solo UNA zona como máximo puede ir con nps null y "sin_datos", y únicamente si no tiene ninguna mención (volumen 0). territorial.volumen: las mismas zonas en % (suman ~100); territorial.lectura obligatoria con cifras.`,
 
   emociones: `
 REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
