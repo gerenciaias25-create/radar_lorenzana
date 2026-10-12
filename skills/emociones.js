@@ -4,15 +4,17 @@ const META = window.DATA_META || {};
 const root = document.getElementById('emo-root');
 
 // 8 emociones fijas de Plutchik: geometría/color no dependen de la IA
+// "deg" = ángulo de INICIO del pétalo (cada emoción ocupa 45°), igual que en
+// el dashboard de referencia EMOCIONES_LA_PIEDAD.
 const EMOTION_META = [
-  {key:'ira',          label:'Ira / Furia',        sublabel:'Furia · Ira · Indignación',              deg:180, color:['#FEE2E2','#FCA5A5','#B91C1C']},
-  {key:'miedo',        label:'Miedo / Terror',     sublabel:'Terror · Miedo · Aprensión',              deg:0,   color:['#CFFAFE','#67E8F9','#0E7490']},
-  {key:'anticipacion', label:'Anticipación',        sublabel:'Vigilancia · Esperanza condicionada',     deg:225, color:['#FFEDD5','#FDBA74','#C2410C']},
-  {key:'tristeza',     label:'Tristeza / Abandono', sublabel:'Aflicción · Melancolía · Desamparo',      deg:90,  color:['#EDE9FE','#A78BFA','#4C1D95']},
-  {key:'asco',         label:'Asco / Aversión',     sublabel:'Aversión · Indignación moral · Descrédito',deg:135, color:['#DCFCE7','#86EFAC','#15803D']},
-  {key:'alegria',      label:'Alegría',              sublabel:'Éxtasis · Alegría · Serenidad',           deg:-90, color:['#FFF9C4','#FFF176','#F9A825']},
-  {key:'confianza',    label:'Confianza',            sublabel:'Admiración · Confianza · Aceptación',     deg:-45, color:['#D1FAE5','#6EE7B7','#059669']},
-  {key:'sorpresa',     label:'Sorpresa',             sublabel:'Asombro · Distracción · Reencuadre',      deg:45,  color:['#DBEAFE','#93C5FD','#2563EB']},
+  {key:'ira',          label:'Ira / Furia',     sublabel:'Furia · Ira · Enfado',                 deg:180, color:['#FEE2E2','#FCA5A5','#B91C1C']},
+  {key:'miedo',        label:'Miedo / Terror',  sublabel:'Terror · Miedo · Temor',               deg:0,   color:['#CFFAFE','#67E8F9','#0E7490']},
+  {key:'anticipacion', label:'Anticipación',    sublabel:'Vigilancia · Anticipación · Interés',  deg:225, color:['#FFEDD5','#FDBA74','#C2410C']},
+  {key:'tristeza',     label:'Tristeza',        sublabel:'Aflicción · Tristeza · Melancolía',    deg:90,  color:['#EDE9FE','#A78BFA','#4C1D95']},
+  {key:'asco',         label:'Asco / Aversión', sublabel:'Aversión · Asco · Aburrimiento',       deg:135, color:['#DCFCE7','#86EFAC','#15803D']},
+  {key:'alegria',      label:'Alegría',         sublabel:'Éxtasis · Alegría · Serenidad',        deg:-90, color:['#FFF9C4','#FFF176','#F9A825']},
+  {key:'confianza',    label:'Confianza',       sublabel:'Admiración · Confianza · Aceptación',  deg:-45, color:['#D1FAE5','#6EE7B7','#059669']},
+  {key:'sorpresa',     label:'Sorpresa',        sublabel:'Asombro · Sorpresa · Distracción',     deg:45,  color:['#DBEAFE','#93C5FD','#2563EB']},
 ];
 const RADAR_LABELS = ["Legitimidad ciudadana","Presencia territorial","Capital positivo","Riesgo castigo","Cap. gestión","Credibilidad"];
 // 12 arquetipos junguianos: geometría/orden fijos, igual que EMOTION_META — la IA
@@ -71,7 +73,9 @@ Object.keys(FALLBACK).forEach(k => { D[k] = pick(D_RAW && D_RAW[k], FALLBACK[k])
 const nombrePrincipal = META.actor || D.territory || 'Sin datos';
 const nameParts = nombrePrincipal.split(' ');
 document.getElementById('em-hdr-name').innerHTML = (nameParts[0]||'').toUpperCase() + ' <span>' + nameParts.slice(1).join(' ').toUpperCase() + '</span>';
-document.getElementById('em-hdr-sub').textContent = D.subtitle || D.date || '';
+document.getElementById('em-hdr-sub').textContent = D.subtitle || '';
+const periodoTxt = META.periodo || D.date || [META.mes, META.anio].filter(Boolean).join(' ');
+document.getElementById('em-hero-l').textContent = 'EMOCIONES // HUMOR SOCIAL EMOCIONAL · SEMIÓTICA ● MONITOREO ACTIVO' + (periodoTxt ? ' · ' + periodoTxt : '');
 document.getElementById('em-whl-territory').textContent = nombrePrincipal;
 document.getElementById('em-ftr-l').textContent = 'RADAR - Emociones · ' + nombrePrincipal;
 
@@ -82,40 +86,50 @@ window.emST = function(id, el){
   document.getElementById('empnl-'+id).classList.add('on');
   el.classList.add('on');
 };
-window.emToggleEm = function(el){ el.querySelector('.emd-box').classList.toggle('open'); };
+window.emToggleEm = function(key){
+  const d = document.getElementById('emd-'+key);
+  if(!d) return;
+  const open = d.classList.contains('open');
+  root.querySelectorAll('.emd-box').forEach(x=>x.classList.remove('open'));
+  if(!open) d.classList.add('open');
+};
 
 // ---------- rueda de Plutchik ----------
+const CX=220, CY=220, WR=[62,108,154,200], GAP=1.4;
+const rad = d => d*Math.PI/180;
+const pt = (r,d) => [CX+r*Math.cos(rad(d)), CY+r*Math.sin(rad(d))];
+function arc(r1,r2,s0,e0){
+  const a=s0+GAP, b=e0-GAP;
+  const [x1,y1]=pt(r1,a),[x2,y2]=pt(r2,a),[x3,y3]=pt(r2,b),[x4,y4]=pt(r1,b);
+  return `M${x1.toFixed(2)},${y1.toFixed(2)}L${x2.toFixed(2)},${y2.toFixed(2)}A${r2},${r2} 0 0,1 ${x3.toFixed(2)},${y3.toFixed(2)}L${x4.toFixed(2)},${y4.toFixed(2)}A${r1},${r1} 0 0,0 ${x1.toFixed(2)},${y1.toFixed(2)}Z`;
+}
+const INACT = ['#e2e8f0','#cbd5e1','#94a3b8'];
 function buildWheel(emotions){
-  const S=380,cx=S/2,cy=S/2,rings=[72,112,150];
-  let svg=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">`;
-  emotions.forEach((em,i)=>{
-    const a0=(em.deg-22.5)*Math.PI/180,a1=(em.deg+22.5)*Math.PI/180;
-    [0,1,2].forEach(r=>{
-      const r0=rings[r],r1=rings[r+1]||rings[r]+38;
-      const x1=cx+r0*Math.cos(a0),y1=cy+r0*Math.sin(a0);
-      const x2=cx+r1*Math.cos(a0),y2=cy+r1*Math.sin(a0);
-      const x3=cx+r1*Math.cos(a1),y3=cy+r1*Math.sin(a1);
-      const x4=cx+r0*Math.cos(a1),y4=cy+r0*Math.sin(a1);
-      const fill=em.active&&em.intensity>r?em.color[r]:"#e2e8f0";
-      svg+=`<path d="M${x1},${y1} L${x2},${y2} A${r1},${r1} 0 0,1 ${x3},${y3} L${x4},${y4} A${r0},${r0} 0 0,0 ${x1},${y1}" fill="${fill}" stroke="#ffffff" stroke-width="1.5" style="cursor:${em.active?'pointer':'default'}" onclick="document.querySelectorAll('#emo-root .emr')[${i}] && emToggleEm(document.querySelectorAll('#emo-root .emr')[${i}])"/>`;
+  let p = '';
+  emotions.forEach(em=>{
+    const ac = em.active, iv = em.intensity;
+    [1,2,3].forEach(i=>{
+      const fill = ac && iv>=i ? em.color[i-1] : INACT[i-1];
+      p += `<path d="${arc(WR[i-1],WR[i],em.deg,em.deg+45)}" fill="${fill}" stroke="#ffffff" stroke-width="2" ${ac?`onclick="emToggleEm('${em.key}')" style="cursor:pointer"`:''}/>`;
     });
-    const lx=cx+(rings[2]+22)*Math.cos(em.deg*Math.PI/180);
-    const ly=cy+(rings[2]+22)*Math.sin(em.deg*Math.PI/180);
-    const anchor=Math.abs(em.deg)>90?"end":"start";
-    svg+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle" fill="${em.active?em.color[2]:'#94a3b8'}" font-size="9" font-weight="${em.active?700:400}" font-family="-apple-system,sans-serif">${em.label.split("/")[0].trim()}</text>`;
+    const md = em.deg+22.5, lr = WR[3]+23;
+    const [lx,ly] = pt(lr,md);
+    const an = Math.cos(rad(md))>.12 ? 'start' : Math.cos(rad(md))<-.12 ? 'end' : 'middle';
+    p += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${an}" dominant-baseline="middle" font-size="11" font-family="-apple-system,sans-serif" fill="${ac?'#0f172a':'#64748b'}" font-weight="${ac?'700':'400'}" style="pointer-events:none">${em.label}</text>`;
+    if(ac && iv===3){
+      const [bx,by] = pt(WR[3]+6,md);
+      p += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="5" fill="${em.color[2]}" style="pointer-events:none"><animate attributeName="opacity" values="1;.25;1" dur="1.6s" repeatCount="indefinite"/></circle>`;
+    }
   });
-  svg+=`<circle cx="${cx}" cy="${cy}" r="50" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
-  <text x="${cx}" y="${cy-8}" text-anchor="middle" fill="#1d4ed8" font-size="9" font-weight="700" font-family="-apple-system,sans-serif">PLUTCHIK</text>
-  <text x="${cx}" y="${cy+6}" text-anchor="middle" fill="#334155" font-size="8" font-family="-apple-system,sans-serif">${(D.territory||'').slice(0,18)}</text>
-  <text x="${cx}" y="${cy+18}" text-anchor="middle" fill="#64748b" font-size="7" font-family="-apple-system,sans-serif">${D.date||''}</text></svg>`;
-  return svg;
+  return `<svg width="440" height="420" viewBox="-100 -10 640 460" style="max-width:100%;height:auto;">${p}<circle cx="${CX}" cy="${CY}" r="${WR[0]-4}" fill="#d5d1d1" stroke="#b0b0b0" stroke-width="1.5"/><text x="${CX}" y="${CY-7}" text-anchor="middle" font-size="9.5" font-family="-apple-system,sans-serif" fill="#475569" font-weight="700" letter-spacing="2">HUMOR</text><text x="${CX}" y="${CY+7}" text-anchor="middle" font-size="9.5" font-family="-apple-system,sans-serif" fill="#475569" font-weight="700" letter-spacing="2">SOCIAL</text></svg>`;
 }
 
 function init(){
   // merge geometría fija + datos de la IA por key
   const emotions = EMOTION_META.map(meta => {
     const d = (D.emotions || []).find(e=>e.key===meta.key) || {};
-    return {...meta, active: !!d.active, intensity: d.intensity||0, triggers: d.triggers||[], consequences: d.consequences||[]};
+    const iv = Math.max(0, Math.min(3, Math.round(Number(d.intensity)||0)));
+    return {...meta, active: !!d.active && iv>0, intensity: iv, triggers: d.triggers||[], consequences: d.consequences||[]};
   });
 
   const activeCount = emotions.filter(e=>e.active).length;
@@ -127,25 +141,31 @@ function init(){
     <div class="card2"><div class="cv">IVE Estimado</div><div class="cval" style="color:#6b21a8">${D.ivEstimado}<span style="font-size:1rem">/100</span></div><div class="csub">Volatilidad</div></div>`;
 
   document.getElementById('em-wheel-wrap').innerHTML = buildWheel(emotions);
-  const firstActive = emotions.find(e=>e.active && e.intensity>0);
-  if(firstActive){
-    document.getElementById('em-leg-hi').style.background = firstActive.color[2];
-    document.getElementById('em-leg-md').style.background = firstActive.color[1];
-  }
+  const hiEm = emotions.find(e=>e.active && e.intensity===3) || emotions.find(e=>e.active);
+  const mdEm = emotions.find(e=>e.active && e.intensity===2) || hiEm;
+  if(hiEm) document.getElementById('em-leg-hi').style.background = hiEm.color[2];
+  if(mdEm) document.getElementById('em-leg-md').style.background = mdEm.color[1];
 
-  document.getElementById('em-list').innerHTML = emotions.map((em,i)=>`
-    <div class="emr" onclick="emToggleEm(this)">
+  // Igual que la referencia: solo emociones ACTIVAS, con su sublabel y
+  // detonantes/consecuencias al hacer clic (en la rueda o en la lista).
+  const activas = emotions.filter(e=>e.active);
+  document.getElementById('em-list').innerHTML = activas.map(em=>{
+    const iv = em.intensity;
+    const riskTx = iv===3 ? 'var(--red-s)' : iv===2 ? 'var(--org-s)' : 'var(--ylw)';
+    const dots = '●'.repeat(iv) + '<span style="color:#94a3b8">' + '○'.repeat(3-iv) + '</span>';
+    return `<div class="emr" onclick="emToggleEm('${em.key}')">
       <div class="emh">
-        <div style="width:8px;height:8px;border-radius:50%;background:${em.active?em.color[2]:'#cbd5e1'};flex-shrink:0"></div>
-        <div style="font-size:12.5px;font-weight:${em.active?700:400};color:${em.active?'var(--tx1)':'var(--tx3)'};flex:1">${em.label}</div>
-        <div style="font-size:10px;color:${em.active?em.color[2]:'var(--tx3)'}">${em.active?["●○○","●●○","●●●"][em.intensity-1]||"":"○○○"}</div>
+        <div style="width:10px;height:10px;border-radius:50%;background:${em.color[2]};box-shadow:0 0 6px ${em.color[2]}55;flex-shrink:0"></div>
+        <span style="font-size:13px;font-weight:700;color:var(--tx1)">${em.label}</span>
+        <span style="margin-left:auto;font-size:13px;color:${riskTx}">${dots}</span>
       </div>
-      <div class="emd-box">
-        ${em.active&&em.triggers.length?`<div class="edk">Detonantes</div><div class="edv">${em.triggers.map(t=>`• ${t}`).join("<br>")}</div>`:""}
-        ${em.active&&em.consequences.length?`<div class="edk" style="margin-top:6px">Consecuencias</div><div class="edv">${em.consequences.map(c=>`• ${c}`).join("<br>")}</div>`:""}
-        ${!em.active?`<div class="edv">Sin activación relevante detectada en el periodo.</div>`:""}
+      <div style="font-size:10.5px;color:var(--tx3);margin-top:2px;margin-left:17px">${em.sublabel}</div>
+      <div class="emd-box" id="emd-${em.key}">
+        ${em.triggers.length?`<div class="edk">Detonantes:</div><div class="edv">${em.triggers.join(' · ')}</div>`:''}
+        ${em.consequences.length?`<div class="edk" style="margin-top:5px">Consecuencias:</div><div class="edv">${em.consequences.join(' · ')}</div>`:''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('') || '<div class="emr"><div class="edv">Sin emociones activas detectadas en el periodo.</div></div>';
 
   document.getElementById('em-sec').innerHTML = (D.secondary||[]).map((s,i)=>`
     <div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)">
@@ -158,9 +178,10 @@ function init(){
   const makeMP = (arr,dc) => (arr||[]).map(t=>`<div class="mpi"><div class="mpd" style="background:${dc}"></div>${t}</div>`).join('');
   document.getElementById('em-mapa-cols').innerHTML = `
     <div class="mpc"><div class="mptt" style="color:#b45309">⚠ Problemáticas</div>${makeMP(D.problematics,'#b45309') || '<div class="mpi">Sin datos.</div>'}</div>
-    <div class="mpc"><div class="mptt" style="color:#b91c1c">⬡ Miedos</div>${makeMP(D.fears,'#b91c1c') || '<div class="mpi">Sin datos.</div>'}</div>
-    <div class="mpc"><div class="mptt" style="color:#15803d">★ Orgullos</div>${makeMP(D.prides,'#15803d') || '<div class="mpi">Sin datos.</div>'}</div>`;
+    <div class="mpc"><div class="mptt" style="color:#ef4444">⬡ Miedos</div>${makeMP(D.fears,'#ef4444') || '<div class="mpi">Sin datos.</div>'}</div>
+    <div class="mpc"><div class="mptt" style="color:#166534">★ Orgullos</div>${makeMP(D.prides,'#166534') || '<div class="mpi">Sin datos.</div>'}</div>`;
 
+  document.getElementById('em-quotes-note').textContent = `Frases construidas a partir de patrones documentados en cobertura periodística regional y declaraciones ciudadanas citadas por medios${periodoTxt ? ' ('+periodoTxt+')' : ''} — no son capturas literales de redes sociales. [ANÁLISIS INFERENCIAL]`;
   document.getElementById('em-quotes').innerHTML = (D.quotes||[]).map(q=>`<div class="qi"><div class="qt">${q.text}</div><div class="qm">${q.topic} · ${q.emotion} · ${q.territory}</div></div>`).join('') || '<div class="qi"><div class="qt">Sin frases ciudadanas disponibles.</div></div>';
 
   const makeSem = (arr, id) => { 
@@ -190,7 +211,6 @@ function init(){
       <div style="color:${(p.tendencia||'').includes('↓')?'#b91c1c':(p.tendencia||'').includes('↑')?'#166534':'#475569'};font-weight:600">${p.tendencia}</div>
     </div>`).join('') || '<div style="font-size:11px;color:var(--tx3)">Sin datos.</div>';
 
-  document.getElementById('em-actores-label').textContent = 'ANÁLISIS COMPARATIVO DE ACTORES · ' + (D.date||'');
   document.getElementById('em-actores-grid').innerHTML = (D.actores||[]).map((a,i)=>`
     <div class="ac">
       <div class="ach" style="border-left:4px solid ${a.borderColor||PALETTE[i%PALETTE.length]}"><div class="acn">${a.name}</div><div class="acr">${a.role}</div></div>
@@ -295,7 +315,7 @@ function init(){
   const temasData = (D.temasChart||[]).filter(t=>Array.isArray(t)&&t.length>=2);
   if(temasCanvas && temasData.length > 0){
     new Chart(temasCanvas,{type:'doughnut',
-      data:{labels:temasData.map(t=>t[0]),datasets:[{data:temasData.map(t=>t[1]),backgroundColor:temasData.map(t=>t[2]||'#94a3b8'),borderColor:'#d5d1d1',borderWidth:2}]},
+      data:{labels:temasData.map(t=>t[0]),datasets:[{data:temasData.map(t=>t[1]),backgroundColor:temasData.map(t=>t[2]||'#94a3b8'),borderColor:'#ffffff',borderWidth:2}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#334155',font:{size:11},boxWidth:12,padding:10}},tooltip:{...CDf.plugins.tooltip,callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}
     });
   }
