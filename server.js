@@ -158,6 +158,25 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
         callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor2, parteOpositor: 2 }), OPENROUTER_KEY),
       ]);
       structured = { ...(p2 || {}), ...(p1 || {}) };
+    } else if (skill === 'tensiones') {
+      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, datosActor1, datosActor2 };
+      const p1 = await callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.tensiones, parteTensiones: 1 }), OPENROUTER_KEY);
+      JOBS.set(jobId, { status: 'processing', progreso: 'Generando cartografía socioafectiva (radiografía, dolores, enemigos, segmentación, narrativas y 9 preguntas)...' });
+      const promptCarto = buildPrompt({ ...base, schema: SCHEMAS.tensionesCartografia, parteTensiones: 2, contextoTensiones: resumenTensionesParaCartografia(p1) });
+      let carto = null;
+      // Hasta 2 intentos: si la cartografía falla o llega vacía, Tensiones
+      // se entrega de todas formas (las 7 pestañas principales no dependen de ella).
+      for (let intento = 1; intento <= 2 && !carto; intento++) {
+        try {
+          const p2 = await callOpenRouter(promptCarto, OPENROUTER_KEY);
+          const c = p2 && (p2.cartografiaSocioafectiva || p2);
+          const llena = c && Array.isArray(c.preguntas) && c.preguntas.length && Array.isArray(c.iasPorZona) && c.iasPorZona.length;
+          if (llena) carto = c; else console.warn(`[!] Cartografía vacía (intento ${intento})`);
+        } catch (e) {
+          console.warn(`[!] Falló la cartografía socioafectiva (intento ${intento}):`, e.message);
+        }
+      }
+      structured = { ...(p1 || {}), cartografiaSocioafectiva: carto || (p1 && p1.cartografiaSocioafectiva) || {} };
     } else {
       const schema = SCHEMAS[skill] || SCHEMAS.radar;
       const prompt = buildPrompt({ skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, datosActor1, datosActor2, schema });
@@ -466,6 +485,30 @@ function normalizeResponse(data, skill, ctx = {}) {
     ensureArray(data.cartografiaSocioafectiva, 'preguntas', []);
     if (!data.cartografiaSocioafectiva.narrativaMadre) data.cartografiaSocioafectiva.narrativaMadre = '';
     if (!data.cartografiaSocioafectiva.narrativaMadreDesc) data.cartografiaSocioafectiva.narrativaMadreDesc = '';
+
+    // Red de seguridad de la cartografía: acepta nombres de campo alternos
+    // que a veces devuelve el modelo y completa colores/orden de las zonas.
+    const cs = data.cartografiaSocioafectiva;
+    const s_ = (...vals) => { for (const v of vals) if (v !== undefined && v !== null && String(v).trim()) return String(v); return ''; };
+    const objs = (a) => a.filter(x => x && typeof x === 'object');
+    cs.preguntas = objs(cs.preguntas).map(p => ({ pregunta: s_(p.pregunta, p.q, p.titulo), respuesta: s_(p.respuesta, p.r, p.texto) })).filter(p => p.pregunta || p.respuesta);
+    cs.dolores = cs.dolores.map(d => typeof d === 'string' ? { frase: d, meta: '' } : d).filter(d => d && typeof d === 'object')
+      .map(d => ({ frase: s_(d.frase, d.f, d.texto), meta: s_(d.meta, d.m, d.contexto) }));
+    cs.enemigosSimbolicos = objs(cs.enemigosSimbolicos).map(e => ({ nombre: s_(e.nombre, e.n, e.titulo), descripcion: s_(e.descripcion, e.d, e.texto) }));
+    cs.fracturasSociales = objs(cs.fracturasSociales).map(f => ({ titulo: s_(f.titulo, f.t, f.nombre), descripcion: s_(f.descripcion, f.d, f.texto) }));
+    cs.segmentacion = objs(cs.segmentacion).map(g => ({ segmento: s_(g.segmento, g.nombre), emocionDominante: s_(g.emocionDominante, g.emocion), detonante: s_(g.detonante, g.detonantePrincipal) }));
+    const sinComillas = (t) => String(t || '').trim().replace(/^["“”«']+|["“”»']+$/g, '').trim();
+    cs.narrativas = objs(cs.narrativas).map(n => ({ nombre: sinComillas(s_(n.nombre, n.n)), tema: s_(n.tema, n.segmento), actor: s_(n.actor, n.act), potencial: s_(n.potencial, n.pol, n.politica), frase: s_(n.frase, n.f), fuente: s_(n.fuente, n.orig, n.origen) }));
+    const colorIas = (v) => v >= 75 ? '#E24B4A' : v >= 55 ? '#D97706' : '#B45309';
+    cs.iasPorZona = objs(cs.iasPorZona).map(z => {
+      const ias = Math.max(0, Math.min(100, Math.round(Number(z.ias) || 0)));
+      return {
+        zona: s_(z.zona, z.nombre, z.n), tipo: s_(z.tipo, z.niv, z.nivel), ias,
+        color: /^#[0-9a-f]{3,8}$/i.test(String(z.color || '')) ? z.color : colorIas(ias),
+        tensionDominante: s_(z.tensionDominante, z.ten, z.tension), emocionDominante: s_(z.emocionDominante, z.emo, z.emocion),
+        lectura: s_(z.lectura, z.lec),
+      };
+    }).sort((a, b) => b.ias - a.ias);
   }
 
    // OPOSITOR
@@ -1261,7 +1304,7 @@ const SCHEMAS = {
 // PROMPTS
 // =========================================================
 
-function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, periodo, clienteName = '', parteOpositor = 1, datosActor1, datosActor2, schema }) {
+function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, periodo, clienteName = '', parteOpositor = 1, parteTensiones = 1, contextoTensiones = '', datosActor1, datosActor2, schema }) {
   periodo = periodo || construirPeriodo({ mes, anio });
   let contexto;
 
@@ -1349,6 +1392,19 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
 - "alertaJuridica": siempre llena, con las líneas que nunca deben cruzarse con estos adversarios.`
     : skill === 'sesgo'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Sesgo):\n- CONSISTENCIA NUMÉRICA (crítico): "metricas.sesgosCriticos.valor" debe ser EXACTAMENTE el número de elementos de "ranking" con score 81-100, y "metricas.sesgosAltos.valor" el número con score 61-80 — cuenta el array real, nunca un número aproximado o inventado.\n- "ranking[].categoria" usa EXACTAMENTE uno de los números romanos "I" a "VIII" del catálogo de referencia dado en las reglas adicionales; distribúyelos, no concentres todo en 1-2 categorías.\n- "ranking[].descripcion" siempre ancla el sesgo en un hecho/evidencia concreto de las fuentes (fecha, cifra, medio, actor), no una definición de libro de texto del sesgo — ej. "22 meses de conflicto armado saturan el frame emocional del electorado (cobertura CNN/Infobae, ago-sep 2026)", nunca solo "La gente reacciona más a lo negativo".\n- "segmentos[].perfil" debe cubrir el espectro completo del electorado del territorio evaluado (mínimo: base dura del partido en el poder, base blanda/decepcionada, persuadible/indeciso, abstencionista/fatigado) — nunca dupliques el mismo perfil dos veces. "color" debe ser EXACTAMENTE uno de "verde", "azul", "ambar", "gris".\n- "ventanasPersuasion[].segmento" debe ser un público específico y territorializado (ej. "Comerciantes de Culiacán", no "Ciudadanía en general"), y "recomendacion" una acción/mensaje concreto y accionable, nunca un consejo genérico tipo "comunicar mejor".\n- "arquitecturaMensajes[].etiqueta" debe ser EXACTAMENTE una de "Diferenciación", "Posicionamiento", "Lanzamiento", "Contención", "Movilización" — cubre al menos 3 etiquetas distintas entre los elementos, no repitas la misma etiqueta en todos.\n- "metricas.sistemaDominante.valor" debe ser EXACTAMENTE "Sistema 1" (procesamiento emocional/reactivo, típico cuando predominan sesgos de negatividad/disponibilidad/pérdida) o "Sistema 2" (procesamiento deliberativo, típico cuando predominan sesgos de confirmación/consistencia con baja intensidad emocional) — decide según qué categorías dominan el ranking.`
+    : skill === 'tensiones' && parteTensiones === 2
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones · CARTOGRAFÍA SOCIOAFECTIVA — pestañas "Radiografía y dolores", "Enemigos y segmentación" y "Narrativas y 9 preguntas"):
+- En esta llamada generas ÚNICAMENTE el objeto "cartografiaSocioafectiva" con TODAS sus listas llenas. Es un módulo COMPLEMENTARIO a Tensiones: Tensiones lee el conflicto institucional; la cartografía lee la VIVENCIA EMOCIONAL por SEGMENTO social y por ZONA.
+- "iasPorZona" (Radiografía territorial sintética + gráfica IAS): 6-8 zonas/corredores/colonias específicas, ordenadas de mayor a menor "ias" (0-100, con variación real). "color": "#E24B4A" si ias≥75, "#D97706" si 55-74, "#B45309" si <55. "tipo" describe la zona (ej. "Corredor carretero / rural", "Urbano-comercial", "Popular / periférico", "Ribereño / agroindustrial", "Empresarial / productivo", "Institucional / político"). "tensionDominante" usa un nombre del ranking de Tensiones. "emocionDominante" formato corto "EmociónA + EmociónB". "lectura" 30-55 palabras: puede abrir con una cita ciudadana entrecomillada seguida de "—" y su interpretación (ej. "\"Si atacan a la Guardia Nacional a plena luz del día, ¿qué nos espera a nosotros?\" — quiebre de la percepción de tránsito seguro").
+- "dolores" (Mapa de dolores sociales): 6-8. "frase" = cita ciudadana entre comillas, en el habla local (ej. "En la carretera uno ya no sabe con qué se va a topar"). "meta" = "Hecho concreto · Intensidad X/5 · fecha o estado" (ej. "Enfrentamiento armado en El Pandillo · Intensidad 5/5 · 14 ago 2026").
+- "enemigosSimbolicos": 4-6. "nombre" es una FIGURA SIMBÓLICA en lenguaje ciudadano (ej. "El que cobra por dejarte trabajar", "El funcionario que no rinde cuentas"), NO el nombre propio de una persona privada. "descripcion" 50-90 palabras con hecho, fecha y cifra.
+- "fracturasSociales": 4-6. "titulo" con los dos polos "X vs. Y"; "descripcion" 50-90 palabras con evidencia.
+- "segmentacion": 6-8 segmentos sociales/económicos concretos (comerciantes, familias con remesas, vecinos de un corredor, comunidad ribereña, militancia de un partido, jóvenes...), "emocionDominante" (1-2 emociones) y "detonante" con fecha.
+- "narrativaMadre": UNA frase ciudadana entre comillas que agrupa las heridas por segmento (DISTINTA de la narrativa madre de Tensiones). "narrativaMadreDesc": 40-70 palabras explicando en qué se diferencia de la de Tensiones.
+- "narrativas": 4-6 narrativas POR SEGMENTO. "nombre" = la narrativa en voz ciudadana; "tema" = "Segmento: …"; "actor" = hecho/actor detonante con fecha; "potencial" = párrafo de 25-45 palabras sobre su potencial de propagación; "frase" = cita textual entre comillas; "fuente" = "Reconstrucción analítica a partir de [medios], [fecha]".
+- "preguntas": EXACTAMENTE 9, en este orden y con esta redacción: 1 "¿Qué le duele más al territorio hoy?", 2 "¿A quién culpa la ciudadanía?", 3 "¿En quién confía todavía?", 4 "¿Qué emoción domina y hacia dónde se dirige?", 5 "¿Qué símbolo podría unir a la comunidad?", 6 "¿Qué narrativa puede movilizarla?", 7 "¿Qué actor ocupa el rol de enemigo simbólico?", 8 "¿Qué segmento está más activado emocionalmente?", 9 "¿Qué tema puede detonar la próxima crisis?". Cada "respuesta" de 45-80 palabras con hechos, fechas y cifras.
+- Incluye comentarios y reacciones de MEDIOS y REDES (con medio/plataforma y fecha) en dolores, narrativas y lecturas.
+${contextoTensiones ? '\nCONTEXTO DE LA PARTE 1 (Tensiones ya generadas — mantén coherencia de nombres):\n' + contextoTensiones : ''}`
     : skill === 'tensiones'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones):\n- CONSISTENCIA ENTRE PESTAÑAS (crítico): "trayectoria" debe tener EXACTAMENTE las mismas tensiones que "ranking" (mismos "nombre", mismo orden), y "riesgos" también debe cubrir esas mismas tensiones en el mismo orden — un analista que lea las 3 pestañas debe reconocer que hablan de las mismas 8-10 tensiones, no de conjuntos distintos. El último elemento de "trayectoria[].valores" debe ser IGUAL al "score" de esa misma tensión en "ranking", y también igual a "trayectoria[].ta". "trayectoriaLabels" y cada "trayectoria[].valores" deben tener la MISMA longitud.\n- "ranking[].lecturaEstrategica" es un campo adicional y DISTINTO de "evidencia": mientras "evidencia" lista hechos verificables, "lecturaEstrategica" es la interpretación — conecta esta tensión con otras del ranking o con el contexto regional. Obligatorio en TODAS las tensiones del ranking, no solo en la primera.\n- "emociones[].tendencia" (flecha ↑/↓/— + palabra corta) y "emociones[].tendenciaDesc" (una línea con el hecho que explica esa evolución) son obligatorios en TODAS las emociones.\n- "riesgos[].accion" (qué hacer) y "riesgos[].consecuencia" (qué pasa si no se hace) son campos distintos y ambos obligatorios.\n- "narrativaMadreSintesis" (síntesis general de TODO el ranking) y "cartografiaSocioafectiva.narrativaMadre" (síntesis por segmento social) deben ser textos DIFERENTES entre sí.\n- "narrativas[].potencial" es un número 0-100, adicional al texto de "narrativas[].politica".\n- "aprobacion.cortes" normalmente trae 1 solo dato real verificado — nunca inventes puntos intermedios interpolados.\n- "ranking[].nivel" tiene SOLO 4 valores posibles y se asigna ÚNICAMENTE por el "score" de esa misma tensión, sin excepción: "Crítico" si score ≥80, "Alto" si score 65-79, "Relevante" si score 50-64, "Emergente" si score <50. Nunca uses "Medio" ni "Bajo" ni ningún otro texto — y nunca asignes "Crítico" a un score menor a 80 ni "Emergente" a uno de 50 o más.\n- "ranking[].emocion" formato EXACTO: "EmociónPrimaria + EmociónSecundaria · X/5" (ej. "Hartazgo + Desprotección · 4/5"), nunca solo una palabra suelta.\n- "ranking[].evidencia" es un párrafo (no una frase) que encadena 2-3 datos verificables (cifras, fechas, colonias) cada uno rematado con su fuente entre paréntesis, siguiendo este patrón: "Dato 1 con cifra y fecha (Fuente, ICF X.X) - Dato 2 (Fuente, ICF X.X)". Nunca lo dejes como una oración vaga sin cifras ni fuente.\n- "emociones[].descripcion" siempre debe indicar si la emoción es estructural/coyuntural y su tendencia (sostenida/en descenso/nueva), no solo repetir el nombre de la emoción.\n- "territorios[].color" debe ser EXACTAMENTE "Rojo", "Naranja" o "Amarillo" (no otros valores ni colores hex aquí).\n- "riesgos[].tipoSenal" debe ser EXACTAMENTE uno de: "Amplificada legítima", "Orgánica", "Inducida", "Aislada". "riesgos[].probEscalar" debe ser EXACTAMENTE "Alta", "Media" o "Baja".\n- "trayectoria[].delta" es un STRING con signo, ej. "+7" o "-3" (último valor menos primer valor de "valores"), nunca un número sin signo ni una palabra.\n- "trayectoria[].velocidad" tiene SOLO 3 valores posibles, asignados por la magnitud de "delta" (en valor absoluto): "Acelerada" si el cambio es ≥25 puntos, "Moderada" si es de 11 a 24 puntos, "Gradual" si es de 10 puntos o menos. PROHIBIDO usar "Creciendo", "Estable", "Bajando" u otro texto, y PROHIBIDO repetir el mismo valor de "velocidad" en todas las filas si los "delta" son distintos entre sí — cada fila refleja SU PROPIA magnitud de cambio.\n- "alertas[].rows": cada alerta necesita mínimo 8 filas cubriendo Territorio, Emoción, Actor expuesto, Qué ocurrió (párrafo con fecha, incorporando reacciones reales de medios/redes si las fuentes las traen), Narrativa activa, Riesgo, Qué puede pasar, Acción inmediata — usa esas etiquetas o muy similares, en ese orden. NINGÚN valor de estas filas puede ser una palabra o frase corta genérica (ej. "Culiacán", "Gobierno del Estado", "Miedo (5/5)"): cada valor debe ser una CLÁUSULA COMPLETA con contexto propio — ej. en vez de "Culiacán" escribe "Culiacán y su zona metropolitana, epicentro de los enfrentamientos de agosto"; en vez de "Gobierno del Estado" escribe "Gobierno del Estado de Sinaloa, por la Secretaría de Seguridad Pública estatal"; "Riesgo" siempre lleva nivel + por qué ("Alto — la ausencia de control territorial puede derivar en..."); "Qué puede pasar" y "Acción inmediata" nunca van en una sola línea genérica, sino con un escenario o acción específica y verificable.\n- "cartografiaSocioafectiva" es un módulo COMPLEMENTARIO a tensiones (no lo dupliques): mientras "ranking"/"narrativas"/"territorios" leen el conflicto institucional, "cartografiaSocioafectiva" lee la vivencia emocional por SEGMENTO social. "iasPorZona[].ias" es 0-100 (Índice de Activación Socioafectiva), nunca copies aquí los mismos números de "riesgos[].srr". "segmentacion[].emocionDominante" usa formato corto "EmociónA + EmociónB" (sin el "· X/5" que sí llevan las emociones de "ranking"). "preguntas" debe ser un array de EXACTAMENTE 9 objetos {pregunta, respuesta}, ni 8 ni 10.\n- "iasPorZona[].color" debe ser coherente con "ias": rojo (#C53030 o similar) si ias≥75, naranja (#C05621) si 55-74, ámbar (#B7791F) si <55 — y cada "lectura" debe nombrar el mecanismo propio de esa zona, nunca una frase intercambiable con otra. "territorios[].color" (Rojo/Naranja/Amarillo) se asigna por nivel de impacto real: "Rojo" = hecho violento, pérdida de vidas o tensión con score≥75 en "ranking"; "Naranja" = tensión activa con score 55-74 o riesgo institucional/económico sostenido; "Amarillo" = tensión latente o score<55 sin escalamiento agudo todavía.`
     : '';
@@ -1357,7 +1413,14 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
   // mínimo literal (1-2 items, textos de una línea). Aquí se especifica
   // cuánto es "amplio" para cada skill, campo por campo, en vez de dejarlo
   // a interpretación del modelo.
-  const requisitosCantidad = REQUISITOS_MINIMOS[(skill === 'opositor' && parteOpositor === 2) ? 'opositor2' : skill] || '';
+  // Tensiones parte 1: la cartografía se genera en la llamada 2, así que se
+  // quitan de las instrucciones las líneas que la piden (para no gastar
+  // tokens de salida en ella) y se avisa explícitamente que NO la genere.
+  const instruccionesTensionesP1 = (txt) => (skill === 'tensiones' && parteTensiones === 1)
+    ? txt.split('\n').filter(l => !l.includes('cartografiaSocioafectiva') && !l.includes('iasPorZona')).join('\n')
+      + '\n- NO generes "cartografiaSocioafectiva" en esta respuesta: se genera en una llamada aparte. Usa todo tu espacio para las 7 pestañas de Tensiones.'
+    : txt;
+  const requisitosCantidad = REQUISITOS_MINIMOS[(skill === 'opositor' && parteOpositor === 2) ? 'opositor2' : (skill === 'tensiones' && parteTensiones === 2) ? 'tensionesCartografia' : skill] || '';
 
   const system = `Eres un analista de inteligencia político-electoral en México. Produce un análisis estructurado ÚNICAMENTE en formato JSON, sin texto adicional, sin markdown, sin backticks.
 
@@ -1372,7 +1435,7 @@ ${schema}
 - PROHIBIDO conformarte con el mínimo técnico de "al menos 1 elemento". Este es un reporte profesional de consultoría política que un cliente va a pagar y leer a detalle: cada sección debe sentirse completa e investigada, no un placeholder.
 - Cualquier campo de texto libre (p. ej. "descripcion", "texto", "analisis", "resumenEjecutivo", "argumento", "observaciones", "dyadInterp") debe ser un PÁRRAFO COMPLETO de 60 a 120 palabras con razonamiento específico y concreto (nombres, cifras, mecanismos causales) — NUNCA una sola oración genérica ni una viñeta corta.
 - ESPECIFICIDAD OBLIGATORIA en TODOS los campos, incluyendo arrays de strings cortos (p. ej. "problematics", "fears", "prides", "evitar"): cada elemento debe anclarse en un hecho verificable-style — fecha o mes aproximado, nombre de colonia/municipio/zona, cifra o porcentaje, o nombre de un actor/cargo específico. Evita frases genéricas tipo "la gente está preocupada por la inseguridad"; en vez de eso escribe algo con el nivel de detalle de: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en [mes] [año] en [colonia específica]". Si no tienes un dato exacto de las fuentes, construye el hecho de forma verosímil y específica para el contexto real del territorio evaluado (no inventes cifras absurdas, pero tampoco te quedes en lo genérico).
-${requisitosCantidad}${guardarropaEmociones}${guardarropaOpositor}${guardarropaSesgo}${guardarropaComparativo}${instruccionesEstructura}`;
+${requisitosCantidad}${guardarropaEmociones}${guardarropaOpositor}${guardarropaSesgo}${guardarropaComparativo}${instruccionesTensionesP1(instruccionesEstructura)}`;
 
   const user = `Periodo evaluado: ${periodo.label} (del ${periodo.desde} al ${periodo.hasta})
 PERIODO DE INVESTIGACIÓN: ${periodo.instruccion}
@@ -1519,6 +1582,49 @@ REQUISITOS MÍNIMOS DE CANTIDAD (COMPARATIVO) — no entregues menos de esto:
 - resumenKpis: mínimo 100 palabras comparando explícitamente a ambos actores.`,
 
 };
+
+// =========================================================
+// TENSIONES EN DOS LLAMADAS
+// El JSON de Tensiones es enorme (8-10 elementos en 9 listas + la
+// cartografía socioafectiva). Con el tope de salida del modelo, la
+// cartografía (que va al final) llegaba cortada o vacía. Por eso se
+// separa: la llamada 1 genera todo Tensiones SIN cartografía y la
+// llamada 2 genera SOLO "cartografiaSocioafectiva", recibiendo como
+// contexto el ranking/emociones/territorios de la llamada 1.
+// =========================================================
+{
+  const t = JSON.parse(SCHEMAS.tensiones);
+  SCHEMAS.tensionesCartografia = JSON.stringify({ cartografiaSocioafectiva: t.cartografiaSocioafectiva }, null, 2);
+  delete t.cartografiaSocioafectiva;
+  SCHEMAS.tensiones = JSON.stringify(t, null, 2);
+
+  const req = REQUISITOS_MINIMOS.tensiones;
+  const corte = req.indexOf('REQUISITOS MÍNIMOS — cartografiaSocioafectiva');
+  if (corte > 0) {
+    REQUISITOS_MINIMOS.tensionesCartografia = '\n' + req.slice(corte);
+    REQUISITOS_MINIMOS.tensiones = req.slice(0, corte)
+      .replace(/REGLA ANTI-CORTE[^\n]*\n/, 'REGLA ANTI-CORTE (OBLIGATORIA): este reporte tiene MUCHOS campos. Está PROHIBIDO dejar sin generar o vacíos los campos finales del JSON ("alertas", "hallazgoEmocional", "hallazgoTrayectoria", "resumenEjecutivo"). Si necesitas espacio, acorta párrafos, pero NUNCA omitas elementos ni listas.\n');
+  }
+}
+
+// Resumen compacto de la llamada 1 para que la cartografía (llamada 2) use
+// los mismos nombres de tensiones, emociones y zonas.
+function resumenTensionesParaCartografia(p1) {
+  if (!p1 || typeof p1 !== 'object') return '';
+  const lista = (arr, f) => (Array.isArray(arr) ? arr : []).map(f).filter(Boolean).slice(0, 10);
+  const partes = [];
+  const rk = lista(p1.ranking, r => r && r.nombre ? `- ${r.nombre} (score ${r.score ?? '?'}; ${r.emocion || ''}; territorio: ${r.territorio || ''}; actor: ${r.actor || ''})` : '');
+  if (rk.length) partes.push('Ranking de tensiones (usa ESTOS nombres en "tensionDominante"):\n' + rk.join('\n'));
+  const em = lista(p1.emociones, e => e && e.nombre ? `${e.nombre} (${e.porcentaje ?? e.intensidad ?? ''})` : '');
+  if (em.length) partes.push('Emociones detectadas: ' + em.join(', '));
+  const te = lista(p1.territorios, z => z && z.nombre ? `${z.nombre} — ${z.tension || ''} (${z.color || ''})` : '');
+  if (te.length) partes.push('Territorios sensibles:\n- ' + te.join('\n- '));
+  const nm = p1.narrativaMadreSintesis && p1.narrativaMadreSintesis.texto;
+  if (nm) partes.push(`Narrativa madre de TENSIONES (la tuya debe ser DISTINTA): ${nm}`);
+  const na = lista(p1.narrativas, n => n && n.nombre ? n.nombre : '');
+  if (na.length) partes.push('Narrativas institucionales ya usadas en Tensiones (no las repitas tal cual): ' + na.join(' | '));
+  return partes.join('\n\n');
+}
 
 function resumirFuentes(bloque) {
   if (!bloque || !bloque.items || bloque.items.length === 0) {
