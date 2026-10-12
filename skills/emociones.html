@@ -21,10 +21,15 @@
 #emo-root .hdr-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1.2}
 #emo-root .hdr-name span{color:var(--ac)}
 #emo-root .hdr-sub{font-size:11px;color:#94A3B8;margin-top:4px;font-weight:500}
-#emo-root .tabs{display:flex;overflow-x:auto;border-bottom:1px solid #cbd5e1;padding:0 2rem;background:#f8fafc}
+#emo-root .hdr{display:block}
+#emo-root .hero-l{font-family:monospace;font-size:10px;color:var(--ac);letter-spacing:4px;margin-bottom:8px}
+#emo-root .hero-n{font-size:clamp(26px,4vw,44px);font-weight:800;margin-bottom:6px;color:#fff;line-height:1.15}
+#emo-root .hero-n span{color:var(--ac)}
+#emo-root .hdr .hdr-sub{font-size:12.5px;color:#cbd5e1;margin-top:.5rem;line-height:1.5;font-weight:400}
+#emo-root .tabs{display:flex;overflow-x:auto;border-bottom:1px solid #cbd5e1;padding:0 2rem;background:#f1f5f9}
 #emo-root .tab{font-size:11.5px;font-weight:600;letter-spacing:.04em;padding:.85rem 1.1rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .18s}
 #emo-root .tab:hover{color:#0f172a;background:rgba(0,0,0,.03)}
-#emo-root .tab.on{color:var(--bg-hdr);border-bottom-color:var(--bg-hdr)}
+#emo-root .tab.on{color:var(--bg-hdr);border-bottom-color:var(--bg-hdr);font-weight:700}
 #emo-root .cnt{padding:1.4rem 2rem}
 #emo-root .pnl{display:none}#emo-root .pnl.on{display:block}
 #emo-root .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
@@ -84,6 +89,10 @@
 #emo-root .cbox-name{font-size:21px;font-weight:800;color:var(--tx1);margin-bottom:.45rem}
 #emo-root .cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72}
 #emo-root .cw{position:relative}
+#emo-root .actores-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+#emo-root .segnote{font-size:11px;color:var(--tx3);margin-top:.5rem;line-height:1.6}
+#emo-root .card,#emo-root .card2,#emo-root .dyc,#emo-root .mpc,#emo-root .ac{min-width:0}
+#emo-root #empnl-segmentos > .card:first-child{display:none !important}
 #emo-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
 
 /* SEGMENTOS Y PERFILES (SEGMENTA) */
@@ -114,13 +123,14 @@
 #emo-root .rkname{font-size:12px;font-weight:700;color:var(--tx1)}
 #emo-root .rkdesc{font-size:10.5px;color:var(--tx3);line-height:1.55;margin-top:2px}
 
-@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4,#emo-root .segbody{grid-template-columns:1fr}#emo-root .cnt{padding:1rem}#emo-root .hdr{padding:1rem}#emo-root .tabs{padding:0 1rem}}
+@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4,#emo-root .actores-g3,#emo-root .segbody{grid-template-columns:1fr}#emo-root .cnt{padding:1rem}#emo-root .hdr{padding:1rem}#emo-root .tabs{padding:0 1rem}}
 #emo-root #em-kpis { display: none !important; }
 </style>
 
 <header class="hdr">
   <div>
-    <h1 class="hdr-name" id="em-hdr-name">CARGANDO...</h1>
+    <div class="hero-l" id="em-hero-l">EMOCIONES // HUMOR SOCIAL EMOCIONAL · SEMIÓTICA ● MONITOREO ACTIVO</div>
+    <h1 class="hero-n" id="em-hdr-name">CARGANDO...</h1>
     <p class="hdr-sub" id="em-hdr-sub"></p>
   </div>
 </header>
@@ -145,7 +155,7 @@
   <div class="gauto" style="margin-bottom:1rem">
     <div>
       <div class="sl">Rueda de Plutchik — <span id="em-whl-territory"></span></div>
-      <div class="card" style="padding:.8rem;text-align:center;background:#ffffff">
+      <div class="card" style="padding:.8rem;text-align:center">
         <div id="em-wheel-wrap"></div>
         <div style="font-size:10px;color:var(--tx3);margin-top:.4rem">Toca cualquier pétalo activo para ver detalles</div>
       </div>
@@ -154,7 +164,7 @@
         <div style="display:flex;gap:1rem;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-hi" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Alta ●●●</span></div>
           <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-md" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Media ●●○</span></div>
-          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#e2e8f0;border:1px solid #cbd5e1"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#94a3b8"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
         </div>
       </div>
     </div>
@@ -179,7 +189,9 @@
 <div class="pnl" id="empnl-mapa">
   <div class="g3" style="margin-bottom:1rem" id="em-mapa-cols"></div>
   <div class="g2" style="margin-bottom:1rem">
-    <div class="card"><div class="sl">Frases Ciudadanas</div><div id="em-quotes"></div></div>
+    <div class="card"><div class="sl">Frases Ciudadanas Representativas</div><div id="em-quotes"></div>
+      <div class="segnote" id="em-quotes-note"></div>
+    </div>
     <div class="card">
       <div class="sl">Emociones por Temática</div>
       <div class="cw" style="height:260px"><canvas id="em-ch-temas"></canvas></div>
@@ -207,21 +219,18 @@
 <div class="pnl" id="empnl-identidad">
   <div class="cbox" style="margin-bottom:1rem" id="em-id-pregunta"></div>
   <div class="g2" style="margin-bottom:1rem">
-    <div class="card"><div class="sl">Percepción del Gobierno en Turno</div><div id="em-gov-sem"></div></div>
+    <div class="card"><div class="sl">Percepción del Gobierno Municipal</div><div id="em-gov-sem"></div></div>
     <div class="card">
-      <div class="sl">Carga Emocional por Partido</div>
+      <div class="sl">Carga Emocional por Partido / Fuerza Política</div>
       <div class="cw" style="height:220px"><canvas id="em-ch-partidos"></canvas></div>
     </div>
   </div>
-  <div class="card"><div class="sl">Percepción Ciudadana por Partido</div><div id="em-partidos-tbl"></div></div>
+  <div class="card"><div class="sl">Percepción Ciudadana por Partido / Fuerza Política</div><div id="em-partidos-tbl"></div></div>
 </div>
 
 <!-- ACTORES -->
 <div class="pnl" id="empnl-actores">
-  <div style="background:rgba(29,78,216,.07);border:1px solid rgba(29,78,216,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:11.5px;color:var(--tx2);line-height:1.6">
-    <span style="color:var(--blue2);font-weight:700" id="em-actores-label">ANÁLISIS COMPARATIVO DE ACTORES</span> — Se compara la posición emocional de los principales actores políticos del territorio, con base en investigación digital del período.
-  </div>
-  <div class="g2" style="margin-bottom:1rem" id="em-actores-grid"></div>
+  <div class="actores-g3" style="margin-bottom:1rem" id="em-actores-grid"></div>
   <div class="card">
     <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
     <div class="cw" style="height:300px"><canvas id="em-ch-actores"></canvas></div>
