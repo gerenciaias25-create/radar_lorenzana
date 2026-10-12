@@ -163,19 +163,27 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       const p1 = await callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.tensiones, parteTensiones: 1 }), OPENROUTER_KEY);
       JOBS.set(jobId, { status: 'processing', progreso: 'Generando cartografía socioafectiva (radiografía, dolores, enemigos, segmentación, narrativas y 9 preguntas)...' });
       const promptCarto = buildPrompt({ ...base, schema: SCHEMAS.tensionesCartografia, parteTensiones: 2, contextoTensiones: resumenTensionesParaCartografia(p1) });
-      let carto = null;
-      // Hasta 2 intentos: si la cartografía falla o llega vacía, Tensiones
-      // se entrega de todas formas (las 7 pestañas principales no dependen de ella).
+      let carto = null, mejorParcial = null, mejorPuntaje = 0;
+      const LISTAS_CARTO = ['iasPorZona', 'dolores', 'enemigosSimbolicos', 'fracturasSociales', 'segmentacion', 'narrativas', 'preguntas'];
+      const puntaje = (c) => LISTAS_CARTO.filter(k => c && Array.isArray(c[k]) && c[k].length).length;
+      // Hasta 2 intentos: si la cartografía falla o llega incompleta, se
+      // conserva el mejor resultado parcial; Tensiones se entrega de todas
+      // formas (las 7 pestañas principales no dependen de ella).
       for (let intento = 1; intento <= 2 && !carto; intento++) {
         try {
-          const p2 = await callOpenRouter(promptCarto, OPENROUTER_KEY);
+          const p2 = await callOpenRouter(promptCarto, OPENROUTER_KEY, 1);
           const c = p2 && (p2.cartografiaSocioafectiva || p2);
-          const llena = c && Array.isArray(c.preguntas) && c.preguntas.length && Array.isArray(c.iasPorZona) && c.iasPorZona.length;
-          if (llena) carto = c; else console.warn(`[!] Cartografía vacía (intento ${intento})`);
+          const pts = puntaje(c);
+          if (pts === LISTAS_CARTO.length) carto = c;
+          else {
+            console.warn(`[!] Cartografía incompleta (intento ${intento}): ${pts}/${LISTAS_CARTO.length} listas con datos`);
+            if (pts > mejorPuntaje) { mejorPuntaje = pts; mejorParcial = c; }
+          }
         } catch (e) {
           console.warn(`[!] Falló la cartografía socioafectiva (intento ${intento}):`, e.message);
         }
       }
+      if (!carto && mejorParcial) carto = mejorParcial;
       structured = { ...(p1 || {}), cartografiaSocioafectiva: carto || (p1 && p1.cartografiaSocioafectiva) || {} };
     } else {
       const schema = SCHEMAS[skill] || SCHEMAS.radar;
@@ -209,7 +217,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
     console.error(`[-] Error en job ${jobId}:`, err);
     JOBS.set(jobId, {
       status: 'error',
-      error: 'Error procesando el análisis.',
+      error: `Error procesando el análisis: ${String(err.message || err).slice(0, 400)}`,
       detail: String(err.message || err),
     });
     limpiarJob(jobId);
@@ -1636,39 +1644,100 @@ function resumirFuentes(bloque) {
     .join('\n');
 }
 
-async function callOpenRouter({ system, user }, apiKey) {
+// Repara un JSON cortado por el tope de tokens de salida: recorta hasta el
+// último valor completo y cierra los corchetes/llaves que quedaron abiertos.
+// Así se conserva todo lo que el modelo alcanzó a generar en vez de perder
+// el análisis completo por un JSON incompleto.
+function repararJSONCortado(txt) {
+  const s = String(txt || '');
+  const ini = s.indexOf('{');
+  if (ini < 0) return null;
+  const pila = [];
+  let enCadena = false, escape = false, ultimoCorte = -1, pilaEnCorte = [];
+  for (let k = ini; k < s.length; k++) {
+    const c = s[k];
+    if (enCadena) {
+      if (escape) escape = false;
+      else if (c === '\\') escape = true;
+      else if (c === '"') enCadena = false;
+      continue;
+    }
+    if (c === '"') { enCadena = true; continue; }
+    if (c === '{' || c === '[') pila.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') {
+      pila.pop();
+      ultimoCorte = k + 1; pilaEnCorte = pila.slice();
+      if (!pila.length) return s.slice(ini, k + 1); // JSON completo
+    } else if (c === ',') {
+      ultimoCorte = k; pilaEnCorte = pila.slice(); // antes de la coma: valor previo completo
+    }
+  }
+  if (ultimoCorte < 0) return null;
+  return s.slice(ini, ultimoCorte) + pilaEnCorte.slice().reverse().join('');
+}
+
+async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
   const model = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  let ultimoError;
 
-  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-      temperature: 0.3,
-      max_tokens: 28000,
-      response_format: { type: 'json_object' },
-    }),
-  });
-  if (!r.ok) {
-    const errText = await r.text().catch(() => '');
-    throw new Error(`OpenRouter error ${r.status}: ${errText.slice(0, 300)}`);
+  for (let intento = 1; intento <= intentos; intento++) {
+    try {
+      const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+          temperature: 0.3,
+          max_tokens: 28000,
+          response_format: { type: 'json_object' },
+        }),
+      });
+
+      if (!r.ok) {
+        const errText = await r.text().catch(() => '');
+        const err = new Error(`OpenRouter respondió HTTP ${r.status}: ${errText.slice(0, 300)}`);
+        // 400/401/402/403: error de configuración (llave, créditos, modelo) -> no tiene caso reintentar.
+        if (r.status >= 400 && r.status < 500 && r.status !== 408 && r.status !== 429) throw Object.assign(err, { definitivo: true });
+        throw err;
+      }
+
+      const data = await r.json();
+      if (data && data.error) throw new Error(`OpenRouter devolvió un error: ${JSON.stringify(data.error).slice(0, 300)}`);
+      const choice = data?.choices?.[0] || {};
+      const raw = choice?.message?.content || '';
+      if (!raw.trim()) throw new Error(`OpenRouter devolvió una respuesta vacía (finish_reason: ${choice.finish_reason || 'desconocido'}).`);
+      const clean = raw.replace(/```json|```/g, '').trim();
+
+      try {
+        return JSON.parse(clean);
+      } catch (e) {
+        // Respuesta cortada (finish_reason "length") o con basura al final:
+        // se intenta rescatar lo generado.
+        const reparado = repararJSONCortado(clean);
+        if (reparado) {
+          try {
+            const obj = JSON.parse(reparado);
+            console.warn(`[!] JSON de OpenRouter incompleto (finish_reason: ${choice.finish_reason}); se rescataron ${reparado.length} de ${clean.length} caracteres.`);
+            return obj;
+          } catch (_) { /* sigue al error */ }
+        }
+        console.error('[-] JSON inválido de OpenRouter (inicio):', clean.slice(0, 300));
+        console.error('[-] JSON inválido de OpenRouter (final):', clean.slice(-300));
+        throw new Error(`OpenRouter devolvió un JSON con formato inválido (finish_reason: ${choice.finish_reason || 'desconocido'}).`);
+      }
+    } catch (e) {
+      ultimoError = e;
+      console.warn(`[!] callOpenRouter intento ${intento}/${intentos} falló:`, e.message);
+      if (e.definitivo) break;
+      if (intento < intentos) await new Promise(res => setTimeout(res, 2000));
+    }
   }
-
-  const data = await r.json();
-  const raw = data?.choices?.[0]?.message?.content || '{}';
-  const clean = raw.replace(/```json|```/g, '').trim();
-
-  try {
-    return JSON.parse(clean);
-  } catch (e) {
-    console.error('[-] JSON inválido de OpenRouter:', clean.slice(0, 500));
-    throw new Error('OpenRouter devolvió un JSON con formato inválido.');
-  }
+  throw ultimoError;
 }
