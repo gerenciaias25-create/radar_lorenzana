@@ -238,7 +238,7 @@ function indiceMes(m) {
   return i >= 0 ? i : 7; // Agosto por defecto (comportamiento histórico)
 }
 
-function construirPeriodo(params = {}) {
+function construirPeriodoBase(params = {}) {
   const tipo = ['mes', 'rango', 'semana'].includes(params.periodoTipo) ? params.periodoTipo : 'mes';
   const anio = parseInt(params.anio, 10) || 2026;
 
@@ -298,6 +298,43 @@ function construirPeriodo(params = {}) {
     mes: MESES[mI], anio: String(anio),
     instruccion: `El periodo es el mes de ${MESES[mI]} ${anio}. Las series temporales pueden usar cortes semanales dentro de ese mes.`,
   };
+}
+
+// Cortes de la gráfica/tabla de TRAYECTORIA (Tensiones): siempre varios
+// puntos para que la gráfica muestre una línea de evolución, no un punto.
+//  - mes:    los 4 meses anteriores + el mes elegido (5 cortes)
+//  - rango:  cada mes del rango (si el rango tiene 1 mes, como "mes")
+//  - semana: las 4 semanas anteriores + la semana elegida (5 cortes)
+function cortesDeTrayectoria(p) {
+  if (p.tipo === 'semana') {
+    const fin = new Date(`${p.desde}T00:00:00Z`);
+    const out = [];
+    for (let k = 4; k >= 0; k--) {
+      const a = new Date(fin.getTime() - k * 7 * 86400000), b = new Date(a.getTime() + 6 * 86400000);
+      out.push(a.getUTCMonth() === b.getUTCMonth()
+        ? `${a.getUTCDate()}–${b.getUTCDate()} ${MESES_CORTOS[b.getUTCMonth()]}`
+        : `${a.getUTCDate()} ${MESES_CORTOS[a.getUTCMonth()]}–${b.getUTCDate()} ${MESES_CORTOS[b.getUTCMonth()]}`);
+    }
+    out[out.length - 1] += ' (periodo)';
+    return out;
+  }
+  if (p.tipo === 'rango' && Array.isArray(p.cortes) && p.cortes.length >= 2) return p.cortes.slice();
+  const [y, mo] = p.desde.split('-').map(Number);
+  const total = y * 12 + (mo - 1);
+  const cruzaAnio = Math.floor((total - 4) / 12) !== Math.floor(total / 12);
+  const out = [];
+  for (let t = total - 4; t <= total; t++) {
+    const a = Math.floor(t / 12), m = t % 12;
+    out.push(cruzaAnio ? `${MESES_CORTOS[m]} ${a}` : MESES[m]);
+  }
+  return out;
+}
+
+function construirPeriodo(params = {}) {
+  const p = construirPeriodoBase(params);
+  p.cortesTrayectoria = cortesDeTrayectoria(p);
+  p.instruccion += ` TRAYECTORIA (Tensiones): "trayectoriaLabels" debe ser EXACTAMENTE ${JSON.stringify(p.cortesTrayectoria)} (${p.cortesTrayectoria.length} cortes; los anteriores al periodo son contexto de comparación) y cada "trayectoria[].valores" debe traer EXACTAMENTE ${p.cortesTrayectoria.length} números (uno por corte, en ese orden), con el último igual al "score" del ranking.`;
+  return p;
 }
 
 // Health Check
@@ -474,6 +511,34 @@ function normalizeResponse(data, skill, ctx = {}) {
     ensureArray(data, 'riesgos', []);
     ensureArray(data, 'trayectoriaLabels', []);
     ensureArray(data, 'trayectoria', []);
+    // Trayectoria: la gráfica necesita varios cortes. Si el modelo devolvió
+    // menos columnas de las pedidas (p. ej. solo el corte final), se usan los
+    // cortes del periodo y se conserva lo que sí trajo: el valor final, y el
+    // inicial cuando se puede deducir de "delta". Los cortes sin dato quedan
+    // vacíos (null) en vez de inventarse.
+    const cortesT = (ctx.periodo && ctx.periodo.cortesTrayectoria) || [];
+    if (cortesT.length >= 2) {
+      const labelsModelo = Array.isArray(data.trayectoriaLabels) ? data.trayectoriaLabels : [];
+      const n = cortesT.length;
+      const ajustar = labelsModelo.length !== n || data.trayectoria.some(t => !Array.isArray(t && t.valores) || t.valores.length !== n);
+      if (ajustar) {
+        data.trayectoriaLabels = cortesT.slice();
+        data.trayectoria = data.trayectoria.filter(t => t && typeof t === 'object').map(t => {
+          const nums = (Array.isArray(t.valores) ? t.valores : [t.t3, t.t2, t.t1, t.ta]).map(Number).filter(Number.isFinite);
+          let valores;
+          if (nums.length >= n) valores = nums.slice(-n);
+          else {
+            valores = new Array(n).fill(null);
+            nums.forEach((v, k) => { valores[n - nums.length + k] = v; });
+            const fin = Number.isFinite(Number(t.ta)) ? Number(t.ta) : valores[n - 1];
+            if (Number.isFinite(fin)) valores[n - 1] = fin;
+            const d = parseFloat(String(t.delta || '').replace(/[^0-9.+-]/g, ''));
+            if (valores[0] === null && Number.isFinite(fin) && Number.isFinite(d) && nums.length < 2) valores[0] = Math.max(0, Math.min(100, fin - d));
+          }
+          return { ...t, valores, ta: valores[n - 1] };
+        });
+      }
+    }
     ensureObject(data, 'aprobacion', { cortes: [], nota: '' });
     ensureArray(data.aprobacion, 'cortes', []);
     ensureArray(data, 'alertas', []);
