@@ -10,13 +10,13 @@ const S = (v) => (v === undefined || v === null) ? '' : String(v);
 const N = (v) => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
 const esc = (v) => S(v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-const C = {ac:'#00C2D4',go:'#F4C430',da:'#E63946',su:'#2EC4B6',ne:'#8FA3B1',bl:'#1B4F8A',or:'#E67E22'};
+const C = {ac:'#0097A7',go:'#D97706',da:'#DC2626',su:'#0D9488',ne:'#64748B',bl:'#1E40AF',or:'#C2410C'};
 const SENT_COLOR = {positivo:C.su,negativo:C.da,neutro:C.ne,polarizado:C.go};
-const G = 'rgba(255,255,255,.05)';
-if (window.Chart) { Chart.defaults.color='#8FA3B1'; Chart.defaults.font.family='system-ui,sans-serif'; Chart.defaults.font.size=10; Chart.defaults.maintainAspectRatio=false; }
+const G = 'rgba(0,0,0,.06)';
+if (window.Chart) { Chart.defaults.color='#475569'; Chart.defaults.font.family='system-ui,sans-serif'; Chart.defaults.font.size=10; Chart.defaults.maintainAspectRatio=false; }
 const sg = v => (v > 0 ? '+' : '') + v;
 const nps = d => { const den = N(d[0]) + N(d[2]); return den ? Math.round((N(d[0]) - N(d[2])) / den * 100) : 0; };
-const npsCol = v => v >= 20 ? C.su : v >= 0 ? C.go : v > -30 ? C.da : '#AA0000';
+const npsCol = v => v >= 20 ? C.su : v >= 0 ? C.go : v > -30 ? C.da : '#991B1B';
 const evSpan = (e) => e ? ` <span class="ev">${esc(e)}</span>` : '';
 
 const actor = O(D.actor), alerta = O(D.alerta);
@@ -44,8 +44,7 @@ const negativo = (t) => /^[−-]/.test(t.trim());
 $('r-tags').innerHTML = `<span class="tag ta">ANÁLISIS BIVARIADO</span>${actor.cargo ? `<span class="tag tn">${esc(S(actor.cargo).toUpperCase())}</span>` : ''}`
   + `<span class="tag tg">ALERTA: ${esc(color)}</span><span class="tag ${negativo(npsTxt) ? 'td' : 'ta'}">NPS-P: ${esc(npsTxt)}</span><span class="tag td">IRR: ${esc(irr)}</span><span class="tag ta">ICN: ${esc(icn)}</span>`;
 $('r-metodo').innerHTML = S(D.metodo);
-$('r-ftr-l').textContent = `RADAR v2.0 · ANÁLISIS BIVARIADO · ESTUDIO CONFIDENCIAL${territorio ? ' · ' + territorio.toUpperCase() : ''}${periodo ? ' · ' + S(periodo).toUpperCase() : ''}`;
-$('r-fuentes').innerHTML = A(D.fuentes).filter(f => f && /^https?:\/\//.test(S(f.url))).map(f => `<li><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.titulo || f.url)}</a></li>`).join('') || '<li>Sin fuentes con enlace verificable en el periodo.</li>';
+$('r-ftr-l').textContent = 'RADAR Estudio confidencial';
 
 /* ---------- PESTAÑAS ---------- */
 window.radarTab = function(btn, id){
@@ -101,7 +100,7 @@ window.radarUpdSent = function(btn, k){
 };
 
 /* ---------- TOP OF MIND ---------- */
-const PAL5 = [C.da,C.go,C.su,C.ac,'#7eb8f7'];
+const PAL5 = [C.da,C.go,C.su,C.ac,'#3B82F6'];
 const palabras = A(O(D.nube).palabras);
 const norm = (t) => S(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const TCOL = TOPICS.map(t => {
@@ -112,7 +111,7 @@ const TCOL = TOPICS.map(t => {
 const tomMat = (o) => ({ g: A(O(o).grupos), d: A(O(o).valores) });
 function rTom(k){
   if (k === 'general') { mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:[{data:A(TOMD.general),backgroundColor:TCOL,borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'%'}}},scales:{x:yPct,y:{grid:{display:false},ticks:{font:{size:10}}}}}}); return; }
-  if (k === 'genero') { const g = O(TOMD.genero); mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:[{label:'Mujeres',data:A(g.mujeres),backgroundColor:'rgba(230,57,70,.75)',borderRadius:2},{label:'Hombres',data:A(g.hombres),backgroundColor:C.bl,borderRadius:2}]},options:{indexAxis:'y',plugins:{legend:legB},scales:{x:{grid:{color:G},max:100,title:{display:true,text:'saliencia 0-100'}},y:{grid:{display:false},ticks:{font:{size:9}}}}}}); return; }
+  if (k === 'genero') { const g = O(TOMD.genero); mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:[{label:'Mujeres',data:A(g.mujeres),backgroundColor:'rgba(220,38,38,.75)',borderRadius:2},{label:'Hombres',data:A(g.hombres),backgroundColor:C.bl,borderRadius:2}]},options:{indexAxis:'y',plugins:{legend:legB},scales:{x:{grid:{color:G},max:100,title:{display:true,text:'saliencia 0-100'}},y:{grid:{display:false},ticks:{font:{size:9}}}}}}); return; }
   const d = tomMat(TOMD[k]); const isSal = k === 'edad';
   mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:d.g.map((g,i)=>({label:g,data:d.d.map(r=>A(r)[i]),backgroundColor:PAL5[i%5],borderRadius:2}))},options:{indexAxis:'y',plugins:{legend:legB},scales:{x:isSal?{grid:{color:G},max:100,title:{display:true,text:'saliencia 0-100'}}:yPct,y:{grid:{display:false},ticks:{font:{size:9}}}}}});
 }
@@ -137,7 +136,7 @@ $('r-tl').innerHTML = Q.map(q => `<div class="tq ${esc(q.tono)}"><div class="tqd
 function rPicos(){
   const v = Q.map(q => N(q.nps));
   const lo = Math.max(-100, Math.floor((Math.min(0, ...v) - 10) / 10) * 10), hi = Math.min(100, Math.ceil((Math.max(0, ...v) + 10) / 10) * 10);
-  mk('rc-picos',{type:'line',data:{labels:Q.map(q=>q.codigo),datasets:[{data:v,borderColor:C.ac,backgroundColor:'rgba(0,194,212,.08)',fill:'origin',tension:.35,borderWidth:2,pointRadius:v.map(x=>x<=-25?6:3),pointBackgroundColor:v.map(x=>x<=-25?C.da:x>=0?C.su:C.go)}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>Q[c[0].dataIndex].codigo+' · '+Q[c[0].dataIndex].rango,label:c=>'NPS-P '+sg(c.raw)+' · '+Q[c.dataIndex].titulo}}},scales:{y:{grid:{color:G},min:lo,max:hi,ticks:{callback:sg}},x:xOff}}});
+  mk('rc-picos',{type:'line',data:{labels:Q.map(q=>q.codigo),datasets:[{data:v,borderColor:C.ac,backgroundColor:'rgba(0,151,167,.1)',fill:'origin',tension:.35,borderWidth:2,pointRadius:v.map(x=>x<=-25?6:3),pointBackgroundColor:v.map(x=>x<=-25?C.da:x>=0?C.su:C.go)}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>Q[c[0].dataIndex].codigo+' · '+Q[c[0].dataIndex].rango,label:c=>'NPS-P '+sg(c.raw)+' · '+Q[c.dataIndex].titulo}}},scales:{y:{grid:{color:G},min:lo,max:hi,ticks:{callback:sg}},x:xOff}}});
   mk('rc-picvol',{type:'bar',data:{labels:Q.map(q=>q.codigo),datasets:[{data:Q.map(q=>N(q.volumen)),backgroundColor:Q.map(q=>q.tono==='neg'?C.da:q.tono==='pos'?C.su:C.go),borderRadius:2,borderWidth:0}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>Q[c[0].dataIndex].rango,label:c=>'Índice '+c.raw}}},scales:{y:{grid:{color:G},min:0,max:100},x:xOff}}});
 }
 
@@ -151,7 +150,7 @@ function rPlat(){
   const mx = Math.max(60, Math.ceil(Math.max(0, ...L.map(l => Math.max(N(pl[l][0]), N(pl[l][2])))) / 10) * 10);
   mk('rc-pltono',{type:'bar',data:{labels:L,datasets:[{label:'% Positivo',data:L.map(l=>pl[l][0]),backgroundColor:C.su,borderRadius:2},{label:'% Negativo',data:L.map(l=>pl[l][2]),backgroundColor:C.da,borderRadius:2}]},options:{plugins:{legend:legB},scales:{y:{...yPct,max:Math.min(100,mx)},x:xOff}}});
   const E = A(D.plataformaEdad); const ag = ['18-24','25-34','35-44','45-59','60+'];
-  mk('rc-pledad',{type:'bar',data:{labels:E.map(e=>e.plataforma),datasets:ag.map((a,i)=>({label:a,data:E.map(e=>A(e.valores)[i]),backgroundColor:['rgba(230,57,70,.75)',C.go,C.ac,C.su,C.ne][i],borderRadius:2}))},options:{plugins:{legend:legB},scales:{y:{...yPct,stacked:true,max:100},x:{...xOff,stacked:true}}}});
+  mk('rc-pledad',{type:'bar',data:{labels:E.map(e=>e.plataforma),datasets:ag.map((a,i)=>({label:a,data:E.map(e=>A(e.valores)[i]),backgroundColor:['rgba(220,38,38,.75)',C.go,C.ac,C.su,C.ne][i],borderRadius:2}))},options:{plugins:{legend:legB},scales:{y:{...yPct,stacked:true,max:100},x:{...xOff,stacked:true}}}});
   const V = A(D.alcancePieza);
   mk('rc-plviral',{type:'bar',data:{labels:V.map(v=>v.metrica),datasets:[{label:'Pieza crítica',data:V.map(v=>N(v.critica)),backgroundColor:C.da,borderRadius:2},{label:'Pieza propia / favorable',data:V.map(v=>N(v.propia)),backgroundColor:C.su,borderRadius:2}]},options:{plugins:{legend:legB,tooltip:{callbacks:{label:c=>c.dataset.label+': '+(/÷\s*10/.test(S(V[c.dataIndex].metrica))?Math.round(c.raw*10)+' vistas':c.raw)}}},scales:{y:{grid:{color:G},min:0},x:xOff}}});
 }
@@ -161,7 +160,7 @@ function buildCloud(words){
   if (!words.length) return '<span style="color:var(--ne)">Sin términos suficientes en la muestra.</span>';
   const max = Math.max(...words.map(w => w.weight)), min = Math.min(...words.map(w => w.weight));
   const order = [...words].sort((a, b) => ((a.word.length * 7) % 11) - ((b.word.length * 7) % 11));
-  return order.map(w => { const t = (w.weight - min) / ((max - min) || 1); const size = (12 + t * 30).toFixed(0); const color = SENT_COLOR[w.sentiment] || '#8FA3B1'; const fw = t > 0.6 ? 800 : t > 0.3 ? 700 : 500;
+  return order.map(w => { const t = (w.weight - min) / ((max - min) || 1); const size = (12 + t * 30).toFixed(0); const color = SENT_COLOR[w.sentiment] || C.ne; const fw = t > 0.6 ? 800 : t > 0.3 ? 700 : 500;
     return `<span style="font-size:${size}px;color:${color};font-weight:${fw};margin:4px 8px;display:inline-block" title="${esc(w.word)} · peso ${w.weight} · ${w.sentiment}">${esc(w.word)}</span>`; }).join(' ');
 }
 $('r-cloud').innerHTML = buildCloud(palabras.map(p => ({word:S(p.w), weight:N(p.v), sentiment:S(p.s)})));
@@ -178,7 +177,7 @@ const NAR = O(D.narrativas);
 const bivar = (t) => t ? (/^\s*<strong>/.test(t) ? t : '<strong>Bivariado:</strong> ' + t) : '';
 const narItem = (n, biCls, crit) => {
   const alertaN = crit && (n.alerta === true || n.alerta === 'true');
-  const tit = alertaN ? `<div class="nit" style="color:var(--da)">⚠ ${esc(S(n.titulo).replace(/^⚠\s*/, ''))}</div>` : `<div class="nit">${esc(n.titulo)}</div>`;
+  const tit = alertaN ? `<div class="nit" style="color:#B91C1C">⚠ ${esc(S(n.titulo).replace(/^⚠\s*/, ''))}</div>` : `<div class="nit">${esc(n.titulo)}</div>`;
   return `<div class="ni">${tit}<div class="nd">${S(n.descripcion)}</div>${A(n.tags).map(t => `<span class="btag ${TAGC[S(t.tipo).toLowerCase()] || 'bsrc'}">${esc(t.texto)}</span>`).join('')}${n.bivariado ? `<div class="bi${biCls}">${bivar(S(n.bivariado))}</div>` : ''}</div>`;
 };
 $('r-nar-fav').innerHTML = A(NAR.favorables).map(n => narItem(n, '', false)).join('');
@@ -186,7 +185,7 @@ $('r-nar-crit').innerHTML = A(NAR.criticas).map(n => narItem(n, ' neg', true)).j
 $('r-nar-neu').innerHTML = A(NAR.neutras).map(n => narItem(n, ' ntr', false)).join('');
 
 /* ---------- RIESGOS ---------- */
-const LV_R = {'CRÍTICO':'lc','ALTO':'la','MEDIO':'lm','BAJO':'lb'}, LV_O = {'ALTO':'lo','MEDIO':'lb','BAJO':'lb'};
+const LV_R = {'CRÍTICO':'lc','ALTO':'la','MEDIO':'lm','BAJO':'lb'}, LV_O = {'ALTO':'lo','MEDIO':'lom','BAJO':'lb'};
 const mr = (r, lv, neg) => `<div class="mr"><div class="mt"><span class="lv ${lv}">${esc(r.nivel)}</span><span class="mn">${esc(r.titulo)}</span></div><div class="md">${S(r.descripcion)}</div>${r.bivariado ? `<div class="bi${neg ? ' neg' : ''}">${bivar(S(r.bivariado))}</div>` : ''}</div>`;
 $('r-riesgos').innerHTML = A(D.riesgos).map(r => mr(r, LV_R[r.nivel] || 'lm', true)).join('');
 $('r-oport').innerHTML = A(D.oportunidades).map(r => mr(r, LV_O[r.nivel] || 'lb', false)).join('');
@@ -195,7 +194,7 @@ const COLN = {VERDE:'su', AMARILLA:'go', NARANJA:'go', ROJA:'da'};
 const cN = COLN[color] || 'go';
 $('r-alerta-box').className = 'ic ' + cN;
 const txtA = S(AN.texto);
-$('r-alerta-txt').innerHTML = /⚡/.test(txtA) ? txtA : `<strong style="color:var(--${cN})">⚡ NIVEL ${nivel} · ALERTA ${esc(color)}.</strong> ${txtA}`;
+$('r-alerta-txt').innerHTML = /⚡/.test(txtA) ? txtA : `<strong style="color:${({su:'#0E7C71',go:'#B45309',da:'#B91C1C'})[cN]}">⚡ NIVEL ${nivel} · ALERTA ${esc(color)}.</strong> ${txtA}`;
 const NIV = ['Verde','Amarilla','Naranja','Roja'];
 const arriba = NIV.slice(nivel);
 const abajo = nivel > 1 ? NIV[nivel - 2] : '';
