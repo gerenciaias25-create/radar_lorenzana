@@ -489,6 +489,54 @@ function normalizeResponse(data, skill, ctx = {}) {
     // el modelo identificó se respetan.
     const esPlaceholder = (t) => !String(t || '').trim() || /^(competidor|oponente|actor|candidat[oa]|rival)\s*[a-z0-9]?$/i.test(String(t).trim());
     if (ctx.actorName && data.actores[0] && esPlaceholder(data.actores[0].name)) data.actores[0].name = ctx.actorName;
+
+    // Actores: nombre real (no el del territorio buscado), rows como pares
+    // [etiqueta, valor] y el radar con las MISMAS etiquetas que las tarjetas.
+    const PAL_ACT = ['#C9980A', '#2563eb', '#9d1c3a', '#16a34a', '#7c3aed', '#0891b2'];
+    data.actores = data.actores.filter(a => a && typeof a === 'object').map((a, i) => ({
+      ...a,
+      name: String(a.name || a.nombre || '').trim(),
+      role: String(a.role || a.rol || a.cargo || '').trim(),
+      borderColor: /^#[0-9a-f]{3,8}$/i.test(String(a.borderColor || '')) ? a.borderColor : PAL_ACT[i % PAL_ACT.length],
+      rows: (Array.isArray(a.rows) ? a.rows : []).map(r => Array.isArray(r) ? [String(r[0] ?? ''), String(r[1] ?? '')] : (r && typeof r === 'object' ? [String(r.label ?? r.k ?? ''), String(r.value ?? r.v ?? '')] : null)).filter(Boolean),
+    })).filter(a => a.name);
+    ensureObject(data, 'actoresRadar', { labels: [], data: [], colors: [] });
+    const ar = data.actoresRadar;
+    if (data.actores.length) {
+      const datosRadar = Array.isArray(ar.data) ? ar.data : [];
+      ar.labels = data.actores.map(a => a.name);
+      ar.colors = data.actores.map(a => a.borderColor);
+      ar.data = data.actores.map((_, i) => {
+        const fila = Array.isArray(datosRadar[i]) ? datosRadar[i] : [];
+        return Array.from({ length: 6 }, (_, k) => Math.max(0, Math.min(100, Number(fila[k]) || 0)));
+      });
+    }
+
+    // Percepción por partido: las 4 columnas siempre llenas (nombre, emoción,
+    // capital, tendencia con flecha) y la gráfica de carga emocional alineada
+    // 1 a 1 con la tabla.
+    const FLECHA = { baja: '↓', sube: '↑', estable: '→' };
+    data.partidos = data.partidos.filter(p => p && typeof p === 'object' && (p.nombre || p.partido)).map(p => {
+      let tendencia = String(p.tendencia || '').trim();
+      const dir = String(p.direccion || '').toLowerCase();
+      if (!/[↑↓→]/.test(tendencia)) tendencia = `${FLECHA[dir] || (/(baj|cae|erosi|pierd|margin)/i.test(tendencia) ? '↓' : /(sub|crec|gan|dispon)/i.test(tendencia) ? '↑' : '→')} ${tendencia || (dir === 'baja' ? 'A la baja' : dir === 'sube' ? 'Al alza' : 'Estable')}`.trim();
+      const c = p.cargaEmocional && typeof p.cargaEmocional === 'object' ? p.cargaEmocional : {};
+      return {
+        ...p,
+        nombre: String(p.nombre || p.partido),
+        emocion: String(p.emocion || p.emocionDominante || '—'),
+        capital: String(p.capital || p.capitalPolitico || '—'),
+        tendencia,
+        cargaEmocional: { iraAsco: Number(c.iraAsco) || 0, decepcionTristeza: Number(c.decepcionTristeza) || 0, interesDisponible: Number(c.interesDisponible) || 0 },
+      };
+    });
+    const chartPrevio = Array.isArray(data.partidosChart) ? data.partidosChart : [];
+    data.partidosChart = data.partidos.map((p, i) => {
+      const fila = chartPrevio[i];
+      if (Array.isArray(fila) && fila.length >= 3 && fila.some(v => Number(v) > 0)) return fila.slice(0, 3).map(v => Number(v) || 0);
+      const c = p.cargaEmocional;
+      return [c.iraAsco, c.decepcionTristeza, c.interesDisponible];
+    });
     ensureObject(data, 'actoresRadar', { labels: [], data: [], colors: [] });
     if (!data.resumenEjecutivo) data.resumenEjecutivo = '';
     if (!data.segIntro) data.segIntro = '';
@@ -1143,20 +1191,22 @@ const SCHEMAS = {
     govSemaforo: [{ label: "string", val: "string", estado: "positivo|atencion|critico", color: "#hex" }],
     partidos: [
       {
-        nombre: "string",
-        emocion: "string",
-        capital: "string",
-        tendencia: "string",
+        nombre: "string (partido o fuerza política con su rol local, ej. 'PAN (gobierno municipal)', 'Morena / PT / Verde', 'PRI', 'Independientes / Movimiento del Sombrero')",
+        emocion: "string (emoción ciudadana dominante hacia esa fuerza, ej. 'Ira contenida / Desgaste', 'Anticipación / Esperanza condicionada')",
+        capital: "string (capital político-emocional: 'Alto' | 'Medio-Alto' | 'Medio' | 'Bajo' | 'Potencial')",
+        tendencia: "string (flecha + frase corta OBLIGATORIA: '↓ Erosión gradual', '→ Consolidando base', '↑ Espacio disponible', '↓ Marginal')",
         direccion: "baja|sube|estable",
+        color: "#hex (color del partido)",
         cargaEmocional: { iraAsco: 0, decepcionTristeza: 0, interesDisponible: 0 }
       }
     ],
     partidosChart: [[0, 0, 0]],
     actores: [
       {
-        name: "string",
-        role: "string",
-        rows: [["label", "value"]],
+        name: "string (NOMBRE COMPLETO REAL de la persona: candidato/a, aspirante, titular en turno o figura opositora — nunca un partido, un cargo genérico ni el nombre del territorio)",
+        role: "string (cargo actual · partido/afiliación · aspiración, ej. 'Secretario del H. Ayuntamiento · PAN (precandidato de continuidad)')",
+        partido: "string",
+        rows: [["Posicionamiento", "cláusula específica"], ["Emoción que capitaliza", "..."], ["Fortaleza narrativa", "..."], ["Riesgo / vulnerabilidad", "..."], ["Relación con el gobierno actual", "..."], ["Ventana de oportunidad", "..."]],
         borderColor: "#hex"
       }
     ],
@@ -1574,8 +1624,8 @@ REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
 - secondary: mínimo 4 emociones secundarias.
 - quotes: mínimo 6 frases ciudadanas distintas, cada una con cita textual + emoción/tono + colonia o zona específica (como en el ejemplo: cita, luego "Tema · Emoción · Colonia").
 - dyads: mínimo 3 díadas emocionales.
-- partidos: mínimo 3 partidos/actores políticos distintos.
-- actores: mínimo 3 actores comparados, cada uno con mínimo 6 filas en "rows" (ver categorías e instrucciones de contenido en la sección de INSTRUCCIONES DE ESTRUCTURA CRÍTICAS).
+- partidos: mínimo 4 fuerzas políticas (incluye al partido en el gobierno local, la principal oposición, otros partidos con presencia y, si existen, independientes/movimientos), cada una con las 4 columnas llenas: "emocion", "capital", "tendencia" (con flecha ↑/↓/→ + frase) y su "cargaEmocional"; "partidosChart" debe tener una fila por partido en el MISMO orden.
+- actores: mínimo 3 actores comparados con su NOMBRE COMPLETO REAL (candidatos/aspirantes/figuras políticas del territorio, nunca un partido, cargo genérico o el nombre del territorio), cada uno con mínimo 6 filas en "rows" (ver categorías e instrucciones de contenido en la sección de INSTRUCCIONES DE ESTRUCTURA CRÍTICAS).
 - problematics: mínimo 6 elementos, cada uno anclado en un hecho específico (fecha, colonia, cifra, nombre de funcionario si aplica) — usa como referencia de densidad y estilo: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en febrero y mayo 2026 en Paseo de los Mexicas y Conscripto".
 - fears: mínimo 5 elementos con el mismo nivel de especificidad territorial y temporal.
 - prides: mínimo 4 elementos con el mismo nivel de especificidad (nombres de proyectos, cifras de aportación económica, identidad territorial concreta).
