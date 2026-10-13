@@ -346,6 +346,7 @@
     <div class="dashboard-toolbar">
       <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte (HTML)</button>
       <button class="btn-action" id="btnPdf" onclick="downloadPDF()">📄 Descargar PDF</button>
+      <button class="btn-action" id="btnGuardarSIE" onclick="guardarEnSistema()" style="display:none">💾 Guardar en el sistema</button>
       <button class="btn-action" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
     </div>
 
@@ -853,16 +854,17 @@ async function downloadPDF() {
 // datos ya cargados en pantalla), en vez de abrir el diálogo de impresión
 // del navegador. El archivo resultante abre standalone, con pestañas,
 // gráficas (Chart.js vía CDN) y acordeones funcionando igual que aquí.
-async function downloadReport() {
+// Arma el HTML autocontenido del dashboard que está en pantalla.
+// Lo usan "Descargar Reporte (HTML)" y "Guardar en el sistema".
+async function construirHTMLStandalone() {
   const skill = document.getElementById('skillSelect').value;
   const skillPath = SKILL_FILES[skill];
   const container = document.getElementById('skillContainer');
 
   if (!skillPath || !container || !container.innerHTML.trim() || !window.DATA) {
-    return showError('No hay un reporte generado todavía para descargar.');
+    throw new Error('No hay un reporte generado todavía.');
   }
-
-  try {
+  {
     // Misma lógica .js que ya se ejecutó en pantalla, para incrustarla inline
     // (un archivo standalone no puede depender de rutas relativas al servidor).
     const jsResp = await fetch(`${skillPath}.js?v=${Date.now()}`, { cache: 'no-store' });
@@ -912,7 +914,13 @@ ${jsCode}
 <\/script>
 </body>
 </html>`;
+    return { skill, html: standalone, fileName, actorLabel };
+  }
+}
 
+async function downloadReport() {
+  try {
+    const { html: standalone, fileName } = await construirHTMLStandalone();
     const blob = new Blob([standalone], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -926,6 +934,51 @@ ${jsCode}
     console.error('[RADAR] Error exportando reporte:', err);
     showError('No se pudo generar el archivo HTML del reporte: ' + (err.message || 'error desconocido'));
   }
+}
+
+// =========================================================
+// GUARDAR EN EL SISTEMA (SIE)
+// RADAR corre dentro de un iframe del Panel de Investigación (sielorenzana.com).
+// El HTML del dashboard se manda al panel padre con postMessage; el panel,
+// que sí tiene la sesión del investigador, lo guarda en la base de datos.
+// =========================================================
+let SIE_PARENT_ORIGIN = null; // se fija al recibir SIE_INIT desde el panel
+
+async function guardarEnSistema() {
+  const btn = document.getElementById('btnGuardarSIE');
+  if (window.parent === window || !SIE_PARENT_ORIGIN) {
+    return avisoGuardado(false, 'Para guardar en el sistema abre RADAR desde el Panel de Investigación de SIE.');
+  }
+  try {
+    btn.disabled = true; btn.textContent = '⏳ Guardando...';
+    const { skill, html, fileName, actorLabel } = await construirHTMLStandalone();
+    const meta = window.DATA_META || {};
+    window.parent.postMessage({
+      type: 'SIE_GUARDAR_DASHBOARD',
+      skill,
+      sujeto: actorLabel,
+      titulo: `${String(skill).toUpperCase()} · ${actorLabel}${meta.periodo ? ' · ' + meta.periodo : ''}`,
+      periodo: meta.periodo || '',
+      cliente: meta.cliente || '',
+      nombreArchivo: fileName,
+      html,
+    }, SIE_PARENT_ORIGIN);
+    // La respuesta llega como mensaje SIE_GUARDADO (ver listener de abajo).
+    setTimeout(() => { if (btn.disabled) { btn.disabled = false; btn.textContent = '💾 Guardar en el sistema'; } }, 30000);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = '💾 Guardar en el sistema';
+    avisoGuardado(false, 'No se pudo guardar: ' + (err.message || err));
+  }
+}
+
+function avisoGuardado(ok, texto) {
+  const btn = document.getElementById('btnGuardarSIE');
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar en el sistema'; }
+  let t = document.getElementById('sieToast');
+  if (!t) { t = document.createElement('div'); t.id = 'sieToast'; document.body.appendChild(t); }
+  t.style.cssText = `position:fixed;top:18px;right:18px;z-index:99999;padding:12px 18px;border-radius:8px;font:700 13px system-ui,sans-serif;color:#fff;background:${ok ? '#10b981' : '#ef4444'};box-shadow:0 6px 20px rgba(0,0,0,.2)`;
+  t.textContent = texto;
+  clearTimeout(t._h); t._h = setTimeout(() => t.remove(), 5000);
 }
 
 function resetToSearch() {
@@ -946,7 +999,13 @@ window.addEventListener('message', (event) => {
   if (!/(^|\.)sielorenzana\.com$/.test(host)) return;
 
   if (event.data && event.data.type === 'SIE_INIT') {
+    SIE_PARENT_ORIGIN = event.origin;
+    const b = document.getElementById('btnGuardarSIE'); if (b) b.style.display = '';
     console.log("Módulo cargado exitosamente en SIE por el investigador:", event.data.investigador);
+  }
+  if (event.data && event.data.type === 'SIE_GUARDADO') {
+    const d = event.data;
+    avisoGuardado(!!d.ok, d.ok ? `✓ Guardado en el sistema · ${d.categoria || ''} · versión ${d.version || ''}` : `⚠ ${d.error || 'No se pudo guardar'}`);
   }
 });
 
