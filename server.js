@@ -267,8 +267,54 @@ function indiceMes(m) {
 }
 
 function construirPeriodoBase(params = {}) {
-  const tipo = ['mes', 'rango', 'semana'].includes(params.periodoTipo) ? params.periodoTipo : 'mes';
+  const tipo = ['mes', 'rango', 'semana', 'personalizado'].includes(params.periodoTipo) ? params.periodoTipo : 'mes';
   const anio = parseInt(params.anio, 10) || 2026;
+
+  if (tipo === 'personalizado') {
+    const ini = new Date(`${params.fechaInicio || ''}T00:00:00Z`);
+    const fin = new Date(`${params.fechaFin || ''}T00:00:00Z`);
+    if (isNaN(ini) || isNaN(fin)) throw new Error('Selecciona la fecha inicial y la fecha final del periodo.');
+    if (fin < ini) throw new Error('La fecha final no puede ser anterior a la fecha inicial.');
+    const dias = Math.round((fin - ini) / 86400000) + 1;
+    if (dias > 731) throw new Error('El periodo personalizado máximo es de 2 años.');
+    const f = (d, conAnio) => `${d.getUTCDate()} ${MESES_CORTOS[d.getUTCMonth()]}${conAnio ? ' ' + d.getUTCFullYear() : ''}`;
+    const label = dias === 1 ? `${f(ini, true)}` : `Del ${f(ini, ini.getUTCFullYear() !== fin.getUTCFullYear())} al ${f(fin, true)}`;
+    const ventanas = (n) => { // parte el periodo en ventanas de n días
+      const out = [];
+      for (let t = ini.getTime(), k = 1; t <= fin.getTime(); t += n * 86400000, k++) {
+        const a = new Date(t), b = new Date(Math.min(t + (n - 1) * 86400000, fin.getTime()));
+        out.push({ a, b, txt: n === 1 ? f(a) : (a.getUTCMonth() === b.getUTCMonth() ? `${a.getUTCDate()}–${b.getUTCDate()} ${MESES_CORTOS[b.getUTCMonth()]}` : `${f(a)}–${f(b)}`) });
+      }
+      return out;
+    };
+    let cortes, cortesRadar, unidad, pref;
+    if (dias <= 14) { cortes = ventanas(1).map(v => v.txt); unidad = 'DIARIOS'; pref = 'D'; }
+    else if (dias <= 62) { cortes = ventanas(7).map(v => v.txt); unidad = 'SEMANALES'; pref = 'S'; }
+    else {
+      cortes = [];
+      for (let t = ini.getUTCFullYear() * 12 + ini.getUTCMonth(); t <= fin.getUTCFullYear() * 12 + fin.getUTCMonth(); t++) cortes.push(ini.getUTCFullYear() === fin.getUTCFullYear() ? MESES[t % 12] : `${MESES_CORTOS[t % 12]} ${Math.floor(t / 12)}`);
+      unidad = 'MENSUALES'; pref = 'Q';
+    }
+    // Radar (picos): días si ≤14, semanas si ≤62, quincenas (máx. 24) si es más largo.
+    if (pref === 'Q') {
+      // quincenas de calendario (1–15 y 16–fin de mes) recortadas al periodo; si son más de 24, cortes mensuales
+      const qs = [];
+      for (let t = ini.getUTCFullYear() * 12 + ini.getUTCMonth(); t <= fin.getUTCFullYear() * 12 + fin.getUTCMonth(); t++) {
+        const y = Math.floor(t / 12), m = t % 12, ult = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+        [[1, 15], [16, ult]].forEach(([d1, d2]) => {
+          const a = new Date(Math.max(Date.UTC(y, m, d1), ini.getTime())), b = new Date(Math.min(Date.UTC(y, m, d2), fin.getTime()));
+          if (a <= b) qs.push(a.getUTCDate() === b.getUTCDate() ? f(a) : `${a.getUTCDate()}–${b.getUTCDate()} ${MESES_CORTOS[m]}`);
+        });
+      }
+      cortesRadar = qs.length <= 24 ? qs.map((q, i) => `Q${i + 1} (${q})`) : cortes.map((c, i) => `M${i + 1} (${c})`);
+    }
+    else cortesRadar = (pref === 'D' ? ventanas(1) : ventanas(7)).map((v, i) => `${pref}${i + 1} (${v.txt})`);
+    return {
+      tipo, label, desde: isoFecha(ini), hasta: isoFecha(fin), cortes, dias,
+      mes: MESES[ini.getUTCMonth()], anio: String(ini.getUTCFullYear()),
+      instruccion: `El periodo es PERSONALIZADO: ${label} (${dias} días, del ${isoFecha(ini)} al ${isoFecha(fin)}). Todo hallazgo, cifra y serie temporal debe referirse a esas fechas; lo anterior es solo antecedente/contexto. Las series de tendencia usan cortes ${unidad}: ${cortes.join(', ')}. En Radar, "quincenas" debe traer EXACTAMENTE un elemento por cada uno de estos cortes, con ese "codigo" y ese "rango": ${cortesRadar.join(', ')}.`,
+    };
+  }
 
   if (tipo === 'semana') {
     const ini = new Date(`${params.semanaInicio || ''}T00:00:00Z`);
@@ -342,6 +388,18 @@ function cortesDeTrayectoria(p) {
       out.push(a.getUTCMonth() === b.getUTCMonth()
         ? `${a.getUTCDate()}–${b.getUTCDate()} ${MESES_CORTOS[b.getUTCMonth()]}`
         : `${a.getUTCDate()} ${MESES_CORTOS[a.getUTCMonth()]}–${b.getUTCDate()} ${MESES_CORTOS[b.getUTCMonth()]}`);
+    }
+    out[out.length - 1] += ' (periodo)';
+    return out;
+  }
+  if (p.tipo === 'personalizado') {
+    if (p.dias > 62 && Array.isArray(p.cortes) && p.cortes.length >= 2) return p.cortes.slice();
+    // periodo corto: 4 ventanas anteriores de la misma duración + el periodo
+    const ini = new Date(`${p.desde}T00:00:00Z`), d = p.dias || 7, out = [];
+    const f = (x) => `${x.getUTCDate()} ${MESES_CORTOS[x.getUTCMonth()]}`;
+    for (let k = 4; k >= 0; k--) {
+      const a = new Date(ini.getTime() - k * d * 86400000), b = new Date(a.getTime() + (d - 1) * 86400000);
+      out.push(d === 1 ? f(a) : (a.getUTCMonth() === b.getUTCMonth() ? `${a.getUTCDate()}–${b.getUTCDate()} ${MESES_CORTOS[b.getUTCMonth()]}` : `${f(a)}–${f(b)}`));
     }
     out[out.length - 1] += ' (periodo)';
     return out;
@@ -757,7 +815,7 @@ function normalizeResponse(data, skill, ctx = {}) {
     data.tom = normalizarTomRadar(data.tom, Object.keys(sg.partido || {}));
     data.crucesTom = arrO(data.crucesTom).map(h => ({ titulo: txt(h.titulo), ev: txt(h.ev), texto: txt(h.texto), accion: txt(h.accion) }));
 
-    data.quincenas = arrO(data.quincenas).map((q, i) => ({
+    data.quincenas = arrO(data.quincenas).map((q, i) => { const mc = txt(q.codigo).match(/^\s*([A-Z]\d+)\s*\((.*)\)\s*$/i); return mc ? { ...q, codigo: mc[1].toUpperCase(), rango: txt(q.rango) || mc[2] } : q; }).map((q, i) => ({
       rango: txt(q.rango), codigo: txt(q.codigo) || `Q${i + 1}`, nps: Math.max(-100, Math.min(100, n0(q.nps))), volumen: Math.max(0, Math.min(100, n0(q.volumen))),
       tono: ['neg', 'pos', 'mix'].includes(q.tono) ? q.tono : (n0(q.nps) <= -10 ? 'neg' : n0(q.nps) >= 5 ? 'pos' : 'mix'), titulo: txt(q.titulo), texto: txt(q.texto), ev: txt(q.ev),
     }));
@@ -1993,7 +2051,7 @@ REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
 - tom.edad, tom.partido y tom.plataforma: "grupos" con los nombres de cada grupo y "valores" con EXACTAMENTE una fila por TEMA (mismo orden que tom.temas) y en cada fila EXACTAMENTE un número por grupo (mismo orden que "grupos"). Ningún tema puede quedar con la fila vacía o en ceros. edad = saliencia 0-100; partido y plataforma = % de la conversación de ese grupo dedicada al tema. tom.partido.grupos = los mismos partidos que segmentos.partido.
 - tom.genero.mujeres y tom.genero.hombres: un número (saliencia 0-100) por tema, en el mismo orden; ninguno vacío.
 - crucesTom: EXACTAMENTE 4 (EDAD, GÉNERO, PARTIDO, PLATAFORMA × TEMA).
-- quincenas: un corte por QUINCENA del periodo (para un rango de meses: 2 por mes; para un solo mes: 2; para una semana: un corte por DÍA con código D1…D7). "nps" -100 a 100, "volumen" índice 0-100 (100 = corte de mayor conversación). Cada "texto" con hechos fechados y métricas reales de las fuentes.
+- quincenas: un corte por QUINCENA del periodo (para un rango de meses: 2 por mes; para un solo mes: 2; para una semana: un corte por DÍA con código D1…D7; para un periodo PERSONALIZADO: exactamente los cortes y códigos que indica la instrucción del periodo). "nps" -100 a 100, "volumen" índice 0-100 (100 = corte de mayor conversación). Cada "texto" con hechos fechados y métricas reales de las fuentes.
 - audiencia: mínimo 6 cuentas/grupos (propias del actor e institucionales vs. grupos vecinales/medios donde ocurre la conversación), en miles.
 - plataformaEdad: mínimo 4 plataformas, 5 valores (18-24, 25-34, 35-44, 45-59, 60+) que suman 100.
 - alcancePieza: mínimo 3 métricas (pieza crítica vs. pieza propia/favorable).
