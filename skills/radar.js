@@ -100,7 +100,7 @@ window.radarUpdSent = function(btn, k){
 };
 
 /* ---------- TOP OF MIND ---------- */
-const PAL5 = [C.da,C.go,C.su,C.ac,'#3B82F6'];
+const PAL5 = [C.da,C.go,C.su,C.ac,'#3B82F6',C.ne,'#7C3AED','#DB2777'];
 const palabras = A(O(D.nube).palabras);
 const norm = (t) => S(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const TCOL = TOPICS.map(t => {
@@ -110,10 +110,17 @@ const TCOL = TOPICS.map(t => {
 });
 const tomMat = (o) => ({ g: A(O(o).grupos), d: A(O(o).valores) });
 function rTom(k){
-  if (k === 'general') { mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:[{data:A(TOMD.general),backgroundColor:TCOL,borderRadius:2,borderWidth:0}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'%'}}},scales:{x:yPct,y:{grid:{display:false},ticks:{font:{size:10}}}}}}); return; }
-  if (k === 'genero') { const g = O(TOMD.genero); mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:[{label:'Mujeres',data:A(g.mujeres),backgroundColor:'rgba(220,38,38,.75)',borderRadius:2},{label:'Hombres',data:A(g.hombres),backgroundColor:C.bl,borderRadius:2}]},options:{indexAxis:'y',plugins:{legend:legB},scales:{x:{grid:{color:G},max:100,title:{display:true,text:'saliencia 0-100'}},y:{grid:{display:false},ticks:{font:{size:9}}}}}}); return; }
+  const nT = TOPICS.length;
+  const cv = $('rc-tom'); const caja = cv && cv.parentNode;
+  const nSeries = k === 'general' ? 1 : k === 'genero' ? 2 : Math.max(1, A(O(TOMD[k]).grupos).length);
+  if (caja) caja.style.height = Math.max(300, Math.round(nT * (k === 'general' ? 34 : 14 + nSeries * 9)) + 70) + 'px';
+  const yTemas = {grid:{display:false},ticks:{autoSkip:false,font:{size:k === 'general' ? 10 : 9}}};
+  const xSal = {grid:{color:G},min:0,suggestedMax:100,title:{display:true,text:'saliencia 0-100'}};
+  const xPct = {...yPct,min:0};
+  if (k === 'general') { mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:[{data:A(TOMD.general),backgroundColor:TCOL,borderRadius:2,borderWidth:0,minBarLength:2}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'%'}}},scales:{x:xPct,y:yTemas}}}); return; }
+  if (k === 'genero') { const g = O(TOMD.genero); mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:[{label:'Mujeres',data:A(g.mujeres),backgroundColor:'rgba(220,38,38,.75)',borderRadius:2,minBarLength:2},{label:'Hombres',data:A(g.hombres),backgroundColor:C.bl,borderRadius:2,minBarLength:2}]},options:{indexAxis:'y',plugins:{legend:legB},scales:{x:xSal,y:yTemas}}}); return; }
   const d = tomMat(TOMD[k]); const isSal = k === 'edad';
-  mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:d.g.map((g,i)=>({label:g,data:d.d.map(r=>A(r)[i]),backgroundColor:PAL5[i%5],borderRadius:2}))},options:{indexAxis:'y',plugins:{legend:legB},scales:{x:isSal?{grid:{color:G},max:100,title:{display:true,text:'saliencia 0-100'}}:yPct,y:{grid:{display:false},ticks:{font:{size:9}}}}}});
+  mk('rc-tom',{type:'bar',data:{labels:TOPICS,datasets:d.g.map((g,i)=>({label:g,data:d.d.map(r=>N(A(r)[i])),backgroundColor:PAL5[i%PAL5.length],borderRadius:2,minBarLength:2}))},options:{indexAxis:'y',datasets:{bar:{categoryPercentage:.85,barPercentage:.9}},plugins:{legend:legB,tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+(isSal?'':'%')}}},scales:{x:isSal?xSal:xPct,y:yTemas}}});
 }
 window.radarUpdTom = function(btn, k){
   root.querySelectorAll('#rtab-tom .bb').forEach(b => b.classList.remove('act')); btn.classList.add('act'); tomK = k;
