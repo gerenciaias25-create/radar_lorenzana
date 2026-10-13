@@ -479,7 +479,7 @@ const CHEQUEOS_FALTANTES = {
     kpis: d => Array.isArray(d.kpis) && d.kpis.length >= 6,
     segmentos: d => d.segmentos && Array.isArray(d.segmentos.general) && d.segmentos.general.length >= 3 && d.segmentos.edad && Object.keys(d.segmentos.edad).length >= 3 && d.segmentos.partido && Object.keys(d.segmentos.partido).length >= 3,
     hallazgosSent: d => Array.isArray(d.hallazgosSent) && d.hallazgosSent.length >= 3,
-    tom: d => d.tom && Array.isArray(d.tom.temas) && d.tom.temas.length >= 5 && Array.isArray(d.tom.general) && d.tom.general.length >= 5,
+    tom: d => tomRadarCompleto(d.tom),
     crucesTom: d => Array.isArray(d.crucesTom) && d.crucesTom.length >= 3,
     quincenas: d => Array.isArray(d.quincenas) && d.quincenas.length >= 2,
     lecturaPlataformas: d => Array.isArray(d.lecturaPlataformas) && d.lecturaPlataformas.length >= 3,
@@ -521,6 +521,109 @@ async function completarFaltantes(skill, data, base, apiKey) {
     console.warn(`[!] No se pudieron completar campos de ${skill}:`, e.message);
   }
   return data;
+}
+
+// Top of Mind (radar): acepta las variantes en que el modelo suele devolver las matrices
+// (filas por tema, filas por grupo/transpuestas, objetos por grupo o por tema) y las deja
+// siempre como { grupos, valores: [una fila por tema con un número por grupo] }.
+function normalizarTomRadar(tomIn, partidosSeg = []) {
+  const num = (v) => { if (typeof v === 'number') return Number.isFinite(v) ? v : 0; const m = String(v ?? '').replace(/[−–—]/g, '-').replace(/,/g, '').match(/[+-]?\d+(\.\d+)?/); return m ? Number(m[0]) : 0; };
+  const txt = (v) => (v === undefined || v === null) ? '' : String(v);
+  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  const clave = (t) => txt(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9+]/g, '');
+  const tom = isObj(tomIn) ? tomIn : {};
+  // temas y peso general
+  let temas = [], general = [];
+  const tIn = Array.isArray(tom.temas) ? tom.temas : [];
+  tIn.forEach(t => {
+    if (isObj(t)) { temas.push(txt(t.tema || t.nombre || t.texto || t.label)); general.push(t.peso ?? t.valor ?? t.porcentaje ?? t.general); }
+    else temas.push(txt(t));
+  });
+  temas = temas.filter(Boolean);
+  const nT = temas.length;
+  const idxTema = (k) => { const c = clave(k); return temas.findIndex(t => clave(t) === c || (c.length > 3 && (clave(t).includes(c) || c.includes(clave(t))))); };
+  const vectorTemas = (v) => {
+    if (Array.isArray(v)) return v.map(x => isObj(x) ? num(x.valor ?? x.peso ?? x.porcentaje) : num(x));
+    if (isObj(v)) { const a = Array(nT).fill(0); Object.keys(v).forEach(k => { const i = idxTema(k); if (i >= 0) a[i] = num(v[k]); }); return a; }
+    return [];
+  };
+  const ajusta = (a) => { a = (a || []).slice(0, nT).map(num); while (a.length < nT) a.push(0); return a; };
+  if (Array.isArray(tom.general) || isObj(tom.general)) { const g = vectorTemas(tom.general); if (g.some(x => x)) general = g; }
+  general = ajusta(general);
+
+  const matriz = (o, porDefecto) => {
+    let grupos = [], filas = [];
+    if (isObj(o)) {
+      grupos = Array.isArray(o.grupos) ? o.grupos.map(txt) : [];
+      let val = o.valores ?? o.datos ?? o.data;
+      if (val === undefined) {
+        // forma { "18-24": [...], "25-34": [...] } (objeto por grupo)
+        const ks = Object.keys(o).filter(k => k !== 'grupos' && (Array.isArray(o[k]) || isObj(o[k])));
+        if (ks.length) { val = {}; ks.forEach(k => { val[k] = o[k]; }); }
+      }
+      if (isObj(val)) {
+        const ks = Object.keys(val);
+        const sonTemas = ks.filter(k => idxTema(k) >= 0).length >= Math.max(1, Math.ceil(ks.length / 2));
+        if (sonTemas) {
+          // { tema: [por grupo] } o { tema: {grupo: n} }
+          filas = Array.from({ length: nT }, () => []);
+          ks.forEach(k => { const i = idxTema(k); if (i < 0) return; const r = val[k];
+            if (Array.isArray(r)) filas[i] = r.map(num);
+            else if (isObj(r)) { if (!grupos.length) grupos = Object.keys(r); filas[i] = grupos.map(g => num(r[g])); } });
+        } else {
+          // { grupo: [por tema] } o { grupo: {tema: n} }
+          if (!grupos.length) grupos = ks;
+          const cols = grupos.map(g => vectorTemas(val[g] ?? val[ks[grupos.indexOf(g)]]));
+          filas = Array.from({ length: nT }, (_, i) => cols.map(c => num(c[i])));
+        }
+      } else if (Array.isArray(val)) {
+        let rows = val.map(r => {
+          if (Array.isArray(r)) return r.map(num);
+          if (isObj(r)) { const vs = r.valores ?? r.datos; if (Array.isArray(vs)) return vs.map(num); if (!grupos.length) grupos = Object.keys(r).filter(k => !/tema|nombre/i.test(k)); return grupos.map(g => num(r[g])); }
+          return [num(r)];
+        });
+        // matriz transpuesta: una fila por grupo con un valor por tema
+        const nG = grupos.length || porDefecto.length;
+        if (rows.length === nG && nG !== nT && rows.every(r => r.length === nT)) rows = Array.from({ length: nT }, (_, i) => rows.map(r => r[i]));
+        // filas con objetos {tema, valores}
+        if (val.some(r => isObj(r) && (r.tema || r.nombre))) {
+          const ord = Array.from({ length: nT }, () => []);
+          val.forEach((r, j) => { const i = isObj(r) ? idxTema(r.tema || r.nombre) : -1; ord[i >= 0 ? i : j] = rows[j] || []; });
+          rows = ord;
+        }
+        filas = rows;
+      }
+    }
+    if (!grupos.length) grupos = porDefecto.slice(0, Math.max(...filas.map(f => (f || []).length), 0) || porDefecto.length);
+    const nG = grupos.length;
+    return { grupos, valores: Array.from({ length: nT }, (_, i) => { const f = (filas[i] || []).slice(0, nG).map(num); while (f.length < nG) f.push(0); return f; }) };
+  };
+  const EDADES = ['18-24', '25-34', '35-44', '45-59', '60+'];
+  const edad = matriz(tom.edad, EDADES);
+  const partido = matriz(tom.partido, partidosSeg.length ? partidosSeg : ['Morena', 'PAN', 'PRI', 'MC', 'Sin partido']);
+  const plataforma = matriz(tom.plataforma ?? tom.plataformas, ['Facebook', 'TikTok', 'X', 'Prensa']);
+  // género: {mujeres, hombres} | {Mujeres, Hombres} | matriz con grupos
+  const g = isObj(tom.genero) ? tom.genero : {};
+  const busca = (re) => { const k = Object.keys(g).find(x => re.test(x)); return k ? g[k] : undefined; };
+  let muj = busca(/^(mujer|mujeres|m|f|femenino)$/i), hom = busca(/^(hombre|hombres|h|masculino)$/i);
+  if ((muj === undefined || hom === undefined) && (g.valores || g.grupos)) {
+    const mg = matriz(g, ['Mujeres', 'Hombres']);
+    const iM = mg.grupos.findIndex(x => /muj|fem/i.test(x)), iH = mg.grupos.findIndex(x => /hom|masc/i.test(x));
+    muj = mg.valores.map(r => r[iM >= 0 ? iM : 0]); hom = mg.valores.map(r => r[iH >= 0 ? iH : 1]);
+  }
+  const genero = { mujeres: ajusta(vectorTemas(muj)), hombres: ajusta(vectorTemas(hom)) };
+  return { temas, general, edad, genero, partido, plataforma };
+}
+
+// ¿El Top of Mind trae todas sus gráficas con datos?
+function tomRadarCompleto(tomIn) {
+  try {
+    const t = normalizarTomRadar(tomIn);
+    if (t.temas.length < 5 || t.general.filter(x => x > 0).length < t.temas.length - 1) return false;
+    const llena = (m) => m.grupos.length >= 2 && m.valores.length && m.valores.flat().filter(x => x > 0).length >= m.valores.flat().length * 0.6;
+    const genOk = t.genero.mujeres.filter(x => x > 0).length >= t.temas.length - 1 && t.genero.hombres.filter(x => x > 0).length >= t.temas.length - 1;
+    return llena(t.edad) && llena(t.partido) && llena(t.plataforma) && genOk;
+  } catch (_) { return false; }
 }
 
 function fuentesReales(bloque, max = 20) {
@@ -651,21 +754,7 @@ function normalizeResponse(data, skill, ctx = {}) {
     data.ratioPlataforma = arrO(data.ratioPlataforma).map(r => ({ etiqueta: txt(r.etiqueta || r.plataforma), valor: nOrNull(r.valor ?? r.ratio) })).filter(r => r.etiqueta);
     data.hallazgosSent = arrO(data.hallazgosSent).map(h => ({ titulo: txt(h.titulo), ev: txt(h.ev), texto: txt(h.texto), accion: txt(h.accion) }));
 
-    ensureObject(data, 'tom', {});
-    const tm = data.tom;
-    tm.temas = Array.isArray(tm.temas) ? tm.temas.map(txt).filter(Boolean) : [];
-    const nT = tm.temas.length;
-    const ajusta = (arr) => { const a = (Array.isArray(arr) ? arr : []).map(n0); while (a.length < nT) a.push(0); return a.slice(0, nT); };
-    tm.general = ajusta(tm.general);
-    const matriz = (o) => {
-      o = (o && typeof o === 'object') ? o : {};
-      const grupos = Array.isArray(o.grupos) ? o.grupos.map(txt) : [];
-      const filas = Array.isArray(o.valores) ? o.valores : [];
-      return { grupos, valores: Array.from({ length: nT }, (_, i) => { const f = (Array.isArray(filas[i]) ? filas[i] : []).map(n0); while (f.length < grupos.length) f.push(0); return f.slice(0, grupos.length); }) };
-    };
-    tm.edad = matriz(tm.edad); tm.partido = matriz(tm.partido); tm.plataforma = matriz(tm.plataforma);
-    ensureObject(tm, 'genero', {});
-    tm.genero = { mujeres: ajusta(tm.genero.mujeres), hombres: ajusta(tm.genero.hombres) };
+    data.tom = normalizarTomRadar(data.tom, Object.keys(sg.partido || {}));
     data.crucesTom = arrO(data.crucesTom).map(h => ({ titulo: txt(h.titulo), ev: txt(h.ev), texto: txt(h.texto), accion: txt(h.accion) }));
 
     data.quincenas = arrO(data.quincenas).map((q, i) => ({
@@ -1900,7 +1989,9 @@ REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
 - segmentos: cada arreglo es [positivo, neutro, negativo, polarizado] en % (suman 100). edad: las 5 franjas; genero: Mujeres y Hombres; partido: mínimo 4 partidos con presencia local + "Sin partido"; plataforma: mínimo 4.
 - ratioPlataforma: mínimo 4 (comentarios críticos ÷ comentarios de defensa por plataforma; usa null si no hay dato).
 - hallazgosSent: EXACTAMENTE 4 (EDAD, GÉNERO, PARTIDO, PLATAFORMA × SENTIMIENTO), cada uno con cifras de NPS-P y "accion".
-- tom.temas: 6-8 temas; tom.general: un % por tema (suman ~100); tom.edad y tom.genero: saliencia 0-100 por tema; tom.partido y tom.plataforma: % por tema; "valores" es una fila por TEMA con un número por grupo.
+- tom.temas: 6-8 temas (texto corto). tom.general: UN número (%) por tema, en el mismo orden (suman ~100).
+- tom.edad, tom.partido y tom.plataforma: "grupos" con los nombres de cada grupo y "valores" con EXACTAMENTE una fila por TEMA (mismo orden que tom.temas) y en cada fila EXACTAMENTE un número por grupo (mismo orden que "grupos"). Ningún tema puede quedar con la fila vacía o en ceros. edad = saliencia 0-100; partido y plataforma = % de la conversación de ese grupo dedicada al tema. tom.partido.grupos = los mismos partidos que segmentos.partido.
+- tom.genero.mujeres y tom.genero.hombres: un número (saliencia 0-100) por tema, en el mismo orden; ninguno vacío.
 - crucesTom: EXACTAMENTE 4 (EDAD, GÉNERO, PARTIDO, PLATAFORMA × TEMA).
 - quincenas: un corte por QUINCENA del periodo (para un rango de meses: 2 por mes; para un solo mes: 2; para una semana: un corte por DÍA con código D1…D7). "nps" -100 a 100, "volumen" índice 0-100 (100 = corte de mayor conversación). Cada "texto" con hechos fechados y métricas reales de las fuentes.
 - audiencia: mínimo 6 cuentas/grupos (propias del actor e institucionales vs. grupos vecinales/medios donde ocurre la conversación), en miles.
