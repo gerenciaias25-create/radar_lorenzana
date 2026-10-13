@@ -26,7 +26,9 @@ SEG.general = A(SEG.general).length ? SEG.general : [0,0,0,0];
 const TOMD = O(D.tom);
 const TOPICS = A(TOMD.temas);
 const Q = A(D.quincenas);
-const esSemana = META.periodoTipo === 'semana' || Q.some(q => /^D\d/i.test(S(q.codigo)));
+const pref0 = S((Q[0] || {}).codigo).charAt(0).toUpperCase();
+const esSemana = META.periodoTipo === 'semana' || pref0 === 'D';
+const esSemanal = !esSemana && pref0 === 'S';
 const periodo = META.periodo || actor.periodo || [META.mes, META.anio].filter(Boolean).join(' ');
 
 /* ---------- ENCABEZADO ---------- */
@@ -131,14 +133,17 @@ window.radarUpdTom = function(btn, k){
 $('r-cruces').innerHTML = A(D.crucesTom).map((h, i) => tarjeta(h, ['go','ac','su','bl'][i % 4])).join('');
 
 /* ---------- PICOS ---------- */
-const unidad = esSemana ? 'DIARIA' : 'QUINCENAL';
-$('r-tab-picos').textContent = esSemana ? 'PICOS DIARIOS' : 'PICOS QUINCENALES';
-$('r-picos-t').textContent = `PICOS DE CONVERSACIÓN — LECTURA ${unidad}`;
-$('r-picos-ct').innerHTML = `NPS-P ${esSemana ? 'Diario' : 'Quincenal'} Estimado <span class="ev">I</span>`;
-$('r-picos-cs').textContent = `${Q.length} ${esSemana ? 'días' : 'quincenas'} · puntos rojos = picos negativos`;
+const U = esSemana ? {adj:'DIARIA',tab:'PICOS DIARIOS',ct:'Diario',n:'días',uno:'día',cr:'DÍA'}
+  : esSemanal ? {adj:'SEMANAL',tab:'PICOS SEMANALES',ct:'Semanal',n:'semanas',uno:'semana',cr:'SEMANA'}
+  : pref0 === 'M' ? {adj:'MENSUAL',tab:'PICOS MENSUALES',ct:'Mensual',n:'meses',uno:'mes',cr:'MES'}
+  : {adj:'QUINCENAL',tab:'PICOS QUINCENALES',ct:'Quincenal',n:'quincenas',uno:'quincena',cr:'QUINCENA'};
+$('r-tab-picos').textContent = U.tab;
+$('r-picos-t').textContent = `PICOS DE CONVERSACIÓN — LECTURA ${U.adj}`;
+$('r-picos-ct').innerHTML = `NPS-P ${U.ct} Estimado <span class="ev">I</span>`;
+$('r-picos-cs').textContent = `${Q.length} ${U.n} · puntos rojos = picos negativos`;
 const qMax = Q.reduce((m, q) => N(q.volumen) > N(m.volumen) ? q : m, Q[0] || {});
-$('r-picvol-cs').textContent = `Índice 100 = ${esSemana ? 'día' : 'quincena'} de mayor conversación${qMax.rango ? ' (' + qMax.rango + ')' : ''}`;
-$('r-crono-t').textContent = `CRONOLOGÍA INTERPRETADA POR ${esSemana ? 'DÍA' : 'QUINCENA'}`;
+$('r-picvol-cs').textContent = `Índice 100 = ${U.uno} de mayor conversación${qMax.rango ? ' (' + qMax.rango + ')' : ''}`;
+$('r-crono-t').textContent = `CRONOLOGÍA INTERPRETADA POR ${U.cr}`;
 $('r-tl').innerHTML = Q.map(q => `<div class="tq ${esc(q.tono)}"><div class="tqd">${esc(q.codigo)} · ${esc(q.rango)}${q.ev ? `<br><span class="ev">${esc(q.ev)}</span>` : ''}</div><div class="tqn">${sg(N(q.nps))}</div><div><div class="tqt">${esc(q.titulo)}</div><div class="tqb">${S(q.texto)}</div></div></div>`).join('');
 function rPicos(){
   const v = Q.map(q => N(q.nps));
