@@ -486,14 +486,18 @@ function onSkillChange() {
 
   document.getElementById('targetProfile2').classList.toggle('hidden', !requiereDosActores);
   document.getElementById('targetProfileExtra').classList.toggle('hidden', !esComparativo);
-  document.getElementById('targetCliente').classList.toggle('hidden', skill !== 'opositor');
+  const usaCliente = ['opositor', 'emociones'].includes(skill);
+  document.getElementById('targetCliente').classList.toggle('hidden', !usaCliente);
+  document.getElementById('targetCliente').placeholder = skill === 'emociones'
+    ? 'Cliente del estudio (opcional) — partido o candidatura, ej. Movimiento Ciudadano...'
+    : 'Cliente de referencia (opcional) — para defensa y comparativo...';
   // Actores de referencia: para skills de territorio/humor social, el analista
   // puede escribir los nombres reales (ej. aspirantes 2027) para que el
   // análisis no dependa de que el modelo los adivine.
   const usaActoresRef = SKILLS_ACTORES_REF.includes(skill);
   document.getElementById('targetActoresRef').classList.toggle('hidden', !usaActoresRef);
   if (!usaActoresRef) document.getElementById('targetActoresRef').value = '';
-  if (skill !== 'opositor') document.getElementById('targetCliente').value = '';
+  if (!usaCliente) document.getElementById('targetCliente').value = '';
   if (!esComparativo) document.getElementById('targetProfileExtra').value = '';
 
   document.getElementById('hintOpositor').style.display = (skill === 'opositor') ? 'block' : 'none';
@@ -528,7 +532,7 @@ async function loadSelectedSkill() {
   const skill = document.getElementById('skillSelect').value;
   const actor = document.getElementById('targetProfile').value.trim();
   const actor2 = document.getElementById('targetProfile2').value.trim();
-  const cliente = skill === 'opositor' ? document.getElementById('targetCliente').value.trim() : '';
+  const cliente = ['opositor', 'emociones'].includes(skill) ? document.getElementById('targetCliente').value.trim() : '';
   const actoresReferencia = SKILLS_ACTORES_REF.includes(skill) ? document.getElementById('targetActoresRef').value.trim() : '';
   const periodoSel = leerPeriodo();
   const periodoDesc = describirPeriodo(periodoSel);
@@ -803,6 +807,9 @@ async function downloadPDF() {
         avisoPdf(`Generando PDF… pestaña ${i + 1} de ${botones.length}`);
         botones[i].click();
         await esperar(900); // las skills dibujan sus gráficas unos ms después del clic
+        // Gráficas creadas en pestañas ocultas: se redibujan ya, sin animación.
+        if (window.Chart && Chart.instances) Object.values(Chart.instances).forEach(ch => { try { ch.resize(); ch.update('none'); } catch (_) {} });
+        await esperar(150);
         let objetivo = container;
         if (i > 0) {
           objetivo = document.querySelector(cfg.seccion) || container;
