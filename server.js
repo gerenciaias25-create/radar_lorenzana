@@ -72,7 +72,7 @@ app.post('/api/analizar', (req, res) => {
   } catch (e) {
     return res.status(400).json({ error: e.message });
   }
-  const clienteName = skill === 'opositor' ? String(cliente || '').trim() : '';
+  const clienteName = ['opositor', 'emociones'].includes(skill) ? String(cliente || '').trim() : '';
   // Actores de referencia que el analista conoce (ej. aspirantes 2027 de un
   // municipio). Son la fuente más confiable de nombres: el modelo no conoce a
   // los aspirantes locales recientes y Apify no siempre los trae.
@@ -169,12 +169,16 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       // respuesta es larga (díadas, pregunta política...). Se divide en dos
       // llamadas en paralelo y después se piden solo los campos que faltaron.
       const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
-      const [pA, pB] = await Promise.all([
+      const [pA, pB, pC] = await Promise.all([
         callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, null, 'A'), parteEmociones: 'A' }), OPENROUTER_KEY),
         callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_B[skill]), parteEmociones: 'B' }), OPENROUTER_KEY)
           .catch(e => { console.warn(`[!] ${skill} parte B falló:`, e.message); return {}; }),
+        PARTES_C[skill]
+          ? callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_C[skill]), parteEmociones: 'C' }), OPENROUTER_KEY)
+            .catch(e => { console.warn(`[!] ${skill} parte C falló:`, e.message); return {}; })
+          : Promise.resolve({}),
       ]);
-      structured = { ...(pA || {}), ...(pB || {}) };
+      structured = { ...(pA || {}), ...(pB || {}), ...(pC || {}) };
       JOBS.set(jobId, { status: 'processing', progreso: 'Verificando que todas las pestañas tengan datos...' });
       structured = await completarFaltantes(skill, structured, base, OPENROUTER_KEY);
     } else if (skill === 'tensiones') {
@@ -475,6 +479,11 @@ function verificarActoresEmociones(data, { territorio, fuentes, actoresRef = [] 
   data.actores = actores;
 
   // Radar alineado con las tarjetas finales.
+  // Lectura arquetípica: solo filas de actores que quedaron en las tarjetas.
+  if (data.arqActores && Array.isArray(data.arqActores.rows) && data.arqActores.rows.length) {
+    const fil = data.arqActores.rows.filter(r => actores.some(a => nombreCoincide(a.name, normTxt(r[0])) || nombreCoincide(String(r[0]).replace(/\(.*?\)/g, ''), normTxt(a.name))));
+    if (fil.length) data.arqActores.rows = fil;
+  }
   const ar = data.actoresRadar || {};
   const previo = new Map((ar.labels || []).map((l, i) => [normTxt(l), (ar.data || [])[i]]));
   data.actoresRadar = {
@@ -493,18 +502,27 @@ function verificarActoresEmociones(data, { territorio, fuentes, actoresRef = [] 
 // Skills que se generan en DOS llamadas en paralelo: la parte B son estos
 // campos; la parte A es todo lo demás del esquema.
 const PARTES_B = {
-  emociones: ['segIntro', 'segmentos', 'semiotica'],
+  emociones: ['preguntaPolitica', 'preguntaDesc', 'govSemaforo', 'partidos', 'partidosChart', 'marcos', 'sintesis', 'actores', 'actoresRadar', 'arquetipos', 'arqIdeal', 'arqWin', 'arqActores', 'codigo'],
   radar: ['audiencia', 'plataformaEdad', 'alcancePieza', 'lecturaPlataformas', 'nube', 'hashtags', 'hashtagsLectura', 'narrativas', 'riesgos', 'oportunidades', 'alertaNivel', 'territorial'],
 };
 // Palabras que identifican las reglas (líneas "- ...") de la parte B.
 const REGEX_PARTE_B = {
-  emociones: /segment|semiotica|semiótica|arquetip|miedos|deseos|necesidades|segIntro/i,
+  emociones: /^\s*-\s*"?(preguntaPolitica|preguntaDesc|govSemaforo|partidos|partidosChart|marcos|sintesis|actores|actores\.rows|actoresRadar|arquetipos|arqIdeal|arqWin|arqActores|codigo)\b/,
   radar: /audiencia|plataformaEdad|alcancePieza|lecturaPlataformas|nube|hashtag|narrativas|riesgos|oportunidades|alertaNivel|territorial/i,
+};
+
+// Tercera parte (en paralelo con A y B) para skills muy largas.
+const PARTES_C = {
+  emociones: ['segIntro', 'segmentos', 'segTbl', 'miedos', 'deseos', 'necesidades'],
+};
+const REGEX_PARTE_C = {
+  emociones: /^\s*-\s*"?(segIntro|segmentos|segTbl|miedos|deseos|necesidades)\b/,
 };
 
 function subEsquema(skill, campos, parte) {
   const full = JSON.parse(SCHEMAS[skill]);
-  const lista = campos || (parte === 'A' ? Object.keys(full).filter(k => !(PARTES_B[skill] || []).includes(k)) : Object.keys(full));
+  const fuera = [...(PARTES_B[skill] || []), ...(PARTES_C[skill] || [])];
+  const lista = campos || (parte === 'A' ? Object.keys(full).filter(k => !fuera.includes(k)) : Object.keys(full));
   const sub = {};
   lista.forEach(k => { if (k in full) sub[k] = full[k]; });
   return JSON.stringify(sub, null, 2);
@@ -530,8 +548,22 @@ const CHEQUEOS_FALTANTES = {
     govSemaforo: d => Array.isArray(d.govSemaforo) && d.govSemaforo.length >= 4,
     partidos: d => Array.isArray(d.partidos) && d.partidos.length >= 3,
     actores: d => Array.isArray(d.actores) && d.actores.filter(a => a && (a.name || a.nombre)).length >= 3,
-    segmentos: d => Array.isArray(d.segmentos) && d.segmentos.length >= 3,
-    semiotica: d => d.semiotica && Array.isArray(d.semiotica.miedos) && d.semiotica.miedos.length >= 5 && Array.isArray(d.semiotica.arquetiposRadar) && d.semiotica.arquetiposRadar.length >= 12,
+    ive: d => d.ive && Number(d.ive.value) > 0 && Array.isArray(d.ive.comps) && d.ive.comps.length >= 3,
+    flows: d => Array.isArray(d.flows) && d.flows.length >= 3,
+    clientePos: d => Array.isArray(d.clientePos) && d.clientePos.length >= 3,
+    marcos: d => Array.isArray(d.marcos) && d.marcos.filter(m => m && String(m.t || '').length > 40).length >= 3,
+    sintesis: d => String(d.sintesis || '').trim().length > 60,
+    arquetipos: d => Array.isArray(d.arquetipos) && d.arquetipos.length >= 4,
+    arqIdeal: d => Array.isArray(d.arqIdeal) && d.arqIdeal.length >= 6,
+    arqWin: d => Array.isArray(d.arqWin) && d.arqWin.length >= 2,
+    arqActores: d => d.arqActores && Array.isArray(d.arqActores.rows) && d.arqActores.rows.length >= 2,
+    codigo: d => String(d.codigo || '').trim().length > 60,
+    segIntro: d => String(d.segIntro || '').trim().length > 40,
+    segmentos: d => Array.isArray(d.segmentos) && d.segmentos.filter(x => x && x.nombre && (x.c1 || x.perfil)).length >= 4,
+    segTbl: d => d.segTbl && Array.isArray(d.segTbl.rows) && d.segTbl.rows.length >= 8,
+    miedos: d => Array.isArray(d.miedos) && d.miedos.length >= 8,
+    deseos: d => Array.isArray(d.deseos) && d.deseos.length >= 8,
+    necesidades: d => Array.isArray(d.necesidades) && d.necesidades.length >= 8,
   },
   radar: {
     kpis: d => Array.isArray(d.kpis) && d.kpis.length >= 6,
@@ -553,7 +585,7 @@ const CHEQUEOS_FALTANTES = {
 
 };
 // Campos que se piden juntos (si falta uno, se pide también su pareja).
-const PAREJAS_FALTANTES = { hashtags: ['hashtagsLectura'], nube: ['hashtags', 'hashtagsLectura'], tom: ['crucesTom'], segmentos: ['hallazgosSent', 'ratioPlataforma'], riesgos: ['alertaNivel'], dyads: ['dyadInterp'], dyadInterp: ['dyads'], preguntaPolitica: ['preguntaDesc'], preguntaDesc: ['preguntaPolitica'], partidos: ['partidosChart'], actores: ['actoresRadar'], concept: ['conceptDesc'] };
+const PAREJAS_FALTANTES = { hashtags: ['hashtagsLectura'], nube: ['hashtags', 'hashtagsLectura'], tom: ['crucesTom'], segmentos: ['hallazgosSent', 'ratioPlataforma'], riesgos: ['alertaNivel'], dyads: ['dyadInterp'], dyadInterp: ['dyads'], marcos: ['sintesis'], arquetipos: ['arqIdeal', 'arqWin', 'codigo'], arqIdeal: ['arqWin'], actores: ['actoresRadar', 'arqActores'], preguntaPolitica: ['preguntaDesc'], preguntaDesc: ['preguntaPolitica'], partidos: ['partidosChart'], concept: ['conceptDesc'] };
 
 async function completarFaltantes(skill, data, base, apiKey) {
   const chequeos = CHEQUEOS_FALTANTES[skill];
@@ -891,7 +923,6 @@ function normalizeResponse(data, skill, ctx = {}) {
     if (!data.subtitle) data.subtitle = '';
     if (!data.date) data.date = '';
     if (!data.riskLevel) data.riskLevel = 'MEDIO';
-    if (typeof data.ivEstimado !== 'number') data.ivEstimado = 0;
     if (!data.concept) data.concept = 'Sin datos';
     if (!data.conceptDesc) data.conceptDesc = 'No se recibieron datos estructurados del backend.';
     ensureArray(data, 'emotions', []);
@@ -968,15 +999,82 @@ function normalizeResponse(data, skill, ctx = {}) {
     });
     ensureObject(data, 'actoresRadar', { labels: [], data: [], colors: [] });
     if (!data.resumenEjecutivo) data.resumenEjecutivo = '';
-    if (!data.segIntro) data.segIntro = '';
-    ensureArray(data, 'segmentos', []);
-    ensureObject(data, 'semiotica', {});
-    ensureObject(data.semiotica, 'arquetipoColectivo', { dominante: '', secundario: '', emergente: '', rechazado: '' });
-    ensureObject(data.semiotica, 'arquetipoPolitico', { ideal: '', secundario: '', resonancia: '', evidencia: '' });
-    ensureArray(data.semiotica, 'arquetiposRadar', new Array(12).fill(0));
-    ensureArray(data.semiotica, 'miedos', []);
-    ensureArray(data.semiotica, 'deseos', []);
-    ensureArray(data.semiotica, 'necesidades', []);
+    const T = (v) => (v === undefined || v === null) ? '' : String(v);
+    const N = (v) => { const m = String(v ?? '').replace(/[−–]/g, '-').match(/-?\d+(\.\d+)?/); return m ? Number(m[0]) : 0; };
+    const arrO = (v) => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
+    const hex = (v, def) => /^#[0-9a-f]{3,8}$/i.test(T(v).trim()) ? T(v).trim() : def;
+    const par = (r) => Array.isArray(r) ? [T(r[0]), T(r[1])] : (r && typeof r === 'object' ? [T(r.k ?? r.label ?? r.etiqueta ?? Object.keys(r)[0]), T(r.v ?? r.value ?? r.valor ?? Object.values(r)[0])] : null);
+    const pares = (v) => (Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.entries(v) : [])).map(par).filter(p => p && (p[0] || p[1]));
+    data.cliente = T(ctx.clienteName || data.cliente).trim();
+    data.anioEleccion = T(data.anioEleccion).trim();
+    data.periodoGobierno = T(data.periodoGobierno).trim();
+
+    // Semáforos: color por valor si falta.
+    const colorVal = (v) => /CR[IÍ]TIC|ROJ/i.test(v) ? '#ef4444' : /^(ALT|BAJ)/i.test(v) ? null : /MEDI|DISPUT|PRUEBA/i.test(v) ? '#eab308' : '#22c55e';
+    ['semaforo', 'govSemaforo'].forEach(k => {
+      data[k] = arrO(data[k]).map(x => ({ label: T(x.label || x.etiqueta), val: T(x.val || x.valor).toUpperCase(), color: hex(x.color, colorVal(T(x.val)) || '#f97316') })).filter(x => x.label);
+    });
+    data.secondary = arrO(data.secondary).map((x, i) => ({ name: T(x.name || x.nombre), text: T(x.text || x.texto), color: hex(x.color, ['#0E7490', '#C2410C', '#4C1D95', '#15803D'][i % 4]) })).filter(x => x.name);
+
+    // IVE
+    const iveIn = (data.ive && typeof data.ive === 'object') ? data.ive : { value: data.ivEstimado };
+    const comps = (Array.isArray(iveIn.comps) ? iveIn.comps : []).map(c => Array.isArray(c) ? [T(c[0]), Math.max(0, Math.min(100, N(c[1])))] : (c && typeof c === 'object' ? [T(c.label || c.nombre), Math.max(0, Math.min(100, N(c.value ?? c.valor)))] : null)).filter(c => c && c[0]);
+    let iveVal = Math.max(0, Math.min(100, Math.round(N(iveIn.value ?? iveIn.valor))));
+    if (!iveVal && comps.length) iveVal = Math.round(comps.reduce((a, c) => a + c[1], 0) / comps.length);
+    const iveCls = T(iveIn.cls || iveIn.clasificacion).toUpperCase() || (iveVal >= 80 ? 'CRÍTICO' : iveVal >= 60 ? 'VOLÁTIL' : iveVal >= 40 ? 'MODERADO' : 'ESTABLE');
+    data.ive = { value: iveVal, cls: iveCls, horizon: T(iveIn.horizon || iveIn.horizonte), comps, text: T(iveIn.text || iveIn.texto) };
+    data.ivEstimado = iveVal;
+
+    data.flows = arrO(data.flows).map((f, i) => ({ em: T(f.em || f.emocion), color: hex(f.color, ['#B91C1C', '#15803D', '#0E7490', '#4C1D95'][i % 4]), origen: T(f.origen), canal: T(f.canal), destino: T(f.destino), tipo: T(f.tipo) })).filter(f => f.em);
+    data.clientePos = pares(data.clientePos);
+    const MARCOS = [['Haidt · Fundaciones morales', '#a855f7'], ['Westen · Roles narrativos', '#60a5fa'], ['Lakoff · Frames en disputa', '#f97316']];
+    const marcosIn = arrO(data.marcos);
+    data.marcos = MARCOS.map(([k, c], i) => { const m = marcosIn.find(x => T(x.k || x.titulo).toLowerCase().includes(k.split(' ')[0].toLowerCase())) || marcosIn[i] || {}; return { k, c, t: T(m.t || m.texto) }; }).filter(m => m.t);
+    data.sintesis = T(data.sintesis);
+    data.partidos = data.partidos.map((p, i) => ({ ...p, corto: T(p.corto || p.sigla) || T(p.nombre).split(/[\s(]/)[0], color: hex(p.color, ['#FF8300', '#B91C1C', '#22c55e', '#60a5fa', '#1d4ed8', '#64748b'][i % 6]) }));
+
+    // Arquetipo
+    const ARQ = [['Arquetipo colectivo dominante', '#22c55e'], ['Arquetipo secundario', '#60a5fa'], ['Arquetipo emergente', '#f97316'], ['Arquetipo rechazado', '#ef4444']];
+    const sem = (data.semiotica && typeof data.semiotica === 'object') ? data.semiotica : {};
+    let arqIn = arrO(data.arquetipos);
+    if (!arqIn.length && sem.arquetipoColectivo) { const ac = sem.arquetipoColectivo; arqIn = [ac.dominante, ac.secundario, ac.emergente, ac.rechazado].map(x => ({ n: T(x).split(/[:—-]/)[0], p: T(x) })); }
+    data.arquetipos = ARQ.map(([k, c], i) => { const a = arqIn[i] || {}; return { k, c, n: T(a.n || a.nombre), p: T(a.p || a.texto || a.descripcion) }; }).filter(a => a.n || a.p);
+    data.arqIdeal = (Array.isArray(data.arqIdeal) ? data.arqIdeal : []).map(a => Array.isArray(a) ? [T(a[0]), Math.max(0, Math.min(100, N(a[1])))] : (a && typeof a === 'object' ? [T(a.nombre || a.arquetipo), Math.max(0, Math.min(100, N(a.valor ?? a.score)))] : null)).filter(a => a && a[0]).sort((x, y) => y[1] - x[1]).slice(0, 10);
+    data.arqWin = arrO(data.arqWin).slice(0, 2).map((w, i) => ({ pos: T(w.pos) || `${i + 1}º · ${T((data.arqIdeal[i] || [])[0])}`, c: hex(w.c, i ? '#60a5fa' : '#22c55e'), why: T(w.why || w.porque), risk: T(w.risk || w.riesgo) }));
+    const tabla = (t, head) => { t = (t && typeof t === 'object') ? t : {}; const rows = (Array.isArray(t.rows) ? t.rows : Array.isArray(t) ? t : []).map(r => Array.isArray(r) ? r.map(T) : (r && typeof r === 'object' ? Object.values(r).map(T) : null)).filter(r => r && r.some(Boolean)); return { head: Array.isArray(t.head) && t.head.length ? t.head.map(T) : head, rows: rows.map(r => { const x = r.slice(0, head.length); while (x.length < head.length) x.push(''); return x; }) }; };
+    data.arqActores = tabla(data.arqActores, ['Actor', 'Arquetipo que proyecta hoy', 'Fricción con el rechazado', 'Distancia al ideal', 'Lectura']);
+    data.codigo = T(data.codigo);
+
+    // Segmentos (acepta también la forma anterior perfil/emocional/palancas)
+    data.segIntro = T(data.segIntro);
+    data.segmentos = arrO(data.segmentos).map(sg => {
+      const pf = sg.perfil || {}, em = sg.emocional || {}, pl = sg.palancas || {}, vc = sg.vector;
+      const c1 = pares(sg.c1).length ? pares(sg.c1) : [['Edad y género', pf.edad], ['Zona', pf.zona], ['Ocupación', pf.ocupacion], ['Escolaridad / NSE', pf.escolaridad], ['Presencia digital', pf.digital], ['Historia electoral', pf.historia]].filter(p => p[1]).map(p => [p[0], T(p[1])]);
+      const c2 = pares(sg.c2).length ? pares(sg.c2) : [['Emoción Plutchik', em.emocion], ['En la vida cotidiana', em.cotidiana], ['Tensión activa', em.tension], ['Dolor profundo', em.dolor], ['Miedo', em.miedo], ['Orgullo', em.orgullo], ['Narrativa maestra', em.narrativa]].filter(p => p[1]).map(p => [p[0], T(p[1])]);
+      const c3in = (sg.c3 && typeof sg.c3 === 'object') ? sg.c3 : {};
+      const c3 = { tags: (Array.isArray(c3in.tags) ? c3in.tags : Array.isArray(pl.problemas) ? pl.problemas : []).map(T).filter(Boolean), orgullo: T(c3in.orgullo || pl.orgullo), consumo: T(c3in.consumo || pl.consumo), votaria: T(c3in.votaria || pl.acerca), alejaria: T(c3in.alejaria || pl.aleja), frame: T(c3in.frame || pl.frame), palanca: T(c3in.palanca || pl.palanca) };
+      const vector = typeof vc === 'string' ? vc : (vc && typeof vc === 'object' ? [vc.canal, vc.tono, vc.formato].filter(Boolean).map(T).join(' · ') : '');
+      let tipo = T(sg.tipo); if (sg.objetivo && !new RegExp(sg.objetivo, 'i').test(tipo)) tipo = `${tipo} · ${T(sg.objetivo).toUpperCase()}`;
+      return { tipo, color: hex(sg.color, '#374151'), nombre: T(sg.nombre), sub: T(sg.sub || sg.subtitulo), peso: Math.round(N(sg.peso)), pers: T(sg.pers || sg.persuabilidad).toUpperCase(), frase: T(sg.frase).replace(/^["“]|["”]$/g, ''), c1, c2, c3, vector };
+    }).filter(sg => sg.nombre);
+    data.segTbl = tabla(data.segTbl, ['Eje', 'Segmento', 'Emoción dominante', 'Intensidad', 'Detonante principal', 'Implicación para el cliente']);
+
+    // Miedos · Deseos · Necesidades (acepta también semiotica.miedos con objetos)
+    const mdn = (v, conScore) => (Array.isArray(v) ? v : []).map((x, i) => {
+      if (Array.isArray(x)) return [T(x[0]), T(x[1]), T(x[2]), conScore ? Math.max(0, Math.min(100, N(x[3]))) : undefined];
+      if (x && typeof x === 'object') return [T(x.nombre || x.titulo || x.name), T(x.evidencia), T(x.significado || x.lectura), conScore ? Math.max(0, Math.min(100, N(x.intensidad ?? x.score ?? x.valor))) : undefined];
+      return typeof x === 'string' ? [x, '', '', conScore ? 0 : undefined] : null;
+    }).filter(x => x && x[0]).map(x => conScore ? x : x.slice(0, 3));
+    data.miedos = mdn(Array.isArray(data.miedos) && data.miedos.length ? data.miedos : sem.miedos, true);
+    data.deseos = mdn(Array.isArray(data.deseos) && data.deseos.length ? data.deseos : sem.deseos, true);
+    data.necesidades = mdn(Array.isArray(data.necesidades) && data.necesidades.length ? data.necesidades : sem.necesidades, false);
+    ['miedos', 'deseos'].forEach(k => {
+      // sin intensidad: se reparte de 90 a 40 según el orden
+      if (data[k].length && data[k].every(x => !x[3])) data[k].forEach((x, i) => { x[3] = Math.round(90 - i * (50 / Math.max(1, data[k].length - 1))); });
+      data[k].sort((a, b) => b[3] - a[3]); data[k] = data[k].slice(0, 10);
+    });
+    data.necesidades = data.necesidades.slice(0, 10);
+    delete data.semiotica;
 
     // Red de seguridad (estructura EMOCIONES_LA_PIEDAD):
     // - Siempre las 8 emociones de Plutchik por "key", intensidad entera 0-3 y
@@ -993,17 +1091,6 @@ function normalizeResponse(data, skill, ctx = {}) {
       const iv = Math.max(0, Math.min(3, Math.round(Number(e.intensity) || 0)));
       const lista = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).map(String).filter(Boolean);
       return { key: k, active: iv > 0 && e.active !== false, intensity: iv, triggers: lista(e.triggers), consequences: lista(e.consequences) };
-    });
-    // - Radar de 12 arquetipos (0-5) y rankings de 10 ordenados por "rank".
-    const radar = Array.isArray(data.semiotica.arquetiposRadar) ? data.semiotica.arquetiposRadar : [];
-    data.semiotica.arquetiposRadar = Array.from({ length: 12 }, (_, k) => Math.max(0, Math.min(5, Number(radar[k]) || 0)));
-    ['miedos', 'deseos', 'necesidades'].forEach(k => {
-      data.semiotica[k] = data.semiotica[k]
-        .map((m, idx) => (typeof m === 'string' ? { nombre: m } : m))
-        .filter(m => m && typeof m === 'object' && (m.nombre || m.name))
-        .map((m, idx) => ({ rank: Number(m.rank) || idx + 1, nombre: String(m.nombre || m.name), evidencia: String(m.evidencia || ''), significado: String(m.significado || m.lectura || '') }))
-        .sort((a, b) => a.rank - b.rank).slice(0, 10)
-        .map((m, idx) => ({ ...m, rank: idx + 1 }));
     });
   }
 
@@ -1618,81 +1705,93 @@ const SCHEMAS = {
   }, null, 2),
 //EMOCIONES
   emociones: JSON.stringify({
-    territory: "string (NUNCA el nombre del país ni del personaje: el estado/entidad y cargo/partido específico de contexto, ej. 'Michoacán · Candidata a Diputación Local')",
-    subtitle: "string",
-    date: "string",
+    territory: "string (municipio/entidad del estudio, ej. 'Xonacatlán, Estado de México' — nunca el país genérico)",
+    subtitle: "string (ej. 'Elección de Ayuntamiento 2027 · Estudio para [cliente] · Periodo analizado: [periodo]')",
+    date: "string (mes y año de corte, ej. 'Octubre 2026')",
+    cliente: "string (partido o candidatura para la que se hace el estudio)",
+    anioEleccion: "string (año de la próxima elección local, ej. '2027')",
+    periodoGobierno: "string (periodo del gobierno municipal en turno, ej. '2025–2027')",
     riskLevel: "CRÍTICO|ALTO|MEDIO|BAJO",
-    ivEstimado: 0,
-    concept: "string",
-    conceptDesc: "string",
+    concept: "string (concepto central del territorio en 2-4 palabras, ej. 'Orden sin Confianza')",
+    conceptDesc: "string (párrafo de 80-120 palabras con los hechos que lo sustentan)",
     emotions: [
-      { key: "ira|sorpresa|anticipacion|tristeza|asco|alegria|confianza|miedo", active: true, intensity: 2, triggers: ["string"], consequences: ["string"] }
+      { key: "ira|miedo|anticipacion|tristeza|asco|alegria|confianza|sorpresa", active: true, intensity: 2, triggers: ["string (hecho concreto con fecha/lugar)"], consequences: ["string"] }
     ],
-    secondary: [{ name: "string", text: "string", color: "#hex" }],
+    secondary: [{ name: "string (ej. 'Ansiedad (Miedo + Anticipación)')", color: "#hex", text: "string" }],
     problematics: ["string"],
     fears: ["string"],
     prides: ["string"],
-    quotes: [{ text: "string", topic: "string", emotion: "string", territory: "string" }],
-    temasChart: [["string", 0, "#hex"]],
-    semaforo: [{ label: "string", val: "string", estado: "positivo|atencion|critico", color: "#hex" }],
-    dyads: [{ name: "string", formula: "string", type: "Primaria|Secundaria", text: "string", risk: "CRÍTICO|ALTO|MEDIO|BAJO", score: 0 }],
+    quotes: [{ text: "string (frase textual ciudadana)", topic: "string", emotion: "string", territory: "string (zona o medio donde se dijo, ej. 'Comentario en Poder Edomex')" }],
+    temasChart: [["string (tema)", 0, "#hex"]],
+    semaforo: [{ label: "string", val: "ALTO|MEDIO|BAJO|ALTA|MEDIA|BAJA|CRÍTICO", color: "#hex" }],
+    dyads: [{ name: "string", formula: "EmociónA + EmociónB", type: "Primaria|Secundaria", text: "string", risk: "CRÍTICO|ALTO|MEDIO|BAJO", score: 0 }],
     dyadInterp: "string",
+    ive: {
+      value: 0,
+      cls: "ESTABLE|MODERADO|VOLÁTIL|CRÍTICO",
+      horizon: "string (ej. '30–60 días')",
+      comps: [["A · Emociones de riesgo (detalle de intensidades)", 0], ["B · Díadas de alto riesgo (cuáles)", 0], ["C · Velocidad de cambio (detalle)", 0], ["D · Detonante externo (cuál)", 0]],
+      text: "string (párrafo: qué evento puede mover el estado emocional y ventana de contención)"
+    },
+    flows: [{ em: "string (emoción)", color: "#hex", origen: "string (hechos que la generan)", canal: "string (medios/redes por donde circula)", destino: "string (a quién se dirige)", tipo: "Directa|Circular|Difusa · vacante|Partidista" }],
+    clientePos: [
+      ["¿Es destino de emoción negativa?", "string"],
+      ["¿Puede capturar emoción difusa?", "string"],
+      ["¿Puede capitalizar un error ajeno?", "string"],
+      ["Riesgo de bypass", "string"]
+    ],
     preguntaPolitica: "string",
     preguntaDesc: "string",
-    govSemaforo: [{ label: "string", val: "string", estado: "positivo|atencion|critico", color: "#hex" }],
-    partidos: [
-      {
-        nombre: "string (partido o fuerza política con su rol local, ej. 'PAN (gobierno municipal)', 'Morena / PT / Verde', 'PRI', 'Independientes / Movimiento del Sombrero')",
-        emocion: "string (emoción ciudadana dominante hacia esa fuerza, ej. 'Ira contenida / Desgaste', 'Anticipación / Esperanza condicionada')",
-        capital: "string (capital político-emocional: 'Alto' | 'Medio-Alto' | 'Medio' | 'Bajo' | 'Potencial')",
-        tendencia: "string (flecha + frase corta OBLIGATORIA: '↓ Erosión gradual', '→ Consolidando base', '↑ Espacio disponible', '↓ Marginal')",
-        direccion: "baja|sube|estable",
-        color: "#hex (color del partido)",
-        cargaEmocional: { iraAsco: 0, decepcionTristeza: 0, interesDisponible: 0 }
-      }
-    ],
+    govSemaforo: [{ label: "string", val: "string (ej. 'CRÍTICO', 'BAJO', 'EN DISPUTA', 'MEDIO-ALTO')", color: "#hex" }],
+    partidos: [{ nombre: "string", corto: "string (nombre corto para la gráfica, ej. 'MC')", emocion: "string", capital: "Alto|Medio-Alto|Medio|Bajo|Potencial", tendencia: "string (flecha ↑/↓/→ + frase corta)", color: "#hex (color del partido)" }],
     partidosChart: [[0, 0, 0]],
-    actores: [
-      {
-        name: "string (NOMBRE COMPLETO REAL de la persona: candidato/a, aspirante, titular en turno o figura opositora — nunca un partido, un cargo genérico ni el nombre del territorio)",
-        role: "string (cargo actual · partido/afiliación · aspiración, ej. 'Secretario del H. Ayuntamiento · PAN (precandidato de continuidad)')",
-        partido: "string",
-        rows: [["Posicionamiento", "cláusula específica"], ["Emoción que capitaliza", "..."], ["Fortaleza narrativa", "..."], ["Riesgo / vulnerabilidad", "..."], ["Relación con el gobierno actual", "..."], ["Ventana de oportunidad", "..."]],
-        borderColor: "#hex"
-      }
+    marcos: [
+      { k: "Haidt · Fundaciones morales", c: "#a855f7", t: "string (usa <b>)" },
+      { k: "Westen · Roles narrativos", c: "#60a5fa", t: "string (Héroe, Villano, Víctima, Metáfora con <b>)" },
+      { k: "Lakoff · Frames en disputa", c: "#f97316", t: "string (Frame A, Frame B, Ganador hoy, Evitar, Usar con <b>)" }
     ],
-    actoresRadar: {
-      labels: ["string"],
-      data: [[0, 0, 0, 0, 0, 0]],
-      colors: ["#hex"]
+    sintesis: "string (síntesis Plutchik · Haidt · Westen · Lakoff, 90-130 palabras; cierra con 'Concepto refinado: <b>...</b>')",
+    actores: [
+      { name: "string (nombre completo real)", role: "string (cargo · partido · trayectoria)", partido: "string", borderColor: "#hex",
+        rows: [["Rol narrativo", "string"], ["Emoción que recibe", "string"], ["Emoción que activa", "string"], ["Bastión", "string"], ["Vulnerabilidad", "string"], ["Ventana", "string"]] }
+    ],
+    actoresRadar: { labels: ["string"], data: [[0, 0, 0, 0, 0, 0]], colors: ["#hex"] },
+    arquetipos: [
+      { k: "Arquetipo colectivo dominante", c: "#22c55e", n: "string", p: "string" },
+      { k: "Arquetipo secundario", c: "#60a5fa", n: "string", p: "string" },
+      { k: "Arquetipo emergente", c: "#f97316", n: "string", p: "string" },
+      { k: "Arquetipo rechazado", c: "#ef4444", n: "string", p: "string" }
+    ],
+    arqIdeal: [["string (arquetipo político, ej. 'Guerrero (defensor del territorio)')", 0]],
+    arqWin: [
+      { pos: "1º · string", c: "#22c55e", why: "string", risk: "string" },
+      { pos: "2º · string", c: "#60a5fa", why: "string", risk: "string" }
+    ],
+    arqActores: {
+      head: ["Actor", "Arquetipo que proyecta hoy", "Fricción con el rechazado", "Distancia al ideal", "Lectura"],
+      rows: [["string (nombre del actor)", "string", "string", "string", "string"]]
     },
-    resumenEjecutivo: "string",
-    segIntro: "string (párrafo metodológico introductorio de la segmentación N×E×I — Narrativa × Emoción × Identidad — para este territorio)",
+    codigo: "string (código simbólico del territorio; usa <b>)",
+    segIntro: "string (metodología N × E × I, a quién se asigna el Leal Activo y prioridad de inversión; usa <b>)",
     segmentos: [
       {
-        tipo: "string (código de tipo, ej. 'T1 · LEAL ACTIVO')",
-        nombre: "string (nombre evocador y memorable del segmento)",
-        subtitulo: "string (una línea describiendo a quién representa este segmento)",
-        peso: "string (peso estimado del segmento, ej. '22% [ESTIMACIÓN]')",
-        persuabilidad: "string (ej. 'YA ES NUESTRO' | 'MUY ALTA' | 'ALTA' | 'MEDIA' | 'BAJA')",
-        persuColor: "#hex",
-        objetivo: "MOVILIZAR|PERSUADIR|CONTENER|IGNORAR",
-        color: "#hex",
-        frase: "string (cita ciudadana textual representativa del segmento, sin comillas, se agregan en frontend)",
-        perfil: { edad: "string", zona: "string", ocupacion: "string", escolaridad: "string", digital: "string (hábitos y canales de consumo digital)", historia: "string (historia electoral/comportamiento de voto previo)" },
-        emocional: { emocion: "string (emoción Plutchik dominante + intensidad + hacia qué/quién se dirige)", cotidiana: "string (cómo se manifiesta en la vida diaria)", tension: "string (tensión política activa que vive este segmento)", dolor: "string (dolor profundo específico)", miedo: "string", orgullo: "string", narrativa: "string (frase/narrativa maestra que mejor lo describe)" },
-        palancas: { problemas: ["string (2-4 problemas críticos)"], orgullo: "string (orgullo comunitario que comparte)", consumo: "string (consumo digital predominante)", acerca: "string (qué acerca a este segmento a un candidato)", aleja: "string (qué lo aleja)", frame: "string (marco cognitivo/framing dominante)", palanca: "string (palanca estratégica de comunicación recomendada)" },
-        vector: { canal: "string (canal recomendado)", tono: "string (tono de comunicación recomendado)", formato: "string (formato de contenido recomendado)" }
+        tipo: "string (ej. 'T1 · Leal Activo · MOVILIZAR', 'T4 · Indeciso Evaluador · PERSUADIR', 'T6 · Apático Potencial · ACTIVAR', 'T5 · Adversario Simbólico · IGNORAR')",
+        color: "#hex", nombre: "string (nombre evocador, ej. 'La Mamá de San Antonio')", sub: "string (una línea)",
+        peso: 0, pers: "YA ES NUESTRO|MUY ALTA|ALTA|MEDIA|BAJA|NULA",
+        frase: "string (cita ciudadana real del segmento, sin comillas)",
+        c1: [["Edad y género", "string"], ["Zona", "string"], ["Ocupación", "string"], ["Escolaridad / NSE", "string"], ["Presencia digital", "string"], ["Historia electoral", "string"]],
+        c2: [["Emoción Plutchik", "string (con ●●○)"], ["En la vida cotidiana", "string"], ["Tensión activa", "string"], ["Dolor profundo", "string"], ["Miedo", "string"], ["Orgullo", "string"], ["Narrativa maestra", "string"]],
+        c3: { tags: ["string (problema crítico)"], orgullo: "string", consumo: "string", votaria: "string (qué lo haría votar por el cliente)", alejaria: "string", frame: "string", palanca: "string" },
+        vector: "string (canal · tono · formato)"
       }
     ],
-    semiotica: {
-      arquetipoColectivo: { dominante: "string (arquetipo junguiano + evidencia breve)", secundario: "string", emergente: "string", rechazado: "string" },
-      arquetipoPolitico: { ideal: "string", secundario: "string", resonancia: "string (ALTA|MEDIA|BAJA + por qué)", evidencia: "string (evidencia y riesgo de sobreactuación)" },
-      arquetiposRadar: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      miedos: [{ rank: 1, nombre: "string", evidencia: "string", significado: "string" }],
-      deseos: [{ rank: 1, nombre: "string", evidencia: "string", significado: "string" }],
-      necesidades: [{ rank: 1, nombre: "string", evidencia: "string", significado: "string" }]
-    }
+    segTbl: {
+      head: ["Eje", "Segmento", "Emoción dominante", "Intensidad", "Detonante principal", "Implicación para el cliente"],
+      rows: [["Género|Generación|Zona|NSE", "string", "string", "Muy alta|Alta|Media|Baja", "string", "string"]]
+    },
+    miedos: [["string (miedo)", "string (evidencia concreta)", "string (lectura política)", 0]],
+    deseos: [["string (deseo)", "string (evidencia concreta)", "string (lectura política)", 0]],
+    necesidades: [["string (necesidad simbólica)", "string (evidencia)", "string (lectura política)"]]
   }, null, 2),
 
 //TENSIONES
@@ -1934,7 +2033,7 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
   // personaje. Evita respuestas genéricas: obliga a derivar municipio/región,
   // actores involucrados y hechos concretos de las fuentes crudas del scraping.
   const guardarropaEmociones = skill === 'emociones'
-    ? `\nReglas adicionales OBLIGATORIAS para este análisis emocional de ${actorName}:\n- ANCLAJE AL CONTEXTO REAL: antes de redactar, identifica en las fuentes crudas (a) el cargo o aspiración actual de ${actorName}, (b) el municipio/estado/región donde ejerce o compite, y (c) los hechos recientes más repetidos (fechas, lugares, cifras, obras, escándalos, declaraciones, medios que los reportan). TODO el reporte debe girar alrededor de ESOS hechos concretos, no de generalidades sobre "la política en México".\n- PROHIBIDO el texto intercambiable: si una frase podría pegarse tal cual en el reporte de otro político o de otro municipio, está mal. Cada párrafo (subtitle, resumenEjecutivo, dyadInterp, preguntaDesc, textos de díadas, segmentos, semiótica, actores) debe nombrar al menos un hecho, lugar, actor, cifra o medio tomado de las fuentes crudas. Cita el medio o la fecha cuando exista (ej. "según [medio], [mes]").\n- ACTORES REALES DEL TERRITORIO: en "actores", el primer elemento es ${actorName}; los demás deben ser las personas que REALMENTE intervienen en la contienda o en el gobierno de ESE municipio/región: rivales de otros partidos, titular saliente o en turno, dirigentes locales/estatales de los partidos relevantes, o figuras que las fuentes crudas mencionan junto a ${actorName}. Prioriza los nombres que aparecen literalmente en las fuentes crudas. Si hay ACTORES POLÍTICOS DE REFERENCIA indicados por el analista, ESOS son los actores. Si no, usa SOLO nombres que aparezcan literalmente en las fuentes crudas (incluidas las de "contexto-actores": sondeos, encuestas, notas de aspirantes). Tu conocimiento interno sobre aspirantes, alcaldes o regidores locales puede estar DESACTUALIZADO para este periodo: NO lo uses para poner nombres de personas. Si no puedes asegurar un nombre con las fuentes, usa el cargo y partido (ej. "Aspirante de Morena a la alcaldía de [municipio] — sin identificar en fuentes") en vez de inventar o adivinar.\n- "territory" y "subtitle" deben reflejar el municipio/estado y cargo reales detectados (ej. "Michoacán · Candidata a ..."), nunca el país genérico "México".\n- "quotes", "problematics", "fears" y "prides" deben provenir de lo que la ciudadanía y los medios dicen sobre ESE territorio en las fuentes crudas; si una fuente trae una frase textual, úsala (acortada) en vez de parafrasear en genérico.\n- Si las fuentes crudas son escasas para un campo, dilo en el texto en términos cualitativos y prudentes ("las fuentes disponibles apuntan a...") en vez de rellenar con frases de manual o inventar cifras.`
+    ? `\nReglas adicionales OBLIGATORIAS para este análisis emocional de ${actorName}:\n- ANCLAJE AL CONTEXTO REAL: antes de redactar, identifica en las fuentes crudas (a) el cargo o aspiración actual de ${actorName}, (b) el municipio/estado/región donde ejerce o compite, y (c) los hechos recientes más repetidos (fechas, lugares, cifras, obras, escándalos, declaraciones, medios que los reportan). TODO el reporte debe girar alrededor de ESOS hechos concretos, no de generalidades sobre "la política en México".\n- PROHIBIDO el texto intercambiable: si una frase podría pegarse tal cual en el reporte de otro político o de otro municipio, está mal. Cada párrafo (subtitle, resumenEjecutivo, dyadInterp, preguntaDesc, textos de díadas, segmentos, semiótica, actores) debe nombrar al menos un hecho, lugar, actor, cifra o medio tomado de las fuentes crudas. Cita el medio o la fecha cuando exista (ej. "según [medio], [mes]").\n- ACTORES REALES DEL TERRITORIO: en "actores", el primer elemento es ${actorName}; los demás deben ser las personas que REALMENTE intervienen en la contienda o en el gobierno de ESE municipio/región: rivales de otros partidos, titular saliente o en turno, dirigentes locales/estatales de los partidos relevantes, o figuras que las fuentes crudas mencionan junto a ${actorName}. Prioriza los nombres que aparecen literalmente en las fuentes crudas. Si hay ACTORES POLÍTICOS DE REFERENCIA indicados por el analista, ESOS son los actores. Si no, usa SOLO nombres que aparezcan literalmente en las fuentes crudas (incluidas las de "contexto-actores": sondeos, encuestas, notas de aspirantes). Tu conocimiento interno sobre aspirantes, alcaldes o regidores locales puede estar DESACTUALIZADO para este periodo: NO lo uses para poner nombres de personas. Si no puedes asegurar un nombre con las fuentes, usa el cargo y partido (ej. "Aspirante de Morena a la alcaldía de [municipio] — sin identificar en fuentes") en vez de inventar o adivinar.\n- "territory" y "subtitle" deben reflejar el municipio/estado y cargo reales detectados (ej. "Michoacán · Candidata a ..."), nunca el país genérico "México".\n- "quotes", "problematics", "fears" y "prides" deben provenir de lo que la ciudadanía y los medios dicen sobre ESE territorio en las fuentes crudas; si una fuente trae una frase textual, úsala (acortada) en vez de parafrasear en genérico.\n- Si las fuentes crudas son escasas para un campo, dilo en el texto en términos cualitativos y prudentes ("las fuentes disponibles apuntan a...") en vez de rellenar con frases de manual o inventar cifras.\n- CLIENTE DEL ESTUDIO: ${clienteName ? `"${clienteName}". Todo lo que diga "cliente" (clientePos, segmentos.c3.votaria, segTbl "Implicación para el cliente", segIntro, subtitle) se refiere a ${clienteName}; escribe "cliente": "${clienteName}".` : 'no se especificó. Toma como cliente al partido que hoy gobierna el territorio (o al partido de ' + actorName + ' si es una persona) y escribe su nombre en "cliente".'}`
     : '';
 
   const etiquetaCliente = clienteName ? `"${clienteName}"` : 'la candidatura cliente (no se especificó nombre: refiérete a ella como "el cliente")';
@@ -1967,7 +2066,7 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
     : '';
 
   const instruccionesEstructura = skill === 'emociones'
-    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "emotions.intensity" es un ENTERO de escala fija 0-3, NUNCA otro rango: 0 = inactiva (no se detecta evidencia real de esta emoción), 1 = baja, 2 = media, 3 = alta. Debes DISTRIBUIR intensidades realistas y VARIADAS entre las 8 emociones según la evidencia — está PROHIBIDO poner intensity:3 a todas las emociones activas; eso es un error, no un signo de análisis completo. Como referencia, en un territorio típico: 1-2 emociones en intensidad 3 (las dominantes), 2-3 en intensidad 2, el resto en 1 o 0 (inactivas). Refleja la mezcla real de las fuentes, no un maximalismo genérico.\n- "dyads" (Díadas Emocionales) — NUNCA lo dejes vacío, es OBLIGATORIO que tenga mínimo 3 elementos, sin excepción. Una díada emocional es la COMBINACIÓN de dos de las 8 emociones activas que juntas producen una dinámica política específica y nombrable. Estructura de cada díada: "name" = nombre corto de la dinámica combinada (ej. "Indignación Resignada", "Miedo Desconfiado", "Esperanza Cautelosa"); "formula" = las dos emociones que se combinan, formato "EmociónA + EmociónB" (ej. "Ira + Tristeza"); "type" = "Primaria" si es la combinación dominante en el territorio o "Secundaria" si es una dinámica emergente menor; "text" = párrafo explicando el mecanismo político-emocional de esa combinación y su implicación estratégica; "risk" = CRÍTICO/ALTO/MEDIO/BAJO; "score" = número 0-100 de intensidad de riesgo. Ejemplo completo: {"name":"Indignación Resignada","formula":"Ira + Tristeza","type":"Primaria","text":"La ciudadanía combina enojo activo por el desabasto de agua con una tristeza resignada ante la falta de respuesta institucional, generando apatía electoral disfrazada de crítica...","risk":"ALTO","score":78}. Construye las díadas a partir de las emociones con mayor "intensity" en el array "emotions" — siempre hay al menos 3 combinaciones detectables en cualquier territorio político real.\n- "dyadInterp" debe ser un párrafo (60-120 palabras) interpretando el conjunto de díadas en términos de estrategia política, no una frase genérica.\n- "actores" (comparación de actores políticos, pestaña "Actores") — PROHIBIDO usar placeholders genéricos como "Competidor A", "Competidor B", "Oponente 1": "actores[0].name" debe ser EXACTAMENTE "${actorName}" (el personaje principal evaluado) — EXCEPCIÓN: si "${actorName}" es un TERRITORIO (municipio/estado) y no una persona, "actores" son las 3 figuras políticas reales que disputan ese territorio (aspirantes, titular en turno, oposición), sin poner el nombre del territorio como actor, y los siguientes 2-3 actores deben ser sus rivales/contrapartes políticos REALES de ese mismo proceso electoral o cargo, con su NOMBRE REAL identificable por el contexto político público de la entidad/cargo (candidatos rivales conocidos, titular saliente, líder de oposición, etc.) — tómalos de los ACTORES POLÍTICOS DE REFERENCIA si existen o de las fuentes crudas (incluido "contexto-actores"); NO uses tu memoria para nombres de aspirantes locales porque puede estar desactualizada. Únicamente si es genuinamente imposible identificar ningún nombre real de ningún rival (cargo muy local y sin contexto electoral claro), usa como alternativa el nombre del PARTIDO u organización que representaría cada rival (ej. "Candidatura del PRI", "Oposición del PAN") en vez de un placeholder tipo "Competidor A".\n- "actores.rows" (comparación de actores políticos) — cada actor debe traer MÍNIMO 6 filas, usando estas categorías de análisis como referencia (puedes adaptar la etiqueta exacta pero cubre el fondo de cada una): "Emoción dominante que activa", "Rol narrativo (Westen)", "Capital emocional positivo/diferencial", "Fundación moral que activa (Haidt)", "Principal vulnerabilidad", "Ventana estratégica 30 días" o "Riesgo para [el otro actor]". El VALOR de cada fila NUNCA debe ser una etiqueta corta o palabra suelta — debe ser una CLÁUSULA COMPLETA Y ESPECÍFICA con evidencia concreta (cifras, nombres de proyectos/lugares, fechas), del mismo nivel de detalle que: "78 Huellas de la Transformación, 250+ patrullas, Mexicable al 68%" o "Brecha entre cifras oficiales y experiencia cotidiana en colonias periféricas" — nunca algo tan corto como "Popularidad alta" o "Buena imagen".\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "secondary" debe incluir color (hex) para cada emoción secundaria.\n- "segmentos" (Segmentación N×E×I — Narrativa × Emoción × Identidad, pestaña "Segmentos y Perfiles"): cada segmento representa un bloque real y reconocible del electorado/población del territorio (ej. base leal de un actor, indeciso evaluador de otro, base ideológica de un tercero, segmento transversal no partidista/desconectado). "peso" es un porcentaje ESTIMADO (marca [ESTIMACIÓN] si no hay encuesta de campo real en las fuentes); "persuabilidad" clasifica qué tan movible es ("YA ES NUESTRO"/"MUY ALTA"/"ALTA"/"MEDIA"/"BAJA") y debe ser coherente con "objetivo" (MOVILIZAR si ya es nuestro, PERSUADIR si es persuadible, CONTENER si es hostil pero relevante, IGNORAR si es irrelevante). "frase" debe sonar a cita ciudadana real de ese segmento específico, no a eslogan genérico. Cada uno de los 4 sub-bloques (perfil, emocional, palancas, vector) debe llenarse por completo, con datos concretos del territorio, nunca genéricos intercambiables entre segmentos.\n- "semiotica" (pestaña "Semiótica"): aplica el modelo de los 12 arquetipos junguianos (Inocente, Explorador, Sabio, Héroe, Rebelde, Mago, Todos/Hombre común, Amante, Bufón, Cuidador, Gobernante, Guerrero) sobre el imaginario colectivo del territorio. "arquetipoColectivo" describe qué arquetipo vive la ciudadanía de sí misma/su comunidad (dominante/secundario/emergente/rechazado), siempre con evidencia concreta del territorio. "arquetipoPolitico" describe qué arquetipo espera la ciudadanía de SU LIDERAZGO político (puede ser distinto al colectivo) y su "evidencia" debe explicar también el riesgo de sobreactuación si un candidato fuerza ese arquetipo sin resultados reales. "arquetiposRadar" es un ARRAY DE EXACTAMENTE 12 NÚMEROS (escala 0-5, pueden llevar un decimal) EN ESTE ORDEN EXACTO: [Inocente, Explorador, Sabio, Héroe, Rebelde, Mago, Todos/Hombre común, Amante, Bufón, Cuidador, Gobernante, Guerrero] — refleja qué tanto resuena cada arquetipo en el imaginario colectivo, con variación real entre valores (nunca todos iguales ni todos en el máximo). "miedos", "deseos" y "necesidades" son 3 rankings INDEPENDIENTES de EXACTAMENTE 10 elementos cada uno, ordenados de "rank":1 (el más fuerte/prioritario) a "rank":10, cada uno con "evidencia" (hecho/fuente concreta del corpus, o [inferencia razonable] si no hay evidencia digital directa) y "significado" (lectura política de por qué importa ese miedo/deseo/necesidad).`
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Emociones):\n- "emotions.intensity" es un ENTERO de escala fija 0-3, NUNCA otro rango: 0 = inactiva (no se detecta evidencia real de esta emoción), 1 = baja, 2 = media, 3 = alta. Debes DISTRIBUIR intensidades realistas y VARIADAS entre las 8 emociones según la evidencia — está PROHIBIDO poner intensity:3 a todas las emociones activas; eso es un error, no un signo de análisis completo. Como referencia, en un territorio típico: 1-2 emociones en intensidad 3 (las dominantes), 2-3 en intensidad 2, el resto en 1 o 0 (inactivas). Refleja la mezcla real de las fuentes, no un maximalismo genérico.\n- "dyads" (Díadas Emocionales) — NUNCA lo dejes vacío, es OBLIGATORIO que tenga mínimo 3 elementos, sin excepción. Una díada emocional es la COMBINACIÓN de dos de las 8 emociones activas que juntas producen una dinámica política específica y nombrable. Estructura de cada díada: "name" = nombre corto de la dinámica combinada (ej. "Indignación Resignada", "Miedo Desconfiado", "Esperanza Cautelosa"); "formula" = las dos emociones que se combinan, formato "EmociónA + EmociónB" (ej. "Ira + Tristeza"); "type" = "Primaria" si es la combinación dominante en el territorio o "Secundaria" si es una dinámica emergente menor; "text" = párrafo explicando el mecanismo político-emocional de esa combinación y su implicación estratégica; "risk" = CRÍTICO/ALTO/MEDIO/BAJO; "score" = número 0-100 de intensidad de riesgo. Ejemplo completo: {"name":"Indignación Resignada","formula":"Ira + Tristeza","type":"Primaria","text":"La ciudadanía combina enojo activo por el desabasto de agua con una tristeza resignada ante la falta de respuesta institucional, generando apatía electoral disfrazada de crítica...","risk":"ALTO","score":78}. Construye las díadas a partir de las emociones con mayor "intensity" en el array "emotions" — siempre hay al menos 3 combinaciones detectables en cualquier territorio político real.\n- "dyadInterp" debe ser un párrafo (60-120 palabras) interpretando el conjunto de díadas en términos de estrategia política, no una frase genérica.\n- "actores" (comparación de actores políticos, pestaña "Actores") — PROHIBIDO usar placeholders genéricos como "Competidor A", "Competidor B", "Oponente 1": "actores[0].name" debe ser EXACTAMENTE "${actorName}" (el personaje principal evaluado) — EXCEPCIÓN: si "${actorName}" es un TERRITORIO (municipio/estado) y no una persona, "actores" son las 3 figuras políticas reales que disputan ese territorio (aspirantes, titular en turno, oposición), sin poner el nombre del territorio como actor, y los siguientes 2-3 actores deben ser sus rivales/contrapartes políticos REALES de ese mismo proceso electoral o cargo, con su NOMBRE REAL identificable por el contexto político público de la entidad/cargo (candidatos rivales conocidos, titular saliente, líder de oposición, etc.) — tómalos de los ACTORES POLÍTICOS DE REFERENCIA si existen o de las fuentes crudas (incluido "contexto-actores"); NO uses tu memoria para nombres de aspirantes locales porque puede estar desactualizada. Únicamente si es genuinamente imposible identificar ningún nombre real de ningún rival (cargo muy local y sin contexto electoral claro), usa como alternativa el nombre del PARTIDO u organización que representaría cada rival (ej. "Candidatura del PRI", "Oposición del PAN") en vez de un placeholder tipo "Competidor A".\n- "temasChart" debe ser un ARRAY DE ARRAYS: cada elemento es ["nombre del tema", porcentajeNumero, "colorHex"]. Ejemplo: [["Seguridad", 35, "#3b82f6"], ["Economía", 25, "#f97316"]]\n- "partidosChart" debe ser un ARRAY DE ARRAYS: cada elemento es [iraAscoNum, decepcionTristezaNum, interesDisponibleNum]. Ejemplo: [[45, 30, 25], [20, 60, 20]]\n- "actoresRadar.data" debe ser un ARRAY DE ARRAYS de números (0-100), uno por actor.\n- "secondary" debe incluir color (hex) para cada emoción secundaria.\n- "actores.rows" — cada actor trae EXACTAMENTE estas 6 filas en este orden: "Rol narrativo" (Westen: héroe/villano/víctima para qué segmento), "Emoción que recibe" (qué emoción ciudadana le llega y por qué hecho), "Emoción que activa" (qué emoción provoca a su favor), "Bastión" (zona o grupo donde es fuerte), "Vulnerabilidad" (hecho concreto que lo expone), "Ventana" (oportunidad estratégica próxima). Cada valor es una CLÁUSULA COMPLETA con evidencia concreta (cifras, lugares, fechas), nunca una etiqueta corta.\n- "ive" (Índice de Volatilidad Emocional): "value" 0-100 = promedio ponderado de sus 4 componentes; "cls" = ESTABLE (<40), MODERADO (40-59), VOLÁTIL (60-79) o CRÍTICO (80+); cada componente de "comps" lleva entre paréntesis el detalle que lo justifica (ej. "A · Emociones de riesgo (Ira 3 + Miedo 2 + Asco 3 + Tristeza 1 = 9/12)"). "text" explica qué evento concreto puede mover el estado emocional y la ventana de contención.\n- "flows" (Mapa Origen → Canal → Destino): una fila por emoción dominante; "origen" = hechos concretos que la generan, "canal" = medios/páginas/grupos por donde circula (nombres reales), "destino" = a quién apunta (persona, partido o "sin destino claro"), "tipo" = Directa, Circular, Difusa · vacante o Partidista.\n- "clientePos" responde las 4 preguntas del esquema DESDE LA POSICIÓN DEL CLIENTE, cada respuesta empieza con Sí/No/Medio, nivel de riesgo u oportunidad y una acción concreta.\n- "marcos": Haidt = a qué fundación moral (Cuidado, Equidad, Lealtad, Autoridad, Santidad, Libertad) se ancla cada emoción dominante; Westen = quién ocupa Héroe, Villano, Víctima y la Metáfora dominante; Lakoff = Frame A y Frame B en disputa, quién sostiene cada uno, cuál gana hoy, palabras a Evitar y a Usar. Usa <b> para las etiquetas.\n- "partidos": "color" = color oficial del partido; "corto" = sigla o nombre corto para la gráfica. "partidosChart" en el mismo orden que "partidos", cada fila [ira/asco, decepción/tristeza, interés/apoyo] en % que suman 100.\n- "arquetipos" (arquetipo colectivo del territorio): dominante, secundario, emergente y rechazado (la sombra que la ciudadanía castiga), cada uno con nombre evocador ("n") y párrafo con evidencia ("p"). "arqIdeal" = 10 arquetipos políticos (Guerrero, Padre/orden protector, Cuidador, Héroe, Madre protectora, Sabio, Rebelde, Gobernante, Explorador, Mago — con descriptor local entre paréntesis si aplica) con su resonancia 0-100, de mayor a menor. "arqWin" explica por qué resuena el 1º y el 2º y su riesgo de sobreactuación. "arqActores.rows" = una fila por actor de "actores" (mismo nombre) con el arquetipo que proyecta, fricción con el arquetipo rechazado, distancia al ideal y lectura. "codigo" = párrafo del código simbólico del territorio y su líder ideal.\n- "segmentos" (SEGMENTA · Buyer Personas Electorales, pestaña "Segmentos y Perfiles"): 4 buyer personas reales y reconocibles del territorio con nombre evocador (ej. "La Mamá de San Antonio", "El Chavo de la Liga"); "tipo" combina código, tipo y acción (T1 Leal Activo · MOVILIZAR, T4 Indeciso Evaluador · PERSUADIR, T6 Apático Potencial · ACTIVAR, T5 Adversario Simbólico · IGNORAR); "pers" coherente con la acción; "peso" en % (estimación triangulada con la conversación); "frase" es una cita ciudadana real del segmento; c1/c2/c3 completos y concretos, nunca intercambiables entre segmentos; "vector" = canal · tono · formato.\n- "segTbl" (Segmentación emocional por perfil ciudadano): filas por eje Género (Mujeres, Hombres), Generación (Gen Z 18–26, Millennials 27–42, Gen X 43–58, Boomers 59+), Zona (4 zonas reales del territorio) y NSE (C/C-, D/E), cada una con emoción dominante, intensidad, detonante principal e implicación para el cliente.\n- "segIntro" es un párrafo metodológico (N × E × I) que dice a qué fuerza se asigna el Leal Activo, cómo se triangularon los pesos y la prioridad de inversión entre los 4 segmentos.\n- "miedos" y "deseos" (pestaña Miedos · Deseos · Necesidades): cada elemento es [título, evidencia concreta (cifra, medio, fecha o cita), lectura política, intensidad simbólica 0-100], ordenados de mayor a menor intensidad. "necesidades" es [título, evidencia, lectura política]. Los 30 elementos deben ser distintos entre sí y propios del territorio.`
     : skill === 'comparativo'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Comparativo, ${listaComparativo.length} actores):\n- LLAVES DINÁMICAS POR ACTOR: en "sentimientoGeneral", "traSerie.series", "picosSerie.series", "plataformasRadar.data" y "sentimientoCruces.*.data", las llaves del objeto deben ser EXACTAMENTE los ${listaComparativo.length} nombres reales listados arriba, NUNCA "NombreActor1"/"NombreActor2" ni variantes. Ejemplo real: {${ejemploLlaves}}. Cada uno de estos objetos debe traer entradas para TODOS los actores, no solo los primeros 2.\n- "npsPorActor" y "ratioPorActor" deben tener EXACTAMENTE ${listaComparativo.length} números, en el mismo orden que la lista de actores.\n- "sentimientoGeneral" y los arrays dentro de "sentimientoCruces.*.data.<actor>.<segmento>" son [positivo, neutro, negativo, polarizado] — 4 números que idealmente suman ~100.\n- "kpiCards": mínimo 4 tarjetas, "color" debe ser una de estas 4 letras exactas: "g" (verde/bueno), "a" (ámbar/atención), "r" (rojo/riesgo), "n" (neutro). NUNCA un color hex aquí.\n- "hashtags": cada fila es EXACTAMENTE 6 elementos en este orden: [hashtag (con #), nombre del actor al que más se asocia, tono ("Positivo"/"Negativo"/"Neutro"/"Polarizado"), plataforma principal donde circula, origen ("orgánico"/"inducido"), frecuencia relativa (número 0-100)].\n- "riesgos" y "oportunidades": cada fila es un array de 4 elementos [nivel, titulo, texto, bivariado]. Nivel de "riesgos" usa CRÍTICO/ALTO/MEDIO/BAJO; nivel de "oportunidades" usa ALTA/MEDIA/BAJA.\n- "narrativas.tipo" debe ser EXACTAMENTE uno de: "favorable", "critica", "ambivalente" (sin acentos, en minúsculas) — el frontend filtra por este valor literal. Debe haber narrativas para CADA uno de los ${listaComparativo.length} actores, no solo de los primeros 2.\n- "alertaTabla" debe tener EXACTAMENTE ${listaComparativo.length} filas, una por actor.\n- "topOfMindCruces.*.data" usa como llave el NOMBRE DEL TEMA (no del actor), con un array de números alineado a "segments".\n- "plataformasRadar.labels" siempre debe ser ["X (Twitter)", "Facebook", "Instagram", "Medios digitales"] y "plataformasRadar.data.<actor>" un array de 4 números alineados a esas labels, para CADA uno de los ${listaComparativo.length} actores.`
     : skill === 'opositor' && parteOpositor === 2
@@ -2030,9 +2129,11 @@ ${contextoTensiones ? '\nCONTEXTO DE LA PARTE 1 (Tensiones ya generadas — mant
   // (A = Flor/Mapa/Díadas/Identidad/Actores, B = Segmentos/Semiótica), para
   // no gastar tokens de salida en campos que no le tocan.
   const esLineaB = (l) => (REGEX_PARTE_B[skill] || /$^/).test(l);
+  const esLineaC = (l) => (REGEX_PARTE_C[skill] || /$^/).test(l);
   const filtrarEmociones = (txt) => {
     if (!PARTES_B[skill] || !parteEmociones || parteEmociones === 'FALTANTES') return txt;
-    return txt.split('\n').filter(l => !/^\s*-\s/.test(l) || (parteEmociones === 'B' ? esLineaB(l) : !esLineaB(l))).join('\n');
+    return txt.split('\n').filter(l => !/^\s*-\s/.test(l)
+      || (parteEmociones === 'B' ? esLineaB(l) : parteEmociones === 'C' ? esLineaC(l) : !esLineaB(l) && !esLineaC(l))).join('\n');
   };
   const requisitosCantidad = REQUISITOS_MINIMOS[(skill === 'opositor' && parteOpositor === 2) ? 'opositor2' : (skill === 'tensiones' && parteTensiones === 2) ? 'tensionesCartografia' : skill] || '';
 
@@ -2092,21 +2193,28 @@ REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
 
   emociones: `
 REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
-- emotions: EXACTAMENTE 8 entradas (las 8 emociones base de Plutchik), con "active:true" solo en las realmente detectadas y "active:false" en el resto — pero las 8 deben existir con "triggers" y "consequences" no vacíos.
-- secondary: mínimo 4 emociones secundarias.
-- quotes: mínimo 6 frases ciudadanas distintas, cada una con cita textual + emoción/tono + colonia o zona específica (como en el ejemplo: cita, luego "Tema · Emoción · Colonia").
-- dyads: mínimo 3 díadas emocionales.
-- partidos: mínimo 4 fuerzas políticas (incluye al partido en el gobierno local, la principal oposición, otros partidos con presencia y, si existen, independientes/movimientos), cada una con las 4 columnas llenas: "emocion", "capital", "tendencia" (con flecha ↑/↓/→ + frase) y su "cargaEmocional"; "partidosChart" debe tener una fila por partido en el MISMO orden.
-- actores: mínimo 3 actores comparados con su NOMBRE COMPLETO REAL (candidatos/aspirantes/figuras políticas del territorio, nunca un partido, cargo genérico o el nombre del territorio), cada uno con mínimo 6 filas en "rows" (ver categorías e instrucciones de contenido en la sección de INSTRUCCIONES DE ESTRUCTURA CRÍTICAS).
-- problematics: mínimo 6 elementos, cada uno anclado en un hecho específico (fecha, colonia, cifra, nombre de funcionario si aplica) — usa como referencia de densidad y estilo: "Desabasto de agua recurrente: más de 230 colonias en tandeo; bloqueos documentados en febrero y mayo 2026 en Paseo de los Mexicas y Conscripto".
-- fears: mínimo 5 elementos con el mismo nivel de especificidad territorial y temporal.
-- prides: mínimo 4 elementos con el mismo nivel de especificidad (nombres de proyectos, cifras de aportación económica, identidad territorial concreta).
-- semaforo (Semáforo Emocional del Territorio): mínimo 6 indicadores distintos (p. ej. seguridad, economía/empleo, servicios públicos, movilidad, salud, educación, obra pública, percepción de gobierno local).
-- govSemaforo (Percepción del Gobierno en Turno): mínimo 6 indicadores de desempeño distintos y específicos (p. ej. seguridad pública, manejo del agua, vialidad/movilidad, transparencia, atención ciudadana, obra pública, economía local, salud), cada uno con su propio "estado" — NO los agrupes en un solo indicador genérico de "Desempeño del gobierno".
-- temasChart (Emociones por Temática): mínimo 5 temas distintos.
-- segmentos: mínimo 4 segmentos distintos, cubriendo el espectro real del electorado/población (mínimo: una base leal/afín, un indeciso evaluable, una base ideológica opositora, y un segmento transversal no partidista o de desconexión política) — cada uno con los 4 sub-bloques (perfil, emocional, palancas, vector) completos, nunca vacíos ni genéricos.
-- semiotica.arquetiposRadar: EXACTAMENTE 12 números, en el orden fijo: Inocente, Explorador, Sabio, Héroe, Rebelde, Mago, Todos/Hombre común, Amante, Bufón, Cuidador, Gobernante, Guerrero — con variación real entre valores.
-- semiotica.miedos, semiotica.deseos, semiotica.necesidades: EXACTAMENTE 10 elementos cada lista (rank 1 a 10), nunca menos.`,
+- emotions: EXACTAMENTE 8 entradas (las 8 emociones base de Plutchik), con "active:true" solo en las realmente detectadas y "active:false" en el resto — pero las 8 deben existir con "triggers" y "consequences" no vacíos (3-5 triggers con fecha/lugar en las activas).
+- secondary: 3-4 emociones secundarias, cada una con "color".
+- problematics: mínimo 6; fears: mínimo 6; prides: mínimo 5 — cada uno anclado en un hecho específico (fecha, colonia, cifra, nombre).
+- quotes: mínimo 8 frases ciudadanas textuales, cada una con tema, emoción y lugar/medio donde se dijo.
+- temasChart: 6-8 temas con % que suman ~100.
+- semaforo: EXACTAMENTE 6 indicadores (estado emocional general, riesgo de voto de castigo, potencial de protesta, capital emocional positivo, legitimidad institucional, disposición al diálogo).
+- dyads: EXACTAMENTE 3 díadas.
+- ive: "value" 0-100 y "comps" con EXACTAMENTE 4 componentes (A emociones de riesgo, B díadas de alto riesgo, C velocidad de cambio, D detonante externo), cada uno 0-100.
+- flows: 4 flujos Origen → Canal → Destino (uno por emoción dominante).
+- clientePos: EXACTAMENTE las 4 preguntas del esquema, respondidas para el cliente.
+- govSemaforo: EXACTAMENTE 6 indicadores de desempeño del gobierno municipal.
+- partidos: mínimo 4 fuerzas políticas (incluye al gobierno local, oposición y el espacio sin dueño si existe); partidosChart con una fila por partido en el MISMO orden.
+- marcos: EXACTAMENTE 3 (Haidt, Westen, Lakoff) con los nombres del esquema.
+- actores: 3-4 actores con nombre completo real y EXACTAMENTE 6 filas cada uno (Rol narrativo, Emoción que recibe, Emoción que activa, Bastión, Vulnerabilidad, Ventana).
+- arquetipos: EXACTAMENTE 4 (dominante, secundario, emergente, rechazado).
+- arqIdeal: EXACTAMENTE 10 arquetipos políticos con resonancia 0-100, ordenados de mayor a menor.
+- arqWin: EXACTAMENTE 2 (1º y 2º lugar de arqIdeal).
+- arqActores.rows: una fila por cada actor de "actores" (mismo nombre).
+- segmentos: EXACTAMENTE 4 buyer personas (T1 Leal Activo, T4 Indeciso Evaluador, T6 Apático Potencial, T5 Adversario Simbólico), "peso" en % que suma ~100, c1 con 6 filas, c2 con 7 filas, c3 con 3-4 tags.
+- segTbl.rows: mínimo 12 filas (2 de Género, 4 de Generación, 4 de Zona, 2 de NSE).
+- miedos y deseos: EXACTAMENTE 10 cada uno, ordenados por intensidad simbólica (0-100) de mayor a menor.
+- necesidades: EXACTAMENTE 10.`,
 
   tensiones: `
 REGLA ANTI-CORTE (OBLIGATORIA, lee esto primero): este reporte tiene MUCHOS campos. Está PROHIBIDO dejar sin generar o vacíos los campos finales del JSON (especialmente "cartografiaSocioafectiva.preguntas" y "cartografiaSocioafectiva.narrativas") por quedarte sin espacio. Si notas que el contenido se está extendiendo demasiado, PRIORIZA ASÍ: primero asegura que TODOS los campos y TODAS las pestañas existan con contenido completo (nunca un array vacío ni un string vacío), y solo si hace falta recortar, acorta la longitud de los párrafos más largos (ej. "lecturaEstrategica", "observaciones", "descripcion") en vez de omitir un campo o una tensión completa. Un reporte con 8 tensiones y párrafos de 40 palabras es MEJOR que uno con 10 tensiones donde "preguntas" o "narrativas" quedaron vacíos.
