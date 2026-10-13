@@ -35,6 +35,11 @@ app.get('/', (req, res) => {
 // crea un job, responde de inmediato, y procesa en background.
 // El frontend consulta /api/estado/:jobId hasta que termine.
 // =========================================================
+// Un error no capturado en una promesa (p. ej. una respuesta rara de Apify)
+// ya no tumba todo el proceso: se registra y el servidor sigue atendiendo.
+process.on('unhandledRejection', (e) => console.error('[!] Promesa rechazada sin capturar:', e && e.stack || e));
+process.on('uncaughtException', (e) => console.error('[!] Excepción no capturada:', e && e.stack || e));
+
 const JOBS = new Map(); // jobId -> { status: 'processing'|'done'|'error', result?, error? }
 const JOB_TTL_MS = 15 * 60 * 1000; // 15 min, luego se limpia de memoria
 
