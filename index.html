@@ -258,6 +258,7 @@
         <option value="mes" selected>Un mes</option>
         <option value="rango">Rango de meses</option>
         <option value="semana">Por semana</option>
+        <option value="personalizado">Fechas personalizadas</option>
       </select>
 
       <div class="periodo-group" id="grpMes">
@@ -317,6 +318,13 @@
         <input type="date" id="weekStart" class="filter-select" onchange="onPeriodoChange()">
       </div>
 
+      <div class="periodo-group hidden" id="grpCustom">
+        <span class="periodo-sep">Del</span>
+        <input type="date" id="fechaInicio" class="filter-select" onchange="onPeriodoChange()">
+        <span class="periodo-sep">al</span>
+        <input type="date" id="fechaFin" class="filter-select" onchange="onPeriodoChange()">
+      </div>
+
       <span class="periodo-resumen" id="periodoResumen"></span>
     </div>
 
@@ -337,6 +345,7 @@
   <div class="dashboard-view" id="view3">
     <div class="dashboard-toolbar">
       <button class="btn-action" onclick="downloadReport()">📥 Descargar Reporte (HTML)</button>
+      <button class="btn-action" id="btnPdf" onclick="downloadPDF()">📄 Descargar PDF</button>
       <button class="btn-action" onclick="resetToSearch()">🔍 Nueva Búsqueda</button>
     </div>
 
@@ -394,6 +403,15 @@ function leerPeriodo() {
     p.mesFin = document.getElementById('monthEndSelect').value;
     p.anioFin = document.getElementById('yearEndSelect').value;
   }
+  if (periodoTipo === 'personalizado') {
+    p.fechaInicio = document.getElementById('fechaInicio').value;
+    p.fechaFin = document.getElementById('fechaFin').value;
+    if (p.fechaInicio) {
+      const d = new Date(p.fechaInicio + 'T00:00:00Z');
+      p.mes = MESES[d.getUTCMonth()];
+      p.anio = String(d.getUTCFullYear());
+    }
+  }
   if (periodoTipo === 'semana') {
     p.semanaInicio = document.getElementById('weekStart').value;
     if (p.semanaInicio) {
@@ -407,6 +425,16 @@ function leerPeriodo() {
 
 // Devuelve { label, error } para mostrar el resumen y validar antes de enviar.
 function describirPeriodo(p) {
+  if (p.periodoTipo === 'personalizado') {
+    if (!p.fechaInicio || !p.fechaFin) return { error: 'Selecciona la fecha inicial y la fecha final.' };
+    const ini = new Date(p.fechaInicio + 'T00:00:00Z'), fin = new Date(p.fechaFin + 'T00:00:00Z');
+    if (fin < ini) return { error: 'La fecha final no puede ser anterior a la fecha inicial.' };
+    const dias = Math.round((fin - ini) / 86400000) + 1;
+    if (dias > 731) return { error: 'El periodo personalizado máximo es de 2 años.' };
+    const f = (d, conAnio) => `${d.getUTCDate()} ${MESES_CORTOS[d.getUTCMonth()]}${conAnio ? ' ' + d.getUTCFullYear() : ''}`;
+    const label = dias === 1 ? f(ini, true) : `Del ${f(ini, ini.getUTCFullYear() !== fin.getUTCFullYear())} al ${f(fin, true)}`;
+    return { label: `${label} (${dias} día${dias === 1 ? '' : 's'})` };
+  }
   if (p.periodoTipo === 'semana') {
     if (!p.semanaInicio) return { error: 'Selecciona la fecha de inicio de la semana.' };
     const ini = new Date(p.semanaInicio + 'T00:00:00Z');
@@ -432,7 +460,14 @@ function describirPeriodo(p) {
 
 function onPeriodoChange() {
   const tipo = document.getElementById('periodoTipo').value;
-  document.getElementById('grpMes').classList.toggle('hidden', tipo === 'semana');
+  document.getElementById('grpMes').classList.toggle('hidden', tipo === 'semana' || tipo === 'personalizado');
+  document.getElementById('grpCustom').classList.toggle('hidden', tipo !== 'personalizado');
+  if (tipo === 'personalizado') {
+    const fi = document.getElementById('fechaInicio'), ff = document.getElementById('fechaFin');
+    if (!ff.value) { const h = new Date(); h.setDate(h.getDate() - 1); ff.value = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`; }
+    if (!fi.value) { const h = new Date(ff.value + 'T00:00:00'); h.setDate(h.getDate() - 29); fi.value = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`; }
+    fi.max = ff.value; ff.min = fi.value;
+  }
   document.getElementById('grpRangoFin').classList.toggle('hidden', tipo !== 'rango');
   document.getElementById('grpSemana').classList.toggle('hidden', tipo !== 'semana');
   document.getElementById('lblDesde').textContent = tipo === 'rango' ? 'De' : 'Mes';
@@ -654,6 +689,155 @@ async function loadSelectedSkill() {
     console.error('[RADAR] Error en loadSelectedSkill:', err);
     showError(err.message || 'Ocurrió un error inesperado');
     resetToSearch();
+  }
+}
+
+// =========================================================
+// DESCARGA EN PDF — recorre TODAS las pestañas del dashboard,
+// renderiza sus gráficas y arma un PDF (A4 horizontal) con:
+//   · el encabezado del reporte + la primera pestaña,
+//   · cada una de las demás pestañas empezando en página nueva.
+// Los cortes de página se buscan en espacios en blanco para no partir
+// tarjetas ni renglones de texto.
+// =========================================================
+const PDF_TABS = {
+  radar:     { botones: '#radar-root .tabs .tb',          seccion: '#radar-root .tsec.show' },
+  tensiones: { botones: '#skillContainer .nb[onclick*="tensTab"]', seccion: '#skillContainer .view.on' },
+  emociones: { botones: '#skillContainer .tab[onclick*="emST"]',   seccion: '#skillContainer .pnl.on' },
+  opositor:  { botones: '#op-nav button',                 seccion: '#skillContainer section.tab.on' },
+};
+
+function cargarScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve();
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = () => reject(new Error('No se pudo cargar ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+function avisoPdf(texto) {
+  let o = document.getElementById('pdfOverlay');
+  if (!texto) { if (o) o.remove(); return; }
+  if (!o) {
+    o = document.createElement('div'); o.id = 'pdfOverlay';
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;display:flex;align-items:center;justify-content:center';
+    o.innerHTML = '<div style="background:#fff;border-radius:10px;padding:22px 28px;font:600 14px system-ui,sans-serif;color:#0f172a;box-shadow:0 10px 30px rgba(0,0,0,.25);min-width:260px;text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><div id="pdfOverlayTxt"></div></div>';
+    document.body.appendChild(o);
+  }
+  document.getElementById('pdfOverlayTxt').textContent = texto;
+}
+
+const esperar = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Busca, subiendo desde "limite", un renglón del canvas que sea liso (sin texto ni bordes).
+function corteLimpio(canvas, desde, limite) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const w = canvas.width, minY = desde + Math.floor((limite - desde) * 0.6);
+  const paso = Math.max(1, Math.floor(w / 600));
+  for (let y = limite; y > minY; y -= 2) {
+    const d = ctx.getImageData(0, y, w, 1).data;
+    let ok = true;
+    const r0 = d[0], g0 = d[1], b0 = d[2];
+    for (let x = 0; x < w; x += paso) {
+      const i = x * 4;
+      if (Math.abs(d[i] - r0) + Math.abs(d[i + 1] - g0) + Math.abs(d[i + 2] - b0) > 24) { ok = false; break; }
+    }
+    if (ok) return y;
+  }
+  return limite;
+}
+
+function agregarCanvasAlPdf(pdf, canvas, primera) {
+  const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+  const margen = 8, anchoMm = pw - margen * 2, altoUtilMm = ph - margen * 2 - 6;
+  const pxPorMm = canvas.width / anchoMm;
+  const altoPagPx = Math.floor(altoUtilMm * pxPorMm);
+  let y = 0, nueva = !primera;
+  while (y < canvas.height - 4) {
+    let fin = Math.min(canvas.height, y + altoPagPx);
+    if (fin < canvas.height) fin = corteLimpio(canvas, y, fin);
+    const trozo = document.createElement('canvas');
+    trozo.width = canvas.width; trozo.height = fin - y;
+    const c = trozo.getContext('2d');
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, trozo.width, trozo.height);
+    c.drawImage(canvas, 0, y, canvas.width, fin - y, 0, 0, canvas.width, fin - y);
+    if (nueva) pdf.addPage();
+    nueva = true;
+    pdf.addImage(trozo.toDataURL('image/jpeg', 0.9), 'JPEG', margen, margen, anchoMm, (fin - y) / pxPorMm, undefined, 'FAST');
+    y = fin;
+  }
+}
+
+async function downloadPDF() {
+  const skill = document.getElementById('skillSelect').value;
+  const container = document.getElementById('skillContainer');
+  if (!container || !container.innerHTML.trim() || !window.DATA) {
+    return showError('No hay un reporte generado todavía para descargar.');
+  }
+  const btn = document.getElementById('btnPdf');
+  btn.disabled = true;
+  const animPrev = window.Chart ? Chart.defaults.animation : undefined;
+  try {
+    avisoPdf('Preparando PDF…');
+    await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if (window.Chart) Chart.defaults.animation = false;
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+    const opts = { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: Math.max(1300, container.scrollWidth),
+      // En la copia que fotografía html2canvas las animaciones de entrada (fade) vuelven a empezar
+      // y el PDF saldría deslavado: se desactivan.
+      onclone: (doc) => { const st = doc.createElement('style'); st.textContent = '*,*::before,*::after{animation:none!important;transition:none!important}'; doc.head.appendChild(st); } };
+    const cfg = PDF_TABS[skill];
+    const botones = cfg ? Array.from(document.querySelectorAll(cfg.botones)) : [];
+    const activo = botones.find(b => b.classList.contains('on') || b.classList.contains('act'));
+
+    if (!botones.length) {
+      // Skill sin pestañas conocidas: se captura tal cual se ve.
+      avisoPdf('Generando PDF…');
+      agregarCanvasAlPdf(pdf, await html2canvas(container, opts), true);
+    } else {
+      for (let i = 0; i < botones.length; i++) {
+        avisoPdf(`Generando PDF… pestaña ${i + 1} de ${botones.length}`);
+        botones[i].click();
+        await esperar(900); // las skills dibujan sus gráficas unos ms después del clic
+        let objetivo = container;
+        if (i > 0) {
+          objetivo = document.querySelector(cfg.seccion) || container;
+          // Título de la pestaña arriba de cada sección
+          const t = document.createElement('div');
+          t.className = 'pdf-titulo-tab';
+          t.textContent = (botones[i].textContent || '').trim().toUpperCase();
+          t.style.cssText = 'font:800 13px ui-monospace,monospace;letter-spacing:3px;color:#1C2738;padding:4px 0 12px;border-bottom:2px solid #1C2738;margin-bottom:14px';
+          objetivo.prepend(t);
+        }
+        const canvas = await html2canvas(objetivo, opts);
+        objetivo.querySelectorAll(':scope > .pdf-titulo-tab').forEach(x => x.remove());
+        agregarCanvasAlPdf(pdf, canvas, i === 0);
+      }
+      if (activo) { activo.click(); }
+    }
+
+    // Pie con número de página
+    const total = pdf.getNumberOfPages();
+    for (let n = 1; n <= total; n++) {
+      pdf.setPage(n);
+      pdf.setFontSize(7); pdf.setTextColor(120);
+      pdf.text(`RADAR · Estudio confidencial · ${n} / ${total}`, pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 4, { align: 'center' });
+    }
+
+    const meta = window.DATA_META || {};
+    const slug = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    pdf.save(`${skill}-${slug(meta.actor) || 'reporte'}${meta.periodo ? '-' + slug(meta.periodo) : ''}.pdf`);
+  } catch (err) {
+    console.error('[RADAR] Error al generar PDF:', err);
+    showError('No se pudo generar el PDF: ' + (err.message || err));
+  } finally {
+    if (window.Chart && animPrev !== undefined) Chart.defaults.animation = animPrev;
+    avisoPdf(null);
+    btn.disabled = false;
   }
 }
 
