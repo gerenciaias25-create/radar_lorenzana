@@ -718,19 +718,13 @@ async function loadSelectedSkill() {
 }
 
 // =========================================================
-// DESCARGA EN PDF — recorre TODAS las pestañas del dashboard,
-// renderiza sus gráficas y arma un PDF (A4 horizontal) con:
-//   · el encabezado del reporte + la primera pestaña,
-//   · cada una de las demás pestañas empezando en página nueva.
-// Los cortes de página se buscan en espacios en blanco para no partir
-// tarjetas ni renglones de texto.
+// DESCARGA EN PDF — FORMATO REPORTE
+// El motor vive en /reporte_pdf.js (el mismo archivo que usa el panel de
+// clientes de SIE como js/sie_pdf.js): cada pestaña es un capítulo, las
+// subpestañas y acordeones salen completos y los cortes de página nunca
+// parten una tarjeta.
 // =========================================================
-const PDF_TABS = {
-  radar:     { botones: '#radar-root .tabs .tb',          seccion: '#radar-root .tsec.show' },
-  tensiones: { botones: '#skillContainer .nb[onclick*="tensTab"]', seccion: '#skillContainer .view.on' },
-  emociones: { botones: '#skillContainer .tab[onclick*="emST"]',   seccion: '#skillContainer .pnl.on' },
-  opositor:  { botones: '#op-nav button',                 seccion: '#skillContainer section.tab.on' },
-};
+window.SIE_REPORTE_SIN_ESCUCHA = true;
 
 function cargarScript(src) {
   return new Promise((resolve, reject) => {
@@ -753,46 +747,6 @@ function avisoPdf(texto) {
   document.getElementById('pdfOverlayTxt').textContent = texto;
 }
 
-const esperar = (ms) => new Promise(r => setTimeout(r, ms));
-
-// Busca, subiendo desde "limite", un renglón del canvas que sea liso (sin texto ni bordes).
-function corteLimpio(canvas, desde, limite) {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const w = canvas.width, minY = desde + Math.floor((limite - desde) * 0.6);
-  const paso = Math.max(1, Math.floor(w / 600));
-  for (let y = limite; y > minY; y -= 2) {
-    const d = ctx.getImageData(0, y, w, 1).data;
-    let ok = true;
-    const r0 = d[0], g0 = d[1], b0 = d[2];
-    for (let x = 0; x < w; x += paso) {
-      const i = x * 4;
-      if (Math.abs(d[i] - r0) + Math.abs(d[i + 1] - g0) + Math.abs(d[i + 2] - b0) > 24) { ok = false; break; }
-    }
-    if (ok) return y;
-  }
-  return limite;
-}
-
-function agregarCanvasAlPdf(pdf, canvas, primera) {
-  const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
-  const margen = 8, anchoMm = pw - margen * 2, altoUtilMm = ph - margen * 2 - 6;
-  const pxPorMm = canvas.width / anchoMm;
-  const altoPagPx = Math.floor(altoUtilMm * pxPorMm);
-  let y = 0, nueva = !primera;
-  while (y < canvas.height - 4) {
-    let fin = Math.min(canvas.height, y + altoPagPx);
-    if (fin < canvas.height) fin = corteLimpio(canvas, y, fin);
-    const trozo = document.createElement('canvas');
-    trozo.width = canvas.width; trozo.height = fin - y;
-    const c = trozo.getContext('2d');
-    c.fillStyle = '#ffffff'; c.fillRect(0, 0, trozo.width, trozo.height);
-    c.drawImage(canvas, 0, y, canvas.width, fin - y, 0, 0, canvas.width, fin - y);
-    if (nueva) pdf.addPage();
-    nueva = true;
-    pdf.addImage(trozo.toDataURL('image/jpeg', 0.9), 'JPEG', margen, margen, anchoMm, (fin - y) / pxPorMm, undefined, 'FAST');
-    y = fin;
-  }
-}
 
 async function downloadPDF() {
   const skill = document.getElementById('skillSelect').value;
@@ -802,68 +756,22 @@ async function downloadPDF() {
   }
   const btn = document.getElementById('btnPdf');
   btn.disabled = true;
-  const animPrev = window.Chart ? Chart.defaults.animation : undefined;
   try {
     avisoPdf('Preparando PDF…');
-    await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    if (window.Chart) Chart.defaults.animation = false;
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-    const opts = { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: Math.max(1300, container.scrollWidth),
-      // En la copia que fotografía html2canvas las animaciones de entrada (fade) vuelven a empezar
-      // y el PDF saldría deslavado: se desactivan.
-      onclone: (doc) => { const st = doc.createElement('style'); st.textContent = '*,*::before,*::after{animation:none!important;transition:none!important}'; doc.head.appendChild(st); } };
-    const cfg = PDF_TABS[skill];
-    const botones = cfg ? Array.from(document.querySelectorAll(cfg.botones)) : [];
-    const activo = botones.find(b => b.classList.contains('on') || b.classList.contains('act'));
-
-    if (!botones.length) {
-      // Skill sin pestañas conocidas: se captura tal cual se ve.
-      avisoPdf('Generando PDF…');
-      agregarCanvasAlPdf(pdf, await html2canvas(container, opts), true);
-    } else {
-      for (let i = 0; i < botones.length; i++) {
-        avisoPdf(`Generando PDF… pestaña ${i + 1} de ${botones.length}`);
-        botones[i].click();
-        await esperar(900); // las skills dibujan sus gráficas unos ms después del clic
-        // Gráficas creadas en pestañas ocultas: se redibujan ya, sin animación.
-        if (window.Chart && Chart.instances) Object.values(Chart.instances).forEach(ch => { try { ch.resize(); ch.update('none'); } catch (_) {} });
-        await esperar(150);
-        let objetivo = container;
-        if (i > 0) {
-          objetivo = document.querySelector(cfg.seccion) || container;
-          // Título de la pestaña arriba de cada sección
-          const t = document.createElement('div');
-          t.className = 'pdf-titulo-tab';
-          t.textContent = (botones[i].textContent || '').trim().toUpperCase();
-          t.style.cssText = 'font:800 13px ui-monospace,monospace;letter-spacing:3px;color:#1C2738;padding:4px 0 12px;border-bottom:2px solid #1C2738;margin-bottom:14px';
-          objetivo.prepend(t);
-        }
-        const canvas = await html2canvas(objetivo, opts);
-        objetivo.querySelectorAll(':scope > .pdf-titulo-tab').forEach(x => x.remove());
-        agregarCanvasAlPdf(pdf, canvas, i === 0);
-      }
-      if (activo) { activo.click(); }
-    }
-
-    // Pie con número de página
-    const total = pdf.getNumberOfPages();
-    for (let n = 1; n <= total; n++) {
-      pdf.setPage(n);
-      pdf.setFontSize(7); pdf.setTextColor(120);
-      pdf.text(`RADAR · Estudio confidencial · ${n} / ${total}`, pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 4, { align: 'center' });
-    }
-
+    await cargarScript('reporte_pdf.js?v=1');
+    const metaT = window.DATA_META || {};
+    const nombreSkill = { radar: 'RADAR', emociones: 'Emociones', tensiones: 'Tensiones', opositor: 'Opositor' }[skill] || skill;
+    const pdf = await window.SIEReporte.generar({
+      contenedor: container, avisar: avisoPdf, pie: 'RADAR Estudio confidencial',
+      titulo: [nombreSkill, metaT.actor, metaT.periodo].filter(Boolean).join(' · ')
+    });
     const meta = window.DATA_META || {};
-    const slug = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const slug = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     pdf.save(`${skill}-${slug(meta.actor) || 'reporte'}${meta.periodo ? '-' + slug(meta.periodo) : ''}.pdf`);
   } catch (err) {
     console.error('[RADAR] Error al generar PDF:', err);
     showError('No se pudo generar el PDF: ' + (err.message || err));
   } finally {
-    if (window.Chart && animPrev !== undefined) Chart.defaults.animation = animPrev;
     avisoPdf(null);
     btn.disabled = false;
   }
