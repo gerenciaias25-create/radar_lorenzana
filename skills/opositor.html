@@ -1,334 +1,179 @@
-<!-- =========================================================
-  EMOCIONES · SEGMENTA · SEMIÓTICA — Plantilla dinámica v4
-  Estructura y diseño de EMOCIONES-XONA (8 pestañas). Lee window.DATA.
-  ========================================================= -->
-<div id="emo-root">
+<div id="op-root">
 <style>
-#emo-root{color-scheme:light;
-  --bg:#f8fafc;--bg-card:#ffffff;--bg-card2:#f1f5f9;--bg-hdr:#1C2738;
-  --brd:#cbd5e1;--brd2:#94a3b8;
-  --tx1:#0f172a;--tx2:#334155;--tx3:#64748b;
-  --blue:#2563eb;--blue2:#1d4ed8;
-  --red:#dc2626;--red-s:#991b1b;--red-bg:rgba(220,38,38,.08);
-  --org:#ea580c;--org-s:#c2410c;--org-bg:rgba(234,88,12,.08);
-  --ylw:#ca8a04;--ylw-bg:rgba(202,138,4,.08);
-  --grn:#16a34a;--grn-s:#15803d;--grn-bg:rgba(22,163,74,.08);
-  --pur:#9333ea;--pur-bg:rgba(147,51,234,.08);
-  --mc:#ea580c;--mc-bg:rgba(234,88,12,.08);
-  --t1:#1A3A5C;--t6:#C9980A;--t5:#374151;}
-#emo-root *{box-sizing:border-box;margin:0;padding:0}
-#emo-root{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px}
-#emo-root h1,#emo-root h2,#emo-root h3{text-wrap:balance}
-#emo-root .hdr{background:var(--bg-hdr);border-bottom:1px solid rgba(255,255,255,.1);color:#ffffff}
-#emo-root .hdr-top{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem .5rem;flex-wrap:wrap;gap:.5rem}
-#emo-root .brand{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
-#emo-root .brand-name{font-size:13px;font-weight:700;letter-spacing:.15em;color:#60a5fa}
-#emo-root .brand-ver{font-size:10px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:3px;font-weight:700}
-#emo-root .hdr-meta{font-size:11px;color:#94a3b8;text-align:right;line-height:1.6}
-#emo-root .hdr-body{padding:.3rem 2rem 1rem}
-#emo-root .hdr-eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.14em;color:#94a3b8;margin-bottom:.35rem}
-#emo-root .hdr-title{font-size:2.5rem;font-weight:800;letter-spacing:-.01em;color:#ffffff;line-height:1.1}
-#emo-root .hdr-sub{font-size:12.5px;color:#cbd5e1;margin-top:.3rem}
-#emo-root .badges{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem}
-#emo-root .badge{font-size:10px;padding:3px 10px;border-radius:4px;font-weight:700;letter-spacing:.04em;border:1px solid}
-#emo-root .b-red{background:rgba(239,68,68,.2);color:#fca5a5;border-color:#ef4444}
-#emo-root .b-org{background:rgba(249,115,22,.2);color:#fdba74;border-color:#f97316}
-#emo-root .b-blu{background:rgba(59,130,246,.2);color:#93c5fd;border-color:#3b82f6}
-#emo-root .b-pur{background:rgba(168,85,247,.2);color:#d8b4fe;border-color:#a855f7}
-#emo-root .b-mc{background:rgba(255,131,0,.2);color:#ffb366;border-color:#ff8300}
-#emo-root .pulse{animation:PULSE 1.5s infinite}
-@keyframes PULSE{0%,100%{opacity:1}50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){#emo-root .pulse{animation:none}
-}
-#emo-root .tabs{display:flex;overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.1);padding:0 2rem;background:#16202e}
-#emo-root .tab{font-size:11.5px;font-weight:600;letter-spacing:.04em;padding:.65rem 1rem;color:#94a3b8;cursor:pointer;border:0;border-bottom:2px solid transparent;white-space:nowrap;background:none;font-family:inherit}
-#emo-root .tab:hover{color:#ffffff;background:rgba(255,255,255,.05)}
-#emo-root .tab:focus-visible{outline:2px solid var(--blue2);outline-offset:-2px}
-#emo-root .tab.on{color:#60a5fa;border-bottom-color:#60a5fa;background:rgba(255,255,255,.08)}
-#emo-root .cnt{padding:1.4rem 2rem}
-#emo-root .pnl{display:none}
-#emo-root .pnl.on{display:block}
-#emo-root .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-#emo-root .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
-#emo-root .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
-#emo-root .gauto{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:1.2rem;align-items:start}
-#emo-root .g2>*,#emo-root .g3>*,#emo-root .g4>*,#emo-root .gauto>*{min-width:0}
-#emo-root .card{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:1.1rem 1.2rem;color:var(--tx1)}
-#emo-root .cv{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.55rem}
-#emo-root .cval{font-size:2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-#emo-root .csub{font-size:11px;color:var(--tx2);margin-top:.3rem}
-#emo-root .sl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--brd)}
-#emo-root .mb{margin-bottom:1rem}
-#emo-root .emr{padding:9px 4px;border-bottom:1px solid var(--brd);cursor:pointer;border-radius:4px}
-#emo-root .emr:hover{background:rgba(0,0,0,.03)}
-#emo-root .emr:last-child{border-bottom:none}
-#emo-root .emh{display:flex;align-items:center;gap:7px}
-#emo-root .emd-box{display:none;margin-top:8px;margin-left:17px;background:rgba(0,0,0,.04);border-radius:6px;padding:8px 10px}
-#emo-root .emd-box.open{display:block}
-#emo-root .edk{font-size:10.5px;font-weight:700;color:var(--tx2);margin-bottom:3px}
-#emo-root .edv{font-size:11.5px;color:var(--tx2);line-height:1.6}
-#emo-root .dyc{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:1rem 1.1rem;border-top:3px solid}
-#emo-root .dyn{font-size:14px;font-weight:800;margin-bottom:3px}
-#emo-root .dyf{font-size:11px;color:var(--tx3);font-style:italic;margin-bottom:7px}
-#emo-root .dyt{font-size:12px;color:var(--tx2);line-height:1.6}
-#emo-root .dybadge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;float:right;margin-top:-2px}
-#emo-root .mpc{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:.9rem 1rem}
-#emo-root .mptt{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-#emo-root .mpi{font-size:12px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;gap:6px;line-height:1.5}
-#emo-root .mpi:last-child{border-bottom:none}
-#emo-root .mpd{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:6px}
-#emo-root .qi{padding:9px 0;border-bottom:1px solid var(--brd)}
-#emo-root .qi:last-child{border-bottom:none}
-#emo-root .qt{font-size:12.5px;font-style:italic;color:var(--tx1);line-height:1.55}
-#emo-root .qt::before,#emo-root .qt::after{content:'"';color:var(--blue);font-style:normal;font-weight:700}
-#emo-root .qm{font-size:10.5px;color:var(--tx3);margin-top:3px}
-#emo-root .ri{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--brd)}
-#emo-root .ri:last-child{border-bottom:none}
-#emo-root .rb{font-size:10px;padding:3px 7px;border-radius:5px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:1px}
-#emo-root .rt{font-size:12px;color:var(--tx2);line-height:1.6}
-#emo-root .sem{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--brd)}
-#emo-root .sem:last-child{border-bottom:none}
-#emo-root .semd{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-#emo-root .seml{font-size:12px;color:var(--tx2);flex:1}
-#emo-root .semv{font-size:12px;font-weight:700;text-align:right}
-#emo-root .ac{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;overflow:hidden}
-#emo-root .ach{padding:.9rem 1.1rem;border-bottom:1px solid var(--brd)}
-#emo-root .acn{font-size:14px;font-weight:800;color:var(--tx1)}
-#emo-root .acr{font-size:11px;color:var(--tx2);margin-top:2px}
-#emo-root .acb{padding:.7rem 1.1rem}
-#emo-root .acrow{display:flex;gap:1rem;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd);font-size:12px}
-#emo-root .acrow:last-child{border-bottom:none}
-#emo-root .ack{color:var(--tx3);font-size:11px;flex-shrink:0}
-#emo-root .acv{color:var(--tx1);font-weight:600;text-align:right;max-width:68%;line-height:1.45}
-#emo-root .cbox{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(6,182,212,.08));border:1px solid rgba(37,99,235,.25);border-radius:12px;padding:1.2rem 1.4rem;border-left:4px solid var(--blue);color:var(--tx1)}
-#emo-root .cbox-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);margin-bottom:.35rem}
-#emo-root .cbox-name{font-size:21px;font-weight:800;color:var(--tx1);margin-bottom:.45rem}
-#emo-root .cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72;max-width:90ch}
-#emo-root .cw{position:relative}
-#emo-root #wheel-wrap svg{width:100%;max-width:440px;height:auto}
-#emo-root .tbl-wrap{overflow-x:auto}
-#emo-root table.t{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
-#emo-root table.t th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);text-align:left;padding:7px 8px;border-bottom:1px solid var(--brd)}
-#emo-root table.t td{padding:8px;border-bottom:1px solid var(--brd);color:var(--tx2);vertical-align:top;line-height:1.5}
-#emo-root table.t td:first-child{color:var(--tx1);font-weight:700}
-#emo-root .flow{display:grid;grid-template-columns:110px 1fr 1fr 1fr 110px;gap:.5rem;align-items:stretch;padding:8px 0;border-bottom:1px solid var(--brd);font-size:11.5px}
-#emo-root .flow:last-child{border-bottom:none}
-#emo-root .flow>div{background:#d5d1d1;border:1px solid var(--brd);border-radius:6px;padding:6px 8px;color:var(--tx2);line-height:1.45;min-width:0}
-#emo-root .flow .fem{font-weight:800;color:var(--tx1)}
-#emo-root .flow .fk{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
-#emo-root .ive{display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap}
-#emo-root .ive-n{font-size:3rem;font-weight:800;color:var(--org);font-variant-numeric:tabular-nums;line-height:1}
-#emo-root .bar{height:8px;border-radius:4px;background:#cbd5e1;overflow:hidden;margin-top:4px}
-#emo-root .bar>span{display:block;height:100%}
-#emo-root .comp{display:grid;grid-template-columns:1fr 50px;gap:.4rem;font-size:11.5px;color:var(--tx2);padding:5px 0}
-#emo-root .bp{border:1px solid var(--brd);border-radius:12px;overflow:hidden;margin-bottom:1rem;background:#d5d1d1}
-#emo-root .bph{padding:1rem 1.2rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
-#emo-root .bpt{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9)}
-#emo-root .bpn{font-size:20px;font-weight:800;color:#fff;margin-top:2px}
-#emo-root .bps{font-size:12px;color:rgba(255,255,255,.9);margin-top:2px}
-#emo-root .bpw{text-align:right}
-#emo-root .bpw b{font-size:26px;color:#fff;font-variant-numeric:tabular-nums}
-#emo-root .bpw span{display:block;font-size:10px;color:rgba(255,255,255,.9);letter-spacing:.08em;text-transform:uppercase}
-#emo-root .bpq{margin:1rem 1.2rem 0;padding:.6rem .9rem;border-left:3px solid;font-style:italic;color:var(--tx1);font-size:13px;background:rgba(0,0,0,.03);border-radius:0 6px 6px 0}
-#emo-root .bpb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;padding:1rem 1.2rem}
-#emo-root .bpc h4{font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem;padding-bottom:.3rem;border-bottom:1px solid var(--brd)}
-#emo-root .kv{font-size:12px;color:var(--tx2);line-height:1.55;padding:4px 0}
-#emo-root .kv b{color:var(--tx1);font-weight:700;display:block;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
-#emo-root .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
-#emo-root .tag{font-size:10.5px;padding:2px 7px;border-radius:10px;border:1px solid;font-weight:600}
-#emo-root .bpf{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.8rem 1.2rem;border-top:1px solid var(--brd);background:#ccd3dc;font-size:12px;color:var(--tx2);align-items:center}
-#emo-root .pb{font-size:10px;font-weight:800;padding:3px 9px;border-radius:4px;letter-spacing:.06em}
-#emo-root .arq{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:1rem}
-#emo-root .arq .k{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
-#emo-root .arq .n{font-size:17px;font-weight:800;color:var(--tx1);margin:4px 0 6px}
-#emo-root .arq p{font-size:12px;color:var(--tx2);line-height:1.6}
-#emo-root .mdn{padding:8px 0;border-bottom:1px solid var(--brd)}
-#emo-root .mdn:last-child{border-bottom:none}
-#emo-root .mdn .h{display:flex;gap:8px;align-items:baseline}
-#emo-root .mdn .i{font-size:11px;font-weight:800;color:var(--tx3);font-variant-numeric:tabular-nums;width:20px;flex-shrink:0}
-#emo-root .mdn .t{font-size:12.5px;font-weight:700;color:var(--tx1);line-height:1.4}
-#emo-root .mdn .e{font-size:11px;color:var(--tx2);line-height:1.5;margin:3px 0 0 28px}
-#emo-root .mdn .p{font-size:11px;color:var(--tx3);line-height:1.5;margin:2px 0 0 28px}
-#emo-root .mdn .p b{color:var(--blue);font-weight:700}
-#emo-root ::-webkit-scrollbar{width:5px;height:5px}
-#emo-root ::-webkit-scrollbar-track{background:#e2e8f0}
-#emo-root ::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
-@media(max-width:900px){#emo-root .bpb{grid-template-columns:1fr}
-#emo-root .flow{grid-template-columns:1fr 1fr}
-#emo-root .flow>div:first-child{grid-column:1/-1}
-}
-@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4{grid-template-columns:1fr}
-#emo-root .hdr-title{font-size:1.7rem}
-#emo-root .cnt{padding:1rem}
-#emo-root .hdr-body,#emo-root .hdr-top{padding-left:1rem;padding-right:1rem}
-#emo-root .tabs{padding:0 1rem}
-#emo-root .hdr-meta{text-align:left}
-
-}
-#emo-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
-#emo-root .badges{display: none;}
-
-
-
-#emo-root{border-radius:8px;overflow:hidden}
-#emo-root .hdr{border-radius:8px 8px 0 0}
+#op-root{--bg:#ffffff;--panel:#d5d1d1;--panel2:#bcba8b;--line:#b0b0b0;--txt:#1e293b;--mut:#475569;--acc:#0284c7;--pan:#2563eb;--mor:#e11d48;--g:#16a34a;--y:#ca8a04;--o:#ea580c;--r:#dc2626;background:var(--bg);color:var(--txt);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;border-radius:8px;overflow:hidden}
+#op-root *{box-sizing:border-box;margin:0;padding:0}
+#op-root .mono{font-family:"JetBrains Mono","Consolas","Courier New",monospace}
+#op-root header{background:#1C2738;color:#ffffff;border-bottom:1px solid var(--line);padding:20px 24px}
+#op-root .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#op-root .logo{font-weight:800;letter-spacing:3px;font-size:20px;color:#38bdf8}
+#op-root .logo span{color:#94a3b8}
+#op-root .tag{display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,.2);border-radius:20px;font-size:11px;color:#cbd5e1;margin:4px 4px 0 0}
+#op-root h1{font-size:22px;margin-top:10px;color:#ffffff}
+#op-root .sub{color:#94a3b8;font-size:13px;margin-top:4px}
+#op-root .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:16px}
+#op-root .ivabox{background:#233248;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:center}
+#op-root .ivanum{font-size:44px;font-weight:800;line-height:1}
+#op-root .ivalbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+#op-root .pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700}
+#op-root .p-g{background:#14532d;color:#86efac}#op-root .p-y{background:#713f12;color:#fde68a}#op-root .p-o{background:#7c2d12;color:#fdba74}#op-root .p-r{background:#7f1d1d;color:#fca5a5}#op-root .p-b{background:#1e3a5f;color:#93c5fd}#op-root .p-m{background:#4c0519;color:#fda4af}#op-root .p-n{background:#1f2937;color:#cbd5e1}
+#op-root nav{display:flex;gap:4px;overflow-x:auto;padding:10px 16px;background:#1C2738;border-bottom:1px solid var(--line)}
+#op-root nav button{background:transparent;border:1px solid rgba(255,255,255,.2);color:#94a3b8;padding:7px 13px;border-radius:8px;cursor:pointer;font-size:12.5px;white-space:nowrap}
+#op-root nav button.on{background:#38bdf8;color:#04111f;border-color:#38bdf8;font-weight:700}
+#op-root .filt{display:flex;gap:6px;flex-wrap:wrap;padding:12px 24px 0}
+#op-root .filt button{background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px}
+#op-root .filt button.on{border-color:var(--acc);color:var(--acc);font-weight:bold}
+#op-root main{padding:16px 24px 40px;max-width:1400px;margin:0 auto;background:#ffffff}
+#op-root section.tab{display:none}#op-root section.tab.on{display:block}
+#op-root h2{font-size:17px;margin:6px 0 12px;color:#0f172a}
+#op-root h3{font-size:14px;margin:0 0 8px;color:#0f172a}
+#op-root .grid{display:grid;gap:14px}
+#op-root .g2{grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
+#op-root .g3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+#op-root .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+#op-root .card.a{border-left:4px solid var(--pan)}#op-root .card.b{border-left:4px solid var(--mor)}#op-root .card.cl{border-left:4px solid var(--g)}
+#op-root .muted{color:var(--mut)}#op-root .small{font-size:12px}
+#op-root table{width:100%;border-collapse:collapse;font-size:12.5px}
+#op-root th,#op-root td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+#op-root th{color:#1e293b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;background:#c2bebe}
+#op-root .tw{overflow-x:auto}
+#op-root .bar{height:8px;background:#b0b0b0;border-radius:6px;overflow:hidden;margin-top:4px}
+#op-root .bar i{display:block;height:100%}
+#op-root .kv{display:grid;grid-template-columns:150px 1fr;gap:4px 10px;font-size:12.5px}
+#op-root .kv b{color:var(--mut);font-weight:600}
+#op-root ul.l,#op-root ol.l{padding-left:18px}#op-root ul.l li,#op-root ol.l li{margin:3px 0}
+#op-root .alert{background:#fee2e2;border:1px solid #f87171;color:#991b1b;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+#op-root .note{background:var(--panel);border:1px dashed var(--line);color:#334155;border-radius:10px;padding:10px 14px;font-size:12px;margin-top:12px}
+#op-root .chip{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--mut);margin-left:4px}
+#op-root .chartbox{position:relative;height:280px}
+#op-root .pocket{background:var(--panel);border:2px solid var(--acc);border-radius:12px;padding:16px;font-size:12.5px}
+#op-root .pocket .ln{border-top:1px solid var(--line);padding:6px 0}
+#op-root .pocket .ln b{color:var(--acc)}
+#op-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
+#op-root .hide{display:none!important}
+@media(max-width:700px){#op-root .g2{grid-template-columns:1fr}#op-root .kv{grid-template-columns:1fr}#op-root header,#op-root main{padding-left:16px;padding-right:16px}#op-root .ivanum{font-size:36px}}
 </style>
-<div class="hdr">
-  <div class="hdr-top">
-    <div class="brand">
-      <span class="brand-name">EMOCIONES · SEGMENTA · SEMIÓTICA</span>
-      <span class="brand-ver">SIE </span>
-      <span style="font-size:11px;color:#94a3b8"></span>
-    </div>
-    <div class="hdr-meta" id="em-hdr-meta"></div>
+
+<header>
+  <div class="brand"><div class="logo mono">OPOSITOR<span>///</span></div>
+    <span class="tag">Expediente de adversarios</span><span class="tag" id="op-tag-terr"></span><span class="tag" id="op-tag-vent"></span><span class="tag" id="op-tag-per"></span>
   </div>
-  <div class="hdr-body">
-    <div class="hdr-eyebrow">// ESTUDIO DE HUMOR SOCIAL EMOCIONAL · ANÁLISIS TERRITORIAL · <span id="em-hdr-date"></span></div>
-    <div class="hdr-title" id="em-hdr-title"></div>
-    <div class="hdr-sub" id="em-hdr-sub"></div>
-    <div class="badges" id="em-hdr-badges"></div>
-  </div>
-  <div class="tabs" role="tablist">
-    <button class="tab on" onclick="emST('flor',this)">Flor de Emociones</button>
-    <button class="tab" onclick="emST('mapa',this)">Mapa Social</button>
-    <button class="tab" onclick="emST('diadas',this)">Díadas · IVE · Transferencia</button>
-    <button class="tab" onclick="emST('identidad',this)">Identidad Política</button>
-    <button class="tab" onclick="emST('actores',this)" id="em-tab-actores">Actores</button>
-    <button class="tab" onclick="emST('segmentos',this)">Segmentos y Perfiles</button>
-    <button class="tab" onclick="emST('arquetipo',this)">Arquetipo</button>
-    <button class="tab" onclick="emST('mdn',this)">Miedos · Deseos · Necesidades</button>
-  </div>
+  <h1 id="op-h1">Vulnerabilidades y contradicciones</h1>
+  <div class="sub" id="op-sub"></div>
+
+  <!-- KPIs ocultos sin dañar la estructura (igual que el dashboard de referencia) -->
+  <div class="hero hide" id="op-hero"></div>
+</header>
+
+<nav id="op-nav"></nav>
+<div class="filt" id="op-filt">
+  <span class="small muted" style="align-self:center">Filtrar actor:</span>
+  <button data-f="all" class="on">Ambos</button><button data-f="a" id="op-f-a">Adversario A</button><button data-f="b" id="op-f-b">Adversario B</button>
 </div>
 
-<div class="cnt">
+<main>
 
-<!-- FLOR -->
-<div class="pnl on" id="empnl-flor">
-  <div class="gauto mb">
-    <div>
-      <div class="sl">Rueda de Plutchik — <span id="em-whl-territory"></span></div>
-      <div class="card" style="padding:.8rem;text-align:center">
-        <div id="em-wheel-wrap"></div>
-        <div style="font-size:10px;color:var(--tx3);margin-top:.4rem">Toca cualquier pétalo activo para ver detalles</div>
-      </div>
-      <div class="card" style="margin-top:.75rem;padding:.75rem 1rem">
-        <div class="cv">Leyenda de Intensidad</div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-hi" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Alta ●●●</span></div>
-          <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-md" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Media ●●○</span></div>
-          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#cbd5e1"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div class="sl">Emociones Activas — clic para expandir</div>
-      <div class="card" id="em-list"></div>
-      <div class="card" style="margin-top:.75rem;padding:.9rem 1rem">
-        <div class="sl" style="margin-bottom:.5rem">Emociones Secundarias (Latentes)</div>
-        <div id="em-sec"></div>
-      </div>
+<!-- 1 RESUMEN -->
+<section class="tab on" id="op-t-res">
+  <div class="alert" id="op-alerta-jur"></div>
+  <div class="grid g2">
+    <div class="card"><h3>IVA por componente (0-100)</h3><div class="chartbox"><canvas id="op-cIva"></canvas></div><div class="small muted" id="op-iva-nota"></div></div>
+    <div class="card"><h3>Alertas estratégicas</h3><ul class="l" id="op-alertas"></ul></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>Recomendaciones de uso inmediato (próximas 2 semanas)</h3><ol class="l" style="padding-left:18px" id="op-recs"></ol></div>
+    <div class="card"><h3>Semáforo cualitativo (3C) · respaldo narrativo</h3>
+      <div id="op-3c"></div>
+      <div class="note">Regla aplicada: doble fuente. Lo que tiene una sola fuente se marca <b>[FUENTE ÚNICA]</b>; lo que no se pudo verificar se marca <b>[NO VERIFICADO]</b>. Los rumores no se activan.</div>
     </div>
   </div>
-  <div class="cbox mb" id="em-concepto-box"></div>
-  <div class="card">
-    <div class="sl">Distribución de Intensidad Emocional</div>
-    <div class="cw" style="height:230px"><canvas id="em-ch-intens" role="img" aria-label="Intensidad emocional por emoción"></canvas></div>
-  </div>
-</div>
+</section>
 
-<!-- MAPA -->
-<div class="pnl" id="empnl-mapa">
-  <div class="g3 mb" id="em-mapa-cols"></div>
-  <div class="g2 mb">
-    <div class="card"><div class="sl">Frases Ciudadanas</div><div id="em-quotes"></div></div>
-    <div class="card">
-      <div class="sl" id="em-temas-t">Peso de la conversación por temática</div>
-      <div class="cw" style="height:300px"><canvas id="em-ch-temas" role="img" aria-label="Emociones por temática"></canvas></div>
+<!-- 2 PERFILES -->
+<section class="tab" id="op-t-per">
+  <h2>Módulo 1 · Perfil biográfico estratégico e IER</h2>
+  <div class="grid g2" id="op-perfiles"></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>Índice de Experiencia vs. Resultado (IER)</h3><div class="chartbox"><canvas id="op-cIer"></canvas></div></div>
+    <div class="card"><h3>Tabla IER</h3><div class="tw"><table id="op-tIer"><thead><tr><th>Actor</th><th>Cargo</th><th>Periodo</th><th>Promesa / narrativa</th><th>Resultado verificable</th><th>IER</th></tr></thead><tbody></tbody></table></div>
+    <div class="note" id="op-ier-nota"></div></div>
+  </div>
+</section>
+
+<!-- 3 CONTRADICCIONES -->
+<section class="tab" id="op-t-con">
+  <h2>Módulo 2 · Mapa y ranking de contradicciones</h2>
+  <div class="card"><h3>Ranking por potencial de daño (0-100)</h3><div class="chartbox" style="height:340px"><canvas id="op-cCon"></canvas></div></div>
+  <div class="grid g2" style="margin-top:14px" id="op-conCards"></div>
+</section>
+
+<!-- 4 VULNERABILIDADES -->
+<section class="tab" id="op-t-vul">
+  <h2>Módulo 3 · Expediente de vulnerabilidades</h2>
+  <div class="tw card"><table id="op-tVul"><thead><tr><th>#</th><th>Actor</th><th>Categoría</th><th>Descripción</th><th>Evidencia</th><th>Verificación</th><th>Riesgo</th><th>¿Pública?</th><th>Uso recomendado</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<!-- 5 RED -->
+<section class="tab" id="op-t-red">
+  <h2>Módulo 4 · Red de alianzas y vínculos</h2>
+  <div class="tw card"><table id="op-tRed"><thead><tr><th>Actor vinculado</th><th>Con</th><th>Tipo de vínculo</th><th>Relevancia</th><th>¿Compromete?</th></tr></thead><tbody></tbody></table></div>
+  <div class="grid g2" style="margin-top:14px" id="op-implic"></div>
+</section>
+
+<!-- 6 NARRATIVA -->
+<section class="tab" id="op-t-nar">
+  <h2>Módulos 5, 5B y 5C · Narrativa, perfil psicopolítico y ecosistema digital</h2>
+  <div class="grid g2" id="op-narr"></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>5B · Perfil psicopolítico (DISC observado) <span class="chip">preliminar</span></h3>
+      <div class="tw"><table><thead><tr><th>Dimensión</th><th data-a="a" class="op-th-a">Adversario A</th><th data-a="b" class="op-th-b">Adversario B</th></tr></thead><tbody id="op-disc"></tbody></table></div>
+      <div class="note" id="op-disc-nota"></div>
+    </div>
+    <div class="card"><h3>5C · Ecosistema digital</h3>
+      <div class="tw"><table><thead><tr><th>Indicador</th><th data-a="a" class="op-th-a">Adversario A</th><th data-a="b" class="op-th-b">Adversario B</th></tr></thead><tbody id="op-dig"></tbody></table></div>
+      <div class="note" id="op-dig-nota"></div>
     </div>
   </div>
-  <div class="card"><div class="sl">Semáforo Emocional del Territorio</div><div class="g3" id="em-semaforo"></div></div>
-</div>
+</section>
 
-<!-- DIADAS -->
-<div class="pnl" id="empnl-diadas">
-  <div class="g3 mb" id="em-dyad-cards"></div>
-  <div class="g2 mb">
-    <div class="card">
-      <div class="sl">Score de Riesgo por Díada</div>
-      <div class="cw" style="height:220px"><canvas id="em-ch-diadas" role="img" aria-label="Riesgo por díada"></canvas></div>
+<!-- 7 VECTORES -->
+<section class="tab" id="op-t-vec">
+  <h2>Módulos 6 y 6E · Vectores ofensivos con verificación jurídico-electoral</h2>
+  <div class="alert">Los vectores en 🔴 <b>no son recomendaciones</b>: se muestran como hallazgo con advertencia. Requieren validación de abogado electoral antes de cualquier uso. Este módulo no sustituye asesoría jurídica formal.</div>
+  <div class="tw card"><table id="op-tVec"><thead><tr><th>#</th><th>Actor</th><th>Tipo</th><th>Argumento central</th><th>Evidencia</th><th>Audiencia</th><th>Canal / momento</th><th>Rebote</th><th>Legal 6E</th></tr></thead><tbody></tbody></table></div>
+  <div class="grid g2" style="margin-top:14px" id="op-vecLegal"></div>
+</section>
+
+<!-- 8 DEFENSA -->
+<section class="tab" id="op-t-def">
+  <h2 id="op-def-h2">Módulo 7 · Ataques anticipados contra el cliente y protocolo de respuesta</h2>
+  <div class="grid g2" id="op-defCards"></div>
+</section>
+
+<!-- 9 COMPARATIVO -->
+<section class="tab" id="op-t-cmp">
+  <h2>Módulo 9 · Comparativo cliente vs. adversarios</h2>
+  <div class="tw card"><table id="op-tCmp"><thead><tr><th>Dimensión</th><th id="op-th-cli">Cliente</th><th data-a="a" class="op-th-a">Adversario A</th><th data-a="b" class="op-th-b">Adversario B</th><th>Ventaja</th></tr></thead><tbody></tbody></table></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>9C · Indicadores cuantitativos de contexto</h3>
+      <div class="tw"><table><thead><tr><th>Indicador</th><th>Valor</th><th>Fuente</th><th>Fecha</th></tr></thead><tbody id="op-9c"></tbody></table></div>
     </div>
-    <div class="card">
-      <div class="sl">Interpretación Estratégica</div>
-      <div id="em-dyad-interp" style="font-size:12.5px;color:var(--tx2);line-height:1.75;margin-top:.3rem"></div>
-    </div>
+    <div class="card"><h3>9B · Diagnóstico del contraste</h3><ul class="l" id="op-9b"></ul></div>
   </div>
-  <div class="g2 mb">
-    <div class="card" id="em-ive-box"></div>
-    <div class="card"><div class="sl" id="em-cliente-t">Posición del cliente en el mapa de transferencia</div><div id="em-cliente-pos"></div></div>
+</section>
+
+<!-- 10 BOLSILLO & VERSIONES -->
+<section class="tab" id="op-t-bol">
+  <h2>Briefing de bolsillo y control de versiones</h2>
+  <div class="note" style="margin:0 0 14px" id="op-bol-nota"></div>
+  <div class="grid g2" id="op-bolsillo"></div>
+  <div class="card" style="margin-top:14px"><h3>Changelog · OPOSITOR v1</h3>
+    <div class="kv mono small" id="op-changelog"></div>
+    <h3 style="margin-top:12px">Activadores de actualización urgente</h3>
+    <ul class="l small" id="op-activadores"></ul>
   </div>
-  <div class="card"><div class="sl">Mapa Origen → Canal → Destino de la emoción</div><div id="em-flows"></div></div>
-</div>
+</section>
 
-<!-- IDENTIDAD -->
-<div class="pnl" id="empnl-identidad">
-  <div class="cbox mb" id="em-id-pregunta"></div>
-  <div class="g2 mb">
-    <div class="card"><div class="sl" id="em-gov-t">Percepción del Gobierno Municipal</div><div id="em-gov-sem"></div></div>
-    <div class="card">
-      <div class="sl">Carga Emocional por Partido / Opción</div>
-      <div class="cw" style="height:240px"><canvas id="em-ch-partidos" role="img" aria-label="Emociones por partido"></canvas></div>
-    </div>
-  </div>
-  <div class="card mb"><div class="sl">Percepción Ciudadana por Partido</div><div class="tbl-wrap"><div id="em-partidos-tbl" style="min-width:560px"></div></div></div>
-  <div class="g3 mb" id="em-marcos"></div>
-  <div class="cbox" style="border-left-color:var(--mc)" id="em-sintesis"></div>
-</div>
+</main>
 
-<!-- ACTORES -->
-<div class="pnl" id="empnl-actores">
-  <div class="g2 mb" id="em-actores-grid"></div>
-  <div class="card">
-    <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
-    <div class="cw" style="height:340px"><canvas id="em-ch-actores" role="img" aria-label="Posicionamiento emocional de actores"></canvas></div>
-  </div>
-</div>
-
-<!-- SEGMENTOS -->
-<div class="pnl" id="empnl-segmentos">
-  <div class="cbox mb" style="border-left-color:var(--mc)" id="em-seg-intro"></div>
-  <div class="g2 mb">
-    <div class="card"><div class="sl">Peso estimado del electorado por tipo</div><div class="cw" style="height:220px"><canvas id="em-ch-seg" role="img" aria-label="Peso por segmento"></canvas></div></div>
-    <div class="card"><div class="sl">Jerarquía de inversión</div><div id="em-seg-inv"></div></div>
-  </div>
-  <div id="em-bp-list"></div>
-  <div class="card"><div class="sl">Segmentación emocional por perfil ciudadano</div><div class="tbl-wrap"><table class="t" id="em-seg-tbl"></table></div></div>
-</div>
-
-<!-- ARQUETIPO -->
-<div class="pnl" id="empnl-arquetipo">
-  <div class="g4 mb" id="em-arq-cards"></div>
-  <div class="g2 mb">
-    <div class="card"><div class="sl">Arquetipo Político Ideal — resonancia de los 10 arquetipos</div><div class="cw" style="height:330px"><canvas id="em-ch-arq" role="img" aria-label="Resonancia de arquetipos políticos"></canvas></div></div>
-    <div class="card"><div class="sl">Ganador y segundo lugar</div><div id="em-arq-win"></div></div>
-  </div>
-  <div class="card mb"><div class="sl" id="em-arqact-t">Lectura arquetípica de los actores</div><div class="tbl-wrap"><table class="t" id="em-arq-act"></table></div></div>
-  <div class="cbox" id="em-arq-codigo"></div>
-</div>
-
-<!-- MIEDOS DESEOS NECESIDADES -->
-<div class="pnl" id="empnl-mdn">
-  <div class="card mb"><div class="sl">Intensidad simbólica — Top 10 miedos y deseos</div><div class="cw" style="height:380px"><canvas id="em-ch-mdn" role="img" aria-label="Miedos y deseos"></canvas></div></div>
-  <div class="g3">
-    <div class="card"><div class="sl" style="color:#991b1b">10 Miedos colectivos</div><div id="em-l-miedos"></div></div>
-    <div class="card"><div class="sl" style="color:#15803d">10 Deseos colectivos</div><div id="em-l-deseos"></div></div>
-    <div class="card"><div class="sl" style="color:#1d4ed8">10 Necesidades simbólicas</div><div id="em-l-necesidades"></div></div>
-  </div>
-</div>
-
-</div>
-
-<div class="footer">
-  <span> Estudio de Humor Social Emocional · Confidencial </span>
-  <span id="em-ftr-r"></span>
-</div>
+<div class="footer"><div id="op-footer">OPOSITOR · ESTUDIO CONFIDENCIAL</div></div>
 </div>
