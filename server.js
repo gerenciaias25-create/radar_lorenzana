@@ -565,6 +565,8 @@ async function completarFaltantes(skill, data, base, apiKey) {
   const contexto = [
     data.concept ? `Concepto central ya definido: "${data.concept}"` : '',
     Array.isArray(data.emotions) ? `Emociones detectadas: ${data.emotions.filter(e => e && Number(e.intensity) > 0).map(e => `${e.key} (${e.intensity}/3)`).join(', ')}` : '',
+    skill === 'radar' && faltan.includes('tom') && data.tom && Array.isArray(data.tom.temas) && data.tom.temas.length
+      ? `Top of Mind: usa EXACTAMENTE estos ${data.tom.temas.length} temas: ${JSON.stringify(data.tom.temas.map(t => (t && typeof t === 'object') ? (t.tema || t.nombre) : t))}. En tom.edad.valores, tom.partido.valores y tom.plataforma.valores pon UNA clave por CADA uno de esos temas (nombre exacto) con un número por grupo; tom.genero.mujeres y tom.genero.hombres con un número por tema. Ningún tema puede quedar sin datos.` : '',
     Array.isArray(data.actores) && data.actores.length ? `Actores ya identificados: ${data.actores.map(a => a && (a.name || a.nombre)).filter(Boolean).join(', ')}` : '',
   ].filter(Boolean).join('\n');
   try {
@@ -597,7 +599,7 @@ function normalizarTomRadar(tomIn, partidosSeg = []) {
     if (isObj(t)) { temas.push(txt(t.tema || t.nombre || t.texto || t.label)); general.push(t.peso ?? t.valor ?? t.porcentaje ?? t.general); }
     else temas.push(txt(t));
   });
-  temas = temas.filter(Boolean);
+  temas = temas.filter(t => t && !/^\s*\.\.\./.test(t));
   const nT = temas.length;
   const idxTema = (k) => { const c = clave(k); return temas.findIndex(t => clave(t) === c || (c.length > 3 && (clave(t).includes(c) || c.includes(clave(t))))); };
   const vectorTemas = (v) => {
@@ -652,6 +654,7 @@ function normalizarTomRadar(tomIn, partidosSeg = []) {
         filas = rows;
       }
     }
+    grupos = grupos.filter(g => g && !/^\s*\.\.\./.test(g));
     if (!grupos.length) grupos = porDefecto.slice(0, Math.max(...filas.map(f => (f || []).length), 0) || porDefecto.length);
     const nG = grupos.length;
     return { grupos, valores: Array.from({ length: nT }, (_, i) => { const f = (filas[i] || []).slice(0, nG).map(num); while (f.length < nG) f.push(0); return f; }) };
@@ -670,7 +673,32 @@ function normalizarTomRadar(tomIn, partidosSeg = []) {
     muj = mg.valores.map(r => r[iM >= 0 ? iM : 0]); hom = mg.valores.map(r => r[iH >= 0 ? iH : 1]);
   }
   const genero = { mujeres: ajusta(vectorTemas(muj)), hombres: ajusta(vectorTemas(hom)) };
-  return { temas, general, edad, genero, partido, plataforma };
+
+  // Último recurso: si a una matriz le faltan filas (temas en cero) se estiman con el peso
+  // general del tema y el perfil de los grupos que sí trajeron dato. Se marca en "completado".
+  const completado = [];
+  const maxG = Math.max(...general, 0);
+  const rellenar = (m, nombre, saliencia) => {
+    if (!maxG || !m.grupos.length) return;
+    const vacia = (r) => !r.some(x => x > 0);
+    const vacias = m.valores.map((r, i) => vacia(r) && general[i] > 0);
+    if (!vacias.some(Boolean)) return;
+    const conDato = m.valores.map((r, i) => !vacia(r) ? i : -1).filter(i => i >= 0);
+    const sumG = conDato.reduce((a, i) => a + general[i], 0);
+    m.valores = m.valores.map((r, i) => {
+      if (!vacias[i]) return r;
+      return m.grupos.map((_, g) => {
+        if (conDato.length && sumG) { const col = conDato.reduce((a, k) => a + m.valores[k][g], 0); return Math.round(general[i] * col / sumG); }
+        return Math.round(saliencia ? general[i] / maxG * 80 : general[i]);
+      });
+    });
+    completado.push(nombre);
+  };
+  rellenar(edad, 'edad', true); rellenar(partido, 'partido', false); rellenar(plataforma, 'plataforma', false);
+  const gm = { grupos: ['Mujeres', 'Hombres'], valores: genero.mujeres.map((x, i) => [x, genero.hombres[i]]) };
+  rellenar(gm, 'genero', true);
+  genero.mujeres = gm.valores.map(r => r[0]); genero.hombres = gm.valores.map(r => r[1]);
+  return { temas, general, edad, genero, partido, plataforma, completado };
 }
 
 // ¿El Top of Mind trae todas sus gráficas con datos?
@@ -680,7 +708,7 @@ function tomRadarCompleto(tomIn) {
     if (t.temas.length < 5 || t.general.filter(x => x > 0).length < t.temas.length - 1) return false;
     const llena = (m) => m.grupos.length >= 2 && m.valores.length && m.valores.flat().filter(x => x > 0).length >= m.valores.flat().length * 0.6;
     const genOk = t.genero.mujeres.filter(x => x > 0).length >= t.temas.length - 1 && t.genero.hombres.filter(x => x > 0).length >= t.temas.length - 1;
-    return llena(t.edad) && llena(t.partido) && llena(t.plataforma) && genOk;
+    return !t.completado.length && llena(t.edad) && llena(t.partido) && llena(t.plataforma) && genOk;
   } catch (_) { return false; }
 }
 
@@ -1558,12 +1586,12 @@ const SCHEMAS = {
     ratioPlataforma: [{ etiqueta: "string (ej. 'TikTok (vistas)', 'Facebook (comentarios)', 'Prensa (notas)', 'X (posts)')", valor: 0 }],
     hallazgosSent: [{ titulo: "EDAD × SENTIMIENTO|GÉNERO × SENTIMIENTO|PARTIDO × SENTIMIENTO|PLATAFORMA × SENTIMIENTO", ev: "E|I|E/I", texto: "string (con cifras de NPS-P por segmento; usa <strong>)", accion: "string (conclusión estratégica de una línea)" }],
     tom: {
-      temas: ["string (6-8 temas de la conversación)"],
-      general: [0],
-      edad: { grupos: ["18-24", "25-34", "35-44", "45-59", "60+"], valores: [[0, 0, 0, 0, 0]] },
-      genero: { mujeres: [0], hombres: [0] },
-      partido: { grupos: ["string (partidos)"], valores: [[0]] },
-      plataforma: { grupos: ["Facebook", "TikTok", "X", "Prensa"], valores: [[0, 0, 0, 0]] }
+      temas: ["Tema A", "Tema B", "Tema C", "... (6-8 temas reales de la conversación, texto corto)"],
+      general: [0, 0, 0, "... un % por cada tema, mismo orden que temas"],
+      edad: { grupos: ["18-24", "25-34", "35-44", "45-59", "60+"], valores: { "Tema A": [0, 0, 0, 0, 0], "Tema B": [0, 0, 0, 0, 0], "Tema C": [0, 0, 0, 0, 0], "...": "UNA entrada por CADA tema de 'temas' (con su nombre exacto) y 5 números de saliencia 0-100" } },
+      genero: { mujeres: [0, 0, 0, "... un número 0-100 por cada tema"], hombres: [0, 0, 0, "... un número 0-100 por cada tema"] },
+      partido: { grupos: ["Partido 1", "Partido 2", "... los mismos de segmentos.partido"], valores: { "Tema A": [0, 0], "Tema B": [0, 0], "...": "UNA entrada por CADA tema con un % por partido" } },
+      plataforma: { grupos: ["Facebook", "TikTok", "X", "Prensa"], valores: { "Tema A": [0, 0, 0, 0], "Tema B": [0, 0, 0, 0], "...": "UNA entrada por CADA tema con un % por plataforma" } }
     },
     crucesTom: [{ titulo: "EDAD × TEMA|GÉNERO × TEMA|PARTIDO × TEMA|PLATAFORMA × TEMA", ev: "E|I|E/I", texto: "string (usa <strong> y <br>)", accion: "string" }],
     quincenas: [{ rango: "string (ej. '26 ABR–10 MAY')", codigo: "string (Q1, Q2... o D1, D2... si son días)", nps: 0, volumen: 0, tono: "neg|pos|mix", titulo: "string (2-5 palabras)", texto: "string (hechos con fecha, medio y métricas: reacciones, compartidos, vistas)", ev: "E|I|H|E/I|E/H" }],
@@ -2048,7 +2076,7 @@ REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
 - ratioPlataforma: mínimo 4 (comentarios críticos ÷ comentarios de defensa por plataforma; usa null si no hay dato).
 - hallazgosSent: EXACTAMENTE 4 (EDAD, GÉNERO, PARTIDO, PLATAFORMA × SENTIMIENTO), cada uno con cifras de NPS-P y "accion".
 - tom.temas: 6-8 temas (texto corto). tom.general: UN número (%) por tema, en el mismo orden (suman ~100).
-- tom.edad, tom.partido y tom.plataforma: "grupos" con los nombres de cada grupo y "valores" con EXACTAMENTE una fila por TEMA (mismo orden que tom.temas) y en cada fila EXACTAMENTE un número por grupo (mismo orden que "grupos"). Ningún tema puede quedar con la fila vacía o en ceros. edad = saliencia 0-100; partido y plataforma = % de la conversación de ese grupo dedicada al tema. tom.partido.grupos = los mismos partidos que segmentos.partido.
+- tom.edad, tom.partido y tom.plataforma: "grupos" con los nombres de cada grupo y "valores" como objeto con UNA clave por CADA tema (el nombre exacto de tom.temas) y como valor un arreglo con un número por grupo (mismo orden que "grupos"). Si hay 8 temas, "valores" debe tener 8 claves. Ningún tema puede quedar con la fila vacía o en ceros. edad = saliencia 0-100; partido y plataforma = % de la conversación de ese grupo dedicada al tema. tom.partido.grupos = los mismos partidos que segmentos.partido.
 - tom.genero.mujeres y tom.genero.hombres: un número (saliencia 0-100) por tema, en el mismo orden; ninguno vacío.
 - crucesTom: EXACTAMENTE 4 (EDAD, GÉNERO, PARTIDO, PLATAFORMA × TEMA).
 - quincenas: un corte por QUINCENA del periodo (para un rango de meses: 2 por mes; para un solo mes: 2; para una semana: un corte por DÍA con código D1…D7; para un periodo PERSONALIZADO: exactamente los cortes y códigos que indica la instrucción del periodo). "nps" -100 a 100, "volumen" índice 0-100 (100 = corte de mayor conversación). Cada "texto" con hechos fechados y métricas reales de las fuentes.
