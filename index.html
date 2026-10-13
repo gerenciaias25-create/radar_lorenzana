@@ -588,15 +588,30 @@ async function loadSelectedSkill() {
       }
     }
 
+    // Errores pasajeros del proxy de Hostinger (502/503/504 o red caída un
+    // momento): se reintenta en lugar de abortar todo el análisis.
+    const esPasajero = (st) => st === 502 || st === 503 || st === 504 || st === 0;
+    async function fetchJsonConReintentos(url, opciones, intentos) {
+      let ultimoError = null;
+      for (let i = 0; i < intentos; i++) {
+        try {
+          const r = await fetch(url, opciones);
+          if (esPasajero(r.status)) { ultimoError = new Error(`HTTP ${r.status}`); }
+          else return { resp: r, json: await parseJsonSeguro(r) };
+        } catch (e) { ultimoError = e; }
+        await new Promise(res => setTimeout(res, 3000 + i * 2000));
+      }
+      throw new Error(`El servidor de RADAR no respondió (${ultimoError ? ultimoError.message : 'sin respuesta'}). Revisa que la app esté encendida en Hostinger e intenta de nuevo.`);
+    }
+
     // 1. Iniciar el análisis. Este endpoint responde casi de inmediato con un
     //    jobId; el trabajo pesado (Apify + OpenRouter) corre en segundo plano
     //    en el servidor para evitar el 504 Gateway Timeout del proxy.
-    const startResp = await fetch('/api/analizar', {
+    const { resp: startResp, json: startJson } = await fetchJsonConReintentos('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skill, actor, actor2, actor3, actor4, actor5, actor6, cliente, actoresReferencia, ...periodoSel }),
-    });
-    const startJson = await parseJsonSeguro(startResp);
+    }, 3);
     if (!startResp.ok) {
       throw new Error(startJson.error || startJson.detail || 'Error al iniciar el análisis en el servidor.');
     }
@@ -609,8 +624,13 @@ async function loadSelectedSkill() {
     let apiJson = null;
     for (let intento = 0; intento < maxIntentos; intento++) {
       await new Promise(r => setTimeout(r, 2000));
-      const estadoResp = await fetch(`/api/estado/${jobId}`, { cache: 'no-store' });
-      const estadoJson = await parseJsonSeguro(estadoResp);
+      let estadoResp, estadoJson;
+      try {
+        ({ resp: estadoResp, json: estadoJson } = await fetchJsonConReintentos(`/api/estado/${jobId}`, { cache: 'no-store' }, 8));
+      } catch (e) {
+        throw new Error('Se perdió la conexión con el servidor de RADAR durante el análisis. ' + e.message);
+      }
+      if (estadoResp.status === 404) throw new Error('El servidor de RADAR se reinició mientras corría el análisis y el trabajo se perdió. Vuelve a dar clic en "Analizar".');
       if (!estadoResp.ok) throw new Error(estadoJson.error || 'El trabajo expiró o no se encontró.');
 
       if (estadoJson.progreso) document.getElementById('loadingSteps').textContent = estadoJson.progreso;
