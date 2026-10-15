@@ -620,7 +620,7 @@ async function loadSelectedSkill() {
 
     // 2. Consultar el estado hasta que el job termine (polling cada 2s, máx 5 min)
     document.getElementById('loadingSteps').textContent = '[1/3] Extrayendo fuentes en Apify (X, Facebook, Instagram, TikTok, YouTube, prensa)...';
-    const maxIntentos = 210; // 210 x 2s = 7 minutos (rangos largos y Opositor hacen más trabajo)
+    const maxIntentos = 450; // 450 x 2s = 15 minutos (modelos grandes como Claude Opus tardan más)
     let apiJson = null;
     for (let intento = 0; intento < maxIntentos; intento++) {
       await new Promise(r => setTimeout(r, 2000));

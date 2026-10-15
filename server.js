@@ -41,7 +41,7 @@ process.on('unhandledRejection', (e) => console.error('[!] Promesa rechazada sin
 process.on('uncaughtException', (e) => console.error('[!] Excepción no capturada:', e && e.stack || e));
 
 const JOBS = new Map(); // jobId -> { status: 'processing'|'done'|'error', result?, error? }
-const JOB_TTL_MS = 15 * 60 * 1000; // 15 min, luego se limpia de memoria
+const JOB_TTL_MS = 30 * 60 * 1000; // 30 min, luego se limpia de memoria
 
 function limpiarJob(jobId) {
   setTimeout(() => JOBS.delete(jobId), JOB_TTL_MS);
@@ -2460,7 +2460,17 @@ async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
       const choice = data?.choices?.[0] || {};
       const raw = choice?.message?.content || '';
       if (!raw.trim()) throw new Error(`OpenRouter devolvió una respuesta vacía (finish_reason: ${choice.finish_reason || 'desconocido'}).`);
-      const clean = raw.replace(/```json|```/g, '').trim();
+      let clean = raw.replace(/```json|```/g, '').trim();
+      // Modelos como Claude a veces escriben una frase antes o después del JSON:
+      // se toma solo el objeto (del primer "{" al último "}").
+      if (!clean.startsWith('{')) {
+        const ini = clean.indexOf('{');
+        if (ini >= 0) clean = clean.slice(ini);
+      }
+      if (!clean.endsWith('}') && choice.finish_reason !== 'length') {
+        const fin = clean.lastIndexOf('}');
+        if (fin > 0) clean = clean.slice(0, fin + 1);
+      }
 
       try {
         return JSON.parse(clean);
