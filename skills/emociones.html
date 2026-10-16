@@ -1,86 +1,82 @@
 <!-- =========================================================
-  EMOCIONES · SEGMENTA · SEMIÓTICA — Plantilla dinámica v4
-  Estructura y diseño de EMOCIONES-XONA (8 pestañas). Lee window.DATA.
+  EMOCIONES · SEGMENTA · SEMIÓTICA — Plantilla dinámica v5
+  Estructura y diseño de EMOCIONES v2 (San Antonio la Isla, 7 pestañas).
+  Lee window.DATA (lo llena RADAR) — no lleva datos fijos.
   ========================================================= -->
 <div id="emo-root">
 <style>
-#emo-root{color-scheme:light;
-  --bg:#f8fafc;--bg-card:#ffffff;--bg-card2:#f1f5f9;--bg-hdr:#1C2738;
-  --brd:#cbd5e1;--brd2:#94a3b8;
-  --tx1:#0f172a;--tx2:#334155;--tx3:#64748b;
-  --blue:#2563eb;--blue2:#1d4ed8;
-  --red:#dc2626;--red-s:#991b1b;--red-bg:rgba(220,38,38,.08);
-  --org:#ea580c;--org-s:#c2410c;--org-bg:rgba(234,88,12,.08);
-  --ylw:#ca8a04;--ylw-bg:rgba(202,138,4,.08);
-  --grn:#16a34a;--grn-s:#15803d;--grn-bg:rgba(22,163,74,.08);
-  --pur:#9333ea;--pur-bg:rgba(147,51,234,.08);
-  --mc:#ea580c;--mc-bg:rgba(234,88,12,.08);
-  --t1:#1A3A5C;--t6:#C9980A;--t5:#374151;}
+#emo-root{--bg:#0a0e1a;--bg-card:#111827;--bg-card2:#1a2236;--bg-hdr:#0d1526;
+  --brd:#1e2d45;--brd2:#253350;
+  --tx1:#e2e8f0;--tx2:#8899aa;--tx3:#4a5a72;
+  --blue:#3b82f6;--blue2:#60a5fa;
+  --red:#ef4444;--red-s:#fca5a5;--red-bg:rgba(239,68,68,.12);
+  --org:#f97316;--org-s:#fdba74;--org-bg:rgba(249,115,22,.12);
+  --ylw:#eab308;--ylw-bg:rgba(234,179,8,.12);
+  --grn:#22c55e;--grn-s:#86efac;--grn-bg:rgba(34,197,94,.12);
+  --pur:#a855f7;--pur-bg:rgba(168,85,247,.12);
+  --tel:#06b6d4;--tel-bg:rgba(6,182,212,.12);}
 #emo-root *{box-sizing:border-box;margin:0;padding:0}
-#emo-root{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px}
-#emo-root h1,#emo-root h2,#emo-root h3{text-wrap:balance}
-#emo-root .hdr{background:var(--bg-hdr);border-bottom:1px solid rgba(255,255,255,.1);color:#ffffff}
+#emo-root{background:var(--bg);color:var(--tx1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+#emo-root .hdr{background:var(--bg-hdr);border-bottom:1px solid var(--brd)}
 #emo-root .hdr-top{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem .5rem;flex-wrap:wrap;gap:.5rem}
-#emo-root .brand{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
-#emo-root .brand-name{font-size:13px;font-weight:700;letter-spacing:.15em;color:#60a5fa}
+#emo-root .brand{display:flex;align-items:center;gap:.6rem}
+#emo-root .brand-name{font-size:13px;font-weight:700;letter-spacing:.15em;color:var(--blue2)}
 #emo-root .brand-ver{font-size:10px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:3px;font-weight:700}
-#emo-root .hdr-meta{font-size:11px;color:#94a3b8;text-align:right;line-height:1.6}
+#emo-root .hdr-meta{font-size:11px;color:var(--tx2);text-align:right;line-height:1.6}
 #emo-root .hdr-body{padding:.3rem 2rem 1rem}
-#emo-root .hdr-eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.14em;color:#94a3b8;margin-bottom:.35rem}
-#emo-root .hdr-title{font-size:2.5rem;font-weight:800;letter-spacing:-.01em;color:#ffffff;line-height:1.1}
-#emo-root .hdr-sub{font-size:12.5px;color:#cbd5e1;margin-top:.3rem}
+#emo-root .hdr-eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.14em;color:var(--tx3);margin-bottom:.35rem}
+#emo-root .hdr-title{font-size:2.5rem;font-weight:800;letter-spacing:-.01em;color:#fff;line-height:1.1}
+#emo-root .hdr-title span{color:var(--blue2)}
+#emo-root .hdr-sub{font-size:12.5px;color:var(--tx2);margin-top:.3rem}
 #emo-root .badges{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem}
 #emo-root .badge{font-size:10px;padding:3px 10px;border-radius:4px;font-weight:700;letter-spacing:.04em;border:1px solid}
-#emo-root .b-red{background:rgba(239,68,68,.2);color:#fca5a5;border-color:#ef4444}
-#emo-root .b-org{background:rgba(249,115,22,.2);color:#fdba74;border-color:#f97316}
-#emo-root .b-blu{background:rgba(59,130,246,.2);color:#93c5fd;border-color:#3b82f6}
-#emo-root .b-pur{background:rgba(168,85,247,.2);color:#d8b4fe;border-color:#a855f7}
-#emo-root .b-mc{background:rgba(255,131,0,.2);color:#ffb366;border-color:#ff8300}
+#emo-root .b-red{background:var(--red-bg);color:var(--red-s);border-color:var(--red)}
+#emo-root .b-org{background:var(--org-bg);color:var(--org-s);border-color:var(--org)}
+#emo-root .b-blu{background:rgba(59,130,246,.15);color:var(--blue2);border-color:var(--blue)}
+#emo-root .b-pur{background:var(--pur-bg);color:#c084fc;border-color:var(--pur)}
+#emo-root .b-grn{background:var(--grn-bg);color:var(--grn-s);border-color:var(--grn)}
 #emo-root .pulse{animation:PULSE 1.5s infinite}
 @keyframes PULSE{0%,100%{opacity:1}50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){#emo-root .pulse{animation:none}
-}
-#emo-root .tabs{display:flex;overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.1);padding:0 2rem;background:#16202e}
-#emo-root .tab{font-size:11.5px;font-weight:600;letter-spacing:.04em;padding:.65rem 1rem;color:#94a3b8;cursor:pointer;border:0;border-bottom:2px solid transparent;white-space:nowrap;background:none;font-family:inherit}
-#emo-root .tab:hover{color:#ffffff;background:rgba(255,255,255,.05)}
-#emo-root .tab:focus-visible{outline:2px solid var(--blue2);outline-offset:-2px}
-#emo-root .tab.on{color:#60a5fa;border-bottom-color:#60a5fa;background:rgba(255,255,255,.08)}
+#emo-root .tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--brd);padding:0 2rem}
+#emo-root .tab{font-size:11.5px;font-weight:600;letter-spacing:.04em;padding:.65rem 1.1rem;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .18s}
+#emo-root .tab:hover{color:var(--tx1);background:rgba(255,255,255,.03)}
+#emo-root .tab.on{color:var(--blue2);border-bottom-color:var(--blue2)}
 #emo-root .cnt{padding:1.4rem 2rem}
 #emo-root .pnl{display:none}
 #emo-root .pnl.on{display:block}
 #emo-root .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-#emo-root .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+#emo-root .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
 #emo-root .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
-#emo-root .gauto{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:1.2rem;align-items:start}
-#emo-root .g2>*,#emo-root .g3>*,#emo-root .g4>*,#emo-root .gauto>*{min-width:0}
-#emo-root .card{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:1.1rem 1.2rem;color:var(--tx1)}
+#emo-root .gauto{display:grid;grid-template-columns:430px 1fr;gap:1.2rem;align-items:start}
+#emo-root .card{background:var(--bg-card);border:1px solid var(--brd);border-radius:10px;padding:1.1rem 1.2rem}
+#emo-root .card2{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1.1rem 1.2rem}
 #emo-root .cv{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.55rem}
-#emo-root .cval{font-size:2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+#emo-root .cval{font-size:2rem;font-weight:800;line-height:1}
 #emo-root .csub{font-size:11px;color:var(--tx2);margin-top:.3rem}
 #emo-root .sl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:.7rem;padding-bottom:.35rem;border-bottom:1px solid var(--brd)}
-#emo-root .mb{margin-bottom:1rem}
-#emo-root .emr{padding:9px 4px;border-bottom:1px solid var(--brd);cursor:pointer;border-radius:4px}
-#emo-root .emr:hover{background:rgba(0,0,0,.03)}
+#emo-root .emr{padding:9px 0;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .12s;border-radius:4px}
+#emo-root .emr:hover{background:rgba(255,255,255,.025)}
 #emo-root .emr:last-child{border-bottom:none}
 #emo-root .emh{display:flex;align-items:center;gap:7px}
-#emo-root .emd-box{display:none;margin-top:8px;margin-left:17px;background:rgba(0,0,0,.04);border-radius:6px;padding:8px 10px}
+#emo-root .emd-box{display:none;margin-top:8px;margin-left:17px;background:rgba(255,255,255,.03);border-radius:6px;padding:8px 10px}
 #emo-root .emd-box.open{display:block}
 #emo-root .edk{font-size:10.5px;font-weight:700;color:var(--tx2);margin-bottom:3px}
-#emo-root .edv{font-size:11.5px;color:var(--tx2);line-height:1.6}
-#emo-root .dyc{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:1rem 1.1rem;border-top:3px solid}
+#emo-root .edv{font-size:11px;color:var(--tx3);line-height:1.6}
+#emo-root .dyc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:1rem 1.1rem;border-top:3px solid}
 #emo-root .dyn{font-size:14px;font-weight:800;margin-bottom:3px}
 #emo-root .dyf{font-size:11px;color:var(--tx3);font-style:italic;margin-bottom:7px}
 #emo-root .dyt{font-size:12px;color:var(--tx2);line-height:1.6}
 #emo-root .dybadge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;float:right;margin-top:-2px}
-#emo-root .mpc{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:.9rem 1rem}
+#emo-root .mpc{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:.9rem 1rem}
 #emo-root .mptt{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-#emo-root .mpi{font-size:12px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;gap:6px;line-height:1.5}
+#emo-root .mpi{font-size:12px;color:var(--tx2);padding:5px 0;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;gap:6px}
 #emo-root .mpi:last-child{border-bottom:none}
-#emo-root .mpd{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:6px}
+#emo-root .mpd{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
 #emo-root .qi{padding:9px 0;border-bottom:1px solid var(--brd)}
 #emo-root .qi:last-child{border-bottom:none}
 #emo-root .qt{font-size:12.5px;font-style:italic;color:var(--tx1);line-height:1.55}
-#emo-root .qt::before,#emo-root .qt::after{content:'"';color:var(--blue);font-style:normal;font-weight:700}
+#emo-root .qt::before{content:'"';color:var(--blue2);font-style:normal;font-weight:700}
+#emo-root .qt::after{content:'"';color:var(--blue2);font-style:normal;font-weight:700}
 #emo-root .qm{font-size:10.5px;color:var(--tx3);margin-top:3px}
 #emo-root .ri{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--brd)}
 #emo-root .ri:last-child{border-bottom:none}
@@ -90,95 +86,121 @@
 #emo-root .sem:last-child{border-bottom:none}
 #emo-root .semd{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 #emo-root .seml{font-size:12px;color:var(--tx2);flex:1}
-#emo-root .semv{font-size:12px;font-weight:700;text-align:right}
-#emo-root .ac{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;overflow:hidden}
+#emo-root .semv{font-size:12px;font-weight:700}
+#emo-root .ac{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;overflow:hidden}
 #emo-root .ach{padding:.9rem 1.1rem;border-bottom:1px solid var(--brd)}
-#emo-root .acn{font-size:14px;font-weight:800;color:var(--tx1)}
+#emo-root .acn{font-size:14px;font-weight:800;color:#fff}
 #emo-root .acr{font-size:11px;color:var(--tx2);margin-top:2px}
-#emo-root .acb{padding:.7rem 1.1rem}
-#emo-root .acrow{display:flex;gap:1rem;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd);font-size:12px}
+#emo-root .acb{padding:.9rem 1.1rem}
+#emo-root .acrow{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--brd);font-size:12px}
 #emo-root .acrow:last-child{border-bottom:none}
-#emo-root .ack{color:var(--tx3);font-size:11px;flex-shrink:0}
-#emo-root .acv{color:var(--tx1);font-weight:600;text-align:right;max-width:68%;line-height:1.45}
-#emo-root .cbox{background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(6,182,212,.08));border:1px solid rgba(37,99,235,.25);border-radius:12px;padding:1.2rem 1.4rem;border-left:4px solid var(--blue);color:var(--tx1)}
+#emo-root .ack{color:var(--tx3);font-size:11px}
+#emo-root .acv{color:var(--tx1);font-weight:600;text-align:right;max-width:65%}
+#emo-root .cbox{background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(6,182,212,.09));border:1px solid rgba(37,99,235,.28);border-radius:12px;padding:1.2rem 1.4rem;border-left:4px solid var(--blue)}
 #emo-root .cbox-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);margin-bottom:.35rem}
-#emo-root .cbox-name{font-size:21px;font-weight:800;color:var(--tx1);margin-bottom:.45rem}
-#emo-root .cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72;max-width:90ch}
+#emo-root .cbox-name{font-size:21px;font-weight:800;color:#fff;margin-bottom:.45rem}
+#emo-root .cbox-text{font-size:12.5px;color:var(--tx2);line-height:1.72}
 #emo-root .cw{position:relative}
-#emo-root #wheel-wrap svg{width:100%;max-width:440px;height:auto}
-#emo-root .tbl-wrap{overflow-x:auto}
-#emo-root table.t{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
-#emo-root table.t th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);text-align:left;padding:7px 8px;border-bottom:1px solid var(--brd)}
-#emo-root table.t td{padding:8px;border-bottom:1px solid var(--brd);color:var(--tx2);vertical-align:top;line-height:1.5}
-#emo-root table.t td:first-child{color:var(--tx1);font-weight:700}
-#emo-root .flow{display:grid;grid-template-columns:110px 1fr 1fr 1fr 110px;gap:.5rem;align-items:stretch;padding:8px 0;border-bottom:1px solid var(--brd);font-size:11.5px}
-#emo-root .flow:last-child{border-bottom:none}
-#emo-root .flow>div{background:#d5d1d1;border:1px solid var(--brd);border-radius:6px;padding:6px 8px;color:var(--tx2);line-height:1.45;min-width:0}
-#emo-root .flow .fem{font-weight:800;color:var(--tx1)}
-#emo-root .flow .fk{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
-#emo-root .ive{display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap}
-#emo-root .ive-n{font-size:3rem;font-weight:800;color:var(--org);font-variant-numeric:tabular-nums;line-height:1}
-#emo-root .bar{height:8px;border-radius:4px;background:#cbd5e1;overflow:hidden;margin-top:4px}
-#emo-root .bar>span{display:block;height:100%}
-#emo-root .comp{display:grid;grid-template-columns:1fr 50px;gap:.4rem;font-size:11.5px;color:var(--tx2);padding:5px 0}
-#emo-root .bp{border:1px solid var(--brd);border-radius:12px;overflow:hidden;margin-bottom:1rem;background:#d5d1d1}
-#emo-root .bph{padding:1rem 1.2rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
-#emo-root .bpt{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9)}
-#emo-root .bpn{font-size:20px;font-weight:800;color:#fff;margin-top:2px}
-#emo-root .bps{font-size:12px;color:rgba(255,255,255,.9);margin-top:2px}
-#emo-root .bpw{text-align:right}
-#emo-root .bpw b{font-size:26px;color:#fff;font-variant-numeric:tabular-nums}
-#emo-root .bpw span{display:block;font-size:10px;color:rgba(255,255,255,.9);letter-spacing:.08em;text-transform:uppercase}
-#emo-root .bpq{margin:1rem 1.2rem 0;padding:.6rem .9rem;border-left:3px solid;font-style:italic;color:var(--tx1);font-size:13px;background:rgba(0,0,0,.03);border-radius:0 6px 6px 0}
-#emo-root .bpb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;padding:1rem 1.2rem}
-#emo-root .bpc h4{font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem;padding-bottom:.3rem;border-bottom:1px solid var(--brd)}
-#emo-root .kv{font-size:12px;color:var(--tx2);line-height:1.55;padding:4px 0}
-#emo-root .kv b{color:var(--tx1);font-weight:700;display:block;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
-#emo-root .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
-#emo-root .tag{font-size:10.5px;padding:2px 7px;border-radius:10px;border:1px solid;font-weight:600}
-#emo-root .bpf{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.8rem 1.2rem;border-top:1px solid var(--brd);background:#ccd3dc;font-size:12px;color:var(--tx2);align-items:center}
-#emo-root .pb{font-size:10px;font-weight:800;padding:3px 9px;border-radius:4px;letter-spacing:.06em}
-#emo-root .arq{background:#d5d1d1;border:1px solid var(--brd);border-radius:10px;padding:1rem}
-#emo-root .arq .k{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
-#emo-root .arq .n{font-size:17px;font-weight:800;color:var(--tx1);margin:4px 0 6px}
-#emo-root .arq p{font-size:12px;color:var(--tx2);line-height:1.6}
+#emo-root ::-webkit-scrollbar{width:5px;height:5px}
+#emo-root ::-webkit-scrollbar-track{background:var(--bg)}
+#emo-root ::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px}
+#emo-root #em-wheel-wrap svg{max-width:100%;height:auto}
+#emo-root .tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin:2px 3px 2px 0;border:1px solid}
+#emo-root .t-ver{background:rgba(34,197,94,.1);color:#86efac;border-color:#15803d}
+#emo-root .t-ofi{background:rgba(59,130,246,.1);color:#93c5fd;border-color:#2563eb}
+#emo-root .t-inf{background:rgba(234,179,8,.1);color:#fde047;border-color:#a16207}
+#emo-root .tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+#emo-root .tbl th{text-align:left;color:var(--tx3);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:6px 6px;border-bottom:1px solid var(--brd2)}
+#emo-root .tbl td{padding:7px 6px;border-bottom:1px solid var(--brd);color:var(--tx2);vertical-align:top;line-height:1.5}
+#emo-root .tbl td b{color:var(--tx1)}
+#emo-root .tblw{overflow-x:auto}
+#emo-root .ive-bar{height:10px;border-radius:5px;background:#1e2d45;overflow:hidden;margin:6px 0 4px}
+#emo-root .ive-fill{height:100%;border-radius:5px}
+#emo-root .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin:6px 0 10px}
+#emo-root .flow-s{flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--brd);border-radius:8px;padding:7px 9px;font-size:11px;color:var(--tx2);line-height:1.5}
+#emo-root .flow-s b{display:block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
+#emo-root .flow-a{align-self:center;color:var(--tx3);font-size:14px}
+#emo-root .bp{background:var(--bg-card);border:1px solid var(--brd);border-radius:12px;overflow:hidden;margin-bottom:1rem}
+#emo-root .bp-h{padding:1rem 1.2rem;color:#fff}
+#emo-root .bp-tipo{font-size:10px;font-weight:700;letter-spacing:.12em;opacity:.85}
+#emo-root .bp-n{font-size:19px;font-weight:800;margin:3px 0}
+#emo-root .bp-s{font-size:12px;opacity:.85}
+#emo-root .bp-w{float:right;text-align:right;font-size:11px;opacity:.9}
+#emo-root .bp-w strong{display:block;font-size:22px;font-weight:800}
+#emo-root .bp-q{margin:1rem 1.2rem 0;padding:.6rem .9rem;border-left:3px solid;font-size:13px;font-style:italic;color:var(--tx1);background:rgba(255,255,255,.02)}
+#emo-root .bp-b{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;padding:1rem 1.2rem}
+#emo-root .bp-ct{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;padding-bottom:.3rem;border-bottom:1px solid var(--brd)}
+#emo-root .bp-r{font-size:11.5px;color:var(--tx2);line-height:1.55;margin-bottom:.45rem}
+#emo-root .bp-r b{color:var(--tx1);font-weight:700}
+#emo-root .bp-f{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.7rem 1.2rem;border-top:1px solid var(--brd);background:rgba(255,255,255,.02);font-size:11.5px;color:var(--tx2)}
+#emo-root .bp-badge{font-size:10px;font-weight:800;padding:3px 10px;border-radius:4px;letter-spacing:.05em}
+#emo-root .arq{background:var(--bg-card2);border:1px solid var(--brd2);border-radius:10px;padding:.9rem 1rem;border-top:3px solid}
+#emo-root .arq-l{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3)}
+#emo-root .arq-n{font-size:17px;font-weight:800;color:#fff;margin:3px 0 6px}
+#emo-root .arq-t{font-size:11.5px;color:var(--tx2);line-height:1.6}
 #emo-root .mdn{padding:8px 0;border-bottom:1px solid var(--brd)}
 #emo-root .mdn:last-child{border-bottom:none}
-#emo-root .mdn .h{display:flex;gap:8px;align-items:baseline}
-#emo-root .mdn .i{font-size:11px;font-weight:800;color:var(--tx3);font-variant-numeric:tabular-nums;width:20px;flex-shrink:0}
-#emo-root .mdn .t{font-size:12.5px;font-weight:700;color:var(--tx1);line-height:1.4}
-#emo-root .mdn .e{font-size:11px;color:var(--tx2);line-height:1.5;margin:3px 0 0 28px}
-#emo-root .mdn .p{font-size:11px;color:var(--tx3);line-height:1.5;margin:2px 0 0 28px}
-#emo-root .mdn .p b{color:var(--blue);font-weight:700}
-#emo-root ::-webkit-scrollbar{width:5px;height:5px}
-#emo-root ::-webkit-scrollbar-track{background:#e2e8f0}
-#emo-root ::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
-@media(max-width:900px){#emo-root .bpb{grid-template-columns:1fr}
-#emo-root .flow{grid-template-columns:1fr 1fr}
-#emo-root .flow>div:first-child{grid-column:1/-1}
-}
-@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4{grid-template-columns:1fr}
+#emo-root .mdn-h{display:flex;gap:7px;align-items:baseline}
+#emo-root .mdn-i{font-size:11px;font-weight:800;color:var(--tx3);min-width:18px}
+#emo-root .mdn-n{font-size:12.5px;font-weight:700;color:var(--tx1)}
+#emo-root .mdn-e{font-size:11px;color:var(--tx3);line-height:1.5;margin:3px 0 0 25px}
+#emo-root .mdn-p{font-size:11px;color:var(--tx2);line-height:1.5;margin:2px 0 0 25px}
+#emo-root .src{font-size:11px;color:var(--tx2);line-height:1.55;padding:5px 0;border-bottom:1px solid var(--brd)}
+#emo-root .src a{color:var(--blue2);text-decoration:none}
+#emo-root .src a:hover{text-decoration:underline}
+#emo-root details.card summary{cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2)}
+#emo-root .qt.para::before,#emo-root .qt.para::after{content:''}
+#emo-root .qt.para{font-style:normal;color:var(--tx2)}
+@media(max-width:780px){#emo-root .gauto,#emo-root .g2,#emo-root .g3,#emo-root .g4,#emo-root .bp-b{grid-template-columns:1fr}
 #emo-root .hdr-title{font-size:1.7rem}
 #emo-root .cnt{padding:1rem}
 #emo-root .hdr-body,#emo-root .hdr-top{padding-left:1rem;padding-right:1rem}
 #emo-root .tabs{padding:0 1rem}
-#emo-root .hdr-meta{text-align:left}
 
 }
+#emo-root{background:#fff}
+#emo-root .hdr{background:#1C2738;border-bottom:none}
+#emo-root .hdr-body{padding-bottom:1.5rem}
+#emo-root .hdr .hdr-eyebrow{color:#94A3B8}
+#emo-root .tabs,#emo-root .cnt{--bg-card:#d5d1d1;--bg-card2:#d5d1d1;--brd:rgba(28,39,56,.13);--brd2:rgba(28,39,56,.2);--tx1:#1C2738;--tx2:#475569;--tx3:#64748B;--blue2:#1d4ed8;--red-s:#b91c1c;--org-s:#c2410c;--grn-s:#15803d}
+#emo-root .tabs{background:#fff;border-bottom:1px solid #cbd5e1}
+#emo-root .tab:hover{background:rgba(28,39,56,.04)}
+#emo-root .cnt{background:#fff}
+#emo-root .acn,#emo-root .cbox-name,#emo-root .arq .n{color:#1C2738}
+#emo-root .emr:hover{background:rgba(28,39,56,.04)}
+#emo-root .emd-box,#emo-root .bpq{background:rgba(255,255,255,.35)}
+#emo-root .ivebar{background:#bdb8b8}
+#emo-root .cbox{background:#d5d1d1}
+#emo-root .lv{background:rgba(21,128,61,.15);color:#15803d}
+#emo-root .le{background:rgba(161,98,7,.15);color:#a16207}
+#emo-root .cnt [style*="#fca5a5"]:not(.bpt){color:#b91c1c!important}
+#emo-root .cnt [style*="#86efac"]:not(.bpt){color:#15803d!important}
+#emo-root .cnt [style*="#c4b5fd"]:not(.bpt),#emo-root .cnt [style*="#c084fc"]:not(.bpt){color:#6d28d9!important}
+#emo-root .cnt [style*="#fde047"]:not(.bpt){color:#a16207!important}
+#emo-root .cnt [style*="#fdba74"]:not(.bpt){color:#c2410c!important}
+#emo-root .cnt [style*="#93c5fd"]:not(.bpt),#emo-root .cnt [style*="#60a5fa"]:not(.bpt){color:#1d4ed8!important}
+#emo-root .cnt [style*="#cbd5e1"]:not(.bpt){color:#475569!important}
+#emo-root .cnt [style*="color:#e2e8f0"]:not(.bpt){color:#000!important}
+#emo-root .cnt [style*="#9ca3af"]{color:#475569!important}
+#emo-root .ive-bar{background:#bdb8b8}
+#emo-root .cnt .arq-n,#emo-root .cnt .acn,#emo-root .cnt .cbox-name{color:#000}
+#emo-root .cnt .t-ver{color:#15803d}
+#emo-root .cnt .t-ofi{color:#1d4ed8}
+#emo-root .cnt .t-inf{color:#a16207}
 #emo-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
-#emo-root .badges{display: none;}
 
-
-
-#emo-root{border-radius:8px;overflow:hidden}
+#emo-root{border-radius:8px;overflow:hidden;color-scheme:light}
 #emo-root .hdr{border-radius:8px 8px 0 0}
+#emo-root .tab{background:none;border:0;border-bottom:2px solid transparent;font-family:inherit}
+#emo-root .hidden{display:none!important}
+#emo-root .cw{position:relative}
 </style>
 <div class="hdr">
   <div class="hdr-top">
     <div class="brand">
-      <span class="brand-name">EMOCIONES · SEGMENTA · SEMIÓTICA</span>
-      <span class="brand-ver">SIE </span>
-      <span style="font-size:11px;color:#94a3b8"></span>
+      <span class="brand-name">EMOCIONES</span>
+      <span class="brand-ver" style="display:none">v3.1</span>
+      <span class="brand-name">+ SEGMENTA + SEMIÓTICA</span><span style="display:none">// HUMOR SOCIAL EMOCIONAL · PLUTCHIK + HAIDT · WESTEN · LAKOFF // SEGMENTA v2.1 // SEMIÓTICA</span>
     </div>
     <div class="hdr-meta" id="em-hdr-meta"></div>
   </div>
@@ -186,25 +208,25 @@
     <div class="hdr-eyebrow">// ESTUDIO DE HUMOR SOCIAL EMOCIONAL · ANÁLISIS TERRITORIAL · <span id="em-hdr-date"></span></div>
     <div class="hdr-title" id="em-hdr-title"></div>
     <div class="hdr-sub" id="em-hdr-sub"></div>
-    <div class="badges" id="em-hdr-badges"></div>
-  </div>
-  <div class="tabs" role="tablist">
-    <button class="tab on" onclick="emST('flor',this)">Flor de Emociones</button>
-    <button class="tab" onclick="emST('mapa',this)">Mapa Social</button>
-    <button class="tab" onclick="emST('diadas',this)">Díadas · IVE · Transferencia</button>
-    <button class="tab" onclick="emST('identidad',this)">Identidad Política</button>
-    <button class="tab" onclick="emST('actores',this)" id="em-tab-actores">Actores</button>
-    <button class="tab" onclick="emST('segmentos',this)">Segmentos y Perfiles</button>
-    <button class="tab" onclick="emST('arquetipo',this)">Arquetipo</button>
-    <button class="tab" onclick="emST('mdn',this)">Miedos · Deseos · Necesidades</button>
+    <div class="badges" id="em-hdr-badges" style="display:none"></div>
   </div>
 </div>
+  <div class="tabs">
+    <div class="tab on"  onclick="emST('flor',this)">Flor de Emociones</div>
+    <div class="tab"     onclick="emST('mapa',this)">Mapa Social</div>
+    <div class="tab"     onclick="emST('diadas',this)">Díadas</div>
+    <div class="tab"     onclick="emST('identidad',this)">Identidad Política</div>
+    <div class="tab"     onclick="emST('actores',this)" id="em-tab-actores">Actores</div>
+    <div class="tab"     onclick="emST('segmentos',this)">Segmentos y Perfiles</div>
+    <div class="tab"     onclick="emST('semiotica',this)">Arquetipo · Miedos/Deseos</div>
+  </div>
+
 
 <div class="cnt">
 
-<!-- FLOR -->
+
 <div class="pnl on" id="empnl-flor">
-  <div class="gauto mb">
+  <div class="gauto" style="margin-bottom:1rem">
     <div>
       <div class="sl">Rueda de Plutchik — <span id="em-whl-territory"></span></div>
       <div class="card" style="padding:.8rem;text-align:center">
@@ -216,7 +238,7 @@
         <div style="display:flex;gap:1rem;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-hi" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Alta ●●●</span></div>
           <div style="display:flex;align-items:center;gap:5px"><div id="em-leg-md" style="width:11px;height:11px;border-radius:50%"></div><span style="font-size:11px;color:var(--tx2)">Media ●●○</span></div>
-          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#cbd5e1"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;border-radius:50%;background:#b0abab"></div><span style="font-size:11px;color:var(--tx2)">Inactiva ○○○</span></div>
         </div>
       </div>
     </div>
@@ -229,30 +251,34 @@
       </div>
     </div>
   </div>
-  <div class="cbox mb" id="em-concepto-box"></div>
+  <div class="cbox" style="margin-bottom:1rem" id="em-concepto-box"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card" id="em-ive-box"></div>
+    <div class="card"><div class="sl">Síntesis Plutchik · Haidt · Westen · Lakoff</div><div id="em-sintesis" style="font-size:12.5px;color:var(--tx2);line-height:1.75"></div></div>
+  </div>
   <div class="card">
     <div class="sl">Distribución de Intensidad Emocional</div>
-    <div class="cw" style="height:230px"><canvas id="em-ch-intens" role="img" aria-label="Intensidad emocional por emoción"></canvas></div>
+    <div class="cw" style="height:200px"><canvas id="em-ch-intens" role="img" aria-label="Intensidad emocional por emoción"></canvas></div>
   </div>
 </div>
 
-<!-- MAPA -->
+
 <div class="pnl" id="empnl-mapa">
-  <div class="g3 mb" id="em-mapa-cols"></div>
-  <div class="g2 mb">
-    <div class="card"><div class="sl">Frases Ciudadanas</div><div id="em-quotes"></div></div>
+  <div class="g3" style="margin-bottom:1rem" id="em-mapa-cols"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Voz ciudadana documentada (citas textuales y paráfrasis)</div><div id="em-quotes"></div></div>
     <div class="card">
-      <div class="sl" id="em-temas-t">Peso de la conversación por temática</div>
-      <div class="cw" style="height:300px"><canvas id="em-ch-temas" role="img" aria-label="Emociones por temática"></canvas></div>
+      <div class="sl" id="em-temas-t">Distribución temática del corpus (estimación SIE)</div>
+      <div class="cw" style="height:260px"><canvas id="em-ch-temas" role="img" aria-label="Emociones por temática"></canvas></div>
     </div>
   </div>
   <div class="card"><div class="sl">Semáforo Emocional del Territorio</div><div class="g3" id="em-semaforo"></div></div>
 </div>
 
-<!-- DIADAS -->
+
 <div class="pnl" id="empnl-diadas">
-  <div class="g3 mb" id="em-dyad-cards"></div>
-  <div class="g2 mb">
+  <div class="g3" style="margin-bottom:1rem" id="em-dyad-cards"></div>
+  <div class="g2">
     <div class="card">
       <div class="sl">Score de Riesgo por Díada</div>
       <div class="cw" style="height:220px"><canvas id="em-ch-diadas" role="img" aria-label="Riesgo por díada"></canvas></div>
@@ -262,73 +288,70 @@
       <div id="em-dyad-interp" style="font-size:12.5px;color:var(--tx2);line-height:1.75;margin-top:.3rem"></div>
     </div>
   </div>
-  <div class="g2 mb">
-    <div class="card" id="em-ive-box"></div>
-    <div class="card"><div class="sl" id="em-cliente-t">Posición del cliente en el mapa de transferencia</div><div id="em-cliente-pos"></div></div>
-  </div>
-  <div class="card"><div class="sl">Mapa Origen → Canal → Destino de la emoción</div><div id="em-flows"></div></div>
 </div>
 
-<!-- IDENTIDAD -->
+
 <div class="pnl" id="empnl-identidad">
-  <div class="cbox mb" id="em-id-pregunta"></div>
-  <div class="g2 mb">
+  <div class="cbox" style="margin-bottom:1rem" id="em-id-pregunta"></div>
+  <div class="g2" style="margin-bottom:1rem">
     <div class="card"><div class="sl" id="em-gov-t">Percepción del Gobierno Municipal</div><div id="em-gov-sem"></div></div>
     <div class="card">
-      <div class="sl">Carga Emocional por Partido / Opción</div>
-      <div class="cw" style="height:240px"><canvas id="em-ch-partidos" role="img" aria-label="Emociones por partido"></canvas></div>
+      <div class="sl">Carga Emocional por Partido</div>
+      <div class="cw" style="height:220px"><canvas id="em-ch-partidos" role="img" aria-label="Emociones por partido"></canvas></div>
     </div>
   </div>
-  <div class="card mb"><div class="sl">Percepción Ciudadana por Partido</div><div class="tbl-wrap"><div id="em-partidos-tbl" style="min-width:560px"></div></div></div>
-  <div class="g3 mb" id="em-marcos"></div>
-  <div class="cbox" style="border-left-color:var(--mc)" id="em-sintesis"></div>
+  <div class="card" style="margin-bottom:1rem"><div class="sl">Percepción Ciudadana por Partido</div><div id="em-partidos-tbl"></div><div id="em-partidos-note" style="font-size:10.5px;color:var(--tx3);margin-top:.6rem;line-height:1.6"></div></div>
+  <div class="card" style="margin-bottom:1rem"><div class="sl">Haidt — Fundación moral de cada emoción central</div><div class="tblw" id="em-haidt-tbl"></div></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Westen — Roles narrativos</div><div id="em-westen"></div></div>
+    <div class="card"><div class="sl">Lakoff — Frames en disputa</div><div id="em-lakoff"></div></div>
+  </div>
+  <div class="card"><div class="sl">Transferencia emocional — ¿hacia dónde viaja la emoción?</div><div id="em-transfer"></div></div>
 </div>
 
-<!-- ACTORES -->
+
 <div class="pnl" id="empnl-actores">
-  <div class="g2 mb" id="em-actores-grid"></div>
+  <div class="g2" style="margin-bottom:1rem" id="em-actores-grid"></div>
   <div class="card">
-    <div class="sl">Mapa de Posicionamiento Emocional de Actores</div>
-    <div class="cw" style="height:340px"><canvas id="em-ch-actores" role="img" aria-label="Posicionamiento emocional de actores"></canvas></div>
+    <div class="sl" id="em-actradar-t">Mapa de Posicionamiento Emocional de Actores</div>
+    <div class="cw" style="height:300px"><canvas id="em-ch-actores" role="img" aria-label="Posicionamiento emocional de actores"></canvas></div>
+    <div id="em-actores-note" style="font-size:10.5px;color:var(--tx3);margin-top:.6rem;line-height:1.6"></div>
   </div>
+  <div class="card" style="margin-top:1rem" id="em-tend-card"><div class="sl" id="em-tend-t">Tendencia de sondeos publicados</div><div class="cw" style="height:260px"><canvas id="em-ch-tend" role="img" aria-label="Tendencia de aprobación e intención de voto"></canvas></div></div>
+  <div class="card" style="margin-top:1rem" id="em-enc-card"><div class="sl" id="em-enc-t">Sondeos publicados — partidos e internas</div><div class="tblw" id="em-encuestas-tbl"></div></div>
 </div>
 
-<!-- SEGMENTOS -->
+
 <div class="pnl" id="empnl-segmentos">
-  <div class="cbox mb" style="border-left-color:var(--mc)" id="em-seg-intro"></div>
-  <div class="g2 mb">
-    <div class="card"><div class="sl">Peso estimado del electorado por tipo</div><div class="cw" style="height:220px"><canvas id="em-ch-seg" role="img" aria-label="Peso por segmento"></canvas></div></div>
-    <div class="card"><div class="sl">Jerarquía de inversión</div><div id="em-seg-inv"></div></div>
+  <div class="cbox" style="margin-bottom:1rem" id="em-seg-intro"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Peso estimado de cada segmento</div><div class="cw" style="height:230px"><canvas id="em-ch-seg" role="img" aria-label="Peso estimado por segmento"></canvas></div></div>
+    <div class="card"><div class="sl">Jerarquía de inversión</div><div id="em-seg-jer"></div></div>
   </div>
-  <div id="em-bp-list"></div>
-  <div class="card"><div class="sl">Segmentación emocional por perfil ciudadano</div><div class="tbl-wrap"><table class="t" id="em-seg-tbl"></table></div></div>
+  <div id="em-seg-cards"></div>
+  <div class="card"><div class="sl">Segmentación emocional por perfil ciudadano (Paso 2C)</div><div class="tblw" id="em-seg-tbl"></div><div id="em-seg-tbl-note" style="font-size:10.5px;color:var(--tx3);margin-top:.6rem;line-height:1.6"></div></div>
 </div>
 
-<!-- ARQUETIPO -->
-<div class="pnl" id="empnl-arquetipo">
-  <div class="g4 mb" id="em-arq-cards"></div>
-  <div class="g2 mb">
-    <div class="card"><div class="sl">Arquetipo Político Ideal — resonancia de los 10 arquetipos</div><div class="cw" style="height:330px"><canvas id="em-ch-arq" role="img" aria-label="Resonancia de arquetipos políticos"></canvas></div></div>
-    <div class="card"><div class="sl">Ganador y segundo lugar</div><div id="em-arq-win"></div></div>
-  </div>
-  <div class="card mb"><div class="sl" id="em-arqact-t">Lectura arquetípica de los actores</div><div class="tbl-wrap"><table class="t" id="em-arq-act"></table></div></div>
-  <div class="cbox" id="em-arq-codigo"></div>
-</div>
 
-<!-- MIEDOS DESEOS NECESIDADES -->
-<div class="pnl" id="empnl-mdn">
-  <div class="card mb"><div class="sl">Intensidad simbólica — Top 10 miedos y deseos</div><div class="cw" style="height:380px"><canvas id="em-ch-mdn" role="img" aria-label="Miedos y deseos"></canvas></div></div>
+<div class="pnl" id="empnl-semiotica">
+  <div class="cbox" style="margin-bottom:1rem" id="em-sem-codigo"></div>
+  <div class="sl">Arquetipo colectivo (Módulo 9)</div>
+  <div class="g4" style="margin-bottom:1rem" id="em-arq-col"></div>
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card"><div class="sl">Arquetipo político ideal — resonancia de los 10 arquetipos (Módulo 10)</div><div class="cw" style="height:300px"><canvas id="em-ch-arq" role="img" aria-label="Resonancia de arquetipos políticos"></canvas></div></div>
+    <div class="card" id="em-arq-ideal"></div>
+  </div>
+  <div class="card" style="margin-bottom:1rem"><div class="sl" id="em-arqact-t">Lectura arquetípica de los aspirantes</div><div class="tblw" id="em-arq-act"></div></div>
+  <div class="card" style="margin-bottom:1rem"><div class="sl">Intensidad simbólica 0–100 — miedos (rojo) y deseos (verde) · estimación analítica (Módulo 5)</div><div class="cw" style="height:520px"><canvas id="em-ch-mdn" role="img" aria-label="Intensidad de miedos y deseos"></canvas></div></div>
   <div class="g3">
-    <div class="card"><div class="sl" style="color:#991b1b">10 Miedos colectivos</div><div id="em-l-miedos"></div></div>
-    <div class="card"><div class="sl" style="color:#15803d">10 Deseos colectivos</div><div id="em-l-deseos"></div></div>
-    <div class="card"><div class="sl" style="color:#1d4ed8">10 Necesidades simbólicas</div><div id="em-l-necesidades"></div></div>
+    <div class="card"><div class="sl" style="color:#fca5a5">10 miedos colectivos</div><div id="em-sem-miedos"></div></div>
+    <div class="card"><div class="sl" style="color:#86efac">10 deseos colectivos</div><div id="em-sem-deseos"></div></div>
+    <div class="card"><div class="sl" style="color:#93c5fd">10 necesidades simbólicas</div><div id="em-sem-neces"></div></div>
   </div>
 </div>
 
-</div>
 
-<div class="footer">
-  <span> Estudio de Humor Social Emocional · Confidencial </span>
-  <span id="em-ftr-r"></span>
+
 </div>
+<div class="footer">SIE EMOCIONES ESTUDIO CONFIDENCIAL</div>
 </div>
