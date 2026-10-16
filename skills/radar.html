@@ -1,353 +1,378 @@
+<!-- =========================================================
+  RADAR v2.1 — Plantilla dinámica (estructura RADAR Naucalpan, 12 pestañas)
+  Lee window.DATA (lo llena el servidor) — no lleva datos fijos.
+  ========================================================= -->
 <div id="radar-root">
 <style>
-
-/* Layout: plantilla RADAR v2.0 del cliente (navy, header sticky, tabs, grids 2/3/4). Tema oscuro único por diseño. */
-#radar-root{--navy:#0D1B2A;--ac:#00C2D4;--go:#F4C430;--da:#E63946;--su:#2EC4B6;--ne:#8FA3B1;--bl:#1B4F8A;--fg:#FFFFFF;--card:rgba(255,255,255,0.04);--border:rgba(0,194,212,0.15);color-scheme:dark;background:var(--navy);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;border-radius:8px;overflow:hidden}
+#radar-root{--navy:#0D1B2A;--ac:#00C2D4;--go:#F4C430;--da:#E63946;--su:#2EC4B6;--ne:#8FA3B1;--bl:#1B4F8A;--or:#E67E22;--card:rgba(255,255,255,0.04);--border:rgba(0,194,212,0.15);--al:#eab308}
 #radar-root *{box-sizing:border-box;margin:0;padding:0}
-#radar-root .hdr{border-bottom:1px solid var(--border);padding:14px 20px;position:sticky;top:env(safe-area-inset-top,0px);background:rgba(13,27,42,.95);backdrop-filter:blur(12px);z-index:100;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-#radar-root .logo{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;color:var(--ac);letter-spacing:5px}
-#radar-root .logo-v{font-family:ui-monospace,monospace;font-size:9px;color:var(--go);border:1px solid var(--go);padding:2px 6px;margin-left:8px}
-#radar-root .meta{font-family:ui-monospace,monospace;font-size:9px;color:var(--ne);text-align:right;line-height:1.6}
-#radar-root .alert{display:inline-block;margin-top:3px;color:var(--go);border:1px solid var(--go);padding:2px 7px;border-radius:2px}
-#radar-root .pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--go);animation:p 2s infinite;margin-right:5px;vertical-align:middle}
-@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
-@media (prefers-reduced-motion:reduce){#radar-root .pulse{animation:none}#radar-root .tsec.show{animation:none}}
-#radar-root .con{max-width:1300px;margin:0 auto;padding-inline:20px;padding-block:0 10px}
-@media(max-width:600px){#radar-root .con{padding-inline:16px}}
-#radar-root .hero{padding:28px 0 20px}
-#radar-root .hero-l{font-family:ui-monospace,monospace;font-size:10px;color:var(--ac);letter-spacing:3px;margin-bottom:8px}
-#radar-root .hero-n{font-size:clamp(26px,4vw,44px);font-weight:800;margin-bottom:6px;text-wrap:balance}
+#radar-root{background:var(--navy);color:#fff;font-family:system-ui,sans-serif;min-height:100vh}
+#radar-root .hdr{border-bottom:1px solid var(--border);padding:14px 24px;position:sticky;top:0;background:rgba(13,27,42,.95);backdrop-filter:blur(12px);z-index:100;display:flex;justify-content:space-between;align-items:center;gap:12px}
+#radar-root .logo{font-family:monospace;font-size:18px;color:var(--ac);letter-spacing:5px}
+#radar-root .logo-v{font-family:monospace;font-size:9px;color:var(--go);border:1px solid var(--go);padding:2px 6px;margin-left:8px}
+#radar-root .meta{font-family:monospace;font-size:9px;color:var(--ne);text-align:right;line-height:1.6}
+#radar-root .pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--al);animation:rdP 1.6s infinite;margin-right:5px;vertical-align:middle;box-shadow:0 0 8px var(--al)}
+@keyframes rdP{0%,100%{opacity:1}50%{opacity:.3}}
+#radar-root .con{max-width:1300px;margin:0 auto;padding:0 20px}
+#radar-root .hero{padding:30px 0 20px}
+#radar-root .hero-l{font-family:monospace;font-size:10px;color:var(--ac);letter-spacing:4px;margin-bottom:8px}
+#radar-root .hero-n{font-size:clamp(26px,4vw,44px);font-weight:800;margin-bottom:6px}
 #radar-root .hero-n span{color:var(--ac)}
 #radar-root .hero-s{font-size:13px;color:var(--ne);margin-bottom:14px}
 #radar-root .tags{display:flex;gap:8px;flex-wrap:wrap}
-#radar-root .tag{font-family:ui-monospace,monospace;font-size:8px;padding:4px 10px;border-radius:2px;letter-spacing:1px;font-weight:700}
+#radar-root .tag{font-family:monospace;font-size:8px;padding:4px 10px;border-radius:2px;letter-spacing:1px;font-weight:700}
 #radar-root .ta{background:rgba(0,194,212,.12);color:var(--ac);border:1px solid rgba(0,194,212,.3)}
 #radar-root .tg{background:rgba(244,196,48,.1);color:var(--go);border:1px solid rgba(244,196,48,.3)}
 #radar-root .tn{background:rgba(143,163,177,.1);color:var(--ne);border:1px solid rgba(143,163,177,.3)}
-#radar-root .td{background:rgba(230,57,70,.1);color:var(--da);border:1px solid rgba(230,57,70,.3)}
-#radar-root .method{margin-top:14px;font-size:11px;color:var(--ne);line-height:1.6;max-width:110ch;border-left:2px solid var(--border);padding-left:10px}
-#radar-root .method b{color:#cfe9ee}
+#radar-root .ts{background:rgba(46,196,182,.1);color:var(--su);border:1px solid rgba(46,196,182,.3)}
+#radar-root .tal{background:rgba(234,179,8,.14);color:var(--al);border:1px solid rgba(234,179,8,.4)}
+#radar-root .alert-bar{background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-left:4px solid var(--al);border-radius:4px;padding:14px 18px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,.9);line-height:1.6}
+#radar-root .alabel{font-family:monospace;font-size:9px;color:var(--al);letter-spacing:2px;margin-bottom:5px;font-weight:700}
+#radar-root .legend{display:flex;gap:14px;flex-wrap:wrap;font-family:monospace;font-size:9px;color:var(--ne);margin-bottom:20px;padding:10px 14px;border:1px dashed var(--border);border-radius:4px}
+#radar-root .sv{display:inline-block;font-family:monospace;font-size:7px;font-weight:700;padding:1px 5px;border-radius:2px;margin-left:4px;vertical-align:middle}
+#radar-root .sv.v{background:rgba(46,196,182,.15);color:var(--su);border:1px solid rgba(46,196,182,.4)}
+#radar-root .sv.e{background:rgba(244,196,48,.1);color:var(--go);border:1px solid rgba(244,196,48,.35)}
+#radar-root .sv.h{background:rgba(230,126,34,.12);color:var(--or);border:1px solid rgba(230,126,34,.4)}
 #radar-root .tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;margin-bottom:24px}
-#radar-root .tb{font-family:ui-monospace,monospace;font-size:9px;padding:10px 14px;cursor:pointer;color:var(--ne);border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;transition:color .2s}
+#radar-root .tb{font-family:monospace;font-size:9px;padding:10px 14px;cursor:pointer;color:var(--ne);border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;transition:all .2s}
 #radar-root .tb:hover{color:#fff}
 #radar-root .tb.act{color:var(--ac);border-bottom-color:var(--ac)}
-#radar-root .tb:focus-visible,#radar-root .bb:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 #radar-root .tsec{display:none}
-#radar-root .tsec.show{display:block;animation:fi .3s ease}
-@keyframes fi{from{opacity:.4}to{opacity:1}}
-#radar-root .stitle{font-family:ui-monospace,monospace;font-size:10px;font-weight:700;color:var(--ac);letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+#radar-root .tsec.show{display:block;animation:rdFi .3s ease}
+@keyframes rdFi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#radar-root .stitle{font-family:monospace;font-size:10px;font-weight:700;color:var(--ac);letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
 #radar-root .stitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
-#radar-root .kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:28px}
+#radar-root .kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:28px}
 #radar-root .kpi{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;position:relative;overflow:hidden}
 #radar-root .kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
-#radar-root .kpi.ac::before{background:var(--ac)}#radar-root .kpi.su::before{background:var(--su)}#radar-root .kpi.da::before{background:var(--da)}#radar-root .kpi.go::before{background:var(--go)}#radar-root .kpi.bl::before{background:var(--bl)}#radar-root .kpi.ne::before{background:var(--ne)}
-#radar-root .kl{font-family:ui-monospace,monospace;font-size:8px;color:var(--ne);letter-spacing:1px;margin-bottom:5px}
-#radar-root .kv{font-size:24px;font-weight:800;line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums}
-#radar-root .kpi.ac .kv{color:var(--ac)}#radar-root .kpi.su .kv{color:var(--su)}#radar-root .kpi.da .kv{color:var(--da)}#radar-root .kpi.go .kv{color:var(--go)}#radar-root .kpi.bl .kv{color:#7eb8f7}#radar-root .kpi.ne .kv{color:var(--ne)}
+#radar-root .kpi.ac::before{background:var(--ac)}
+#radar-root .kpi.su::before{background:var(--su)}
+#radar-root .kpi.da::before{background:var(--da)}
+#radar-root .kpi.go::before{background:var(--go)}
+#radar-root .kpi.bl::before{background:var(--bl)}
+#radar-root .kpi.or::before{background:var(--or)}
+#radar-root .kl{font-family:monospace;font-size:8px;color:var(--ne);letter-spacing:1px;margin-bottom:5px}
+#radar-root .kv{font-size:24px;font-weight:800;line-height:1;margin-bottom:3px}
+#radar-root .kpi.ac .kv{color:var(--ac)}
+#radar-root .kpi.su .kv{color:var(--su)}
+#radar-root .kpi.da .kv{color:var(--da)}
+#radar-root .kpi.go .kv{color:var(--go)}
+#radar-root .kpi.bl .kv{color:#7eb8f7}
+#radar-root .kpi.or .kv{color:var(--or)}
 #radar-root .kn{font-size:10px;color:var(--ne);line-height:1.4}
-#radar-root .ev{font-family:ui-monospace,monospace;font-size:7px;padding:1px 4px;border-radius:2px;background:rgba(255,255,255,.08);color:var(--ne);margin-left:4px;letter-spacing:0;vertical-align:1px}
-#radar-root .cg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:28px}
-@media(max-width:768px){#radar-root .cg{grid-template-columns:1fr}}
-#radar-root .card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;min-width:0}
+#radar-root .cg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:768px){#radar-root .cg{grid-template-columns:1fr}
+}
+#radar-root .card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px}
 #radar-root .ct{font-size:13px;font-weight:700;margin-bottom:3px}
 #radar-root .cs{font-size:10px;color:var(--ne);margin-bottom:14px}
-#radar-root .cw{position:relative;height:230px}
-#radar-root .cw.t{height:300px}
 #radar-root .bbar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-#radar-root .blbl{font-family:ui-monospace,monospace;font-size:9px;color:var(--ac);letter-spacing:1px}
-#radar-root .bb{font-family:ui-monospace,monospace;font-size:8px;padding:5px 11px;border-radius:2px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--ne);letter-spacing:1px}
+#radar-root .blbl{font-family:monospace;font-size:9px;color:var(--ac);letter-spacing:1px}
+#radar-root .bb{font-family:monospace;font-size:8px;padding:5px 11px;border-radius:2px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--ne);letter-spacing:1px;transition:all .15s}
 #radar-root .bb:hover{border-color:var(--ac);color:#fff}
 #radar-root .bb.act{background:rgba(0,194,212,.12);border-color:var(--ac);color:var(--ac)}
-#radar-root .ig{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-bottom:24px}
-@media(max-width:768px){#radar-root .ig{grid-template-columns:1fr}}
-#radar-root .ic{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:13px}
-#radar-root .ic.ac{border-left:3px solid var(--ac)}#radar-root .ic.go{border-left:3px solid var(--go)}#radar-root .ic.su{border-left:3px solid var(--su)}#radar-root .ic.bl{border-left:3px solid #7eb8f7}#radar-root .ic.da{border-left:3px solid var(--da)}
-#radar-root .ih{font-size:11px;font-weight:700;margin-bottom:5px;letter-spacing:.5px}
-#radar-root .ib{font-size:11px;color:rgba(255,255,255,.82);line-height:1.6}
-#radar-root .ib strong{color:#fff}
-#radar-root .im{font-size:10px;color:var(--ac);margin-top:6px}
-#radar-root .ng{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:28px}
-@media(max-width:900px){#radar-root .ng{grid-template-columns:1fr}}
+#radar-root .ng{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:900px){#radar-root .ng{grid-template-columns:1fr}
+}
 #radar-root .nc{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden}
-#radar-root .nh{padding:10px 13px;font-family:ui-monospace,monospace;font-size:8px;font-weight:700;letter-spacing:2px}
-#radar-root .nh.fav{background:rgba(46,196,182,.15);color:var(--su);border-bottom:1px solid rgba(46,196,182,.2)}
-#radar-root .nh.crit{background:rgba(230,57,70,.15);color:var(--da);border-bottom:1px solid rgba(230,57,70,.2)}
-#radar-root .nh.neu{background:rgba(143,163,177,.08);color:var(--ne);border-bottom:1px solid var(--border)}
+#radar-root .nh{padding:10px 13px;font-family:monospace;font-size:8px;font-weight:700;letter-spacing:2px}
+#radar-root .nh.fav{background:rgba(46,196,182,.15);color:var(--su)}
+#radar-root .nh.crit{background:rgba(230,57,70,.15);color:var(--da)}
+#radar-root .nh.neu{background:rgba(143,163,177,.08);color:var(--ne)}
 #radar-root .ni{padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.04)}
 #radar-root .ni:last-child{border-bottom:none}
-#radar-root .nit{font-size:12px;font-weight:600;margin-bottom:3px}
-#radar-root .nd{font-size:10px;color:var(--ne);line-height:1.45}
-#radar-root .btag{display:inline-block;font-family:ui-monospace,monospace;font-size:7px;padding:2px 6px;border-radius:2px;margin:4px 3px 0 0;font-weight:700}
+#radar-root .nit{font-size:12px;font-weight:500;margin-bottom:3px}
+#radar-root .nd{font-size:10px;color:var(--ne);line-height:1.4}
+#radar-root .btag{display:inline-block;font-family:monospace;font-size:7px;padding:2px 6px;border-radius:2px;margin-top:4px;margin-right:3px;font-weight:700}
 #radar-root .bgen{background:rgba(0,194,212,.1);color:var(--ac);border:1px solid rgba(0,194,212,.25)}
 #radar-root .bage{background:rgba(244,196,48,.1);color:var(--go);border:1px solid rgba(244,196,48,.25)}
 #radar-root .bpar{background:rgba(46,196,182,.08);color:var(--su);border:1px solid rgba(46,196,182,.2)}
-#radar-root .bpla{background:rgba(27,79,138,.25);color:#7eb8f7;border:1px solid rgba(27,79,138,.4)}
+#radar-root .bloc{background:rgba(27,79,138,.2);color:#7eb8f7;border:1px solid rgba(27,79,138,.3)}
 #radar-root .bsrc{background:rgba(230,57,70,.1);color:var(--da);border:1px solid rgba(230,57,70,.2)}
-#radar-root .bi{background:rgba(0,194,212,.05);border-left:3px solid var(--ac);padding:6px 9px;font-size:9.5px;color:rgba(255,255,255,.78);line-height:1.5;margin-top:7px}
+#radar-root .bi{background:rgba(0,194,212,.05);border-left:3px solid var(--ac);padding:6px 9px;font-size:9.5px;color:rgba(255,255,255,.75);line-height:1.5;margin-top:7px}
 #radar-root .bi strong{color:var(--ac)}
-#radar-root .bi.neg{border-left-color:var(--da);background:rgba(230,57,70,.05)}#radar-root .bi.neg strong{color:var(--da)}
-#radar-root .bi.ntr{border-left-color:var(--ne);background:rgba(143,163,177,.04)}#radar-root .bi.ntr strong{color:var(--ne)}
-#radar-root .mg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:24px}
-@media(max-width:768px){#radar-root .mg{grid-template-columns:1fr}}
-#radar-root .mh{padding:10px 14px;font-family:ui-monospace,monospace;font-size:8px;font-weight:700;letter-spacing:2px}
+#radar-root .bi.neg{border-left-color:var(--da);background:rgba(230,57,70,.05)}
+#radar-root .bi.neg strong{color:var(--da)}
+#radar-root .bi.ntr{border-left-color:var(--ne);background:rgba(143,163,177,.04)}
+#radar-root .bi.ntr strong{color:var(--ne)}
+#radar-root .mg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+@media(max-width:768px){#radar-root .mg{grid-template-columns:1fr}
+}
+#radar-root .mh{padding:10px 14px;font-family:monospace;font-size:8px;font-weight:700;letter-spacing:2px}
 #radar-root .mh.risk{background:rgba(230,57,70,.2);color:var(--da);border:1px solid rgba(230,57,70,.25);border-bottom:none}
 #radar-root .mh.opp{background:rgba(46,196,182,.12);color:var(--su);border:1px solid rgba(46,196,182,.2);border-bottom:none}
 #radar-root .mb{border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px}
 #radar-root .mr{padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.04)}
 #radar-root .mr:last-child{border-bottom:none}
 #radar-root .mt{display:flex;align-items:center;gap:9px;margin-bottom:5px}
-#radar-root .lv{font-family:ui-monospace,monospace;font-size:7px;font-weight:700;padding:3px 7px;border-radius:2px;min-width:52px;text-align:center}
-#radar-root .lc{background:#E63946;color:#fff}#radar-root .la{background:#E67E22;color:#fff}#radar-root .lm{background:#F4C430;color:#0D1B2A}#radar-root .lo{background:#2EC4B6;color:#0D1B2A}#radar-root .lb{background:#00C2D4;color:#0D1B2A}
-#radar-root .mn{font-size:12px;font-weight:600}
+#radar-root .lv{font-family:monospace;font-size:7px;font-weight:700;padding:3px 7px;border-radius:2px;min-width:54px;text-align:center}
+#radar-root .lc{background:#E63946;color:#fff}
+#radar-root .la{background:#E67E22;color:#fff}
+#radar-root .lm{background:#F4C430;color:#0D1B2A}
+#radar-root .lb{background:#8FA3B1;color:#0D1B2A}
+#radar-root .lo1{background:var(--su);color:#0D1B2A}
+#radar-root .lo2{background:var(--ac);color:#0D1B2A}
+#radar-root .mn{font-size:12px;font-weight:500}
 #radar-root .md{font-size:10px;color:var(--ne);line-height:1.5;margin-bottom:5px}
-#radar-root .esc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:28px}
-@media(max-width:768px){#radar-root .esc{grid-template-columns:1fr}}
-#radar-root .esc ul{list-style:none;font-size:11px;line-height:1.55;color:rgba(255,255,255,.82)}
-#radar-root .esc li{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-#radar-root .hm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:28px}
-@media(max-width:768px){#radar-root .hm{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#radar-root .hm{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:28px}
+@media(max-width:768px){#radar-root .hm{grid-template-columns:repeat(2,1fr)}
+}
 #radar-root .hz{background:var(--card);border-radius:4px;padding:13px;text-align:center;border:2px solid transparent}
 #radar-root .hz.fav{border-color:var(--su);background:rgba(46,196,182,.08)}
 #radar-root .hz.adv{border-color:var(--da);background:rgba(230,57,70,.08)}
 #radar-root .hz.ine{border-color:var(--go);background:rgba(244,196,48,.06)}
-#radar-root .hz.nd{border-color:var(--ne);background:rgba(143,163,177,.05)}
 #radar-root .hzn{font-size:12px;font-weight:600;margin-bottom:4px}
-#radar-root .hzs{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
-#radar-root .hz.fav .hzs,#radar-root .hz.fav .hzl{color:var(--su)}#radar-root .hz.adv .hzs,#radar-root .hz.adv .hzl{color:var(--da)}#radar-root .hz.ine .hzs,#radar-root .hz.ine .hzl{color:var(--go)}#radar-root .hz.nd .hzs,#radar-root .hz.nd .hzl{color:var(--ne)}
-#radar-root .hzl{font-family:ui-monospace,monospace;font-size:8px;margin-top:4px}
+#radar-root .hzs{font-size:20px;font-weight:800}
+#radar-root .hz.fav .hzs{color:var(--su)}
+#radar-root .hz.adv .hzs{color:var(--da)}
+#radar-root .hz.ine .hzs{color:var(--go)}
+#radar-root .hzl{font-family:monospace;font-size:8px;margin-top:4px}
+#radar-root .hz.fav .hzl{color:var(--su)}
+#radar-root .hz.adv .hzl{color:var(--da)}
+#radar-root .hz.ine .hzl{color:var(--go)}
 #radar-root .hzd{font-size:9px;color:var(--ne);margin-top:5px;line-height:1.4}
-#radar-root .tl{display:grid;gap:8px;margin-bottom:28px}
-#radar-root .tq{display:grid;grid-template-columns:118px 64px minmax(0,1fr);gap:12px;align-items:start;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--ne);border-radius:4px;padding:10px 13px}
-#radar-root .tq.neg{border-left-color:var(--da)}#radar-root .tq.pos{border-left-color:var(--su)}#radar-root .tq.mix{border-left-color:var(--go)}
-#radar-root .tqd{font-family:ui-monospace,monospace;font-size:9px;color:var(--ac);letter-spacing:.5px;line-height:1.5}
-#radar-root .tqn{font-family:ui-monospace,monospace;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
-#radar-root .tq.neg .tqn{color:var(--da)}#radar-root .tq.pos .tqn{color:var(--su)}#radar-root .tq.mix .tqn{color:var(--go)}
-#radar-root .tqt{font-size:12px;font-weight:600;margin-bottom:2px}
-#radar-root .tqb{font-size:10.5px;color:var(--ne);line-height:1.5}
-@media(max-width:600px){#radar-root .tq{grid-template-columns:1fr 1fr}#radar-root .tq>div:last-child{grid-column:1/-1}}
-#radar-root .cloud{text-align:center;line-height:1.25;padding:6px 0 4px}
-#radar-root .lgd{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;font-family:ui-monospace,monospace;font-size:8px;color:var(--ne);margin-top:8px}
-#radar-root .lgd i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
-#radar-root .tw{overflow-x:auto}
-#radar-root table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
-#radar-root th,#radar-root td{padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:top}
-#radar-root th{font-family:ui-monospace,monospace;font-size:8px;letter-spacing:1px;color:var(--ne);font-weight:700}
-#radar-root td.n{text-align:right;font-family:ui-monospace,monospace}
-#radar-root .ftr{border-top:1px solid var(--border);padding:18px 0 26px;font-size:10px;color:var(--ne);line-height:1.7}
-#radar-root .ftr .fl{font-family:ui-monospace,monospace;font-size:8px;letter-spacing:2px;text-align:center;margin-bottom:12px}
-#radar-root .ftr a{color:var(--ac);text-decoration:none;word-break:break-word}
-#radar-root .ftr a:hover{text-decoration:underline}
-#radar-root .ftr ul{columns:2;column-gap:24px;list-style:none}
-@media(max-width:768px){#radar-root .ftr ul{columns:1}}
-#radar-root .ftr li{break-inside:avoid;margin-bottom:3px}
-
-#radar-root .hdr{position:relative;top:auto}
-#radar-root .ic.ne{border-left:3px solid var(--ne)}
-
-/* ===== Paleta clara de RADAR (misma que la versión anterior): fondo blanco, encabezado navy, tarjetas grises ===== */
-#radar-root{--navy:#1C2738;--ne:#556B82;--card:#d5d1d1;--border:rgba(0,0,0,0.1);color-scheme:light;background:#ffffff;color:#1e293b}
-#radar-root .hdr{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:none}
-#radar-root .logo{color:#fff}
-#radar-root .meta{color:#94A3B8}
-#radar-root .hero{background:var(--navy);color:#fff;margin:0 -20px;padding:22px 20px 20px;border-radius:0 0 4px 4px}
-#radar-root .hero-n{color:#fff}
-#radar-root .hero-s{color:#94A3B8}
-#radar-root .method{color:#cbd5e1;border-left-color:rgba(255,255,255,.2)}
-#radar-root .method b,#radar-root .method strong{color:#fff}
-#radar-root .hero .ev{background:rgba(255,255,255,.12);color:#cbd5e1}
-#radar-root .tn{color:#cbd5e1}
-#radar-root .tabs{border-bottom:2px solid #e2e8f0;padding-top:10px}
-#radar-root .tb{color:#64748b;font-weight:600}
-#radar-root .tb:hover{color:var(--navy)}
-#radar-root .tb.act{color:var(--navy);border-bottom-color:var(--navy);font-weight:800}
-#radar-root .tb:focus-visible,#radar-root .bb:focus-visible{outline-color:var(--navy)}
-#radar-root .stitle{color:var(--navy)}
+#radar-root .mog{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:28px}
+@media(max-width:900px){#radar-root .mog{grid-template-columns:1fr}
+}
+#radar-root .mc{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:15px}
+#radar-root .mi{font-size:17px;margin-bottom:7px}
+#radar-root .mn2{font-family:monospace;font-size:9px;color:var(--ac);letter-spacing:1px;margin-bottom:5px}
+#radar-root .md2{font-size:11px;color:var(--ne);line-height:1.55}
+#radar-root .md2 strong{color:#fff;font-weight:600}
+#radar-root .eg{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:28px}
+@media(max-width:900px){#radar-root .eg{grid-template-columns:1fr}
+}
+#radar-root .ec{background:var(--card);border-radius:4px;overflow:hidden}
+#radar-root .eh{padding:9px 13px;font-family:monospace;font-size:8px;font-weight:700;letter-spacing:1px}
+#radar-root .eb{padding:13px;border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px}
+#radar-root .er{display:flex;justify-content:space-between;margin-bottom:7px;font-size:11px;gap:8px}
+#radar-root .ek{color:var(--ne);font-size:10px}
+#radar-root .ep{font-size:10px;color:var(--ne);margin-top:8px;line-height:1.5}
+#radar-root .clb{background:linear-gradient(135deg,rgba(27,79,138,.3),rgba(0,194,212,.08));border:1px solid rgba(0,194,212,.3);border-radius:4px;padding:22px 26px;margin-bottom:18px;position:relative}
+#radar-root .clb::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--ac)}
+#radar-root .cll{font-family:monospace;font-size:9px;color:var(--ac);letter-spacing:3px;margin-bottom:9px}
+#radar-root .clt{font-size:13px;line-height:1.7;color:rgba(255,255,255,.88);font-style:italic;font-weight:300}
+#radar-root .clt strong{font-style:normal;font-weight:600;color:#fff}
+#radar-root .vg{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:30px}
+@media(max-width:900px){#radar-root .vg{grid-template-columns:1fr}
+}
+#radar-root .vc{background:var(--card);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+#radar-root .vh{padding:8px 13px;font-family:monospace;font-size:7.5px;font-weight:700;letter-spacing:1.5px}
+#radar-root .vb{padding:11px 13px;font-size:11px;line-height:1.55;color:rgba(255,255,255,.82);font-weight:300}
+#radar-root .ig{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:24px}
+@media(max-width:768px){#radar-root .ig{grid-template-columns:1fr}
+}
+#radar-root .ic{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:13px}
+#radar-root .ic.ac{border-left:3px solid var(--ac)}
+#radar-root .ic.go{border-left:3px solid var(--go)}
+#radar-root .ic.su{border-left:3px solid var(--su)}
+#radar-root .ic.bl{border-left:3px solid #7eb8f7}
+#radar-root .ic.da{border-left:3px solid var(--da)}
+#radar-root .ic.or{border-left:3px solid var(--or)}
+#radar-root .ih{font-size:11px;font-weight:700;margin-bottom:5px}
+#radar-root .ib{font-size:11px;color:rgba(255,255,255,.8);line-height:1.6}
+#radar-root .im{font-size:10px;color:var(--ac);margin-top:5px}
+#radar-root .tl{position:relative;margin-bottom:28px;padding-left:22px;border-left:2px solid var(--border)}
+#radar-root .te{position:relative;margin-bottom:14px;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:11px 14px}
+#radar-root .te::before{content:'';position:absolute;left:-29px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--navy);border:2px solid var(--ac)}
+#radar-root .te.neg::before{border-color:var(--da)}
+#radar-root .te.pos::before{border-color:var(--su)}
+#radar-root .te.mix::before{border-color:var(--go)}
+#radar-root .td{font-family:monospace;font-size:9px;color:var(--ac);letter-spacing:1px;margin-bottom:3px}
+#radar-root .tt{font-size:12px;font-weight:600;margin-bottom:4px}
+#radar-root .tx{font-size:10.5px;color:var(--ne);line-height:1.5}
+#radar-root .cloud{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;text-align:center;line-height:1.3;margin-bottom:12px;min-height:200px}
+#radar-root .ttab{width:100%;border-collapse:collapse;font-size:10.5px}
+#radar-root .ttab th{font-family:monospace;font-size:8px;color:var(--ac);letter-spacing:1px;text-align:left;padding:7px 8px;border-bottom:1px solid var(--border)}
+#radar-root .ttab td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.85)}
+#radar-root .ttab td.c{text-align:center}
+#radar-root .hx td.c{font-weight:700;font-family:monospace;font-size:10px}
+#radar-root .tblw{overflow-x:auto}
+#radar-root .ftr{border-top:1px solid var(--border);padding:18px 0;text-align:center;font-family:monospace;font-size:8px;color:var(--ne);letter-spacing:2px;line-height:1.8}
+#radar-root .src{font-size:9.5px;color:var(--ne);line-height:1.7}
+#radar-root .src a{color:var(--ac);text-decoration:none}
+#radar-root canvas{max-height:230px}
+#radar-root .lst{list-style:none;padding:0}
+#radar-root .lst li{font-size:10.5px;color:rgba(255,255,255,.82);padding:5px 0 5px 14px;position:relative;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.04)}
+#radar-root .lst li::before{content:'▸';position:absolute;left:0;color:var(--ac)}
+#radar-root .lst.dn li::before{color:var(--su);content:'▼'}
+#radar-root .lst.up li::before{color:var(--da);content:'▲'}
+#radar-root{background:#fff;color:#1C2738}
+#radar-root .hdr{background:#1C2738;backdrop-filter:none;border-bottom:none}
+#radar-root .sv.e{color:#8a6a00;background:rgba(244,196,48,.25);border-color:#b8920f}
+#radar-root .sv.v{color:#0f766e;background:rgba(46,196,182,.2);border-color:#0f766e}
+#radar-root .sv.h{color:#b45309;border-color:#b45309}
+#radar-root .hband{background:#1C2738;color:#fff}
+#radar-root .hband .hero{padding:24px 0 26px}
+#radar-root .hband .hero-s{color:#94A3B8}
+#radar-root main.con{background:#fff;padding-top:20px}
+#radar-root .legend{color:#475569;border-color:#cbd5e1}
+#radar-root .tabs{border-bottom-color:#cbd5e1}
+#radar-root .tb{color:#475569}
+#radar-root .tb:hover{color:#1C2738}
+#radar-root .tb.act{color:#0891A0;border-bottom-color:#0891A0}
+#radar-root .stitle{color:#0891A0}
 #radar-root .stitle::after{background:linear-gradient(90deg,#cbd5e1,transparent)}
-#radar-root .kpi,#radar-root .card,#radar-root .ic,#radar-root .nc,#radar-root .tq,#radar-root .hz{background:var(--card);color:#1e293b}
-#radar-root .mb{background:var(--card)}
-#radar-root .kl{color:#475569;font-weight:700}
-#radar-root .kpi.ac .kv{color:#007A87}#radar-root .kpi.su .kv{color:#0E7C71}#radar-root .kpi.da .kv{color:#B91C1C}#radar-root .kpi.go .kv{color:#B45309}#radar-root .kpi.bl .kv{color:var(--bl)}#radar-root .kpi.ne .kv{color:#475569}
-#radar-root .kn{color:#475569}
-#radar-root .ev{background:rgba(0,0,0,.08);color:#334155}
-#radar-root .ct{color:#0f172a}
-#radar-root .cs{color:#475569}
-#radar-root .blbl{color:var(--navy);font-weight:700}
-#radar-root .bb{border:1px solid #cbd5e1;background:#fff;color:#475569}
-#radar-root .bb:hover{border-color:var(--navy);color:var(--navy)}
-#radar-root .bb.act{background:var(--navy);border-color:var(--navy);color:#fff}
-#radar-root .ic.bl{border-left-color:var(--bl)}
-#radar-root .ic.ne{border-left:3px solid #64748b}
-#radar-root .ih{color:#0f172a}
-#radar-root .ib{color:#334155}
-#radar-root .ib strong{color:#0f172a}
-#radar-root .im{color:var(--navy);font-weight:700}
-#radar-root .nh.fav{background:rgba(46,196,182,.25);color:#0E7C71;border-bottom:1px solid rgba(46,196,182,.3)}
-#radar-root .nh.crit{background:rgba(230,57,70,.25);color:#B91C1C;border-bottom:1px solid rgba(230,57,70,.3)}
-#radar-root .nh.neu{background:rgba(143,163,177,.25);color:#334155;border-bottom:1px solid rgba(0,0,0,.1)}
-#radar-root .ni{border-bottom:1px solid rgba(0,0,0,.08)}
-#radar-root .nit{color:#0f172a;font-weight:700}
-#radar-root .nd{color:#334155}
-#radar-root .bgen{background:rgba(0,194,212,.2);color:#005F69;border:1px solid rgba(0,194,212,.4)}
-#radar-root .bage{background:rgba(244,196,48,.25);color:#78350F;border:1px solid rgba(244,196,48,.4)}
-#radar-root .bpar{background:rgba(46,196,182,.2);color:#0E7C71;border:1px solid rgba(46,196,182,.4)}
-#radar-root .bpla{background:rgba(27,79,138,.2);color:var(--bl);border:1px solid rgba(27,79,138,.3)}
-#radar-root .bsrc{background:rgba(230,57,70,.2);color:#B91C1C;border:1px solid rgba(230,57,70,.3)}
-#radar-root .bi{background:rgba(255,255,255,.5);color:#1e293b}
-#radar-root .bi strong{color:#005F69}
-#radar-root .bi.neg{background:rgba(255,255,255,.5)}#radar-root .bi.neg strong{color:#B91C1C}
-#radar-root .bi.ntr{border-left-color:#64748b;background:rgba(255,255,255,.5)}#radar-root .bi.ntr strong{color:#334155}
-#radar-root .mh.risk{background:rgba(230,57,70,.25);color:#B91C1C;border:1px solid rgba(230,57,70,.3);border-bottom:none}
-#radar-root .mh.opp{background:rgba(46,196,182,.25);color:#0E7C71;border:1px solid rgba(46,196,182,.3);border-bottom:none}
-#radar-root .mr{border-bottom:1px solid rgba(0,0,0,.08)}
-#radar-root .mn{color:#0f172a;font-weight:700}
-#radar-root .md{color:#334155}
-#radar-root .lc{background:#B91C1C;color:#fff}#radar-root .la{background:#C2410C;color:#fff}#radar-root .lm{background:#B45309;color:#fff}#radar-root .lb{background:#64748b;color:#fff}#radar-root .lo{background:#0E7C71;color:#fff}#radar-root .lom{background:var(--navy);color:#fff}
-#radar-root .esc ul{color:#334155}
-#radar-root .esc li{border-bottom:1px solid rgba(0,0,0,.08)}
-#radar-root .hz.fav{background:rgba(46,196,182,.2)}#radar-root .hz.adv{background:rgba(230,57,70,.2)}#radar-root .hz.ine{background:rgba(244,196,48,.2)}#radar-root .hz.nd{background:rgba(143,163,177,.25);border-color:#64748b}
-#radar-root .hzn{color:#0f172a;font-weight:700}
-#radar-root .hz.fav .hzs,#radar-root .hz.fav .hzl{color:#0E7C71}#radar-root .hz.adv .hzs,#radar-root .hz.adv .hzl{color:#B91C1C}#radar-root .hz.ine .hzs,#radar-root .hz.ine .hzl{color:#B45309}#radar-root .hz.nd .hzs,#radar-root .hz.nd .hzl{color:#475569}
-#radar-root .hzl{font-weight:700}
-#radar-root .hzd{color:#334155}
-#radar-root .tqd{color:#007A87}
-#radar-root .tq.neg .tqn{color:#B91C1C}#radar-root .tq.pos .tqn{color:#0E7C71}#radar-root .tq.mix .tqn{color:#B45309}
-#radar-root .tqt{color:#0f172a;font-weight:700}
-#radar-root .tqb{color:#334155}
-#radar-root .lgd{color:#475569}
-#radar-root th,#radar-root td{border-bottom:1px solid rgba(0,0,0,.08)}
-#radar-root th{color:#475569}
-#radar-root td{color:#1e293b}
-#radar-root .ftr{background:var(--navy);border-top:1px solid rgba(255,255,255,.1);color:#94A3B8;margin:30px -20px 0;padding:14px 24px}
-#radar-root .ftr .fl{margin-bottom:0;color:#94A3B8}
-
-/* Ocultos a petición: etiquetas del encabezado, cuadro de metodología y tarjetas de KPIs (se conservan las gráficas de KPIs bivariados) */
-#radar-root #r-tags,#radar-root #r-metodo,#radar-root #r-kpis,#radar-root #rtab-kpis > .stitle:first-child{display:none!important}
+#radar-root .kpi,#radar-root .card,#radar-root .nc,#radar-root .mc,#radar-root .ic,#radar-root .te,#radar-root .cloud,#radar-root .vc,#radar-root .ec,#radar-root .hz,#radar-root .mb{background:#d5d1d1;border-color:rgba(28,39,56,.12)}
+#radar-root .eb{border-color:rgba(28,39,56,.12)}
+#radar-root .kl,#radar-root .kn,#radar-root .cs,#radar-root .nd,#radar-root .md,#radar-root .md2,#radar-root .hzd,#radar-root .tx,#radar-root .ek,#radar-root .ep,#radar-root .src,#radar-root .blbl{color:#475569}
+#radar-root .ct,#radar-root .nit,#radar-root .mn,#radar-root .ih,#radar-root .hzn,#radar-root .tt,#radar-root .er,#radar-root .md2 strong{color:#1C2738}
+#radar-root .ib,#radar-root .vb,#radar-root .lst li,#radar-root .ttab td{color:#1f2937}
+#radar-root .bi{color:#1f2937;background:rgba(0,194,212,.08)}
+#radar-root .clb{background:#d5d1d1}
+#radar-root .clt{color:#1f2937}
+#radar-root .clt strong{color:#1C2738}
+#radar-root .ni,#radar-root .mr,#radar-root .ttab td,#radar-root .lst li{border-bottom-color:rgba(28,39,56,.1)}
+#radar-root .ttab th{border-bottom-color:rgba(28,39,56,.2)}
+#radar-root .bb{color:#475569;border-color:#cbd5e1}
+#radar-root .bb:hover{color:#1C2738}
+#radar-root .te::before{background:#fff}
+#radar-root .tl{border-left-color:#cbd5e1}
+#radar-root .bgen{color:#0e7490;border-color:#0e7490}
+#radar-root .bage{color:#8a6a00;border-color:#b8920f}
+#radar-root .bpar{color:#0f766e;border-color:#0f766e}
+#radar-root .bloc{color:#1B4F8A;border-color:#1B4F8A}
+#radar-root .bsrc{color:#b91c1c;border-color:#b91c1c}
+#radar-root .footer{background:#1C2738;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px;font-size:11px;color:#94A3B8;display:flex;flex-wrap:wrap;gap:8px;margin-top:40px;border-radius:0 0 8px 8px}
+#radar-root .kg{display: none;}
+#radar-root{border-radius:8px;overflow:hidden;color-scheme:light;min-height:0}
+#radar-root .hdr{border-radius:8px 8px 0 0}
+#radar-root .sindatos{font-family:monospace;font-size:10px;color:#64748b;padding:18px;text-align:center;border:1px dashed #cbd5e1;border-radius:4px}
 </style>
-
 <header class="hdr">
-  <div><span class="logo">RADAR<span style="opacity:.3">///</span></span><span class="logo-v">v2.0</span></div>
-  <div class="meta" id="r-meta"><span class="pulse"></span>BIVARIADO ACTIVO</div>
+  <div><span class="logo">RADAR<span style="opacity:.3">///</span></span><span class="logo-v"></span></div>
+  <div class="meta" id="r-meta"></div>
 </header>
-
-<main class="con">
+<div class="hband"><div class="con">
   <section class="hero">
-    <div class="hero-l">// INTELIGENCIA POLÍTICO-DIGITAL v2.0 · ANÁLISIS BIVARIADO · POSICIONAMIENTO DIGITAL</div>
-    <h1 class="hero-n" id="r-hdr-name">CARGANDO...</h1>
-    <p class="hero-s" id="r-hdr-sub"></p>
-    <div class="tags" id="r-tags"></div>
-    <p class="method" id="r-metodo"></p>
+    <div class="hero-l">// INTELIGENCIA POLÍTICO-DIGITAL v2.1 · ANÁLISIS BIVARIADO · ESTUDIO EJECUTIVO</div>
+    <h1 class="hero-n" id="r-nombre"></h1>
+    <p class="hero-s" id="r-sub"></p>
   </section>
-
-  <div class="tabs" role="tablist">
+</div></div>
+<main class="con">
+  <div class="tabs">
     <button class="tb act" onclick="radarTab(this,'kpis')">KPIs AMPLIADOS</button>
     <button class="tb" onclick="radarTab(this,'sent')">SENTIMIENTO</button>
     <button class="tb" onclick="radarTab(this,'tom')">TOP OF MIND</button>
-    <button class="tb" onclick="radarTab(this,'picos')" id="r-tab-picos">PICOS QUINCENALES</button>
+    <button class="tb" onclick="radarTab(this,'pic')">PICOS</button>
     <button class="tb" onclick="radarTab(this,'plat')">PLATAFORMAS</button>
     <button class="tb" onclick="radarTab(this,'nube')">NUBE &amp; HASHTAGS</button>
     <button class="tb" onclick="radarTab(this,'nar')">NARRATIVAS</button>
+    <button class="tb" onclick="radarTab(this,'cruz')">CRUCES ESTRATÉGICOS</button>
     <button class="tb" onclick="radarTab(this,'risk')">RIESGOS &amp; OPORT.</button>
-    <button class="tb" onclick="radarTab(this,'ter')">MAPA TERRITORIAL</button>
+    <button class="tb" onclick="radarTab(this,'ter')">TERRITORIAL</button>
+    <button class="tb" onclick="radarTab(this,'mod')">MÓDULOS</button>
+    <button class="tb" onclick="radarTab(this,'conc')">CONCLUSIÓN</button>
   </div>
 
-  <!-- KPIs -->
   <div class="tsec show" id="rtab-kpis">
-    <div class="stitle">INDICADORES CLAVE AMPLIADOS</div>
-    <div class="kg" id="r-kpis"></div>
     <div class="stitle">KPIs BIVARIADOS</div>
     <div class="cg">
-      <div class="card"><div class="ct">NPS-P por Identidad Partidista <span class="ev">I</span></div><div class="cs">Aprobación neta sobre menciones con postura clara</div><div class="cw"><canvas id="rc-npspar"></canvas></div></div>
-      <div class="card"><div class="ct">NPS-P por Edad y Género <span class="ev">I</span></div><div class="cs" id="r-npsdemo-s">Brecha de aprobación demográfica</div><div class="cw"><canvas id="rc-npsdemo"></canvas></div></div>
-      <div class="card"><div class="ct">Ratio Ataque/Defensa por Plataforma <span class="ev">E</span></div><div class="cs">Umbral de riesgo 1.5 · comentarios críticos ÷ comentarios de defensa</div><div class="cw"><canvas id="rc-ratiopl"></canvas></div></div>
-      <div class="card"><div class="ct">NPS-P por Plataforma <span class="ev">I</span></div><div class="cs">Dónde se inclina la conversación</div><div class="cw"><canvas id="rc-npspla"></canvas></div></div>
+      <div class="card"><div class="ct">NPS-P por Identidad Partidista <span class="sv e">E</span></div><div class="cs" id="r-npspar-s"></div><canvas id="r-c-npspar"></canvas></div>
+      <div class="card"><div class="ct">NPS-P por Edad y Género <span class="sv e">E</span></div><div class="cs" id="r-npsdemo-s"></div><canvas id="r-c-npsdemo"></canvas></div>
+      <div class="card"><div class="ct">Ratio Ataque/Defensa por Plataforma <span class="sv e">E</span></div><div class="cs">¿Dónde la crítica no tiene contrapeso? (&gt;1.5 = riesgo)</div><canvas id="r-c-ratiopl"></canvas></div>
+      <div class="card"><div class="ct"><span id="r-tra-t">TRA — Evolución</span> <span class="sv e">E</span></div><div class="cs">Temperatura reputacional acumulada ponderada por alcance</div><canvas id="r-c-tra"></canvas></div>
     </div>
   </div>
 
-  <!-- SENTIMIENTO -->
   <div class="tsec" id="rtab-sent">
     <div class="stitle">SENTIMIENTO DIGITAL — ANÁLISIS BIVARIADO</div>
     <div class="bbar">
       <span class="blbl">CRUZAR POR →</span>
       <button class="bb act" onclick="radarUpdSent(this,'general')">GENERAL</button>
-      <button class="bb" onclick="radarUpdSent(this,'edad')">EDAD</button>
       <button class="bb" onclick="radarUpdSent(this,'genero')">GÉNERO</button>
+      <button class="bb" onclick="radarUpdSent(this,'edad')">EDAD</button>
       <button class="bb" onclick="radarUpdSent(this,'partido')">PARTIDO</button>
       <button class="bb" onclick="radarUpdSent(this,'plataforma')">PLATAFORMA</button>
+      <button class="bb" onclick="radarUpdSent(this,'audiencia')">AUDIENCIA</button>
     </div>
     <div class="cg">
-      <div class="card"><div class="ct" id="r-sent-t">Sentimiento General</div><div class="cs" id="r-sent-s">Distribución del tono en el periodo (%)</div><div class="cw t"><canvas id="rc-sent"></canvas></div></div>
-      <div class="card"><div class="ct" id="r-nps-t">NPS-P por Edad y Género</div><div class="cs">Aprobación neta por segmento</div><div class="cw t"><canvas id="rc-sentnps"></canvas></div></div>
+      <div class="card"><div class="ct" id="r-sent-t">Sentimiento General</div><div class="cs">Clasificación semántica del periodo · % menciones <span class="sv e">E</span></div><canvas id="r-c-sent"></canvas></div>
+      <div class="card"><div class="ct">Clima Digital por Segmento</div><div class="cs">% de clima favorable percibido <span class="sv e">E</span></div><canvas id="r-c-clima"></canvas></div>
     </div>
     <div class="stitle">HALLAZGOS BIVARIADOS</div>
-    <div class="ig" id="r-hallazgos"></div>
+    <div class="ig" id="r-hsent"></div>
   </div>
 
-  <!-- TOP OF MIND -->
   <div class="tsec" id="rtab-tom">
     <div class="stitle">TOP OF MIND — ANÁLISIS BIVARIADO</div>
     <div class="bbar">
       <span class="blbl">CRUZAR POR →</span>
       <button class="bb act" onclick="radarUpdTom(this,'general')">GENERAL</button>
-      <button class="bb" onclick="radarUpdTom(this,'edad')">EDAD</button>
       <button class="bb" onclick="radarUpdTom(this,'genero')">GÉNERO</button>
+      <button class="bb" onclick="radarUpdTom(this,'edad')">EDAD</button>
       <button class="bb" onclick="radarUpdTom(this,'partido')">PARTIDO</button>
-      <button class="bb" onclick="radarUpdTom(this,'plataforma')">PLATAFORMA</button>
     </div>
-    <div class="card" style="margin-bottom:18px"><div class="ct" id="r-tom-t">Top de Temas — General</div><div class="cs" id="r-tom-s">Peso de cada tema en la conversación del periodo (%)</div><div class="cw t"><canvas id="rc-tom"></canvas></div></div>
+    <div class="card" style="margin-bottom:18px"><div class="ct" id="r-tom-t">Top de Temas — General</div><div class="cs" id="r-tom-s"></div><canvas id="r-c-tom" style="max-height:260px"></canvas></div>
     <div class="stitle">CRUCES TEMÁTICOS</div>
-    <div class="ig" id="r-cruces"></div>
+    <div class="ig" id="r-ctom"></div>
   </div>
 
-  <!-- PICOS -->
-  <div class="tsec" id="rtab-picos">
-    <div class="stitle" id="r-picos-t">PICOS DE CONVERSACIÓN — LECTURA QUINCENAL</div>
-    <div class="cg">
-      <div class="card"><div class="ct" id="r-picos-ct">NPS-P Quincenal Estimado <span class="ev">I</span></div><div class="cs" id="r-picos-cs"></div><div class="cw t"><canvas id="rc-picos"></canvas></div></div>
-      <div class="card"><div class="ct">Volumen Relativo de Menciones <span class="ev">E/I</span></div><div class="cs" id="r-picvol-cs">Índice 100 = corte de mayor conversación</div><div class="cw t"><canvas id="rc-picvol"></canvas></div></div>
-    </div>
-    <div class="stitle" id="r-crono-t">CRONOLOGÍA INTERPRETADA POR QUINCENA</div>
-    <div class="tl" id="r-tl"></div>
+  <div class="tsec" id="rtab-pic">
+    <div class="stitle">PICOS DE CONVERSACIÓN — CRONOLOGÍA INTERPRETADA</div>
+    <div class="card" style="margin-bottom:20px"><div class="ct">Volumen de conversación vs. NPS-P estimado</div><div class="cs">Índice de volumen (pico = 100) y NPS-P semanal <span class="sv e">E</span> · eventos <span class="sv v">V</span></div><canvas id="r-c-picos" style="max-height:260px"></canvas></div>
+    <div class="tl" id="r-crono"></div>
   </div>
 
-  <!-- PLATAFORMAS -->
   <div class="tsec" id="rtab-plat">
     <div class="stitle">PLATAFORMAS — ANÁLISIS BIVARIADO</div>
     <div class="cg">
-      <div class="card"><div class="ct">Audiencia Instalada (miles) <span class="ev">E</span></div><div class="cs">Cuentas propias vs. espacios donde ocurre la conversación</div><div class="cw t"><canvas id="rc-plalc"></canvas></div></div>
-      <div class="card"><div class="ct">Tono por Plataforma <span class="ev">I</span></div><div class="cs">% positivo vs. % negativo</div><div class="cw t"><canvas id="rc-pltono"></canvas></div></div>
-      <div class="card"><div class="ct">Plataforma × Edad <span class="ev">I</span></div><div class="cs">Composición estimada de la audiencia que conversa sobre el actor (%)</div><div class="cw t"><canvas id="rc-pledad"></canvas></div></div>
-      <div class="card"><div class="ct">Alcance por Pieza: Crítica vs. Propia <span class="ev">E</span></div><div class="cs">Promedio por publicación en la muestra</div><div class="cw t"><canvas id="rc-plviral"></canvas></div></div>
+      <div class="card"><div class="ct">Peso por Plataforma en la Conversación <span class="sv e">E</span></div><div class="cs">% del volumen total sobre el actor</div><canvas id="r-c-plalc"></canvas></div>
+      <div class="card"><div class="ct">Tono por Plataforma <span class="sv e">E</span></div><div class="cs">¿Dónde es más alta la crítica?</div><canvas id="r-c-pltono"></canvas></div>
+      <div class="card"><div class="ct">Plataforma × Edad <span class="sv e">E</span></div><div class="cs" id="r-pledad-s">Composición etaria de la audiencia por canal</div><canvas id="r-c-pledad"></canvas></div>
+      <div class="card"><div class="ct">Presencia Actual vs. Requerida <span class="sv e">E</span></div><div class="cs">Brecha de capacidad digital (0-100) para una interna y una constitucional</div><canvas id="r-c-plgap"></canvas></div>
+      <div class="card"><div class="ct">Velocidad de Viralización (horas a 1K interacciones) <span class="sv e">E</span></div><div class="cs">Contenido crítico vs. propio — menor = más rápido</div><canvas id="r-c-plviral"></canvas></div>
+      <div class="card"><div class="ct">Plataforma × Partido <span class="sv e">E</span></div><div class="cs" id="r-plpar-s">¿Qué segmento partidista habla del actor en cada canal?</div><canvas id="r-c-plpar"></canvas></div>
     </div>
-    <div class="stitle">LECTURA ESTRATÉGICA</div>
-    <div class="ig" id="r-lect"></div>
+    <div class="stitle">LECTURA ESTRATÉGICA POR CANAL</div>
+    <div class="mog" id="r-plect"></div>
   </div>
 
-  <!-- NUBE -->
   <div class="tsec" id="rtab-nube">
     <div class="stitle">NUBE DE PALABRAS DEL ACTOR</div>
-    <div class="card" style="margin-bottom:18px"><div class="cloud" id="r-cloud"></div>
-      <div class="lgd"><span><i style="background:#0D9488"></i>POSITIVO</span><span><i style="background:#DC2626"></i>NEGATIVO</span><span><i style="background:#64748B"></i>NEUTRO</span><span><i style="background:#D97706"></i>POLARIZADO</span></div>
-      <div class="bi neg" style="margin-top:14px" id="r-cloud-lect"></div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:monospace;font-size:9px;margin-bottom:10px">
+      <span style="color:#2EC4B6">■ POSITIVO</span><span style="color:#E63946">■ NEGATIVO</span><span style="color:#8FA3B1">■ NEUTRO</span><span style="color:#F4C430">■ POLARIZADO</span><span class="sv e">E · aproximación cualitativa sobre corpus mediático; no es conteo exacto de frecuencias</span>
     </div>
+    <div class="cloud" id="r-cloud"></div>
+    <div class="ic ac" style="margin-bottom:28px"><div class="ih">LECTURA SEMÁNTICA</div><div class="ib" id="r-nube-lect"></div></div>
     <div class="stitle">ANÁLISIS DE HASHTAGS</div>
     <div class="cg">
-      <div class="card"><div class="ct">Hashtags en la Muestra <span class="ev">E</span></div><div class="cs">Apariciones en publicaciones del periodo</div><div class="cw t"><canvas id="rc-hash"></canvas></div></div>
-      <div class="card"><div class="ct">Detalle</div><div class="cs">Tono, plataforma y origen</div><div class="tw"><table id="r-hashT"></table></div></div>
+      <div class="card"><div class="ct">Ranking de Hashtags Asociados <span class="sv e">E</span></div><div class="cs">Frecuencia relativa (índice 100 = mayor) · color por tono</div><canvas id="r-c-hash" style="max-height:330px"></canvas></div>
+      <div class="card"><div class="ct">Detalle</div><div class="cs">Plataforma dominante y tipo de impulso</div>
+        <div class="tblw"><table class="ttab"><thead><tr><th>HASHTAG</th><th>ÍNDICE</th><th>TONO</th><th>PLATAFORMA</th><th>IMPULSO</th></tr></thead><tbody id="r-hash-tb"></tbody></table></div>
+      </div>
     </div>
-    <div class="bi" id="r-hash-lect"></div>
+    <div class="ic go"><div class="ih">HASHTAG QUE RESUME LA CONVERSACIÓN</div><div class="ib" id="r-hash-res"></div></div>
   </div>
 
-  <!-- NARRATIVAS -->
   <div class="tsec" id="rtab-nar">
     <div class="stitle">ANÁLISIS BIVARIADO DE NARRATIVAS</div>
     <div class="ng">
       <div class="nc"><div class="nh fav">▲ NARRATIVAS FAVORABLES</div><div id="r-nar-fav"></div></div>
       <div class="nc"><div class="nh crit">▼ NARRATIVAS CRÍTICAS</div><div id="r-nar-crit"></div></div>
-      <div class="nc"><div class="nh neu">◆ NARRATIVAS NEUTRAS / AMBIVALENTES</div><div id="r-nar-neu"></div></div>
+      <div class="nc"><div class="nh neu">◆ NARRATIVAS NEUTRAS / CONTEXTO</div><div id="r-nar-neu"></div></div>
     </div>
   </div>
 
-  <!-- RIESGOS -->
+  <div class="tsec" id="rtab-cruz">
+    <div class="stitle">CRUCES BIVARIADOS ADICIONALES</div>
+    <div class="cg">
+      <div class="card"><div class="ct">Matriz Edad × Género — NPS-P <span class="sv e">E</span></div><div class="cs">Dónde gana y dónde pierde, combinado</div>
+        <div class="tblw"><table class="ttab hx"><thead><tr id="r-mx-eg-h"></tr></thead><tbody id="r-mx-eg"></tbody></table></div>
+        <div class="bi" style="margin-top:12px" id="r-mx-eg-l"></div>
+      </div>
+      <div class="card"><div class="ct">Matriz Partido × Narrativa — Resonancia <span class="sv e">E</span></div><div class="cs">Índice 0-100 de adhesión a cada narrativa por segmento</div>
+        <div class="tblw"><table class="ttab hx"><thead><tr id="r-mx-pn-h"></tr></thead><tbody id="r-mx-pn"></tbody></table></div>
+      </div>
+      <div class="card"><div class="ct">Partido × Edad — NPS-P <span class="sv e">E</span></div><div class="cs" id="r-paredad-s"></div><canvas id="r-c-paredad"></canvas></div>
+      <div class="card"><div class="ct">Zona × Género — Clima favorable % <span class="sv e">E</span></div><div class="cs">Brecha territorial por sexo</div><canvas id="r-c-zongen"></canvas></div>
+      <div class="card"><div class="ct"><span id="r-interna-t"></span> <span class="sv e">E</span></div><div class="cs" id="r-interna-s"></div><canvas id="r-c-interna"></canvas></div>
+      <div class="card"><div class="ct">Tema × Tono — Dónde convierte la agenda <span class="sv e">E</span></div><div class="cs" id="r-tematono-s"></div><canvas id="r-c-tematono"></canvas></div>
+    </div>
+    <div class="ig" id="r-hcruz"></div>
+  </div>
+
   <div class="tsec" id="rtab-risk">
     <div class="stitle">MATRIZ BIVARIADA DE RIESGOS Y OPORTUNIDADES</div>
     <div class="mg">
@@ -355,26 +380,44 @@
       <div><div class="mh opp">✦ OPORTUNIDADES — POTENCIAL POR SEGMENTO</div><div class="mb" id="r-oport"></div></div>
     </div>
     <div class="stitle">NIVEL DE ALERTA — ESCENARIOS DE MOVIMIENTO</div>
-    <div class="ic go" style="margin-bottom:12px" id="r-alerta-box"><div class="ib" id="r-alerta-txt"></div></div>
-    <div class="esc">
-      <div class="card"><div class="ct" style="color:#B91C1C" id="r-sube-t">▲ Lo subiría</div><ul id="r-sube"></ul></div>
-      <div class="card"><div class="ct" style="color:#0E7C71" id="r-baja-t">▼ Lo bajaría</div><ul id="r-baja"></ul></div>
+    <div class="cg">
+      <div class="card" id="r-sube-c" style="border-left:3px solid var(--or)"><div class="ct" id="r-sube-t" style="color:var(--or)"></div><ul class="lst up" id="r-sube"></ul></div>
+      <div class="card" id="r-baja-c" style="border-left:3px solid var(--su)"><div class="ct" id="r-baja-t" style="color:var(--su)"></div><ul class="lst dn" id="r-baja"></ul></div>
     </div>
   </div>
 
-  <!-- TERRITORIAL -->
   <div class="tsec" id="rtab-ter">
-    <div class="stitle">MAPA DE CALOR TERRITORIAL — NPS-P POR LOCALIDAD</div>
+    <div class="stitle">MAPA DE CALOR TERRITORIAL — NPS-P POR ZONA <span class="sv e">E</span></div>
     <div class="hm" id="r-hm"></div>
     <div class="cg">
-      <div class="card"><div class="ct">NPS-P por Localidad <span class="ev">I</span></div><div class="cs">Aprobación neta estimada</div><div class="cw"><canvas id="rc-ternps"></canvas></div></div>
-      <div class="card"><div class="ct">Volumen de Conversación por Localidad <span class="ev">I</span></div><div class="cs">% del total de menciones con referencia territorial</div><div class="cw"><canvas id="rc-tervol"></canvas></div></div>
+      <div class="card"><div class="ct">NPS-P por Zona <span class="sv e">E</span></div><div class="cs">Aprobación neta territorial</div><canvas id="r-c-ternps"></canvas></div>
+      <div class="card"><div class="ct">Volumen de Conversación por Zona <span class="sv e">E</span></div><div class="cs">% del total de menciones geolocalizables</div><canvas id="r-c-tervol"></canvas></div>
     </div>
-    <div class="bi neg" style="margin-bottom:28px" id="r-ter-lect"></div>
+    <div class="eg" id="r-terblq"></div>
   </div>
 
-  <footer class="ftr">
-    <div class="fl" id="r-ftr-l">RADAR Estudio confidencial</div>
-  </footer>
+  <div class="tsec" id="rtab-mod">
+    <div class="stitle" id="r-mod-t">MÓDULOS ESPECIALIZADOS</div>
+    <div class="mog" id="r-mod"></div>
+    <div class="stitle" id="r-esc-t">ESCENARIOS A 90 DÍAS</div>
+    <div class="eg" id="r-esc"></div>
+  </div>
+
+  <div class="tsec" id="rtab-conc">
+    <div class="stitle">DICTAMEN EJECUTIVO FINAL</div>
+    <div class="clb"><div class="cll" id="r-dict-l">// DICTAMEN RADAR v2.1</div><p class="clt" id="r-dict"></p></div>
+    <div class="vg">
+      <div class="vc"><div class="vh" style="background:rgba(46,196,182,.15);color:var(--su)">FORTALEZA PRINCIPAL</div><div class="vb" id="r-v-fortaleza"></div></div>
+      <div class="vc"><div class="vh" style="background:rgba(230,57,70,.15);color:var(--da)">VULNERABILIDAD CRÍTICA</div><div class="vb" id="r-v-vulnerabilidad"></div></div>
+      <div class="vc"><div class="vh" style="background:rgba(230,126,34,.15);color:var(--or)">RIESGO INMEDIATO</div><div class="vb" id="r-v-riesgo"></div></div>
+      <div class="vc"><div class="vh" style="background:rgba(0,194,212,.1);color:var(--ac)">NARRATIVA A CONSTRUIR</div><div class="vb" id="r-v-narrativa"></div></div>
+      <div class="vc"><div class="vh" style="background:rgba(27,79,138,.3);color:#7eb8f7">OPORTUNIDAD PRIORITARIA</div><div class="vb" id="r-v-oportunidad"></div></div>
+      <div class="vc"><div class="vh" style="background:rgba(234,179,8,.15);color:var(--al)">DICTAMEN FINAL</div><div class="vb" id="r-v-final"></div></div>
+    </div>
+    <div class="stitle">RECOMENDACIONES ACCIONABLES</div>
+    <div class="ig" id="r-recs"></div>
+    <div class="card"><div class="ct" style="font-size:11px">FUENTES VERIFICADAS DEL PERIODO</div><div class="src" id="r-fuentes"></div></div>
+  </div>
 </main>
+<footer class="footer"><div id="r-foot">RADAR · ESTUDIO CONFIDENCIAL</div></footer>
 </div>
