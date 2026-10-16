@@ -170,6 +170,27 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
         callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor2, parteOpositor: 2 }), OPENROUTER_KEY),
       ]);
       structured = { ...(p2 || {}), ...(p1 || {}) };
+    } else if (skill === 'radar') {
+      // RADAR v2.1: la parte A (encabezado, KPIs, sentimiento, top of mind y
+      // picos) va primero; B (plataformas, nube, narrativas, cruces) y C
+      // (riesgos, territorial, módulos, conclusión) van en paralelo después,
+      // con los nombres de grupos, temas y nivel de alerta de la parte A para
+      // que todas las pestañas usen los mismos segmentos.
+      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
+      basePartes = base;
+      const pA = await callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, null, 'A'), parteEmociones: 'A' }), OPENROUTER_KEY)
+        .catch(e => { console.warn('[!] radar parte A falló:', e.message); return {}; });
+      JOBS.set(jobId, { status: 'processing', progreso: 'Generando plataformas, narrativas, cruces, riesgos, territorial y conclusión...' });
+      const ctxA = resumenRadarParaPartes(pA);
+      const [pB, pC] = await Promise.all([
+        callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_B[skill]), parteEmociones: 'B', contextoTensiones: ctxA }), OPENROUTER_KEY)
+          .catch(e => { console.warn('[!] radar parte B falló:', e.message); return {}; }),
+        callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_C[skill]), parteEmociones: 'C', contextoTensiones: ctxA }), OPENROUTER_KEY)
+          .catch(e => { console.warn('[!] radar parte C falló:', e.message); return {}; }),
+      ]);
+      structured = { ...(pA || {}), ...(pB || {}), ...(pC || {}) };
+      JOBS.set(jobId, { status: 'processing', progreso: 'Verificando que todas las pestañas tengan datos...' });
+      structured = await completarFaltantes(skill, structured, base, OPENROUTER_KEY);
     } else if (PARTES_B[skill]) {
       // Emociones genera MUCHOS campos; gpt-4o-mini se salta algunos cuando la
       // respuesta es larga (díadas, pregunta política...). Se divide en dos
@@ -535,20 +556,26 @@ function verificarActoresEmociones(data, { territorio, fuentes, actoresRef = [] 
 // campos; la parte A es todo lo demás del esquema.
 const PARTES_B = {
   emociones: ['preguntaPolitica', 'preguntaDesc', 'govSemaforo', 'partidos', 'partidosChart', 'partidosNote', 'sintesis', 'haidt', 'haidtNote', 'westen', 'westenMeta', 'lakoff', 'lakoffUsar', 'lakoffEvitar', 'transfer', 'transferCliente', 'actores', 'actoresRadar', 'actoresNote', 'encuestasTitulo', 'encuestas', 'encuestasNota', 'tendencia', 'arqActores', 'arqNote'],
-  radar: ['audiencia', 'plataformaEdad', 'alcancePieza', 'lecturaPlataformas', 'nube', 'hashtags', 'hashtagsLectura', 'narrativas', 'riesgos', 'oportunidades', 'alertaNivel', 'territorial'],
+  radar: ['plataformas', 'nube', 'hashtags', 'hashtagResumen', 'narrativas', 'cruces'],
 };
 // Palabras que identifican las reglas (líneas "- ...") de la parte B.
 const REGEX_PARTE_B = {
   emociones: /^\s*-\s*"?(preguntaPolitica|preguntaDesc|govSemaforo|partidos|partidosChart|partidosNote|sintesis|haidt|haidtNote|westen|westenMeta|lakoff|lakoffUsar|lakoffEvitar|transfer|transferCliente|actores|actores\.rows|actoresRadar|actoresNote|encuestas|encuestasTitulo|encuestasNota|tendencia|arqActores|arqNote)\b/,
-  radar: /audiencia|plataformaEdad|alcancePieza|lecturaPlataformas|nube|hashtag|narrativas|riesgos|oportunidades|alertaNivel|territorial/i,
+  radar: /^\s*-\s*"?(plataformas|nube|hashtags|hashtagResumen|narrativas|cruces)\b/,
 };
 
 // Tercera parte (en paralelo con A y B) para skills muy largas.
 const PARTES_C = {
   emociones: ['segIntro', 'segJer', 'segmentos', 'segTabla', 'segTablaNote', 'miedos', 'deseos', 'necesidades'],
+  radar: ['riesgos', 'oportunidades', 'alertaSube', 'alertaBaja', 'territorial', 'modulosVariante', 'modulos', 'escenariosHorizonte', 'escenarios', 'dictamen', 'veredicto', 'recomendaciones', 'fuentesTexto', 'fuentesNota'],
 };
 const REGEX_PARTE_C = {
   emociones: /^\s*-\s*"?(segIntro|segJer|segmentos|segTabla|segTablaNote|miedos|deseos|necesidades)\b/,
+  radar: /^\s*-\s*"?(riesgos|oportunidades|alertaSube|alertaBaja|territorial|modulos|modulosVariante|escenarios|escenariosHorizonte|dictamen|veredicto|recomendaciones|fuentesTexto|fuentesNota)\b/,
+};
+// Reglas generales que van en TODAS las partes.
+const REGEX_GENERAL = {
+  radar: /^\s*-\s*(Etiquetas de evidencia|NPS-P|Usa los MISMOS|Las cifras de encuestas)/,
 };
 
 function subEsquema(skill, campos, parte) {
@@ -622,27 +649,54 @@ const CHEQUEOS_FALTANTES = {
     preguntas: d => Array.isArray(d.preguntas) && d.preguntas.filter(q => q && (q.respuesta || q.r)).length >= 7,
   },
   radar: {
-    kpis: d => Array.isArray(d.kpis) && d.kpis.length >= 6,
-    segmentos: d => d.segmentos && Array.isArray(d.segmentos.general) && d.segmentos.general.length >= 3 && d.segmentos.edad && Object.keys(d.segmentos.edad).length >= 3 && d.segmentos.partido && Object.keys(d.segmentos.partido).length >= 3,
+    meta: d => d.meta && typeof d.meta === 'object' && !!String(d.meta.nombre || '').trim(),
+    npsPartido: d => d.npsPartido && Array.isArray(d.npsPartido.datos) && d.npsPartido.datos.length >= 4,
+    npsDemo: d => d.npsDemo && Array.isArray(d.npsDemo.datos) && d.npsDemo.datos.length >= 4,
+    ratioPlataforma: d => Array.isArray(d.ratioPlataforma) && d.ratioPlataforma.length >= 3,
+    tra: d => d.tra && Array.isArray(d.tra.valores) && d.tra.valores.length >= 4,
+    sentimiento: d => d.sentimiento && Array.isArray(d.sentimiento.general) && ['genero', 'edad', 'partido', 'plataforma', 'audiencia'].every(k => Array.isArray(d.sentimiento[k]) && d.sentimiento[k].length >= 2),
+    clima: d => d.clima && typeof d.clima === 'object' && Array.isArray(d.clima.general) && d.clima.general.length >= 3,
     hallazgosSent: d => Array.isArray(d.hallazgosSent) && d.hallazgosSent.length >= 3,
-    tom: d => tomRadarCompleto(d.tom),
+    tom: d => d.tom && d.tom.general && Array.isArray(d.tom.general.temas) && d.tom.general.temas.length >= 4 && ['genero', 'edad', 'partido'].every(k => d.tom[k] && Array.isArray(d.tom[k].series) && d.tom[k].series.length >= 2),
     crucesTom: d => Array.isArray(d.crucesTom) && d.crucesTom.length >= 3,
-    quincenas: d => Array.isArray(d.quincenas) && d.quincenas.length >= 2,
-    lecturaPlataformas: d => Array.isArray(d.lecturaPlataformas) && d.lecturaPlataformas.length >= 3,
+    picos: d => Array.isArray(d.picos) && d.picos.length >= 5,
+    cronologia: d => Array.isArray(d.cronologia) && d.cronologia.length >= 4,
+    plataformas: d => d.plataformas && ['peso', 'tono', 'edad', 'brecha', 'viral', 'lectura'].every(k => Array.isArray(d.plataformas[k]) && d.plataformas[k].length >= 3),
     nube: d => d.nube && Array.isArray(d.nube.palabras) && d.nube.palabras.length >= 15,
+    hashtags: d => Array.isArray(d.hashtags) && d.hashtags.length >= 5,
     narrativas: d => d.narrativas && ['favorables', 'criticas', 'neutras'].every(k => Array.isArray(d.narrativas[k]) && d.narrativas[k].length >= 2),
+    cruces: d => d.cruces && ['edadGenero', 'partidoNarrativa', 'partidoEdad', 'zonaGenero', 'interna', 'temaTono'].every(k => d.cruces[k] && typeof d.cruces[k] === 'object'),
     riesgos: d => Array.isArray(d.riesgos) && d.riesgos.length >= 3,
     oportunidades: d => Array.isArray(d.oportunidades) && d.oportunidades.length >= 3,
-    alertaNivel: d => d.alertaNivel && String(d.alertaNivel.texto || '').length > 40,
-    territorial: d => d.territorial && Array.isArray(d.territorial.zonas) && d.territorial.zonas.length >= 4
-      && d.territorial.zonas.filter(z => z && /\d/.test(String(z.nps ?? ''))).length >= Math.min(4, d.territorial.zonas.length - 1)
-      && Array.isArray(d.territorial.volumen) && d.territorial.volumen.length >= 3,
+    alertaSube: d => Array.isArray(d.alertaSube) && d.alertaSube.length >= 3 && Array.isArray(d.alertaBaja) && d.alertaBaja.length >= 3,
+    territorial: d => d.territorial && Array.isArray(d.territorial.zonas) && d.territorial.zonas.filter(z => z && /\d/.test(String(z.nps ?? ''))).length >= 4 && Array.isArray(d.territorial.volumen) && d.territorial.volumen.length >= 3,
+    modulos: d => Array.isArray(d.modulos) && d.modulos.length >= 4,
+    escenarios: d => Array.isArray(d.escenarios) && d.escenarios.length >= 3,
+    dictamen: d => largo(d.dictamen, 60),
+    veredicto: d => d.veredicto && typeof d.veredicto === 'object' && Object.values(d.veredicto).filter(v => largo(v, 10)).length >= 5,
+    recomendaciones: d => Array.isArray(d.recomendaciones) && d.recomendaciones.length >= 3,
   },
 
 };
 // Emociones: segunda revisión sobre los datos YA normalizados (lo que la página dibuja).
 // Si algo quedó vacío o en ceros, se vuelve a pedir una vez más.
 const CHEQUEOS_POST = {
+  radar: {
+    npsPartido: d => d.npsPartido.datos.length >= 4 && d.npsPartido.datos.some(x => x[1] !== 0),
+    tra: d => d.tra.valores.some(v => v !== 0),
+    sentimiento: d => d.sentimiento.general.some(v => v > 0) && d.sentimiento.partido.length >= 2 && d.sentimiento.edad.length >= 3,
+    clima: d => d.clima.general.some(x => x[1] > 0),
+    tom: d => d.tom.general.temas.some(t => t.valor > 0) && ['genero', 'edad', 'partido'].every(k => d.tom[k].series.some(s => s.valores.some(v => v > 0))),
+    picos: d => d.picos.length >= 5 && d.picos.some(p => p.volumen > 0),
+    plataformas: d => d.plataformas.peso.some(x => x.valor > 0) && d.plataformas.tono.length >= 3 && d.plataformas.lectura.length >= 3,
+    nube: d => d.nube.palabras.length >= 15,
+    narrativas: d => d.narrativas.favorables.length >= 2 && d.narrativas.criticas.length >= 2,
+    cruces: d => d.cruces.edadGenero.filas.length >= 2 && d.cruces.partidoNarrativa.filas.length >= 3 && d.cruces.partidoEdad.series.length >= 2 && d.cruces.zonaGenero.zonas.length >= 3 && d.cruces.interna.series.length >= 2 && d.cruces.temaTono.temas.length >= 3,
+    territorial: d => d.territorial.zonas.filter(z => z.nps !== null).length >= 4 && d.territorial.volumen.length >= 3,
+    modulos: d => d.modulos.length >= 4,
+    escenarios: d => d.escenarios.length >= 3,
+    veredicto: d => Object.values(d.veredicto).filter(v => largo(v, 10)).length >= 5,
+  },
   tensiones: {
     ranking: d => d.ranking.filter(r => r.score > 0 && r.evidencia.length && largo(r.lectura, 20)).length >= 5,
     emociones: d => d.emociones.filter(e => e.porcentaje > 0).length >= 5,
@@ -692,7 +746,7 @@ const CHEQUEOS_POST = {
   },
 };
 // Campos que se piden juntos (si falta uno, se pide también su pareja).
-const PAREJAS_FALTANTES = { ranking: ['trayectoria', 'riesgos'], trayectoria: ['ranking', 'trayectoriaLabels'], enemigos: ['lecturaEnemigos'], ias: ['dolores'], hashtags: ['hashtagsLectura'], nube: ['hashtags', 'hashtagsLectura'], tom: ['crucesTom'], segmentos: ['hallazgosSent', 'ratioPlataforma', 'segJer'], riesgos: ['alertaNivel'], dyads: ['dyadInterp'], dyadInterp: ['dyads'], haidt: ['haidtNote'], westen: ['westenMeta'], lakoff: ['lakoffUsar', 'lakoffEvitar'], transfer: ['transferCliente'], codigo: ['codigoTitulo'], arqCol: ['codigoTitulo', 'codigo'], arqScores: ['arqIdeal'], arqIdeal: ['arqScores'], segTabla: ['segTablaNote'], actores: ['actoresRadar', 'arqActores', 'actoresNote'], preguntaPolitica: ['preguntaDesc'], preguntaDesc: ['preguntaPolitica'], partidos: ['partidosChart'], concept: ['conceptDesc'] };
+const PAREJAS_FALTANTES = { hashtagResumen: ['hashtags'], alertaSube: ['alertaBaja'], escenarios: ['escenariosHorizonte'], modulos: ['modulosVariante'], veredicto: ['dictamen'], dictamen: ['veredicto'], picos: ['cronologia'], cronologia: ['picos'], ranking: ['trayectoria', 'riesgos'], trayectoria: ['ranking', 'trayectoriaLabels'], enemigos: ['lecturaEnemigos'], ias: ['dolores'], hashtags: ['hashtagsLectura', 'hashtagResumen'], nube: ['hashtags', 'hashtagsLectura', 'hashtagResumen'], tom: ['crucesTom'], segmentos: ['hallazgosSent', 'ratioPlataforma', 'segJer'], riesgos: ['alertaNivel'], dyads: ['dyadInterp'], dyadInterp: ['dyads'], haidt: ['haidtNote'], westen: ['westenMeta'], lakoff: ['lakoffUsar', 'lakoffEvitar'], transfer: ['transferCliente'], codigo: ['codigoTitulo'], arqCol: ['codigoTitulo', 'codigo'], arqScores: ['arqIdeal'], arqIdeal: ['arqScores'], segTabla: ['segTablaNote'], actores: ['actoresRadar', 'arqActores', 'actoresNote'], preguntaPolitica: ['preguntaDesc'], preguntaDesc: ['preguntaPolitica'], partidos: ['partidosChart'], concept: ['conceptDesc'] };
 
 async function completarFaltantes(skill, data, base, apiKey, chequeos = CHEQUEOS_FALTANTES[skill]) {
   if (!chequeos) return data;
@@ -704,8 +758,7 @@ async function completarFaltantes(skill, data, base, apiKey, chequeos = CHEQUEOS
   const contexto = [
     data.concept ? `Concepto central ya definido: "${data.concept}"` : '',
     Array.isArray(data.emotions) ? `Emociones detectadas: ${data.emotions.filter(e => e && Number(e.intensity) > 0).map(e => `${e.key} (${e.intensity}/3)`).join(', ')}` : '',
-    skill === 'radar' && faltan.includes('tom') && data.tom && Array.isArray(data.tom.temas) && data.tom.temas.length
-      ? `Top of Mind: usa EXACTAMENTE estos ${data.tom.temas.length} temas: ${JSON.stringify(data.tom.temas.map(t => (t && typeof t === 'object') ? (t.tema || t.nombre) : t))}. En tom.edad.valores, tom.partido.valores y tom.plataforma.valores pon UNA clave por CADA uno de esos temas (nombre exacto) con un número por grupo; tom.genero.mujeres y tom.genero.hombres con un número por tema. Ningún tema puede quedar sin datos.` : '',
+    skill === 'radar' ? resumenRadarParaPartes(data) : '',
     Array.isArray(data.actores) && data.actores.length ? `Actores ya identificados: ${data.actores.map(a => a && (a.name || a.nombre)).filter(Boolean).join(', ')}` : '',
   ].filter(Boolean).join('\n');
   // Tensiones: los campos de la parte 2 se piden con sus propias instrucciones.
@@ -727,135 +780,6 @@ async function completarFaltantes(skill, data, base, apiKey, chequeos = CHEQUEOS
     }
   }));
   return data;
-}
-
-// Top of Mind (radar): acepta las variantes en que el modelo suele devolver las matrices
-// (filas por tema, filas por grupo/transpuestas, objetos por grupo o por tema) y las deja
-// siempre como { grupos, valores: [una fila por tema con un número por grupo] }.
-function normalizarTomRadar(tomIn, partidosSeg = []) {
-  const num = (v) => { if (typeof v === 'number') return Number.isFinite(v) ? v : 0; const m = String(v ?? '').replace(/[−–—]/g, '-').replace(/,/g, '').match(/[+-]?\d+(\.\d+)?/); return m ? Number(m[0]) : 0; };
-  const txt = (v) => (v === undefined || v === null) ? '' : String(v);
-  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
-  const clave = (t) => txt(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9+]/g, '');
-  const tom = isObj(tomIn) ? tomIn : {};
-  // temas y peso general
-  let temas = [], general = [];
-  const tIn = Array.isArray(tom.temas) ? tom.temas : [];
-  tIn.forEach(t => {
-    if (isObj(t)) { temas.push(txt(t.tema || t.nombre || t.texto || t.label)); general.push(t.peso ?? t.valor ?? t.porcentaje ?? t.general); }
-    else temas.push(txt(t));
-  });
-  temas = temas.filter(t => t && !/^\s*\.\.\./.test(t));
-  const nT = temas.length;
-  const idxTema = (k) => { const c = clave(k); return temas.findIndex(t => clave(t) === c || (c.length > 3 && (clave(t).includes(c) || c.includes(clave(t))))); };
-  const vectorTemas = (v) => {
-    if (Array.isArray(v)) return v.map(x => isObj(x) ? num(x.valor ?? x.peso ?? x.porcentaje) : num(x));
-    if (isObj(v)) { const a = Array(nT).fill(0); Object.keys(v).forEach(k => { const i = idxTema(k); if (i >= 0) a[i] = num(v[k]); }); return a; }
-    return [];
-  };
-  const ajusta = (a) => { a = (a || []).slice(0, nT).map(num); while (a.length < nT) a.push(0); return a; };
-  if (Array.isArray(tom.general) || isObj(tom.general)) { const g = vectorTemas(tom.general); if (g.some(x => x)) general = g; }
-  general = ajusta(general);
-
-  const matriz = (o, porDefecto) => {
-    let grupos = [], filas = [];
-    if (isObj(o)) {
-      grupos = Array.isArray(o.grupos) ? o.grupos.map(txt) : [];
-      let val = o.valores ?? o.datos ?? o.data;
-      if (val === undefined) {
-        // forma { "18-24": [...], "25-34": [...] } (objeto por grupo)
-        const ks = Object.keys(o).filter(k => k !== 'grupos' && (Array.isArray(o[k]) || isObj(o[k])));
-        if (ks.length) { val = {}; ks.forEach(k => { val[k] = o[k]; }); }
-      }
-      if (isObj(val)) {
-        const ks = Object.keys(val);
-        const sonTemas = ks.filter(k => idxTema(k) >= 0).length >= Math.max(1, Math.ceil(ks.length / 2));
-        if (sonTemas) {
-          // { tema: [por grupo] } o { tema: {grupo: n} }
-          filas = Array.from({ length: nT }, () => []);
-          ks.forEach(k => { const i = idxTema(k); if (i < 0) return; const r = val[k];
-            if (Array.isArray(r)) filas[i] = r.map(num);
-            else if (isObj(r)) { if (!grupos.length) grupos = Object.keys(r); filas[i] = grupos.map(g => num(r[g])); } });
-        } else {
-          // { grupo: [por tema] } o { grupo: {tema: n} }
-          if (!grupos.length) grupos = ks;
-          const cols = grupos.map(g => vectorTemas(val[g] ?? val[ks[grupos.indexOf(g)]]));
-          filas = Array.from({ length: nT }, (_, i) => cols.map(c => num(c[i])));
-        }
-      } else if (Array.isArray(val)) {
-        let rows = val.map(r => {
-          if (Array.isArray(r)) return r.map(num);
-          if (isObj(r)) { const vs = r.valores ?? r.datos; if (Array.isArray(vs)) return vs.map(num); if (!grupos.length) grupos = Object.keys(r).filter(k => !/tema|nombre/i.test(k)); return grupos.map(g => num(r[g])); }
-          return [num(r)];
-        });
-        // matriz transpuesta: una fila por grupo con un valor por tema
-        const nG = grupos.length || porDefecto.length;
-        if (rows.length === nG && nG !== nT && rows.every(r => r.length === nT)) rows = Array.from({ length: nT }, (_, i) => rows.map(r => r[i]));
-        // filas con objetos {tema, valores}
-        if (val.some(r => isObj(r) && (r.tema || r.nombre))) {
-          const ord = Array.from({ length: nT }, () => []);
-          val.forEach((r, j) => { const i = isObj(r) ? idxTema(r.tema || r.nombre) : -1; ord[i >= 0 ? i : j] = rows[j] || []; });
-          rows = ord;
-        }
-        filas = rows;
-      }
-    }
-    grupos = grupos.filter(g => g && !/^\s*\.\.\./.test(g));
-    if (!grupos.length) grupos = porDefecto.slice(0, Math.max(...filas.map(f => (f || []).length), 0) || porDefecto.length);
-    const nG = grupos.length;
-    return { grupos, valores: Array.from({ length: nT }, (_, i) => { const f = (filas[i] || []).slice(0, nG).map(num); while (f.length < nG) f.push(0); return f; }) };
-  };
-  const EDADES = ['18-24', '25-34', '35-44', '45-59', '60+'];
-  const edad = matriz(tom.edad, EDADES);
-  const partido = matriz(tom.partido, partidosSeg.length ? partidosSeg : ['Morena', 'PAN', 'PRI', 'MC', 'Sin partido']);
-  const plataforma = matriz(tom.plataforma ?? tom.plataformas, ['Facebook', 'TikTok', 'X', 'Prensa']);
-  // género: {mujeres, hombres} | {Mujeres, Hombres} | matriz con grupos
-  const g = isObj(tom.genero) ? tom.genero : {};
-  const busca = (re) => { const k = Object.keys(g).find(x => re.test(x)); return k ? g[k] : undefined; };
-  let muj = busca(/^(mujer|mujeres|m|f|femenino)$/i), hom = busca(/^(hombre|hombres|h|masculino)$/i);
-  if ((muj === undefined || hom === undefined) && (g.valores || g.grupos)) {
-    const mg = matriz(g, ['Mujeres', 'Hombres']);
-    const iM = mg.grupos.findIndex(x => /muj|fem/i.test(x)), iH = mg.grupos.findIndex(x => /hom|masc/i.test(x));
-    muj = mg.valores.map(r => r[iM >= 0 ? iM : 0]); hom = mg.valores.map(r => r[iH >= 0 ? iH : 1]);
-  }
-  const genero = { mujeres: ajusta(vectorTemas(muj)), hombres: ajusta(vectorTemas(hom)) };
-
-  // Último recurso: si a una matriz le faltan filas (temas en cero) se estiman con el peso
-  // general del tema y el perfil de los grupos que sí trajeron dato. Se marca en "completado".
-  const completado = [];
-  const maxG = Math.max(...general, 0);
-  const rellenar = (m, nombre, saliencia) => {
-    if (!maxG || !m.grupos.length) return;
-    const vacia = (r) => !r.some(x => x > 0);
-    const vacias = m.valores.map((r, i) => vacia(r) && general[i] > 0);
-    if (!vacias.some(Boolean)) return;
-    const conDato = m.valores.map((r, i) => !vacia(r) ? i : -1).filter(i => i >= 0);
-    const sumG = conDato.reduce((a, i) => a + general[i], 0);
-    m.valores = m.valores.map((r, i) => {
-      if (!vacias[i]) return r;
-      return m.grupos.map((_, g) => {
-        if (conDato.length && sumG) { const col = conDato.reduce((a, k) => a + m.valores[k][g], 0); return Math.round(general[i] * col / sumG); }
-        return Math.round(saliencia ? general[i] / maxG * 80 : general[i]);
-      });
-    });
-    completado.push(nombre);
-  };
-  rellenar(edad, 'edad', true); rellenar(partido, 'partido', false); rellenar(plataforma, 'plataforma', false);
-  const gm = { grupos: ['Mujeres', 'Hombres'], valores: genero.mujeres.map((x, i) => [x, genero.hombres[i]]) };
-  rellenar(gm, 'genero', true);
-  genero.mujeres = gm.valores.map(r => r[0]); genero.hombres = gm.valores.map(r => r[1]);
-  return { temas, general, edad, genero, partido, plataforma, completado };
-}
-
-// ¿El Top of Mind trae todas sus gráficas con datos?
-function tomRadarCompleto(tomIn) {
-  try {
-    const t = normalizarTomRadar(tomIn);
-    if (t.temas.length < 5 || t.general.filter(x => x > 0).length < t.temas.length - 1) return false;
-    const llena = (m) => m.grupos.length >= 2 && m.valores.length && m.valores.flat().filter(x => x > 0).length >= m.valores.flat().length * 0.6;
-    const genOk = t.genero.mujeres.filter(x => x > 0).length >= t.temas.length - 1 && t.genero.hombres.filter(x => x > 0).length >= t.temas.length - 1;
-    return !t.completado.length && llena(t.edad) && llena(t.partido) && llena(t.plataforma) && genOk;
-  } catch (_) { return false; }
 }
 
 function fuentesReales(bloque, max = 20) {
@@ -954,80 +878,191 @@ function normalizeResponse(data, skill, ctx = {}) {
     return obj;
   };
 
-  // RADAR
+  // RADAR (v2.1 · estructura RADAR Naucalpan, 12 pestañas)
+  // Acepta nombres de campo alternos y deja SIEMPRE la forma que dibuja la plantilla.
   if (skill === 'radar') {
-    // Estructura RADAR v2.0 (Kino Ruiz · Xonacatlán): segmentos con 4 tonos
-    // [positivo, neutro, negativo, polarizado], quincenas, audiencia, etc.
-    const n0 = (v) => { if (typeof v === 'number') return Number.isFinite(v) ? v : 0; const m = String(v ?? '').replace(/[\u2212\u2013\u2014]/g, '-').replace(/,/g, '').match(/[+-]?\d+(\.\d+)?/); const x = m ? Number(m[0]) : NaN; return Number.isFinite(x) ? x : 0; };
-    const nOrNull = (v) => { if (v === null || v === undefined || v === '') return null; if (typeof v === 'number') return Number.isFinite(v) ? v : null; const t = String(v).replace(/[\u2212\u2013]/g, '-'); return /\d/.test(t) ? n0(t) : null; };
-    const arrO = (v) => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
-    const txt = (v) => (v === undefined || v === null) ? '' : String(v);
-    const cuatro = (v) => { const a = Array.isArray(v) ? v.map(n0) : []; while (a.length < 4) a.push(0); return a.slice(0, 4); };
-    const mapaSeg = (o) => { const out = {}; if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(k => { out[k] = cuatro(o[k]); }); return out; };
+    const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+    const txt = (...vals) => { for (const v of vals) if (v !== undefined && v !== null && typeof v !== 'object' && String(v).trim()) return String(v).trim(); return ''; };
+    const n0 = (v) => { if (typeof v === 'number') return Number.isFinite(v) ? v : 0; const m = String(v ?? '').replace(/[−–—]/g, '-').replace(/,/g, '.').match(/[+-]?\d+(\.\d+)?/); return m ? Number(m[0]) : 0; };
+    const nN = (v) => (v === null || v === undefined || v === '' || !/\d/.test(String(v))) ? null : n0(v);
+    const lim = (v, a, b) => Math.max(a, Math.min(b, n0(v)));
+    const lista = (v) => Array.isArray(v) ? v : isObj(v) ? Object.entries(v).map(([k, x]) => isObj(x) ? { grupo: k, nombre: k, ...x } : Array.isArray(x) ? { grupo: k, valores: x } : { grupo: k, valor: x }) : [];
+    const objs = (v) => lista(v).filter(isObj);
+    const nums = (v) => Array.isArray(v) ? v.map(x => isObj(x) ? n0(x.valor ?? x.v ?? x.pct) : n0(x)) : isObj(v) ? Object.values(v).map(n0) : [];
+    const pares = (v) => lista(v).map(p => Array.isArray(p) ? [txt(p[0]), n0(p[1])] : isObj(p) ? [txt(p.etiqueta, p.label, p.grupo, p.nombre, p.plataforma, p.segmento, p.zona, p.tema), n0(p.valor ?? p.v ?? p.nps ?? p.ratio ?? p.pct)] : null).filter(p => p && p[0]);
+    const series = (v) => objs(v).map(s => ({ grupo: txt(s.grupo, s.nombre, s.segmento, s.label, s.partido, s.plataforma, s.aspirante), valores: nums(s.valores ?? s.datos ?? s.data ?? s.d) })).filter(s => s.grupo);
+    const tarjetas = (v) => objs(v).map(h => ({ titulo: txt(h.titulo, h.ih, h.nombre), texto: txt(h.texto, h.ib, h.descripcion), accion: txt(h.accion, h.im, h.conclusion).replace(/^→\s*/, '') })).filter(h => h.titulo || h.texto);
+    const textos = (v) => lista(v).map(x => isObj(x) ? txt(x.texto, x.senal, x.descripcion) : txt(x)).filter(Boolean);
+    const sinComillas = (t) => String(t || '').trim().replace(/^["“”']+|["“”']+$/g, '').trim();
+    const old = { actor: isObj(data.actor) ? data.actor : {}, alerta: isObj(data.alerta) ? data.alerta : {} };
 
-    ensureObject(data, 'actor', { cargo: '', entidad: '', partido: '', periodo: '' });
-    ensureObject(data, 'alerta', { nivel: 2, color: 'AMARILLA', corte: '' });
-    data.alerta.nivel = Math.max(1, Math.min(4, Math.round(n0(data.alerta.nivel) || 2)));
-    data.alerta.color = txt(data.alerta.color || ['VERDE', 'AMARILLA', 'NARANJA', 'ROJA'][data.alerta.nivel - 1]).toUpperCase();
-    data.metodo = txt(data.metodo);
+    // meta
+    const mIn = isObj(data.meta) ? data.meta : {};
+    const nombre = txt(mIn.nombre, mIn.actor, ctx.actorName);
+    const palabras = nombre.split(/\s+/).filter(Boolean);
+    const COLORES = ['VERDE', 'AMARILLA', 'NARANJA', 'ROJA'];
+    let nivel = Math.round(n0(mIn.nivel ?? old.alerta.nivel));
+    const alertaTxt = txt(mIn.alerta, old.alerta.color).toUpperCase();
+    const iAl = COLORES.findIndex(c => alertaTxt.includes(c.slice(0, 5)));
+    if (!(nivel >= 1 && nivel <= 4)) nivel = iAl >= 0 ? iAl + 1 : 2;
+    const meta = {
+      nombre, resaltado: txt(mIn.resaltado), nombreCorto: txt(mIn.nombreCorto) || palabras.slice(0, 2).join(' '),
+      corto: txt(mIn.corto) || (palabras.length >= 3 ? palabras[palabras.length - 2] : palabras[palabras.length - 1] || ''),
+      territorio: txt(mIn.territorio, (txt(old.actor.entidad).split(',')[0] || '').trim()), territorioLargo: txt(mIn.territorioLargo, mIn.territorio),
+      gentilicio: txt(mIn.gentilicio), subtitulo: txt(mIn.subtitulo, [old.actor.cargo, old.actor.partido, old.actor.entidad].filter(Boolean).join(' · ')),
+      ventana: txt(mIn.ventana, ctx.periodo && ctx.periodo.label), corte: txt(mIn.corte, old.alerta.corte), nivel, alerta: COLORES[nivel - 1],
+    };
+    if (!meta.resaltado) meta.resaltado = meta.corto;
 
-    const ORDEN_KPI = ['NPS POLÍTICO', 'SHARE OF VOICE', 'RATIO ATAQUE/DEF.', 'TRA QUINCENAL', 'IRR — RESILIENCIA', 'ICN — CONVERSIÓN', 'IAA — AMPL. ADVERSA', 'AUDIENCIA PROPIA vs VECINAL'];
-    const kin = arrO(data.kpis);
-    data.kpis = ORDEN_KPI.map((clave, i) => {
-      const k = kin.find(x => txt(x.clave).toUpperCase().startsWith(clave.split(' ')[0])) || kin[i] || {};
-      const valor = txt(k.valor) || 'n/d';
-      return { clave, valor, nota: txt(k.nota), color: ['da', 'go', 'su', 'ac', 'bl', 'ne'].includes(k.color) ? k.color : (valor === 'n/d' ? 'ne' : 'ac'), ev: txt(k.ev) };
+    const ord = (a) => a.slice().sort((x, y) => y[1] - x[1]);
+    const npsP = isObj(data.npsPartido) ? data.npsPartido : { datos: data.npsPartido };
+    const npsD = isObj(data.npsDemo) ? data.npsDemo : { datos: data.npsDemo };
+    const traIn = isObj(data.tra) ? data.tra : {};
+    let traLab = lista(traIn.labels).map(x => txt(x)), traVal = nums(traIn.valores ?? traIn.datos);
+    if (!traVal.length && Array.isArray(data.tra)) { const pp = pares(data.tra); traLab = pp.map(p => p[0]); traVal = pp.map(p => p[1]); }
+    while (traLab.length < traVal.length) traLab.push(`C${traLab.length + 1}`);
+
+    // sentimiento y clima
+    const sIn = isObj(data.sentimiento) ? data.sentimiento : isObj(data.segmentos) ? data.segmentos : {};
+    const sent = { general: nums(sIn.general).slice(0, 4) };
+    while (sent.general.length < 4) sent.general.push(0);
+    ['genero', 'edad', 'partido', 'plataforma', 'audiencia'].forEach(k => {
+      sent[k] = series(sIn[k]).map(s => ({ grupo: s.grupo, valores: s.valores.slice(0, k === 'genero' ? 4 : 3) }));
     });
-
-    ensureObject(data, 'segmentos', {});
-    const sg = data.segmentos;
-    sg.general = cuatro(Array.isArray(sg.general) ? sg.general : (sg.general && typeof sg.general === 'object' ? Object.values(sg.general)[0] : []));
-    ['edad', 'genero', 'partido', 'plataforma'].forEach(k => { sg[k] = mapaSeg(sg[k]); });
-    data.ratioPlataforma = arrO(data.ratioPlataforma).map(r => ({ etiqueta: txt(r.etiqueta || r.plataforma), valor: nOrNull(r.valor ?? r.ratio) })).filter(r => r.etiqueta);
-    data.hallazgosSent = arrO(data.hallazgosSent).map(h => ({ titulo: txt(h.titulo), ev: txt(h.ev), texto: txt(h.texto), accion: txt(h.accion) }));
-
-    data.tom = normalizarTomRadar(data.tom, Object.keys(sg.partido || {}));
-    data.crucesTom = arrO(data.crucesTom).map(h => ({ titulo: txt(h.titulo), ev: txt(h.ev), texto: txt(h.texto), accion: txt(h.accion) }));
-
-    data.quincenas = arrO(data.quincenas).map((q, i) => { const mc = txt(q.codigo).match(/^\s*([A-Z]\d+)\s*\((.*)\)\s*$/i); return mc ? { ...q, codigo: mc[1].toUpperCase(), rango: txt(q.rango) || mc[2] } : q; }).map((q, i) => ({
-      rango: txt(q.rango), codigo: txt(q.codigo) || `Q${i + 1}`, nps: Math.max(-100, Math.min(100, n0(q.nps))), volumen: Math.max(0, Math.min(100, n0(q.volumen))),
-      tono: ['neg', 'pos', 'mix'].includes(q.tono) ? q.tono : (n0(q.nps) <= -10 ? 'neg' : n0(q.nps) >= 5 ? 'pos' : 'mix'), titulo: txt(q.titulo), texto: txt(q.texto), ev: txt(q.ev),
-    }));
-    data.audiencia = arrO(data.audiencia).map(a => ({ cuenta: txt(a.cuenta), miles: n0(a.miles), tipo: txt(a.tipo || 'propia') })).filter(a => a.cuenta).sort((a, b) => b.miles - a.miles);
-    data.plataformaEdad = arrO(data.plataformaEdad).map(p => { const v = (Array.isArray(p.valores) ? p.valores : []).map(n0); while (v.length < 5) v.push(0); return { plataforma: txt(p.plataforma), valores: v.slice(0, 5) }; });
-    data.alcancePieza = arrO(data.alcancePieza).map(a => ({ metrica: txt(a.metrica), critica: n0(a.critica), propia: n0(a.propia) }));
-    data.lecturaPlataformas = arrO(data.lecturaPlataformas).map(l => ({ titulo: txt(l.titulo), color: ['ac', 'da', 'bl', 'go', 'ne', 'su'].includes(l.color) ? l.color : 'ac', texto: txt(l.texto) }));
-
-    ensureObject(data, 'nube', { palabras: [], lectura: '' });
-    const TON = { favorable: 'positivo', positivo: 'positivo', negativo: 'negativo', neutro: 'neutro', polarizado: 'polarizado' };
-    data.nube.palabras = arrO(data.nube.palabras).map(p => ({ w: txt(p.w || p.word || p.palabra), v: Math.max(1, Math.min(100, n0(p.v ?? p.weight))), s: TON[txt(p.s || p.sentiment).toLowerCase()] || 'neutro' })).filter(p => p.w);
-    data.nube.lectura = txt(data.nube.lectura);
-    data.hashtags = arrO(data.hashtags).map(h => ({ tag: txt(h.tag).startsWith('#') ? txt(h.tag) : '#' + txt(h.tag), apariciones: n0(h.apariciones ?? h.valor), tono: TON[txt(h.tono).toLowerCase()] || 'neutro', plataforma: txt(h.plataforma), origen: txt(h.origen) }))
-      .filter(h => h.tag.length > 1).sort((a, b) => b.apariciones - a.apariciones);
-    data.hashtagsLectura = txt(data.hashtagsLectura);
-
-    ensureObject(data, 'narrativas', {});
-    const narr = (arr) => arrO(arr).map(n => ({ ...n, titulo: txt(n.titulo), descripcion: txt(n.descripcion), bivariado: txt(n.bivariado), tags: (Array.isArray(n.tags) ? n.tags : []).map(t => typeof t === 'string' ? { texto: t, tipo: '' } : { texto: txt(t.texto), tipo: txt(t.tipo) }) }));
-    ['favorables', 'criticas', 'neutras'].forEach(k => { data.narrativas[k] = narr(data.narrativas[k]); });
-    const lvl = (v, ok, def) => { const x = txt(v).toUpperCase().replace('CRITICO', 'CRÍTICO').replace('ALTA', 'ALTO').replace('MEDIA', 'MEDIO').replace('BAJA', 'BAJO'); return ok.includes(x) ? x : def; };
-    data.riesgos = arrO(data.riesgos).map(r => ({ nivel: lvl(r.nivel, ['CRÍTICO', 'ALTO', 'MEDIO', 'BAJO'], 'MEDIO'), titulo: txt(r.titulo), descripcion: txt(r.descripcion), bivariado: txt(r.bivariado) }));
-    data.oportunidades = arrO(data.oportunidades).map(r => ({ nivel: lvl(r.nivel, ['ALTO', 'MEDIO', 'BAJO'], 'MEDIO'), titulo: txt(r.titulo), descripcion: txt(r.descripcion), bivariado: txt(r.bivariado) }));
-    ensureObject(data, 'alertaNivel', { texto: '', sube: [], baja: [] });
-    ['sube', 'baja'].forEach(k => { const v = data.alertaNivel[k]; data.alertaNivel[k] = Array.isArray(v) ? v.map(txt).filter(Boolean) : txt(v).split(/\s·\s|;|\n/).map(x => x.trim()).filter(Boolean); });
-    data.alertaNivel.texto = txt(data.alertaNivel.texto);
-
-    ensureObject(data, 'territorial', { zonas: [], volumen: [], lectura: '' });
-    data.territorial.zonas = arrO(data.territorial.zonas).map(z => {
-      const crudo = [z.nps, z.npsP, z.nps_p, z['NPS-P'], z.NPS, z.valor, z.score, z.aprobacion].find(v => v !== undefined && v !== null && v !== '');
-      const nps = nOrNull(typeof crudo === 'object' && crudo ? (crudo.valor ?? crudo.nps) : crudo);
-      const clTxt = txt(z.clasificacion).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const clM = /sin.?dato/.test(clTxt) ? 'sin_datos' : /advers/.test(clTxt) ? 'adversa' : /favor/.test(clTxt) ? 'favorable' : /inerc/.test(clTxt) ? 'inercial' : '';
-      const cl = nps === null ? (clM || 'sin_datos') : (clM && clM !== 'sin_datos' ? clM : (nps >= 5 ? 'favorable' : nps <= -15 ? 'adversa' : 'inercial'));
-      return { nombre: txt(z.nombre), nps, clasificacion: cl, etiqueta: txt(z.etiqueta), nota: txt(z.nota) };
+    const cIn = isObj(data.clima) ? data.clima : {};
+    const clima = {};
+    ['general', 'genero', 'edad', 'partido', 'plataforma', 'audiencia'].forEach(k => {
+      clima[k] = pares(cIn[k]);
+      // sin clima: se estima con el % positivo de cada grupo de sentimiento
+      if (!clima[k].length && k !== 'general' && sent[k].length) clima[k] = sent[k].map(s => [s.grupo, Math.round(n0(s.valores[0]))]);
     });
-    data.territorial.volumen = arrO(data.territorial.volumen || data.territorial.volumenPorZona).map(v => ({ zona: txt(v.zona), valor: n0(v.valor ?? v.volumen) }));
-    data.territorial.lectura = txt(data.territorial.lectura);
-    ensureArray(data, 'fuentes', []);
+    if (!clima.general.length && sent.general.some(Boolean)) clima.general = [['Favorable', sent.general[0]], ['Mixto', sent.general[3]], ['Adverso', sent.general[2]], ['Inercial', sent.general[1]]];
+
+    // top of mind
+    const tIn = isObj(data.tom) ? data.tom : {};
+    const tg = isObj(tIn.general) ? tIn.general : { temas: tIn.general };
+    const TONOS = ['positivo', 'negativo', 'neutro', 'polarizado', 'propuesta'];
+    let temasG = lista(tg.temas).map((t, i) => isObj(t) ? { tema: txt(t.tema, t.nombre, t.label), valor: n0(t.valor ?? t.peso ?? t.pct), tono: TONOS.includes(txt(t.tono).toLowerCase()) ? txt(t.tono).toLowerCase() : 'neutro' } : { tema: txt(t), valor: n0(lista(tIn.general)[i]), tono: 'neutro' }).filter(t => t.tema);
+    const matrizTom = (o, k) => {
+      if (!isObj(o)) return { titulo: '', sub: '', temas: [], series: [] };
+      let temas = lista(o.temas).map(x => txt(isObj(x) ? (x.tema || x.nombre) : x)).filter(Boolean);
+      let ss = series(o.series);
+      if (!ss.length && isObj(o.valores)) ss = Object.keys(o.valores).map(g => ({ grupo: g, valores: nums(o.valores[g]) }));
+      if (!temas.length && ss.length) temas = temasG.map(t => t.tema);
+      return { titulo: txt(o.titulo), sub: txt(o.sub), temas, series: ss.map(s => ({ grupo: s.grupo, valores: temas.map((_, i) => n0(s.valores[i])) })) };
+    };
+    const tom = { general: { titulo: txt(tg.titulo), sub: txt(tg.sub), temas: temasG } };
+    ['genero', 'edad', 'partido'].forEach(k => { tom[k] = matrizTom(tIn[k], k); });
+
+    const picos = objs(data.picos || data.quincenas).map((p, i) => ({ label: txt(p.label, p.fecha, p.rango, p.codigo) || `C${i + 1}`, volumen: lim(p.volumen, 0, 100), nps: lim(p.nps, -100, 100), pico: /neg/i.test(txt(p.pico, p.tono)) && n0(p.volumen) >= 40 ? 'negativo' : /alto|max|pos|si|true/i.test(txt(p.pico)) ? 'alto' : '' }));
+    const cronologia = objs(data.cronologia).map(e => ({ fecha: txt(e.fecha, e.td), titulo: txt(e.titulo, e.tt), texto: txt(e.texto, e.tx, e.descripcion), tono: /neg/i.test(txt(e.tono)) ? 'neg' : /pos/i.test(txt(e.tono)) ? 'pos' : 'mix', ev: (txt(e.ev).match(/[VEH]/i) || ['V'])[0].toUpperCase() })).filter(e => e.titulo || e.texto);
+
+    // plataformas
+    const pIn = isObj(data.plataformas) ? data.plataformas : {};
+    const filasP = (v, f) => objs(v).map(f).filter(x => x.plataforma);
+    const ppIn = isObj(pIn.partido) ? pIn.partido : {};
+    const plataformas = {
+      peso: filasP(pIn.peso, x => ({ plataforma: txt(x.plataforma, x.nombre), valor: n0(x.valor ?? x.peso ?? x.pct) })),
+      tono: filasP(pIn.tono, x => ({ plataforma: txt(x.plataforma, x.nombre), pos: n0(x.pos ?? x.positivo), neu: n0(x.neu ?? x.neutro), neg: n0(x.neg ?? x.negativo) })),
+      edad: filasP(pIn.edad, x => { const v = nums(x.valores); while (v.length < 4) v.push(0); return { plataforma: txt(x.plataforma, x.nombre), valores: v.slice(0, 4) }; }),
+      brecha: filasP(pIn.brecha, x => ({ plataforma: txt(x.plataforma, x.nombre), actual: lim(x.actual, 0, 100), requerido: lim(x.requerido, 0, 100) })),
+      viral: filasP(pIn.viral, x => ({ plataforma: txt(x.plataforma, x.nombre), critica: n0(x.critica), propia: n0(x.propia) })),
+      partido: { plataformas: lista(ppIn.plataformas).map(x => txt(x)), series: series(ppIn.series) },
+      lectura: objs(pIn.lectura || data.lecturaPlataformas).map(l => ({ titulo: txt(l.titulo), texto: txt(l.texto), alerta: l.alerta === true || l.color === 'da' })).filter(l => l.titulo || l.texto),
+    };
+    if (!plataformas.partido.plataformas.length) plataformas.partido.plataformas = plataformas.tono.map(t => t.plataforma);
+
+    const TON = { favorable: 'positivo', positivo: 'positivo', negativo: 'negativo', neutro: 'neutro', neutral: 'neutro', polarizado: 'polarizado', mixto: 'polarizado' };
+    const nIn = isObj(data.nube) ? data.nube : { palabras: data.nube };
+    const nube = { palabras: objs(nIn.palabras).map(p => ({ w: txt(p.w, p.word, p.palabra), v: lim(p.v ?? p.weight ?? p.peso, 1, 100), s: TON[txt(p.s, p.sentiment, p.tono).toLowerCase()] || 'neutro' })).filter(p => p.w), lectura: txt(nIn.lectura) };
+    const hashtags = objs(data.hashtags).map(h => ({ tag: (t => t.startsWith('#') ? t : '#' + t)(txt(h.tag, h.h, h.hashtag)), indice: n0(h.indice ?? h.f ?? h.apariciones ?? h.valor), tono: TON[txt(h.tono, h.t).toLowerCase()] || 'neutro', plataforma: txt(h.plataforma, h.p), impulso: txt(h.impulso, h.origen, h.i) })).filter(h => h.tag.length > 1).sort((a, b) => b.indice - a.indice);
+    const maxH = Math.max(0, ...hashtags.map(h => h.indice));
+    if (maxH > 100) hashtags.forEach(h => { h.indice = Math.round(h.indice / maxH * 100); });
+
+    const nrIn = isObj(data.narrativas) ? data.narrativas : {};
+    const narr = (v, crit) => objs(v).map((n, i) => {
+      let titulo = sinComillas(txt(n.titulo, n.nombre));
+      const alerta = n.alerta === true || /^⚠/.test(titulo);
+      titulo = titulo.replace(/^⚠\s*/, '');
+      return { titulo, ev: (txt(n.ev).match(/[VEH]/i) || ['V'])[0].toUpperCase(), descripcion: txt(n.descripcion, n.desc), tags: lista(n.tags).map(t => typeof t === 'string' ? { texto: t, tipo: '' } : isObj(t) ? { texto: txt(t.texto), tipo: txt(t.tipo) } : null).filter(t => t && t.texto), bivariado: txt(n.bivariado).replace(/^<strong>Bivariado:<\/strong>\s*/i, ''), alerta: crit && alerta };
+    }).filter(n => n.titulo);
+    const narrativas = { favorables: narr(nrIn.favorables), criticas: narr(nrIn.criticas, true), neutras: narr(nrIn.neutras || nrIn.neutrales) };
+
+    // cruces
+    const czIn = isObj(data.cruces) ? data.cruces : {};
+    const eg = isObj(czIn.edadGenero) ? czIn.edadGenero : {}, pn = isObj(czIn.partidoNarrativa) ? czIn.partidoNarrativa : {};
+    const pe = isObj(czIn.partidoEdad) ? czIn.partidoEdad : {}, zg = isObj(czIn.zonaGenero) ? czIn.zonaGenero : {};
+    const it = isObj(czIn.interna) ? czIn.interna : {}, tt = isObj(czIn.temaTono) ? czIn.temaTono : {};
+    const filasM = (v, k) => objs(v).map(f => ({ [k]: txt(f[k], f.nombre, f.segmento, f.narrativa, f.label), valores: nums(f.valores) })).filter(f => f[k]).concat(lista(v).filter(Array.isArray).map(f => ({ [k]: txt(f[0]), valores: nums(f[1]) })));
+    const cruces = {
+      edadGenero: { grupos: lista(eg.grupos).map(x => txt(x)), filas: filasM(eg.filas, 'segmento'), lectura: txt(eg.lectura).replace(/^<strong>Lectura:<\/strong>\s*/i, '') },
+      partidoNarrativa: { grupos: lista(pn.grupos).map(x => txt(x)), filas: filasM(pn.filas, 'narrativa').map(f => ({ ...f, valores: f.valores.map(v => Math.max(0, Math.min(100, v))) })) },
+      partidoEdad: { sub: txt(pe.sub), grupos: lista(pe.grupos).map(x => txt(x)), series: series(pe.series) },
+      zonaGenero: { zonas: lista(zg.zonas).map(x => txt(x)), hombres: nums(zg.hombres), mujeres: nums(zg.mujeres) },
+      interna: { titulo: txt(it.titulo), sub: txt(it.sub), segmentos: lista(it.segmentos).map(x => txt(x)), series: series(it.series).map(s => ({ nombre: s.grupo, valores: s.valores })) },
+      temaTono: { temas: lista(tt.temas).map(x => txt(x)), positivo: nums(tt.positivo), negativo: nums(tt.negativo) },
+      hallazgos: tarjetas(czIn.hallazgos),
+    };
+    if (!cruces.edadGenero.grupos.length) cruces.edadGenero.grupos = ['18-29', '30-44', '45-59', '60+'];
+    if (!cruces.partidoEdad.grupos.length) cruces.partidoEdad.grupos = ['18-29', '30-44', '45-59', '60+'];
+
+    const NIV_R = (v) => { const x = txt(v).toUpperCase(); return /CR[IÍ]T/.test(x) ? 'CRÍTICO' : /ALT/.test(x) ? 'ALTO' : /BAJ/.test(x) ? 'BAJO' : 'MEDIO'; };
+    const NIV_O = (v) => { const x = txt(v).toUpperCase(); return /MUY/.test(x) ? 'MUY ALTA' : /ALT/.test(x) ? 'ALTA' : /BAJ/.test(x) ? 'BAJA' : 'MEDIA'; };
+    const mr = (v, f) => objs(v).map(r => ({ nivel: f(r.nivel), titulo: txt(r.titulo, r.nombre), descripcion: txt(r.descripcion), bivariado: txt(r.bivariado).replace(/^<strong>Bivariado:<\/strong>\s*/i, '') })).filter(r => r.titulo);
+    const oldAN = isObj(data.alertaNivel) ? data.alertaNivel : {};
+
+    // territorial
+    const terIn = isObj(data.territorial) ? data.territorial : {};
+    const zonas = objs(terIn.zonas).map(z => {
+      const nps = nN(z.nps ?? z.npsP ?? z.valor);
+      const cl = txt(z.clase, z.clasificacion).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const clase = nps === null ? (/advers/.test(cl) ? 'adversa' : /favor/.test(cl) ? 'favorable' : 'inercial') : /advers/.test(cl) ? 'adversa' : /favor/.test(cl) ? 'favorable' : /inerc|disput/.test(cl) ? 'inercial' : nps >= 10 ? 'favorable' : nps <= -10 ? 'adversa' : 'inercial';
+      const etq = txt(z.etiqueta) || { favorable: 'FAVORABLE', inercial: nps !== null && nps > 0 ? 'DISPUTADA' : 'INERCIAL', adversa: 'ADVERSA' }[clase];
+      return { nombre: txt(z.nombre, z.zona), nps: nps === null ? null : Math.max(-100, Math.min(100, Math.round(nps))), clase, etiqueta: etq.replace(/^[🟢🟡🔴]\s*/u, ''), nota: txt(z.nota, z.descripcion) };
+    }).filter(z => z.nombre);
+    const ordC = { favorable: 0, inercial: 1, adversa: 2 };
+    zonas.sort((a, b) => ordC[a.clase] - ordC[b.clase]);
+    const TIPOS = ['fuerte', 'disputa', 'adversa'];
+    const territorial = {
+      zonas,
+      volumen: objs(terIn.volumen).map(v => ({ zona: txt(v.zona, v.nombre), valor: n0(v.valor ?? v.volumen ?? v.pct) })).filter(v => v.zona).sort((a, b) => b.valor - a.valor),
+      bloques: objs(terIn.bloques).map((b, i) => ({ tipo: TIPOS.find(t => txt(b.tipo).toLowerCase().startsWith(t.slice(0, 4))) || TIPOS[i % 3], titulo: txt(b.titulo).replace(/^ZONA (FUERTE|EN DISPUTA|ADVERSA)\s*[—-]\s*/i, ''), zonas: txt(b.zonas), estado: txt(b.estado), texto: txt(b.texto), clave: txt(b.clave), valor: txt(b.valor) })),
+    };
+
+    const escenarios = objs(data.escenarios).map(e => ({ nombre: txt(e.nombre).toUpperCase(), prob: Math.round(lim(e.prob ?? e.probabilidad, 0, 100)), nps: Math.round(lim(e.nps, -100, 100)), nivel: txt(e.nivel), detonante: txt(e.detonante), alerta: txt(e.alerta, e.alertaTemprana), texto: txt(e.texto, e.descripcion) })).filter(e => e.nombre);
+    const vIn = isObj(data.veredicto) ? data.veredicto : {};
+    const veredicto = {}; ['fortaleza', 'vulnerabilidad', 'riesgo', 'narrativa', 'oportunidad', 'final'].forEach(k => { veredicto[k] = txt(vIn[k]); });
+    const recomendaciones = objs(data.recomendaciones).map(r => {
+      let plazo = txt(r.plazo), titulo = txt(r.titulo);
+      if (!plazo && titulo.includes(' · ')) [plazo, titulo] = titulo.split(' · ', 2);
+      return { plazo, titulo, texto: txt(r.texto, r.descripcion), objetivo: txt(r.objetivo, r.meta).replace(/^→\s*/, '').replace(/^Objetivo:\s*/i, '') };
+    }).filter(r => r.titulo || r.texto);
+
+    const out = {
+      meta,
+      npsPartido: { sub: txt(npsP.sub), datos: ord(pares(npsP.datos)) },
+      npsDemo: { sub: txt(npsD.sub), datos: pares(npsD.datos) },
+      ratioPlataforma: ord(pares(data.ratioPlataforma)),
+      tra: { titulo: txt(traIn.titulo), labels: traLab.slice(0, traVal.length), valores: traVal },
+      sentimiento: sent, clima,
+      hallazgosSent: tarjetas(data.hallazgosSent),
+      tom, crucesTom: tarjetas(data.crucesTom),
+      picos, cronologia, plataformas, nube, hashtags,
+      hashtagResumen: txt(data.hashtagResumen, data.hashtagsLectura),
+      narrativas, cruces,
+      riesgos: mr(data.riesgos, NIV_R), oportunidades: mr(data.oportunidades, NIV_O),
+      alertaSube: textos(data.alertaSube || oldAN.sube), alertaBaja: textos(data.alertaBaja || oldAN.baja),
+      territorial,
+      modulosVariante: txt(data.modulosVariante),
+      modulos: objs(data.modulos).map(m => ({ icono: txt(m.icono), titulo: txt(m.titulo, m.nombre), texto: txt(m.texto, m.descripcion) })).filter(m => m.titulo || m.texto),
+      escenariosHorizonte: txt(data.escenariosHorizonte),
+      escenarios,
+      dictamen: txt(data.dictamen, isObj(data.dictamen) ? data.dictamen.texto : ''),
+      veredicto, recomendaciones,
+      fuentesTexto: txt(data.fuentesTexto), fuentesNota: txt(data.fuentesNota),
+    };
+    Object.keys(data).forEach(k => { delete data[k]; });
+    Object.assign(data, out);
   }
 
 
@@ -1983,52 +2018,77 @@ function tag(items, fuente) {
 // =========================================================
 // SCHEMAS LIMPIOS (coinciden 1:1 con las plantillas HTML)
 // =========================================================
-//RADAR
+//RADAR (v2.1 · estructura RADAR Naucalpan, 12 pestañas)
 const SCHEMAS = {
   radar: JSON.stringify({
-    actor: { cargo: "string (cargo actual exacto)", entidad: "string (municipio, estado)", partido: "string", periodo: "string" },
-    alerta: { nivel: 1, color: "VERDE|AMARILLA|NARANJA|ROJA", corte: "string (fecha de corte, ej. '11-OCT-2026')" },
-    metodo: "string (párrafo de metodología: corpus revisado — notas de prensa, publicaciones de Facebook/TikTok/Instagram/X con métricas, cuentas propias revisadas — y aclaración de que los cruces por edad/género/partido/plataforma son estimación modelada [I]; usa <b> para etiquetas)",
-    kpis: [{ clave: "NPS POLÍTICO|SHARE OF VOICE|RATIO ATAQUE/DEF.|TRA QUINCENAL|IRR — RESILIENCIA|ICN — CONVERSIÓN|IAA — AMPL. ADVERSA|AUDIENCIA PROPIA vs VECINAL", valor: "string (ej. '−9', '2.1x', '≈35d', '37%', '44K / 218K', 'n/d')", nota: "string (lectura de 8-20 palabras con la cifra que lo sustenta)", color: "da|go|su|ac|bl|ne", ev: "E|I|H|E/I" }],
-    segmentos: {
+    meta: { nombre: "string (nombre completo real del actor)", resaltado: "string (la palabra del nombre que va resaltada, normalmente el primer apellido)", nombreCorto: "string (nombre + primer apellido, ej. 'David Parra')", corto: "string (apellido con que lo nombra la conversación, ej. 'Parra')", territorio: "string (municipio corto, ej. 'Naucalpan')", territorioLargo: "string (nombre oficial, ej. 'Naucalpan de Juárez')", gentilicio: "string (ej. 'naucalpense')", subtitulo: "string (cargo o aspiración · partido · contexto · territorio · Periodo … · Corte dd/mm/aaaa)", ventana: "string (ej. '13 jun – 13 oct 2026')", corte: "string (ej. '13 oct 2026')", nivel: 2, alerta: "VERDE|AMARILLA|NARANJA|ROJA" },
+    npsPartido: { sub: "string (lectura corta de la gráfica)", datos: [["string (segmento partidista)", 0]] },
+    npsDemo: { sub: "string (lectura corta)", datos: [["18-29", 0], ["30-44", 0], ["45-59", 0], ["60+", 0], ["♂ Hombres", 0], ["♀ Mujeres", 0]] },
+    ratioPlataforma: [["string (plataforma)", 0]],
+    tra: { titulo: "string (ej. 'TRA — Evolución Semanal (jun–oct 2026)')", labels: ["string (corte)"], valores: [0] },
+    sentimiento: {
       general: [0, 0, 0, 0],
-      edad: { "18-24": [0, 0, 0, 0], "25-34": [0, 0, 0, 0], "35-44": [0, 0, 0, 0], "45-59": [0, 0, 0, 0], "60+": [0, 0, 0, 0] },
-      genero: { "Mujeres": [0, 0, 0, 0], "Hombres": [0, 0, 0, 0] },
-      partido: { "NombrePartido": [0, 0, 0, 0] },
-      plataforma: { "Facebook": [0, 0, 0, 0], "TikTok": [0, 0, 0, 0], "X": [0, 0, 0, 0], "Instagram": [0, 0, 0, 0], "Prensa digital": [0, 0, 0, 0] }
+      genero: [{ grupo: "Hombres", valores: [0, 0, 0, 0] }, { grupo: "Mujeres", valores: [0, 0, 0, 0] }],
+      edad: [{ grupo: "18-29", valores: [0, 0, 0] }],
+      partido: [{ grupo: "string (segmento partidista)", valores: [0, 0, 0] }],
+      plataforma: [{ grupo: "string (plataforma)", valores: [0, 0, 0] }],
+      audiencia: [{ grupo: "string (tipo de audiencia)", valores: [0, 0, 0] }]
     },
-    ratioPlataforma: [{ etiqueta: "string (ej. 'TikTok (vistas)', 'Facebook (comentarios)', 'Prensa (notas)', 'X (posts)')", valor: 0 }],
-    hallazgosSent: [{ titulo: "EDAD × SENTIMIENTO|GÉNERO × SENTIMIENTO|PARTIDO × SENTIMIENTO|PLATAFORMA × SENTIMIENTO", ev: "E|I|E/I", texto: "string (con cifras de NPS-P por segmento; usa <strong>)", accion: "string (conclusión estratégica de una línea)" }],
+    clima: { general: [["Favorable", 0], ["Mixto", 0], ["Adverso", 0], ["Inercial", 0]], genero: [["Hombres", 0], ["Mujeres", 0]], edad: [["18-29", 0]], partido: [["string", 0]], plataforma: [["string", 0]], audiencia: [["string", 0]] },
+    hallazgosSent: [{ titulo: "GÉNERO × SENTIMIENTO|PARTIDO × SENTIMIENTO|EDAD × SENTIMIENTO|AUDIENCIA × SENTIMIENTO", texto: "string (con NPS-P por segmento; usa <strong>)", accion: "string (conclusión estratégica de una línea)" }],
     tom: {
-      temas: ["Tema A", "Tema B", "Tema C", "... (6-8 temas reales de la conversación, texto corto)"],
-      general: [0, 0, 0, "... un % por cada tema, mismo orden que temas"],
-      edad: { grupos: ["18-24", "25-34", "35-44", "45-59", "60+"], valores: { "Tema A": [0, 0, 0, 0, 0], "Tema B": [0, 0, 0, 0, 0], "Tema C": [0, 0, 0, 0, 0], "...": "UNA entrada por CADA tema de 'temas' (con su nombre exacto) y 5 números de saliencia 0-100" } },
-      genero: { mujeres: [0, 0, 0, "... un número 0-100 por cada tema"], hombres: [0, 0, 0, "... un número 0-100 por cada tema"] },
-      partido: { grupos: ["Partido 1", "Partido 2", "... los mismos de segmentos.partido"], valores: { "Tema A": [0, 0], "Tema B": [0, 0], "...": "UNA entrada por CADA tema con un % por partido" } },
-      plataforma: { grupos: ["Facebook", "TikTok", "X", "Prensa"], valores: { "Tema A": [0, 0, 0, 0], "Tema B": [0, 0, 0, 0], "...": "UNA entrada por CADA tema con un % por plataforma" } }
+      general: { sub: "string (ej. '¿Qué domina la conversación sobre David Parra? (%)')", temas: [{ tema: "string (texto corto)", valor: 0, tono: "positivo|negativo|neutro|polarizado|propuesta" }] },
+      genero: { titulo: "Top of Mind × Género", sub: "string (lectura corta)", temas: ["string"], series: [{ grupo: "Hombres", valores: [0] }, { grupo: "Mujeres", valores: [0] }] },
+      edad: { titulo: "Top of Mind × Edad", sub: "string", temas: ["string"], series: [{ grupo: "18-29", valores: [0] }] },
+      partido: { titulo: "Top of Mind × Partido", sub: "string", temas: ["string"], series: [{ grupo: "string (segmento partidista)", valores: [0] }] }
     },
-    crucesTom: [{ titulo: "EDAD × TEMA|GÉNERO × TEMA|PARTIDO × TEMA|PLATAFORMA × TEMA", ev: "E|I|E/I", texto: "string (usa <strong> y <br>)", accion: "string" }],
-    quincenas: [{ rango: "string (ej. '26 ABR–10 MAY')", codigo: "string (Q1, Q2... o D1, D2... si son días)", nps: 0, volumen: 0, tono: "neg|pos|mix", titulo: "string (2-5 palabras)", texto: "string (hechos con fecha, medio y métricas: reacciones, compartidos, vistas)", ev: "E|I|H|E/I|E/H" }],
-    audiencia: [{ cuenta: "string (cuenta o grupo)", miles: 0, tipo: "propia|vecinal|instagram|tiktok|medio" }],
-    plataformaEdad: [{ plataforma: "string", valores: [0, 0, 0, 0, 0] }],
-    alcancePieza: [{ metrica: "string (ej. 'FB compartidos', 'FB comentarios', 'TikTok vistas ÷10')", critica: 0, propia: 0 }],
-    lecturaPlataformas: [{ titulo: "string (ej. 'FACEBOOK · CAMPO DE BATALLA · 25-54')", color: "ac|da|bl|go|ne", texto: "string (con cuentas, seguidores y piezas concretas; usa <strong>)" }],
-    nube: { palabras: [{ w: "string", v: 0, s: "positivo|negativo|neutro|polarizado" }], lectura: "string" },
-    hashtags: [{ tag: "#string", apariciones: 0, tono: "positivo|negativo|neutro|polarizado", plataforma: "string", origen: "string (Orgánico | Medio local | Impulso coordinado...)" }],
-    hashtagsLectura: "string (usa <strong>)",
+    crucesTom: [{ titulo: "GÉNERO × TEMA|EDAD × TEMA|PARTIDO × TEMA|TERRITORIO × TEMA", texto: "string (usa <strong> y <br>)", accion: "string" }],
+    picos: [{ label: "string (fecha del corte, ej. '11-13 Jul')", volumen: 0, nps: 0, pico: "alto|negativo|" }],
+    cronologia: [{ fecha: "string (ej. '11–13 JUL 2026 · PICO MÁXIMO (100)')", titulo: "string", texto: "string (qué pasó, medio, y daño/beneficio)", tono: "pos|neg|mix", ev: "V|E|H" }],
+    plataformas: {
+      peso: [{ plataforma: "string", valor: 0 }],
+      tono: [{ plataforma: "string", pos: 0, neu: 0, neg: 0 }],
+      edad: [{ plataforma: "string", valores: [0, 0, 0, 0] }],
+      brecha: [{ plataforma: "string", actual: 0, requerido: 0 }],
+      viral: [{ plataforma: "string", critica: 0, propia: 0 }],
+      partido: { plataformas: ["string"], series: [{ grupo: "string (segmento partidista)", valores: [0] }] },
+      lectura: [{ titulo: "string (ej. 'FACEBOOK · ~50% · 40+')", texto: "string (usa <strong>)", alerta: false }]
+    },
+    nube: { palabras: [{ w: "string", v: 0, s: "positivo|negativo|neutro|polarizado" }], lectura: "string (usa <strong>)" },
+    hashtags: [{ tag: "#string", indice: 0, tono: "positivo|negativo|neutro|polarizado", plataforma: "string", impulso: "string (Propio | Orgánico | Orgánico adverso | Institucional | Rival | Medio afín…)" }],
+    hashtagResumen: "string (usa <strong>)",
     narrativas: {
-      favorables: [{ titulo: "string (entre comillas tipográficas si es frase)", descripcion: "string (con cifra)", tags: [{ texto: "string", tipo: "edad|genero|partido|plataforma|fuente" }], bivariado: "string" }],
-      criticas: [{ titulo: "string", alerta: false, descripcion: "string", tags: [{ texto: "string", tipo: "edad|genero|partido|plataforma|fuente" }], bivariado: "string" }],
-      neutras: [{ titulo: "string", descripcion: "string", tags: [{ texto: "string", tipo: "edad|genero|partido|plataforma|fuente" }], bivariado: "string" }]
+      favorables: [{ titulo: "string", ev: "V|E|H", descripcion: "string", tags: [{ texto: "string", tipo: "edad|zona|partido|audiencia|fuente" }], bivariado: "string" }],
+      criticas: [{ titulo: "string", ev: "V|E|H", alerta: false, descripcion: "string", tags: [{ texto: "string", tipo: "edad|zona|partido|audiencia|fuente" }], bivariado: "string" }],
+      neutras: [{ titulo: "string", ev: "V|E|H", descripcion: "string", tags: [{ texto: "string", tipo: "edad|zona|partido|audiencia|fuente" }], bivariado: "string" }]
+    },
+    cruces: {
+      edadGenero: { grupos: ["18-29", "30-44", "45-59", "60+"], filas: [{ segmento: "♂ Hombres", valores: [0, 0, 0, 0] }, { segmento: "♀ Mujeres", valores: [0, 0, 0, 0] }, { segmento: "Total", valores: [0, 0, 0, 0] }], lectura: "string (usa <strong>)" },
+      partidoNarrativa: { grupos: ["string (segmento partidista)"], filas: [{ narrativa: "string", valores: [0] }] },
+      partidoEdad: { sub: "string (pregunta que responde la gráfica)", grupos: ["18-29", "30-44", "45-59", "60+"], series: [{ grupo: "string (segmento partidista)", valores: [0, 0, 0, 0] }] },
+      zonaGenero: { zonas: ["string"], hombres: [0], mujeres: [0] },
+      interna: { titulo: "string (ej. 'Intención interna PAN × Segmento')", sub: "string (de dónde sale la proyección)", segmentos: ["string"], series: [{ nombre: "string (aspirante o 'NS/Otro')", valores: [0] }] },
+      temaTono: { temas: ["string"], positivo: [0], negativo: [0] },
+      hallazgos: [{ titulo: "string (ej. 'HALLAZGO CRUZADO 1 — …')", texto: "string", accion: "string" }]
     },
     riesgos: [{ nivel: "CRÍTICO|ALTO|MEDIO|BAJO", titulo: "string", descripcion: "string", bivariado: "string" }],
-    oportunidades: [{ nivel: "ALTO|MEDIO|BAJO", titulo: "string", descripcion: "string", bivariado: "string" }],
-    alertaNivel: { texto: "string (párrafo: nivel actual y por qué; picos del periodo; usa <strong>)", sube: ["string"], baja: ["string"] },
+    oportunidades: [{ nivel: "MUY ALTA|ALTA|MEDIA|BAJA", titulo: "string", descripcion: "string", bivariado: "string" }],
+    alertaSube: ["string (señal que subiría el nivel de alerta)"],
+    alertaBaja: ["string (señal que lo bajaría)"],
     territorial: {
-      zonas: [{ nombre: "string (localidad real)", nps: 0, clasificacion: "favorable|adversa|inercial|sin_datos", etiqueta: "string (ej. 'ADVERSA CRÍTICA', 'INERCIAL-FAV.')", nota: "string (motivo en 4-8 palabras)" }],
-      volumen: [{ zona: "string", valor: 0 }],
-      lectura: "string (párrafo)"
-    }
+      zonas: [{ nombre: "string (zona o localidad real)", nps: 0, clase: "favorable|inercial|adversa", etiqueta: "string (ej. 'FAVORABLE', 'FAV.-INERCIAL', 'DISPUTADA', 'ADVERSA')", nota: "string (colonias y motivo en una línea)" }],
+      volumen: [{ zona: "string (mismas zonas)", valor: 0 }],
+      bloques: [{ tipo: "fuerte|disputa|adversa", titulo: "string (ej. 'PUEBLOS Y POPULAR PONIENTE')", zonas: "string", estado: "string (2-3 palabras)", texto: "string", clave: "string (ej. 'Segmento clave', 'Riesgo', 'Estrategia')", valor: "string" }]
+    },
+    modulosVariante: "string (ej. 'VARIANTE B — ASPIRANTE EN COMPETENCIA' o 'VARIANTE A — GOBERNANTE EN FUNCIONES')",
+    modulos: [{ titulo: "string (ej. 'M-A · MONITOREO DE CUENTAS CLAVE')", texto: "string (usa <strong>; cierra con [V], [E] o [H])" }],
+    escenariosHorizonte: "string (ej. 'A ENE 2027')",
+    escenarios: [{ nombre: "OPTIMISTA|BASE|PESIMISTA", prob: 0, nps: 0, nivel: "string (ej. '🟡 Amarilla')", detonante: "string", alerta: "string (alerta temprana)", texto: "string" }],
+    dictamen: "string (párrafo ejecutivo final; usa <strong>)",
+    veredicto: { fortaleza: "string", vulnerabilidad: "string", riesgo: "string", narrativa: "string", oportunidad: "string", final: "string (emoji de nivel + veredicto en 1-2 frases)" },
+    recomendaciones: [{ plazo: "string (ej. '0–15 DÍAS')", titulo: "string (ej. 'CONTENCIÓN DE LA BASE')", texto: "string", objetivo: "string (meta medible)" }],
+    fuentesTexto: "string (medios realmente consultados con tema y fecha, separados por ' · ')",
+    fuentesNota: "string (qué es estimación analítica y requiere validación)"
   }, null, 2),
 //EMOCIONES
   emociones: JSON.stringify({
@@ -2356,6 +2416,22 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
 - "alertaJuridica": siempre llena, con las líneas que nunca deben cruzarse con estos adversarios.`
     : skill === 'sesgo'
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Sesgo):\n- CONSISTENCIA NUMÉRICA (crítico): "metricas.sesgosCriticos.valor" debe ser EXACTAMENTE el número de elementos de "ranking" con score 81-100, y "metricas.sesgosAltos.valor" el número con score 61-80 — cuenta el array real, nunca un número aproximado o inventado.\n- "ranking[].categoria" usa EXACTAMENTE uno de los números romanos "I" a "VIII" del catálogo de referencia dado en las reglas adicionales; distribúyelos, no concentres todo en 1-2 categorías.\n- "ranking[].descripcion" siempre ancla el sesgo en un hecho/evidencia concreto de las fuentes (fecha, cifra, medio, actor), no una definición de libro de texto del sesgo — ej. "22 meses de conflicto armado saturan el frame emocional del electorado (cobertura CNN/Infobae, ago-sep 2026)", nunca solo "La gente reacciona más a lo negativo".\n- "segmentos[].perfil" debe cubrir el espectro completo del electorado del territorio evaluado (mínimo: base dura del partido en el poder, base blanda/decepcionada, persuadible/indeciso, abstencionista/fatigado) — nunca dupliques el mismo perfil dos veces. "color" debe ser EXACTAMENTE uno de "verde", "azul", "ambar", "gris".\n- "ventanasPersuasion[].segmento" debe ser un público específico y territorializado (ej. "Comerciantes de Culiacán", no "Ciudadanía en general"), y "recomendacion" una acción/mensaje concreto y accionable, nunca un consejo genérico tipo "comunicar mejor".\n- "arquitecturaMensajes[].etiqueta" debe ser EXACTAMENTE una de "Diferenciación", "Posicionamiento", "Lanzamiento", "Contención", "Movilización" — cubre al menos 3 etiquetas distintas entre los elementos, no repitas la misma etiqueta en todos.\n- "metricas.sistemaDominante.valor" debe ser EXACTAMENTE "Sistema 1" (procesamiento emocional/reactivo, típico cuando predominan sesgos de negatividad/disponibilidad/pérdida) o "Sistema 2" (procesamiento deliberativo, típico cuando predominan sesgos de confirmación/consistencia con baja intensidad emocional) — decide según qué categorías dominan el ranking.`
+    : skill === 'radar'
+    ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (RADAR):
+- Etiquetas de evidencia: [V] = verificado en una fuente fechada; [E] = estimación analítica RADAR (NPS-P, pesos, cruces, índices); [H] = hipótesis por validar. Cierra con [V] o [H] los textos que lo requieran; "ev" de "cronologia" y "narrativas" es solo la letra.
+- meta: si el actor es una PERSONA, "nombre" es su nombre completo real; "subtitulo" = cargo o aspiración · partido o coordinación · territorio · Periodo <ventana> · Corte dd/mm/aaaa.
+- NPS-P (aprobación neta) va de -100 a 100. Los valores de un mismo segmento deben ser coherentes en todas las pestañas (npsPartido, hallazgosSent, narrativas, riesgos, cruces y territorial).
+- Usa los MISMOS nombres de grupo en todas las gráficas (ej. "Ex-PRI", "Milit. PAN", "Simp. PAN", "Indep.", "Morena"; "Facebook", "X", "Instagram", "TikTok", "WhatsApp", "YouTube"): el color de cada grupo se asigna por su nombre.
+- picos y cronologia: los picos coinciden con eventos fechados de "cronologia"; la fecha de cronología en mayúsculas indica si fue PICO MÁXIMO (100), SEGUNDO PICO, etc.
+- cronologia: hechos reales de las fuentes con medio y fecha; el antecedente fuera de periodo, si existe, se marca "· ANTECEDENTE (FUERA DE PERIODO)".
+- plataformas: los números son estimación [E] sin acceso a APIs; no inventes seguidores ni handles: si no se identifican cuentas propias, dilo.
+- narrativas: "titulo" corto (la narrativa en sí, entre «» si es frase); "descripcion" con el hecho y su fuente; "bivariado" explica en qué segmentos funciona y en cuáles no, con cifras.
+- cruces.interna: si el actor compite en una interna, compara a los aspirantes; si gobierna, compara su aprobación contra los principales rivales por segmento ("titulo" y "sub" lo dicen).
+- territorial: zonas, colonias o pueblos REALES del municipio, nunca genéricos ("Zona 1").
+- modulos: "modulosVariante" = "VARIANTE A — GOBERNANTE EN FUNCIONES" o "VARIANTE B — ASPIRANTE EN COMPETENCIA"; cada módulo con datos concretos (medios, fechas, nombres) y cerrado con [V] o [H].
+- escenarios: "nps" es el NPS-P esperado al día 90; "nivel" con emoji (🟢 Estable, 🟡 Amarilla, 🟠 Naranja, 🔴 Roja).
+- veredicto.final empieza con el emoji del nivel actual y coincide con "meta.alerta".
+- Las cifras de encuestas solo si aparecen en las fuentes, con su casa y fecha; nunca las inventes.`
     : skill === 'tensiones' && parteTensiones === 2
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones · SOCIOAFECTIVA — pestañas "Dolores, enemigos y fracturas", "Segmentación socioafectiva" y "Las 9 preguntas"):
 - En esta llamada generas ÚNICAMENTE los campos de la cartografía socioafectiva (dolores, ias, enemigos, lecturaEnemigos, fracturas, segmentos, hallazgoSegmentacion, preguntas). Tensiones lee el conflicto institucional; la socioafectiva lee la vivencia emocional de la gente y sus heridas.
@@ -2389,7 +2465,7 @@ ${contextoTensiones ? '\nCONTEXTO DE LA PARTE 1 (Tensiones ya generadas — mant
   const esLineaC = (l) => (REGEX_PARTE_C[skill] || /$^/).test(l);
   const filtrarEmociones = (txt) => {
     if (!PARTES_B[skill] || !parteEmociones || parteEmociones === 'FALTANTES') return txt;
-    return txt.split('\n').filter(l => !/^\s*-\s/.test(l)
+    return txt.split('\n').filter(l => !/^\s*-\s/.test(l) || (REGEX_GENERAL[skill] || /$^/).test(l)
       || (parteEmociones === 'B' ? esLineaB(l) : parteEmociones === 'C' ? esLineaC(l) : !esLineaB(l) && !esLineaC(l))).join('\n');
   };
   const requisitosCantidad = REQUISITOS_MINIMOS[(skill === 'opositor' && parteOpositor === 2) ? 'opositor2' : (skill === 'tensiones' && parteTensiones === 2) ? 'tensionesCartografia' : skill] || '';
@@ -2428,25 +2504,30 @@ Genera el JSON completo con el esquema indicado, cumpliendo las cantidades míni
 // Ajusta estos números libremente según lo que necesite cada plantilla.
 const REQUISITOS_MINIMOS = {
   radar: `
-REQUISITOS MÍNIMOS DE CANTIDAD (RADAR) — no entregues menos de esto:
-- kpis: EXACTAMENTE 8, en este orden: NPS POLÍTICO, SHARE OF VOICE, RATIO ATAQUE/DEF., TRA QUINCENAL, IRR — RESILIENCIA, ICN — CONVERSIÓN, IAA — AMPL. ADVERSA, AUDIENCIA PROPIA vs VECINAL. Si un KPI no puede medirse escribe "n/d" en "valor" y explica por qué en "nota" (color "ne").
-- segmentos: cada arreglo es [positivo, neutro, negativo, polarizado] en % (suman 100). edad: las 5 franjas; genero: Mujeres y Hombres; partido: mínimo 4 partidos con presencia local + "Sin partido"; plataforma: mínimo 4.
-- ratioPlataforma: mínimo 4 (comentarios críticos ÷ comentarios de defensa por plataforma; usa null si no hay dato).
-- hallazgosSent: EXACTAMENTE 4 (EDAD, GÉNERO, PARTIDO, PLATAFORMA × SENTIMIENTO), cada uno con cifras de NPS-P y "accion".
-- tom.temas: 6-8 temas (texto corto). tom.general: UN número (%) por tema, en el mismo orden (suman ~100).
-- tom.edad, tom.partido y tom.plataforma: "grupos" con los nombres de cada grupo y "valores" como objeto con UNA clave por CADA tema (el nombre exacto de tom.temas) y como valor un arreglo con un número por grupo (mismo orden que "grupos"). Si hay 8 temas, "valores" debe tener 8 claves. Ningún tema puede quedar con la fila vacía o en ceros. edad = saliencia 0-100; partido y plataforma = % de la conversación de ese grupo dedicada al tema. tom.partido.grupos = los mismos partidos que segmentos.partido.
-- tom.genero.mujeres y tom.genero.hombres: un número (saliencia 0-100) por tema, en el mismo orden; ninguno vacío.
-- crucesTom: EXACTAMENTE 4 (EDAD, GÉNERO, PARTIDO, PLATAFORMA × TEMA).
-- quincenas: un corte por QUINCENA del periodo (para un rango de meses: 2 por mes; para un solo mes: 2; para una semana: un corte por DÍA con código D1…D7; para un periodo PERSONALIZADO: exactamente los cortes y códigos que indica la instrucción del periodo). "nps" -100 a 100, "volumen" índice 0-100 (100 = corte de mayor conversación). Cada "texto" con hechos fechados y métricas reales de las fuentes.
-- audiencia: mínimo 6 cuentas/grupos (propias del actor e institucionales vs. grupos vecinales/medios donde ocurre la conversación), en miles.
-- plataformaEdad: mínimo 4 plataformas, 5 valores (18-24, 25-34, 35-44, 45-59, 60+) que suman 100.
-- alcancePieza: mínimo 3 métricas (pieza crítica vs. pieza propia/favorable).
-- lecturaPlataformas: 5 (una por plataforma relevante, incluida la brecha más crítica con color "da").
-- nube.palabras: 30-40 palabras/frases con peso "v" 10-100; nube.lectura obligatoria.
-- hashtags: mínimo 8 con "apariciones" reales de la muestra (si casi no hay hashtags, dilo en hashtagsLectura).
-- narrativas: favorables 3, criticas 3 (marca "alerta": true en las 2 más dañinas), neutras 3; cada una con 2-3 tags y "bivariado".
-- riesgos: mínimo 5. oportunidades: mínimo 4. alertaNivel: texto + 5 "sube" + 5 "baja".
-- territorial.zonas: 6 localidades reales del municipio. "nps" es OBLIGATORIO y NUMÉRICO (entero de -100 a 100, estimación [I] a partir del tono de las menciones de esa localidad) en toda zona que tenga volumen de conversación; la "clasificacion" debe ser coherente con ese número (favorable ≥ +5, inercial entre -14 y +4, adversa ≤ -15). Solo UNA zona como máximo puede ir con nps null y "sin_datos", y únicamente si no tiene ninguna mención (volumen 0). territorial.volumen: las mismas zonas en % (suman ~100); territorial.lectura obligatoria con cifras.`,
+REQUISITOS MÍNIMOS DE CANTIDAD (RADAR v2.1) — no entregues menos de esto:
+- meta: todos los campos con los datos reales del actor; "nivel" 1-4 (1 VERDE estable, 2 AMARILLA riesgo acumulativo, 3 NARANJA crisis en formación, 4 ROJA crisis activa) coherente con "alerta".
+- npsPartido: 5-7 segmentos partidistas reales del territorio (incluye la base propia, la militancia del partido, independientes y el partido rival), NPS-P de -100 a 100, de mayor a menor.
+- npsDemo: EXACTAMENTE 6 barras: 18-29, 30-44, 45-59, 60+, ♂ Hombres, ♀ Mujeres.
+- ratioPlataforma: 5-6 plataformas (crítica ÷ defensa; >1.5 = riesgo), de mayor a menor.
+- tra: 8-18 cortes (semanas o quincenas del periodo) con su valor TRA, y "titulo" con la granularidad y el rango.
+- sentimiento: "general" = [positivo, neutro, negativo, polarizado] que suma 100; "genero" con 4 valores (incluye polarizado); "edad" (18-29, 30-44, 45-59, 60+), "partido" (los mismos segmentos de npsPartido, 4-5), "plataforma" (4-5) y "audiencia" (3) con [positivo, neutro, negativo] que suman 100 por grupo.
+- clima: % de clima favorable por grupo con los MISMOS grupos de "sentimiento"; "general" = Favorable, Mixto, Adverso, Inercial (suman 100).
+- hallazgosSent: EXACTAMENTE 4 (GÉNERO, PARTIDO, EDAD y AUDIENCIA × SENTIMIENTO), con cifras de NPS-P y "accion".
+- tom: "general" con 6-8 temas cuyo "valor" suma ~100; "genero", "edad" y "partido" con 5-6 temas y una serie por grupo (mismos grupos de "sentimiento"), con UN número por tema en cada serie.
+- crucesTom: EXACTAMENTE 4 (GÉNERO, EDAD, PARTIDO y TERRITORIO × TEMA).
+- picos: 10-18 cortes del periodo con "volumen" índice 0-100 (el mayor = 100) y "nps"; marca "alto" en los 1-2 picos principales y "negativo" en el pico de daño.
+- cronologia: 7-10 eventos FECHADOS de las fuentes, en orden cronológico, cada uno con medio y si fue daño o beneficio.
+- plataformas: "peso" 6 plataformas que suman 100; "tono", "edad" (4 franjas 18-29, 30-44, 45-59, 60+ que suman 100), "brecha", "viral" y "partido" con 5-6 plataformas; "lectura" EXACTAMENTE 6 tarjetas (una por plataforma; "alerta": true en la brecha más crítica).
+- nube: 30-40 palabras con peso "v" 9-100; "lectura" obligatoria.
+- hashtags: 10-12 con "indice" 0-100 (el mayor = 100); "hashtagResumen" obligatorio.
+- narrativas: favorables 5, criticas 4 ("alerta": true solo en la más peligrosa), neutras 4; cada una con 1-3 tags y "bivariado".
+- cruces: "edadGenero" 3 filas (♂ Hombres, ♀ Mujeres, Total); "partidoNarrativa" 6 narrativas × 5 segmentos (0-100); "partidoEdad" 4 series; "zonaGenero" 6-7 zonas; "interna" 5-6 segmentos con una serie por aspirante + "NS/Otro" que suman 100 por segmento; "temaTono" 6-7 temas; "hallazgos" EXACTAMENTE 2.
+- riesgos: 6 (al menos 2 CRÍTICO o ALTO). oportunidades: 5 (MUY ALTA, ALTA o MEDIA). alertaSube: 5. alertaBaja: 5.
+- territorial: "zonas" 8 zonas reales del municipio con "nps" numérico y "clase" coherente (favorable ≥ +10, inercial entre -9 y +9, adversa ≤ -10), ordenadas de favorable a adversa; "volumen" las mismas zonas en % que suman ~100; "bloques" EXACTAMENTE 3 (fuerte, disputa, adversa).
+- modulos: EXACTAMENTE 6 (M-A Monitoreo de cuentas clave, M-B Amplificadores críticos, M-C Eventos detonantes, M-D Actores del escenario, M-E Comparativo electoral, M-F Brechas prioritarias).
+- escenarios: EXACTAMENTE 3 (OPTIMISTA, BASE, PESIMISTA) con "prob" que suma 100.
+- dictamen: 90-140 palabras. veredicto: los 6 campos llenos. recomendaciones: EXACTAMENTE 4 (dos de 0–15 DÍAS y dos de 15–60 DÍAS).
+- fuentesTexto: obligatorio, solo con medios que aparezcan en las fuentes crudas.`,
 
   emociones: `
 REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
@@ -2573,6 +2654,29 @@ const CAMPOS_TENS_P2 = ['dolores', 'ias', 'enemigos', 'lecturaEnemigos', 'fractu
 
 // Resumen compacto de la llamada 1 para que la cartografía (llamada 2) use
 // los mismos nombres de tensiones, emociones y zonas.
+// Resumen de la parte A de RADAR para las partes B y C (y para completar
+// faltantes): mismos grupos, temas y nivel de alerta en todas las pestañas.
+function resumenRadarParaPartes(d) {
+  if (!d || typeof d !== 'object') return '';
+  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  const nombres = (v) => (Array.isArray(v) ? v : []).map(x => isObj(x) ? (x.grupo || x.nombre || x.tema) : Array.isArray(x) ? x[0] : x).filter(Boolean).map(String);
+  const m = isObj(d.meta) ? d.meta : {};
+  const s = isObj(d.sentimiento) ? d.sentimiento : {};
+  const partes = ['CONTEXTO YA GENERADO (usa EXACTAMENTE estos nombres y este nivel de alerta):'];
+  if (m.nombre) partes.push(`Actor: ${m.nombre}${m.territorio ? ' · ' + m.territorio : ''}${m.ventana ? ' · ' + m.ventana : ''}`);
+  if (m.nivel || m.alerta) partes.push(`Nivel de alerta: ${m.nivel || ''} ${m.alerta || ''}`.trim());
+  const np = isObj(d.npsPartido) ? d.npsPartido.datos : d.npsPartido;
+  if (Array.isArray(np) && np.length) partes.push('NPS-P por segmento partidista: ' + np.map(x => Array.isArray(x) ? `${x[0]} ${x[1]}` : '').filter(Boolean).join(', '));
+  const sp = nombres(s.partido); if (sp.length) partes.push('Segmentos partidistas: ' + sp.join(', '));
+  const sl = nombres(s.plataforma); if (sl.length) partes.push('Plataformas: ' + sl.join(', '));
+  const sa = nombres(s.audiencia); if (sa.length) partes.push('Audiencias: ' + sa.join(', '));
+  const tg = isObj(d.tom) && isObj(d.tom.general) ? nombres(d.tom.general.temas) : [];
+  if (tg.length) partes.push('Temas del Top of Mind: ' + tg.join(' | '));
+  const cr = (Array.isArray(d.cronologia) ? d.cronologia : []).filter(isObj).map(e => `${e.fecha || ''}: ${e.titulo || ''}`).slice(0, 10);
+  if (cr.length) partes.push('Eventos del periodo:\n- ' + cr.join('\n- '));
+  return partes.length > 1 ? partes.join('\n') : '';
+}
+
 function resumenTensionesParaCartografia(p1) {
   if (!p1 || typeof p1 !== 'object') return '';
   const lista = (arr, f) => (Array.isArray(arr) ? arr : []).map(f).filter(Boolean).slice(0, 10);
