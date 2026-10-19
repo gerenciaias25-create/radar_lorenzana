@@ -1,5 +1,5 @@
 (function(){
-/* RADAR v2.1 · Análisis bivariado — estructura RADAR Naucalpan (12 pestañas).
+/* RADAR v2.1 · Análisis bivariado — estructura RADAR Naucalpan (11 pestañas, sin Conclusión).
    Lee window.DATA (lo llena el servidor). Cada sección se dibuja aislada:
    si un bloque viene vacío o con error, las demás pestañas siguen funcionando. */
 const D = (window.DATA && typeof window.DATA === 'object') ? window.DATA : {};
@@ -71,7 +71,6 @@ seccion('encabezado', () => {
   put('r-nombre', nombre.split(/\s+/).map(p => clave(p) === res ? '<span>' + esc(p.toUpperCase()) + '</span>' : esc(p.toUpperCase())).join(' '));
   put('r-sub', esc(meta.subtitulo || [meta.cargo, territorio, meta.ventana].filter(Boolean).join(' · ')));
   put('r-foot', ['RADAR', esc(S(meta.territorioLargo || territorio).toUpperCase()), 'ESTUDIO CONFIDENCIAL'].filter(Boolean).join(' · '));
-  put('r-dict-l', '// DICTAMEN RADAR v2.1' + (meta.corte ? ' · ' + esc(S(meta.corte).toUpperCase()) : ''));
 });
 
 /* ---------- Registro de colores por grupo ---------- */
@@ -317,28 +316,6 @@ seccion('modulos', () => {
   const ICON = ['📡', '🔥', '⚡', '🗺️', '📊', '🎯'];
   put('r-mod-t', 'MÓDULOS ESPECIALIZADOS' + (D.modulosVariante ? ' (' + esc(S(D.modulosVariante).toUpperCase()) + ')' : ''));
   put('r-mod', A(D.modulos).filter(m => m && (m.titulo || m.texto)).map((m, i) => '<div class="mc" style="border-top:3px solid ' + COLS[i % 6] + '"><div class="mi">' + esc(m.icono || ICON[i % 6]) + '</div><div class="mn2">' + esc(S(m.titulo).toUpperCase()) + '</div><div class="md2">' + H(m.texto) + '</div></div>').join('') || vacio());
-  put('r-esc-t', 'ESCENARIOS A 90 DÍAS' + (D.escenariosHorizonte ? ' (' + esc(S(D.escenariosHorizonte).toUpperCase()) + ')' : ''));
-  const EC = [['rgba(46,196,182,.2)', 'var(--su)'], ['rgba(244,196,48,.15)', 'var(--go)'], ['rgba(230,57,70,.2)', 'var(--da)']];
-  put('r-esc', A(D.escenarios).filter(e => e && e.nombre).map((e, i) => {
-    const q = EC[i % 3];
-    return '<div class="ec"><div class="eh" style="background:' + q[0] + ';color:' + q[1] + '">' + esc(S(e.nombre).toUpperCase()) + ' · ' + N(e.prob) + '%</div><div class="eb">'
-      + '<div class="er"><span class="ek">NPS-P día 90</span><span style="color:' + q[1] + ';font-weight:700">' + sgnU(N(e.nps)) + '</span></div>'
-      + '<div class="er"><span class="ek">Nivel de alerta</span><span>' + esc(e.nivel) + '</span></div>'
-      + '<div class="er"><span class="ek">Detonante</span><span style="font-size:10px;text-align:right">' + esc(e.detonante) + '</span></div>'
-      + '<div class="er"><span class="ek">Alerta temprana</span><span style="font-size:10px;text-align:right">' + esc(e.alerta) + '</span></div>'
-      + '<p class="ep">' + H(e.texto) + '</p></div></div>';
-  }).join('') || vacio());
-});
-
-seccion('conclusion', () => {
-  put('r-dict', H(D.dictamen) || 'Sin dictamen.');
-  const V = O(D.veredicto);
-  ['fortaleza', 'vulnerabilidad', 'riesgo', 'narrativa', 'oportunidad', 'final'].forEach(k => put('r-v-' + k, H(V[k]) || '—'));
-  put('r-recs', A(D.recomendaciones).filter(r => r && (r.titulo || r.texto)).map((r, i) => {
-    const col = ['ac', 'su', 'or', 'bl'][i % 4];
-    return '<div class="ic ' + col + '"><div class="ih">' + esc([r.plazo, r.titulo].filter(Boolean).join(' · ').toUpperCase()) + '</div><div class="ib">' + H(r.texto) + '</div>' + (S(r.objetivo) ? '<div class="im">→ Objetivo: ' + H(r.objetivo) + '</div>' : '') + '</div>';
-  }).join('') || vacio());
-  put('r-fuentes', H(D.fuentesTexto || A(D.fuentes).map(f => esc(O(f).titulo || O(f).medio || f)).join(' · ')) + '<br>\n      <span style="color:var(--or)">' + H(D.fuentesNota || 'Métricas de plataformas, NPS-P, cruces bivariados, nube y hashtags: estimación analítica RADAR sin acceso directo a APIs de redes; requieren validación con herramienta de social listening.') + '</span>');
 });
 
 /* Primera pestaña */
