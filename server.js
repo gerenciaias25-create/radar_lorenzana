@@ -592,11 +592,11 @@ const REGEX_PARTE_B = {
 // Tercera parte (en paralelo con A y B) para skills muy largas.
 const PARTES_C = {
   emociones: ['segIntro', 'segJer', 'segmentos', 'segTabla', 'segTablaNote', 'miedos', 'deseos', 'necesidades'],
-  radar: ['riesgos', 'oportunidades', 'alertaSube', 'alertaBaja', 'territorial', 'modulosVariante', 'modulos', 'escenariosHorizonte', 'escenarios', 'dictamen', 'veredicto', 'recomendaciones', 'fuentesTexto', 'fuentesNota'],
+  radar: ['riesgos', 'oportunidades', 'alertaSube', 'alertaBaja', 'territorial', 'modulosVariante', 'modulos'],
 };
 const REGEX_PARTE_C = {
   emociones: /^\s*-\s*"?(segIntro|segJer|segmentos|segTabla|segTablaNote|miedos|deseos|necesidades)\b/,
-  radar: /^\s*-\s*"?(riesgos|oportunidades|alertaSube|alertaBaja|territorial|modulos|modulosVariante|escenarios|escenariosHorizonte|dictamen|veredicto|recomendaciones|fuentesTexto|fuentesNota)\b/,
+  radar: /^\s*-\s*"?(riesgos|oportunidades|alertaSube|alertaBaja|territorial|modulos|modulosVariante)\b/,
 };
 // Reglas generales que van en TODAS las partes.
 const REGEX_GENERAL = {
@@ -696,10 +696,6 @@ const CHEQUEOS_FALTANTES = {
     alertaSube: d => Array.isArray(d.alertaSube) && d.alertaSube.length >= 3 && Array.isArray(d.alertaBaja) && d.alertaBaja.length >= 3,
     territorial: d => d.territorial && Array.isArray(d.territorial.zonas) && d.territorial.zonas.filter(z => z && /\d/.test(String(z.nps ?? ''))).length >= 4 && Array.isArray(d.territorial.volumen) && d.territorial.volumen.length >= 3,
     modulos: d => Array.isArray(d.modulos) && d.modulos.length >= 4,
-    escenarios: d => Array.isArray(d.escenarios) && d.escenarios.length >= 3,
-    dictamen: d => largo(d.dictamen, 60),
-    veredicto: d => d.veredicto && typeof d.veredicto === 'object' && Object.values(d.veredicto).filter(v => largo(v, 10)).length >= 5,
-    recomendaciones: d => Array.isArray(d.recomendaciones) && d.recomendaciones.length >= 3,
   },
 
 };
@@ -719,8 +715,6 @@ const CHEQUEOS_POST = {
     cruces: d => d.cruces.edadGenero.filas.length >= 2 && d.cruces.partidoNarrativa.filas.length >= 3 && d.cruces.partidoEdad.series.length >= 2 && d.cruces.zonaGenero.zonas.length >= 3 && d.cruces.interna.series.length >= 2 && d.cruces.temaTono.temas.length >= 3,
     territorial: d => d.territorial.zonas.filter(z => z.nps !== null).length >= 4 && d.territorial.volumen.length >= 3,
     modulos: d => d.modulos.length >= 4,
-    escenarios: d => d.escenarios.length >= 3,
-    veredicto: d => Object.values(d.veredicto).filter(v => largo(v, 10)).length >= 5,
   },
   tensiones: {
     ranking: d => d.ranking.filter(r => r.score > 0 && r.evidencia.length && largo(r.lectura, 20)).length >= 5,
@@ -771,7 +765,7 @@ const CHEQUEOS_POST = {
   },
 };
 // Campos que se piden juntos (si falta uno, se pide también su pareja).
-const PAREJAS_FALTANTES = { hashtagResumen: ['hashtags'], alertaSube: ['alertaBaja'], escenarios: ['escenariosHorizonte'], modulos: ['modulosVariante'], veredicto: ['dictamen'], dictamen: ['veredicto'], picos: ['cronologia'], cronologia: ['picos'], ranking: ['trayectoria', 'riesgos'], trayectoria: ['ranking', 'trayectoriaLabels'], enemigos: ['lecturaEnemigos'], ias: ['dolores'], hashtags: ['hashtagsLectura', 'hashtagResumen'], nube: ['hashtags', 'hashtagsLectura', 'hashtagResumen'], tom: ['crucesTom'], segmentos: ['hallazgosSent', 'ratioPlataforma', 'segJer'], riesgos: ['alertaNivel'], dyads: ['dyadInterp'], dyadInterp: ['dyads'], haidt: ['haidtNote'], westen: ['westenMeta'], lakoff: ['lakoffUsar', 'lakoffEvitar'], transfer: ['transferCliente'], codigo: ['codigoTitulo'], arqCol: ['codigoTitulo', 'codigo'], arqScores: ['arqIdeal'], arqIdeal: ['arqScores'], segTabla: ['segTablaNote'], actores: ['actoresRadar', 'arqActores', 'actoresNote'], preguntaPolitica: ['preguntaDesc'], preguntaDesc: ['preguntaPolitica'], partidos: ['partidosChart'], concept: ['conceptDesc'] };
+const PAREJAS_FALTANTES = { hashtagResumen: ['hashtags'], alertaSube: ['alertaBaja'], modulos: ['modulosVariante'], picos: ['cronologia'], cronologia: ['picos'], ranking: ['trayectoria', 'riesgos'], trayectoria: ['ranking', 'trayectoriaLabels'], enemigos: ['lecturaEnemigos'], ias: ['dolores'], hashtags: ['hashtagsLectura', 'hashtagResumen'], nube: ['hashtags', 'hashtagsLectura', 'hashtagResumen'], tom: ['crucesTom'], segmentos: ['hallazgosSent', 'ratioPlataforma', 'segJer'], riesgos: ['alertaNivel'], dyads: ['dyadInterp'], dyadInterp: ['dyads'], haidt: ['haidtNote'], westen: ['westenMeta'], lakoff: ['lakoffUsar', 'lakoffEvitar'], transfer: ['transferCliente'], codigo: ['codigoTitulo'], arqCol: ['codigoTitulo', 'codigo'], arqScores: ['arqIdeal'], arqIdeal: ['arqScores'], segTabla: ['segTablaNote'], actores: ['actoresRadar', 'arqActores', 'actoresNote'], preguntaPolitica: ['preguntaDesc'], preguntaDesc: ['preguntaPolitica'], partidos: ['partidosChart'], concept: ['conceptDesc'] };
 
 async function completarFaltantes(skill, data, base, apiKey, chequeos = CHEQUEOS_FALTANTES[skill]) {
   if (!chequeos) return data;
@@ -1054,15 +1048,6 @@ function normalizeResponse(data, skill, ctx = {}) {
       bloques: objs(terIn.bloques).map((b, i) => ({ tipo: TIPOS.find(t => txt(b.tipo).toLowerCase().startsWith(t.slice(0, 4))) || TIPOS[i % 3], titulo: txt(b.titulo).replace(/^ZONA (FUERTE|EN DISPUTA|ADVERSA)\s*[—-]\s*/i, ''), zonas: txt(b.zonas), estado: txt(b.estado), texto: txt(b.texto), clave: txt(b.clave), valor: txt(b.valor) })),
     };
 
-    const escenarios = objs(data.escenarios).map(e => ({ nombre: txt(e.nombre).toUpperCase(), prob: Math.round(lim(e.prob ?? e.probabilidad, 0, 100)), nps: Math.round(lim(e.nps, -100, 100)), nivel: txt(e.nivel), detonante: txt(e.detonante), alerta: txt(e.alerta, e.alertaTemprana), texto: txt(e.texto, e.descripcion) })).filter(e => e.nombre);
-    const vIn = isObj(data.veredicto) ? data.veredicto : {};
-    const veredicto = {}; ['fortaleza', 'vulnerabilidad', 'riesgo', 'narrativa', 'oportunidad', 'final'].forEach(k => { veredicto[k] = txt(vIn[k]); });
-    const recomendaciones = objs(data.recomendaciones).map(r => {
-      let plazo = txt(r.plazo), titulo = txt(r.titulo);
-      if (!plazo && titulo.includes(' · ')) [plazo, titulo] = titulo.split(' · ', 2);
-      return { plazo, titulo, texto: txt(r.texto, r.descripcion), objetivo: txt(r.objetivo, r.meta).replace(/^→\s*/, '').replace(/^Objetivo:\s*/i, '') };
-    }).filter(r => r.titulo || r.texto);
-
     const out = {
       meta,
       npsPartido: { sub: txt(npsP.sub), datos: ord(pares(npsP.datos)) },
@@ -1080,11 +1065,6 @@ function normalizeResponse(data, skill, ctx = {}) {
       territorial,
       modulosVariante: txt(data.modulosVariante),
       modulos: objs(data.modulos).map(m => ({ icono: txt(m.icono), titulo: txt(m.titulo, m.nombre), texto: txt(m.texto, m.descripcion) })).filter(m => m.titulo || m.texto),
-      escenariosHorizonte: txt(data.escenariosHorizonte),
-      escenarios,
-      dictamen: txt(data.dictamen, isObj(data.dictamen) ? data.dictamen.texto : ''),
-      veredicto, recomendaciones,
-      fuentesTexto: txt(data.fuentesTexto), fuentesNota: txt(data.fuentesNota),
     };
     Object.keys(data).forEach(k => { delete data[k]; });
     Object.assign(data, out);
@@ -2106,14 +2086,7 @@ const SCHEMAS = {
       bloques: [{ tipo: "fuerte|disputa|adversa", titulo: "string (ej. 'PUEBLOS Y POPULAR PONIENTE')", zonas: "string", estado: "string (2-3 palabras)", texto: "string", clave: "string (ej. 'Segmento clave', 'Riesgo', 'Estrategia')", valor: "string" }]
     },
     modulosVariante: "string (ej. 'VARIANTE B — ASPIRANTE EN COMPETENCIA' o 'VARIANTE A — GOBERNANTE EN FUNCIONES')",
-    modulos: [{ titulo: "string (ej. 'M-A · MONITOREO DE CUENTAS CLAVE')", texto: "string (usa <strong>; cierra con [V], [E] o [H])" }],
-    escenariosHorizonte: "string (ej. 'A ENE 2027')",
-    escenarios: [{ nombre: "OPTIMISTA|BASE|PESIMISTA", prob: 0, nps: 0, nivel: "string (ej. '🟡 Amarilla')", detonante: "string", alerta: "string (alerta temprana)", texto: "string" }],
-    dictamen: "string (párrafo ejecutivo final; usa <strong>)",
-    veredicto: { fortaleza: "string", vulnerabilidad: "string", riesgo: "string", narrativa: "string", oportunidad: "string", final: "string (emoji de nivel + veredicto en 1-2 frases)" },
-    recomendaciones: [{ plazo: "string (ej. '0–15 DÍAS')", titulo: "string (ej. 'CONTENCIÓN DE LA BASE')", texto: "string", objetivo: "string (meta medible)" }],
-    fuentesTexto: "string (medios realmente consultados con tema y fecha, separados por ' · ')",
-    fuentesNota: "string (qué es estimación analítica y requiere validación)"
+    modulos: [{ titulo: "string (ej. 'M-A · MONITOREO DE CUENTAS CLAVE')", texto: "string (usa <strong>; cierra con [V], [E] o [H])" }]
   }, null, 2),
 //EMOCIONES
   emociones: JSON.stringify({
@@ -2454,8 +2427,6 @@ function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorAct
 - cruces.interna: si el actor compite en una interna, compara a los aspirantes; si gobierna, compara su aprobación contra los principales rivales por segmento ("titulo" y "sub" lo dicen).
 - territorial: zonas, colonias o pueblos REALES del municipio, nunca genéricos ("Zona 1").
 - modulos: "modulosVariante" = "VARIANTE A — GOBERNANTE EN FUNCIONES" o "VARIANTE B — ASPIRANTE EN COMPETENCIA"; cada módulo con datos concretos (medios, fechas, nombres) y cerrado con [V] o [H].
-- escenarios: "nps" es el NPS-P esperado al día 90; "nivel" con emoji (🟢 Estable, 🟡 Amarilla, 🟠 Naranja, 🔴 Roja).
-- veredicto.final empieza con el emoji del nivel actual y coincide con "meta.alerta".
 - Las cifras de encuestas solo si aparecen en las fuentes, con su casa y fecha; nunca las inventes.`
     : skill === 'tensiones' && parteTensiones === 2
     ? `\nINSTRUCCIONES DE ESTRUCTURA CRÍTICAS (Tensiones · SOCIOAFECTIVA — pestañas "Dolores, enemigos y fracturas", "Segmentación socioafectiva" y "Las 9 preguntas"):
@@ -2551,9 +2522,7 @@ REQUISITOS MÍNIMOS DE CANTIDAD (RADAR v2.1) — no entregues menos de esto:
 - riesgos: 6 (al menos 2 CRÍTICO o ALTO). oportunidades: 5 (MUY ALTA, ALTA o MEDIA). alertaSube: 5. alertaBaja: 5.
 - territorial: "zonas" 8 zonas reales del municipio con "nps" numérico y "clase" coherente (favorable ≥ +10, inercial entre -9 y +9, adversa ≤ -10), ordenadas de favorable a adversa; "volumen" las mismas zonas en % que suman ~100; "bloques" EXACTAMENTE 3 (fuerte, disputa, adversa).
 - modulos: EXACTAMENTE 6 (M-A Monitoreo de cuentas clave, M-B Amplificadores críticos, M-C Eventos detonantes, M-D Actores del escenario, M-E Comparativo electoral, M-F Brechas prioritarias).
-- escenarios: EXACTAMENTE 3 (OPTIMISTA, BASE, PESIMISTA) con "prob" que suma 100.
-- dictamen: 90-140 palabras. veredicto: los 6 campos llenos. recomendaciones: EXACTAMENTE 4 (dos de 0–15 DÍAS y dos de 15–60 DÍAS).
-- fuentesTexto: obligatorio, solo con medios que aparezcan en las fuentes crudas.`,
+`,
 
   emociones: `
 REQUISITOS MÍNIMOS DE CANTIDAD (EMOCIONES) — no entregues menos de esto:
