@@ -3,6 +3,15 @@ import cors from 'cors';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { AsyncLocalStorage } from 'async_hooks';
+
+// Variables del archivo .env (si existe y dotenv está instalado). En Hostinger
+// también pueden venir del panel; si dotenv no está, el servidor sigue igual.
+try { await import('dotenv/config'); } catch (_) { /* sin .env */ }
+
+// Modelo de IA vigente y registro de gasto por investigación.
+const modeloIA = () => (process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini').trim();
+const GASTO_IA = new AsyncLocalStorage();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,7 +125,8 @@ app.post('/api/analizar', (req, res) => {
 
   // Se procesa en segundo plano; NO se espera (no "await") para
   // poder responder al cliente de inmediato.
-  procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, periodo, clienteName, actoresRef, APIFY_TOKEN, OPENROUTER_KEY });
+  GASTO_IA.run({ modelo: modeloIA(), llamadas: 0, entrada: 0, salida: 0, costo: 0 },
+    () => procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, periodo, clienteName, actoresRef, APIFY_TOKEN, OPENROUTER_KEY }));
 
   return res.status(202).json({ jobId });
 });
@@ -155,7 +165,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       ]);
     }
 
-    JOBS.set(jobId, { status: 'processing', progreso: 'Estructurando datos con OpenRouter...' });
+    JOBS.set(jobId, { status: 'processing', progreso: `Estructurando datos con ${modeloIA()} (OpenRouter)...` });
 
     // 2. Estructuración con OpenRouter
     let structured;
@@ -285,9 +295,11 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
         periodoInfo: periodo,
         cliente: clienteName || null,
         fuentesEncontradas,
+        ia: (g => g ? { modelo: g.modelo, llamadas: g.llamadas, tokensEntrada: g.entrada, tokensSalida: g.salida, costoUSD: Math.round(g.costo * 10000) / 10000 } : undefined)(GASTO_IA.getStore()),
         data: normalized,
       },
     });
+    { const g = GASTO_IA.getStore(); if (g) console.log(`[IA] Job ${jobId} (${skill}) terminado con ${g.modelo}: ${g.llamadas} llamadas · ${g.entrada} tokens de entrada · ${g.salida} de salida · costo total $${g.costo.toFixed(4)} USD`); }
     limpiarJob(jobId);
   } catch (err) {
     console.error(`[-] Error en job ${jobId}:`, err);
@@ -800,7 +812,7 @@ function fuentesReales(bloque, max = 20) {
 
 // Health Check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Servidor RADAR activo' });
+  res.status(200).json({ status: 'OK', message: 'Servidor RADAR activo', modeloIA: modeloIA(), modeloConfigurado: !!process.env.OPENROUTER_MODEL });
 });
 
 // Puerto
@@ -2750,7 +2762,7 @@ function limpiarTextoParaModelo(t) {
 }
 
 async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
-  const model = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  const model = modeloIA();
   system = limpiarTextoParaModelo(system);
   user = limpiarTextoParaModelo(user);
   let ultimoError;
@@ -2772,6 +2784,7 @@ async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
           temperature: 0.3,
           max_tokens: 28000,
           response_format: { type: 'json_object' },
+          usage: { include: true },
         }),
       });
 
@@ -2785,6 +2798,14 @@ async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
 
       const data = await r.json();
       if (data && data.error) throw new Error(`OpenRouter devolvió un error: ${JSON.stringify(data.error).slice(0, 300)}`);
+      // Registro de gasto: modelo que REALMENTE respondió, tokens y costo en USD.
+      {
+        const u = data.usage || {};
+        const g = GASTO_IA.getStore();
+        const usado = data.model || model;
+        if (g) { g.modelo = usado; g.llamadas++; g.entrada += u.prompt_tokens || 0; g.salida += u.completion_tokens || 0; g.costo += Number(u.cost) || 0; }
+        console.log(`[IA] ${usado} · entrada ${u.prompt_tokens ?? '?'} tokens · salida ${u.completion_tokens ?? '?'} tokens · costo $${Number(u.cost || 0).toFixed(4)} USD`);
+      }
       const choice = data?.choices?.[0] || {};
       const raw = choice?.message?.content || '';
       if (!raw.trim()) throw new Error(`OpenRouter devolvió una respuesta vacía (finish_reason: ${choice.finish_reason || 'desconocido'}).`);
