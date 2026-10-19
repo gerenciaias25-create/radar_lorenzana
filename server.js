@@ -13,6 +13,17 @@ try { createRequire(import.meta.url)('dotenv').config(); } catch (_) { /* sin .e
 
 // Modelo de IA vigente y registro de gasto por investigación.
 const modeloIA = () => (process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini').trim();
+// Modelo económico para las partes menos críticas (complementos, segmentos,
+// plataformas). Si OPENROUTER_MODEL_ECONOMICO no está definido: con un modelo
+// Claude Opus se usa Claude Sonnet; con cualquier otro modelo, el mismo modelo.
+// Para usar el modelo principal en todo, pon OPENROUTER_MODEL_ECONOMICO=mismo.
+const modeloEconomico = () => {
+  const v = (process.env.OPENROUTER_MODEL_ECONOMICO || '').trim();
+  if (v && v.toLowerCase() !== 'mismo') return v;
+  if (v.toLowerCase() === 'mismo') return modeloIA();
+  return /^anthropic\/claude-opus/i.test(modeloIA()) ? 'anthropic/claude-sonnet-5.5' : modeloIA();
+};
+const ECO = { economico: true };
 const GASTO_IA = new AsyncLocalStorage();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -178,8 +189,8 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       // tokens de salida del modelo no corte las últimas pestañas.
       const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
       const [p1, p2] = await Promise.all([
-        callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor, parteOpositor: 1 }), OPENROUTER_KEY),
-        callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor2, parteOpositor: 2 }), OPENROUTER_KEY),
+        callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor, parteOpositor: 1 }), OPENROUTER_KEY, 2, { maxTokens: 28000 }),
+        callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor2, parteOpositor: 2 }), OPENROUTER_KEY, 2, { maxTokens: 28000 }),
       ]);
       structured = { ...(p2 || {}), ...(p1 || {}) };
     } else if (skill === 'radar') {
@@ -195,7 +206,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       JOBS.set(jobId, { status: 'processing', progreso: 'Generando plataformas, narrativas, cruces, riesgos, territorial y conclusión...' });
       const ctxA = resumenRadarParaPartes(pA);
       const [pB, pC] = await Promise.all([
-        callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_B[skill]), parteEmociones: 'B', contextoTensiones: ctxA }), OPENROUTER_KEY)
+        callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_B[skill]), parteEmociones: 'B', contextoTensiones: ctxA }), OPENROUTER_KEY, 2, ECO)
           .catch(e => { console.warn('[!] radar parte B falló:', e.message); return {}; }),
         callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_C[skill]), parteEmociones: 'C', contextoTensiones: ctxA }), OPENROUTER_KEY)
           .catch(e => { console.warn('[!] radar parte C falló:', e.message); return {}; }),
@@ -215,7 +226,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
         callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_B[skill]), parteEmociones: 'B' }), OPENROUTER_KEY)
           .catch(e => { console.warn(`[!] ${skill} parte B falló:`, e.message); return {}; }),
         PARTES_C[skill]
-          ? callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_C[skill]), parteEmociones: 'C' }), OPENROUTER_KEY)
+          ? callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, PARTES_C[skill]), parteEmociones: 'C' }), OPENROUTER_KEY, 2, ECO)
             .catch(e => { console.warn(`[!] ${skill} parte C falló:`, e.message); return {}; })
           : Promise.resolve({}),
       ]);
@@ -236,7 +247,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       // formas (las 7 pestañas principales no dependen de ella).
       for (let intento = 1; intento <= 2 && !carto; intento++) {
         try {
-          const p2 = await callOpenRouter(promptCarto, OPENROUTER_KEY, 1);
+          const p2 = await callOpenRouter(promptCarto, OPENROUTER_KEY, 1, ECO);
           const c = p2 && (p2.cartografiaSocioafectiva || p2);
           const pts = puntaje(c);
           if (pts === LISTAS_CARTO.length) carto = c;
@@ -255,7 +266,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
     } else {
       const schema = SCHEMAS[skill] || SCHEMAS.radar;
       const prompt = buildPrompt({ skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2, schema });
-      structured = await callOpenRouter(prompt, OPENROUTER_KEY);
+      structured = await callOpenRouter(prompt, OPENROUTER_KEY, 2, { maxTokens: 28000 });
     }
 
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
@@ -785,7 +796,7 @@ async function completarFaltantes(skill, data, base, apiKey, chequeos = CHEQUEOS
       const extra = await callOpenRouter(buildPrompt({
         ...base, schema: subEsquema(skill, campos), parteEmociones: 'FALTANTES', parteTensiones: parteT,
         contextoTensiones: `Este es un COMPLEMENTO: genera ÚNICAMENTE estos campos, completos y con la densidad pedida: ${campos.join(', ')}.\n${contexto}${ctxTens ? '\n' + ctxTens : ''}`,
-      }), apiKey);
+      }), apiKey, 2, ECO);
       if (extra && typeof extra === 'object') {
         campos.forEach(k => { if (extra[k] !== undefined && extra[k] !== null) data[k] = extra[k]; });
       }
@@ -814,7 +825,7 @@ function fuentesReales(bloque, max = 20) {
 
 // Health Check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Servidor RADAR activo', modeloIA: modeloIA(), modeloConfigurado: !!process.env.OPENROUTER_MODEL });
+  res.status(200).json({ status: 'OK', message: 'Servidor RADAR activo', modeloIA: modeloIA(), modeloEconomico: modeloEconomico(), modeloConfigurado: !!process.env.OPENROUTER_MODEL });
 });
 
 // Puerto
@@ -2490,6 +2501,7 @@ Reglas:
 - Responde EXCLUSIVAMENTE con un objeto JSON válido acorde a este esquema exacto (mismos nombres de propiedades, mismos tipos de datos):
 ${schema}
 - Basa el análisis en los datos crudos proporcionados.
+- CONTROL DE EXTENSIÓN: respeta el MÁXIMO de cada rango de palabras y la cantidad de elementos pedida (ni de más ni de menos). Escribe con densidad: cada frase con un dato, nombre o fecha; sin repetir la misma idea en varios campos ni rellenar con frases generales.
 - Si no hay datos crudos suficientes para algún campo, genera valores realistas basados en el contexto político mexicano pero SIEMPRE respeta los nombres de propiedades del esquema.
 - Todos los textos en español de México.
 - Los campos numéricos deben ser números, no strings.
@@ -2763,8 +2775,8 @@ function limpiarTextoParaModelo(t) {
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F￾￿]/g, ' ');
 }
 
-async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
-  const model = modeloIA();
+async function callOpenRouter({ system, user }, apiKey, intentos = 2, opciones = {}) {
+  const model = opciones.economico ? modeloEconomico() : modeloIA();
   system = limpiarTextoParaModelo(system);
   user = limpiarTextoParaModelo(user);
   let ultimoError;
@@ -2779,12 +2791,23 @@ async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
         },
         body: JSON.stringify({
           model,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: user },
-          ],
+          // Con modelos Claude, las fuentes (iguales en todas las partes de una
+          // misma investigación) van primero y en caché: las llamadas
+          // siguientes las leen a ~10% del precio.
+          messages: /^anthropic\//i.test(model)
+            ? [
+                { role: 'system', content: [
+                  { type: 'text', text: 'DATOS DE LA INVESTIGACIÓN (fuentes crudas y periodo):\n' + user, cache_control: { type: 'ephemeral' } },
+                  { type: 'text', text: system },
+                ] },
+                { role: 'user', content: 'Con los datos de la investigación y siguiendo las reglas y el esquema indicados, responde ahora ÚNICAMENTE con el objeto JSON.' },
+              ]
+            : [
+                { role: 'system', content: system },
+                { role: 'user', content: user },
+              ],
           temperature: 0.3,
-          max_tokens: 28000,
+          max_tokens: opciones.maxTokens || 16000,
           response_format: { type: 'json_object' },
           usage: { include: true },
         }),
@@ -2805,8 +2828,9 @@ async function callOpenRouter({ system, user }, apiKey, intentos = 2) {
         const u = data.usage || {};
         const g = GASTO_IA.getStore();
         const usado = data.model || model;
-        if (g) { g.modelo = usado; g.llamadas++; g.entrada += u.prompt_tokens || 0; g.salida += u.completion_tokens || 0; g.costo += Number(u.cost) || 0; }
-        console.log(`[IA] ${usado} · entrada ${u.prompt_tokens ?? '?'} tokens · salida ${u.completion_tokens ?? '?'} tokens · costo $${Number(u.cost || 0).toFixed(4)} USD`);
+        if (g) { g.modelos = g.modelos || {}; g.modelos[usado] = (g.modelos[usado] || 0) + 1; g.modelo = Object.keys(g.modelos).join(' + '); g.llamadas++; g.entrada += u.prompt_tokens || 0; g.salida += u.completion_tokens || 0; g.costo += Number(u.cost) || 0; }
+        const cache = u.prompt_tokens_details && u.prompt_tokens_details.cached_tokens;
+        console.log(`[IA] ${usado} · entrada ${u.prompt_tokens ?? '?'} tokens${cache ? ` (${cache} desde caché)` : ''} · salida ${u.completion_tokens ?? '?'} tokens · costo $${Number(u.cost || 0).toFixed(4)} USD`);
       }
       const choice = data?.choices?.[0] || {};
       const raw = choice?.message?.content || '';
