@@ -4,10 +4,12 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { AsyncLocalStorage } from 'async_hooks';
+import { createRequire } from 'module';
 
 // Variables del archivo .env (si existe y dotenv está instalado). En Hostinger
 // también pueden venir del panel; si dotenv no está, el servidor sigue igual.
-try { await import('dotenv/config'); } catch (_) { /* sin .env */ }
+// Sin "await" a nivel superior: Hostinger carga este archivo con require().
+try { createRequire(import.meta.url)('dotenv').config(); } catch (_) { /* sin .env */ }
 
 // Modelo de IA vigente y registro de gasto por investigación.
 const modeloIA = () => (process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini').trim();
