@@ -2,6 +2,18 @@
 /* EMOCIONES · SEGMENTA · SEMIÓTICA — v5 (estructura EMOCIONES v2 · San Antonio la Isla, 7 pestañas).
    Lee window.DATA (lo arma server.js) y window.DATA_META (actor, periodo, cliente). */
 const D = (window.DATA && typeof window.DATA === 'object') ? window.DATA : {};
+// Compatibilidad: datos con la forma de la versión anterior (v4) → forma v5.
+(function compat(){
+  const arr = (v) => Array.isArray(v) ? v : [];
+  if (!arr(D.arqCol).length && arr(D.arquetipos).length) D.arqCol = D.arquetipos.map(a => [String(a.k || '').replace(/^Arquetipo( colectivo)?\s*/i, ''), a.n, a.p, a.c]);
+  if (!arr(D.arqScores).length && Array.isArray(D.arqIdeal)) { D.arqScores = D.arqIdeal; D.arqIdeal = {}; }
+  if ((!D.arqIdeal || Array.isArray(D.arqIdeal) || !D.arqIdeal.gan) && arr(D.arqWin).length) { const w = D.arqWin, q = (t) => String(t || '').replace(/^\s*\d+\s*[º°o]?\s*[·.\-:]\s*/, ''); D.arqIdeal = { gan: q(w[0].pos), ganTxt: w[0].why, ganRiesgo: w[0].risk, seg: w[1] ? q(w[1].pos) : '', segTxt: w[1] ? w[1].why : '', segRiesgo: w[1] ? w[1].risk : '' }; }
+  if (D.arqActores && !Array.isArray(D.arqActores) && Array.isArray(D.arqActores.rows)) D.arqActores = D.arqActores.rows.map(r => [r[0], r[1], [r[3], r[4]].filter(Boolean).join(' · ')]);
+  if (D.ive && D.ive.val === undefined && D.ive.value !== undefined) D.ive = { val: D.ive.value, cls: D.ive.cls, hor: D.ive.horizon, parts: arr(D.ive.comps).map((c, i) => [c[0], c[1], [0.35, 0.25, 0.2, 0.2][i] || 0.25]), note: D.ive.text };
+  if (!arr(D.transfer).length && arr(D.flows).length) D.transfer = D.flows.map(f => ({ em: f.em, color: f.color, o: f.origen, c: f.canal, d: f.destino, t: f.tipo }));
+  if (!D.transferCliente && arr(D.clientePos).length) D.transferCliente = D.clientePos.map(p => `<b>${p[0]}</b> ${p[1]}`).join(' · ');
+  if (!arr(D.segTabla).length && D.segTbl && arr(D.segTbl.rows).length) D.segTabla = D.segTbl.rows;
+})();
 const META = window.DATA_META || {};
 const root = document.getElementById('emo-root');
 const $ = (id) => document.getElementById(id);
@@ -39,6 +51,27 @@ const anioElec = S(D.anioEleccion).trim();
 const RISK = {CRÍTICO:'#ef4444', ALTO:'#f97316', MEDIO:'#eab308', BAJO:'#22c55e'};
 const RISK_BG = {CRÍTICO:'#fee2e2', ALTO:'#ffedd5', MEDIO:'#fef9c3', BAJO:'#dcfce7'};
 const PAL = ['#1A3A5C','#2563eb','#C9980A','#374151','#16a34a','#7c3aed'];
+// Colores de series: si el modelo manda un color inválido, gris o repetido, se usa uno vivo distinto.
+const VIVOS = ['#2563eb','#dc2626','#16a34a','#C9980A','#7c3aed','#0891b2','#db2777','#ea580c'];
+const colorSerie = (c, i, usados) => {
+  let x = String(c || '').trim();
+  const m = x.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  let gris = true;
+  if (m) { const h = m[1].length === 3 ? m[1].split('').map(d => d + d).join('') : m[1]; const v = [0, 2, 4].map(k => parseInt(h.substr(k, 2), 16)); gris = Math.max(...v) - Math.min(...v) < 40; x = '#' + h; }
+  if (!m || gris || usados.has(x.toLowerCase())) x = VIVOS.find(v => !usados.has(v.toLowerCase())) || VIVOS[i % VIVOS.length];
+  usados.add(x.toLowerCase());
+  return x;
+};
+// Etiquetas largas del eje: se quita lo que va entre paréntesis y se parten en renglones cortos.
+const envolver = (t, n = 16, max = 3) => {
+  let s = String(t || '').trim();
+  if (s.length > 24) s = s.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+  const out = []; let linea = '';
+  s.split(/\s+/).forEach(w => { if ((linea + ' ' + w).trim().length > n && linea) { out.push(linea); linea = w; } else linea = (linea + ' ' + w).trim(); });
+  if (linea) out.push(linea);
+  if (out.length > max) { out.length = max; out[max - 1] = out[max - 1].replace(/\s*\S*$/, '') + '…'; }
+  return out.length > 1 ? out : (out[0] || '');
+};
 
 // ---------- pestañas ----------
 window.emST = function(id, el){
@@ -83,14 +116,20 @@ function tagsHTML(v){ const lista = Array.isArray(v) ? v : S(v).replace(/^tags:/
   return lista.map(t => { const [a, c0] = S(t).split('|'); const c = /^#[0-9a-f]{3,8}$/i.test(S(c0).trim()) ? c0.trim() : '#475569'; return a.trim() ? `<span class="tag" style="background:${c}22;color:#e2e8f0;border-color:${c}">${a.trim()}</span>` : ''; }).join(''); }
 const tabla = (head, rows, fmt) => A(rows).length ? `<table class="tbl"><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${A(rows).map(r => `<tr>${head.map((_, i) => `<td>${fmt ? fmt(A(r)[i], i) : S(A(r)[i])}</td>`).join('')}</tr>`).join('')}</table>` : vacio();
 
+// Cada sección se dibuja por separado: si una falla, las demás se dibujan igual.
+function seccion(nombre, fn){ try { fn(); } catch (e) { console.error('[emociones] sección ' + nombre + ':', e); } }
+const act = activas();
+const TD = O(D.tendencia), TS = A(TD.series).filter(s => A(s.data).some(v => v !== null && v !== undefined && v !== ''));
+const SEGS = A(D.segmentos);
+const sem = (arr, id) => put(id, A(arr).map(s => `<div class="sem"><div class="semd" style="background:${S(s.color)}"></div><div class="seml">${S(s.label)}</div><div class="semv" style="color:${S(s.color)}">${S(s.val)}</div></div>`).join('') || vacio());
 function init(){
+  seccion('encabezado', () => {
   /* ---------- encabezado ---------- */
   put('em-hdr-meta', `<div>● MONITOREO ACTIVO · ${fecha}</div><div style="color:var(--tx3)">${territorio.toUpperCase()}</div>`);
   txt('em-hdr-date', fecha);
   txt('em-whl-territory', territorio);
   put('em-hdr-title', territorio.replace(/(\S+)/, m => `<span style="color:var(--blue2)">${m}</span>`));
   txt('em-hdr-sub', S(D.subtitle));
-  const act = activas();
   const NEG = ['miedo','ira','tristeza','asco'], POS = ['alegria','confianza','anticipacion'];
   const negI = act.filter(e => NEG.includes(e.key)).reduce((t, e) => t + e.intensity, 0), posI = act.filter(e => POS.includes(e.key)).reduce((t, e) => t + e.intensity, 0);
   const cap = negI + posI > 0 ? Math.round(posI / (negI + posI) * 100) : 0;
@@ -98,6 +137,8 @@ function init(){
   put('em-hdr-badges', `<span class="badge b-red pulse">● ${S(D.riskLevel)}</span>${hiEms ? `<span class="badge b-red">${hiEms}: DOMINANTES</span>` : ''}<span class="badge b-org">DÍADAS: ${A(D.dyads).filter(d => d.risk === 'CRÍTICO').length} CRÍTICAS</span><span class="badge b-blu">CAPITAL POSITIVO: ${cap}%</span><span class="badge b-pur">CONCEPTO: ${S(D.concept).toUpperCase()}</span>`);
   if (anioElec) { txt('em-tab-actores', 'Actores ' + anioElec); txt('em-actradar-t', 'Mapa de Posicionamiento Emocional de Actores ' + anioElec); }
 
+  });
+  seccion('flor', () => {
   /* ---------- flor ---------- */
   put('em-wheel-wrap', buildWheel());
   const hi = act.find(e => e.intensity === 3), md = act.find(e => e.intensity === 2);
@@ -123,6 +164,8 @@ function init(){
     <div style="font-size:10.5px;color:var(--tx3);margin-top:.5rem;line-height:1.55">${S(I.note)}</div>`);
   put('em-sintesis', S(D.sintesis) || vacio('Sin síntesis disponible.'));
 
+  });
+  seccion('mapa', () => {
   /* ---------- mapa social ---------- */
   const mk = (arr, dc) => A(arr).map(t => `<div class="mpi"><div class="mpd" style="background:${dc}"></div>${S(t)}</div>`).join('') || vacio();
   put('em-mapa-cols', `<div class="mpc"><div class="mptt" style="color:#eab308">⚠ Problemáticas</div>${mk(D.problematics, '#eab308')}</div>
@@ -130,13 +173,16 @@ function init(){
     <div class="mpc"><div class="mptt" style="color:#22c55e">★ Orgullos</div>${mk(D.prides, '#22c55e')}</div>`);
   put('em-quotes', A(D.quotes).map(q => `<div class="qi"><div class="qt${q.para ? ' para' : ''}">${S(q.text)}</div><div class="qm">${[q.topic, q.emotion, q.territory].filter(Boolean).map(S).join(' · ')}</div></div>`).join('') || vacio());
   if (D.temasTitulo) txt('em-temas-t', S(D.temasTitulo));
-  const sem = (arr, id) => put(id, A(arr).map(s => `<div class="sem"><div class="semd" style="background:${S(s.color)}"></div><div class="seml">${S(s.label)}</div><div class="semv" style="color:${S(s.color)}">${S(s.val)}</div></div>`).join('') || vacio());
   sem(D.semaforo, 'em-semaforo');
 
+  });
+  seccion('diadas', () => {
   /* ---------- díadas ---------- */
   put('em-dyad-cards', A(D.dyads).map(d => `<div class="dyc" style="border-top-color:${RISK[d.risk] || '#64748b'}"><span class="dybadge" style="background:${RISK_BG[d.risk] || '#f1f5f9'};color:${RISK[d.risk] || '#64748b'}">${S(d.risk)}</span><div class="dyn" style="color:${RISK[d.risk] || 'var(--tx1)'}">${S(d.name)}</div><div class="dyf">Díada ${S(d.type)} · ${S(d.formula)}</div><div class="dyt">${S(d.text)}</div></div>`).join('') || `<div class="dyc">${vacio('Sin díadas detectadas.')}</div>`);
   put('em-dyad-interp', S(D.dyadInterp) || 'Sin interpretación disponible.');
 
+  });
+  seccion('identidad', () => {
   /* ---------- identidad política ---------- */
   put('em-id-pregunta', `<div class="cbox-label">Pregunta Política del Territorio</div><div class="cbox-name" style="font-size:18px">"${S(D.preguntaPolitica)}"</div><div class="cbox-text">${S(D.preguntaDesc)}</div>`);
   if (D.periodoGobierno) txt('em-gov-t', `Percepción del Gobierno Municipal ${S(D.periodoGobierno)}`);
@@ -153,6 +199,8 @@ function init(){
   put('em-transfer', A(D.transfer).map(t => `<div style="font-size:11px;font-weight:800;color:${S(t.color) || 'var(--tx1)'};letter-spacing:.08em;margin-top:.4rem">${S(t.em)}</div><div class="flow"><div class="flow-s"><b>Origen</b>${S(t.o)}</div><div class="flow-a">→</div><div class="flow-s"><b>Canal</b>${S(t.c)}</div><div class="flow-a">→</div><div class="flow-s"><b>Destino</b>${S(t.d)}</div><div class="flow-a">→</div><div class="flow-s"><b>Tipo</b>${S(t.t)}</div></div>`).join('')
     + (D.transferCliente ? `<div class="cbox" style="margin-top:.4rem;padding:.9rem 1rem"><div class="cbox-text">${S(D.transferCliente)}</div></div>` : '') || vacio());
 
+  });
+  seccion('actores', () => {
   /* ---------- actores ---------- */
   put('em-actores-grid', A(D.actores).map((a, i) => `<div class="ac"><div class="ach" style="border-left:4px solid ${S(a.borderColor) || PAL[i % PAL.length]}"><div class="acn">${S(a.name)}</div><div class="acr">${S(a.role)}</div></div><div class="acb">${A(a.rows).map(r => `<div class="acrow"><span class="ack">${S(A(r)[0])}</span><span class="acv">${S(A(r)[1])}</span></div>`).join('')}</div></div>`).join('') || `<div class="ac"><div class="acb">${vacio('Sin actores disponibles.')}</div></div>`);
   put('em-actores-note', S(D.actoresNote));
@@ -161,11 +209,11 @@ function init(){
     if (D.encuestasTitulo) txt('em-enc-t', S(D.encuestasTitulo));
     put('em-encuestas-tbl', tabla(['Casa', 'Levantamiento', 'Método', 'Intención por partido / aprobación', 'Internas / aspirantes'], ENC, (c, i) => i === 0 ? `<b>${S(c)}</b>` : S(c)) + (D.encuestasNota ? `<div style="font-size:10.5px;color:var(--tx3);margin-top:.5rem;line-height:1.6">${S(D.encuestasNota)}</div>` : ''));
   } else ocultar('em-enc-card');
-  const TD = O(D.tendencia), TS = A(TD.series).filter(s => A(s.data).some(v => v !== null && v !== undefined && v !== ''));
   if (A(TD.labels).length >= 2 && TS.length) { if (TD.titulo) txt('em-tend-t', S(TD.titulo)); } else ocultar('em-tend-card');
 
+  });
+  seccion('segmentos', () => {
   /* ---------- segmentos ---------- */
-  const SEGS = A(D.segmentos);
   put('em-seg-intro', `<div class="cbox-label">SEGMENTA v2.1 · Eje N × E × I</div><div class="cbox-name">${SEGS.length || 4} Buyer Personas electorales de ${terrCorto}</div><div class="cbox-text">${S(D.segIntro)}</div>`);
   const prio = (t0) => { const t = S(t0).split('·').pop(); return /PERSUAD/i.test(t) ? [1,'●●●●●'] : /ACTIV/i.test(t) ? [2,'●●●●○'] : /MOVILIZ/i.test(t) ? [3,'●●●○○'] : /CONTEN/i.test(t) ? [4,'●●○○○'] : /IGNOR|NO INVERT/i.test(t) ? [5,'○○○○○'] : [4,'●●○○○']; };
   let JER = A(D.segJer).filter(j => A(j)[0]);
@@ -186,49 +234,64 @@ function init(){
   put('em-seg-tbl', tabla(['Eje', 'Segmento', 'Emoción dominante', 'Intensidad', 'Detonante', 'Implicación'], D.segTabla, (c, i) => i === 1 ? `<b>${S(c)}</b>` : S(c)));
   put('em-seg-tbl-note', S(D.segTablaNote));
 
+  });
+  seccion('semiotica', () => {
   /* ---------- semiótica: arquetipo + miedos/deseos/necesidades ---------- */
-  put('em-sem-codigo', `<div class="cbox-label">Código simbólico de ${terrCorto}</div>${D.codigoTitulo ? `<div class="cbox-name">${S(D.codigoTitulo)}</div>` : ''}<div class="cbox-text">${S(D.codigo)}</div>`);
-  put('em-arq-col', A(D.arqCol).map(a => { a = A(a); return `<div class="arq" style="border-top-color:${S(a[3]) || '#64748b'}"><div class="arq-l">${S(a[0])}</div><div class="arq-n">${S(a[1])}</div><div class="arq-t">${S(a[2])}</div></div>`; }).join(''));
-  const AI = O(D.arqIdeal);
-  put('em-arq-ideal', `<div class="sl">Arquetipo político ideal</div>
+  put('em-sem-codigo', `<div class="cbox-label">Código simbólico de ${terrCorto}</div>${D.codigoTitulo ? `<div class="cbox-name">${S(D.codigoTitulo)}</div>` : ''}<div class="cbox-text">${S(D.codigo) || 'Sin código simbólico disponible para este periodo.'}</div>`);
+  const RANGOS = [['Dominante', '#ef4444'], ['Secundario', '#3b82f6'], ['Emergente', '#22c55e'], ['Rechazado', '#64748b']];
+  const COL = A(D.arqCol).map(A).filter(a => S(a[1]).trim() || S(a[2]).trim());
+  put('em-arq-col', COL.length ? COL.map((a, i) => `<div class="arq" style="border-top-color:${S(a[3]) || (RANGOS[i] || RANGOS[3])[1]}"><div class="arq-l">${S(a[0]) || (RANGOS[i] || RANGOS[3])[0]}</div><div class="arq-n">${S(a[1]) || '—'}</div><div class="arq-t">${S(a[2]) || 'Sin evidencia suficiente en las fuentes del periodo.'}</div></div>`).join('')
+    : `<div class="arq" style="grid-column:1/-1">${vacio('No se identificó el arquetipo colectivo con las fuentes del periodo.')}</div>`);
+  const AS0 = A(D.arqScores).map(A).filter(a => a[0]).sort((x, y) => N(y[1]) - N(x[1]));
+  const AI = Object.assign({}, O(D.arqIdeal));
+  if (!AI.gan && AS0[0]) AI.gan = S(AS0[0][0]);
+  if (!AI.seg && AS0[1]) AI.seg = S(AS0[1][0]);
+  if (!AI.ganTxt && AI.gan) AI.ganTxt = `Arquetipo con mayor resonancia en el territorio${AS0[0] ? ` (${N(AS0[0][1])}/100)` : ''}.`;
+  if (!AI.segTxt && AI.seg) AI.segTxt = `Segundo arquetipo con mayor resonancia${AS0[1] ? ` (${N(AS0[1][1])}/100)` : ''}.`;
+  put('em-arq-ideal', !AI.gan ? `<div class="sl">Arquetipo político ideal</div>${vacio('Sin arquetipo ideal identificado en este análisis.')}` : `<div class="sl">Arquetipo político ideal</div>
     <div class="arq" style="border-top-color:#22c55e;margin-bottom:.7rem"><div class="arq-l">1º · Mayor resonancia</div><div class="arq-n">${S(AI.gan)}</div><div class="arq-t">${S(AI.ganTxt)}</div>${AI.ganRiesgo ? `<div class="arq-t" style="margin-top:6px;color:#fca5a5"><b>Riesgo de sobreactuación:</b> ${S(AI.ganRiesgo)}</div>` : ''}</div>
-    <div class="arq" style="border-top-color:#60a5fa"><div class="arq-l">2º lugar</div><div class="arq-n">${S(AI.seg)}</div><div class="arq-t">${S(AI.segTxt)}</div>${AI.segRiesgo ? `<div class="arq-t" style="margin-top:6px;color:#fca5a5"><b>Riesgo de sobreactuación:</b> ${S(AI.segRiesgo)}</div>` : ''}</div>`);
+    <div class="arq" style="border-top-color:#60a5fa"><div class="arq-l">2º lugar</div><div class="arq-n">${S(AI.seg) || '—'}</div><div class="arq-t">${S(AI.segTxt)}</div>${AI.segRiesgo ? `<div class="arq-t" style="margin-top:6px;color:#fca5a5"><b>Riesgo de sobreactuación:</b> ${S(AI.segRiesgo)}</div>` : ''}</div>`);
   put('em-arq-act', tabla(['Aspirante', 'Arquetipo que proyecta', 'Resonancia con el ideal'], D.arqActores, (c, i) => i === 0 ? `<b>${S(c)}</b>` : S(c)) + (D.arqNote ? `<div style="font-size:11.5px;color:var(--tx2);margin-top:.6rem;line-height:1.6">${S(D.arqNote)}</div>` : ''));
   const mdn = (arr, id) => put(id, A(arr).map((m, i) => { m = A(m); return `<div class="mdn"><div class="mdn-h"><span class="mdn-i">${i + 1}</span><span class="mdn-n">${S(m[0])}</span></div><div class="mdn-e">Evidencia: ${S(m[1])} ${tagOf(m[m.length - 1])}</div><div class="mdn-p">→ ${S(m[2])}</div></div>`; }).join('') || vacio());
   mdn(D.miedos, 'em-sem-miedos'); mdn(D.deseos, 'em-sem-deseos'); mdn(D.necesidades, 'em-sem-neces');
 
+  });
+  seccion('graficas', () => {
   /* ---------- gráficas ---------- */
-  if (typeof Chart === 'undefined') return;
-  const mkc = (id, cfg) => { const c = $(id); if (c) { try { new Chart(c, cfg); } catch (e) { console.warn('[emociones] gráfica', id, e); } } };
+  if (typeof Chart === 'undefined') { root.querySelectorAll('canvas').forEach(c => { if (c.parentElement) c.parentElement.innerHTML = '<div style="font-size:12px;color:var(--tx3);padding:1rem;text-align:center">No se pudo cargar la librería de gráficas (Chart.js). Revisa la conexión a internet y vuelve a abrir el reporte.</div>'; }); return; }
+  const sinDatos = (id, t) => { const c = $(id); if (c && c.parentElement) c.parentElement.innerHTML = `<div style="height:100%;min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--tx3);border:1px dashed var(--brd2);border-radius:8px;padding:1rem">${t || 'Sin datos suficientes para esta gráfica en el periodo analizado.'}</div>`; };
+  const tieneValores = (cfg) => A(O(cfg.data).datasets).some(ds => A(ds.data).some(v => v !== null && v !== undefined && Number(v) > 0));
+  const mkc = (id, cfg) => { const c = $(id); if (!c) return; if (!tieneValores(cfg)) return sinDatos(id); try { new Chart(c, cfg); } catch (e) { console.warn('[emociones] gráfica', id, e); sinDatos(id); } };
   mkc('em-ch-intens', {type:'bar', data:{labels:act.map(e => e.label), datasets:[{data:act.map(e => e.intensity), backgroundColor:act.map(e => e.color[2] + 'cc'), borderColor:act.map(e => e.color[2]), borderWidth:1, borderRadius:5, borderSkipped:false}]},
     options:{...CD, indexAxis:'y', plugins:{...CD.plugins, tooltip:{...CD.plugins.tooltip, callbacks:{label:c => ' ' + ['Inactiva','Baja','Media','Alta'][c.raw]}}}, scales:{x:{...CD.scales.x, min:0, max:3, ticks:{...CD.scales.x.ticks, stepSize:1, callback:v => ['○○○','●○○','●●○','●●●'][v]}}, y:{...CD.scales.y}}}});
   const temas = A(D.temasChart).filter(t => Array.isArray(t) && t.length >= 2);
   mkc('em-ch-temas', {type:'doughnut', data:{labels:temas.map(t => S(t[0])), datasets:[{data:temas.map(t => N(t[1])), backgroundColor:temas.map((t, i) => S(t[2]) || PAL[i % PAL.length]), borderColor:'#111827', borderWidth:2}]},
     options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true, position:'right', labels:{color:'#334155', font:{size:11}, boxWidth:12, padding:10}}, tooltip:{...CD.plugins.tooltip, callbacks:{label:c => ' ' + c.label + ': ' + c.raw + '%'}}}}});
   const dy = A(D.dyads);
-  mkc('em-ch-diadas', {type:'bar', data:{labels:dy.map(d => S(d.name)), datasets:[{label:'Score de riesgo', data:dy.map(d => N(d.score)), backgroundColor:dy.map(d => (RISK[d.risk] || '#64748b') + 'cc'), borderColor:dy.map(d => RISK[d.risk] || '#64748b'), borderWidth:1, borderRadius:6, borderSkipped:false}]},
+  mkc('em-ch-diadas', {type:'bar', data:{labels:dy.map(d => envolver(S(d.name))), datasets:[{label:'Score de riesgo', data:dy.map(d => N(d.score)), backgroundColor:dy.map(d => (RISK[d.risk] || '#64748b') + 'cc'), borderColor:dy.map(d => RISK[d.risk] || '#64748b'), borderWidth:1, borderRadius:6, borderSkipped:false}]},
     options:{...CD, scales:{x:{...CD.scales.x}, y:{...CD.scales.y, min:0, max:100, ticks:{...CD.scales.y.ticks, callback:v => v + '/100'}}}}});
   const pc = A(D.partidosChart);
-  mkc('em-ch-partidos', {type:'bar', data:{labels:A(D.partidos).map(p => S(p.nombre)), datasets:[
+  mkc('em-ch-partidos', {type:'bar', data:{labels:A(D.partidos).map(p => envolver(S(p.nombre))), datasets:[
       {label:'Ira/Asco', data:pc.map(x => N(A(x)[0])), backgroundColor:'#B91C1Caa', borderRadius:4, borderSkipped:false},
       {label:'Decepción/Tristeza', data:pc.map(x => N(A(x)[1])), backgroundColor:'#4C1D95aa', borderRadius:4, borderSkipped:false},
       {label:'Interés disponible', data:pc.map(x => N(A(x)[2])), backgroundColor:'#059669aa', borderRadius:4, borderSkipped:false}]},
     options:{...CD, plugins:{...CD.plugins, legend:{display:true, labels:{color:'#334155', font:{size:10}, boxWidth:10}}}, scales:{x:{...CD.scales.x}, y:{...CD.scales.y, min:0, max:100, ticks:{...CD.scales.y.ticks, callback:v => v + '%'}}}}});
   const ar = O(D.actoresRadar);
-  if (A(ar.labels).length) mkc('em-ch-actores', {type:'radar', data:{labels:['Legitimidad ciudadana','Presencia territorial','Capital positivo','Riesgo castigo','Cap. gestión','Credibilidad'],
-      datasets:A(ar.labels).map((l, i) => { const c = S(A(ar.colors)[i]) || PAL[i % PAL.length]; return {label:S(l), data:A(A(ar.data)[i]).map(N), borderColor:c, backgroundColor:c + '22', pointBackgroundColor:c, pointRadius:4}; })},
+  if (!A(ar.labels).length) sinDatos('em-ch-actores'); else mkc('em-ch-actores', {type:'radar', data:{labels:['Legitimidad ciudadana','Presencia territorial','Capital positivo','Riesgo castigo','Cap. gestión','Credibilidad'],
+      datasets:(u => A(ar.labels).map((l, i) => { const c = colorSerie(A(ar.colors)[i], i, u); return {label:S(l), data:A(A(ar.data)[i]).map(N), borderColor:c, backgroundColor:c + '22', pointBackgroundColor:c, pointRadius:4, borderWidth:2}; }))(new Set())},
     options:{responsive:true, maintainAspectRatio:false, scales:{r:{ticks:{color:'#475569', font:{size:9}, stepSize:20, backdropColor:'transparent'}, grid:{color:'rgba(28,39,56,.15)'}, pointLabels:{color:'#334155', font:{size:10}}, angleLines:{color:'rgba(28,39,56,.12)'}, min:0, max:100}},
       plugins:{legend:{display:true, labels:{color:'#334155', font:{size:11}, boxWidth:10}}, tooltip:{...CD.plugins.tooltip}}}});
   if (A(TD.labels).length >= 2 && TS.length) mkc('em-ch-tend', {type:'line', data:{labels:A(TD.labels).map(S), datasets:TS.map((s, i) => { const c = S(s.color) || PAL[i % PAL.length]; return {label:S(s.label), data:A(s.data).map(v => (v === null || v === undefined || v === '') ? null : N(v)), borderColor:c, backgroundColor:c, borderDash:s.dash ? [5,4] : undefined, spanGaps:true, tension:.3}; })},
     options:{...CD, plugins:{...CD.plugins, legend:{display:true, labels:{color:'#334155', font:{size:10}, boxWidth:10}}, tooltip:{...CD.plugins.tooltip, callbacks:{label:c => ' ' + c.dataset.label + ': ' + c.raw + '%'}}}, scales:{x:{...CD.scales.x}, y:{...CD.scales.y, min:0, suggestedMax:60, ticks:{...CD.scales.y.ticks, callback:v => v + '%'}}}}});
-  if (SEGS.length) mkc('em-ch-seg', {type:'doughnut', data:{labels:SEGS.map(g => S(g.nombre) + ' (' + S(g.tipo).split('·')[0].trim() + ')'), datasets:[{data:SEGS.map(g => N(g.peso)), backgroundColor:SEGS.map((g, i) => S(g.color) || PAL[i % PAL.length]), borderColor:'#111827', borderWidth:2}]},
+  if (!SEGS.length) sinDatos('em-ch-seg'); else mkc('em-ch-seg', {type:'doughnut', data:{labels:SEGS.map(g => S(g.nombre) + ' (' + S(g.tipo).split('·')[0].trim() + ')'), datasets:[{data:SEGS.map(g => N(g.peso)), backgroundColor:SEGS.map((g, i) => S(g.color) || PAL[i % PAL.length]), borderColor:'#111827', borderWidth:2}]},
     options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true, position:'bottom', labels:{color:'#334155', font:{size:10.5}, boxWidth:10, padding:8}}, tooltip:{...CD.plugins.tooltip, callbacks:{label:c => ' ' + c.raw + '% (estimación)'}}}}});
   const AS = A(D.arqScores).filter(a => A(a)[0]);
-  if (AS.length) mkc('em-ch-arq', {type:'bar', data:{labels:AS.map(a => S(a[0])), datasets:[{data:AS.map(a => N(a[1])), backgroundColor:AS.map(a => N(a[1]) >= 75 ? '#22c55ecc' : N(a[1]) >= 50 ? '#eab308aa' : N(a[1]) >= 30 ? '#f97316aa' : '#ef4444aa'), borderRadius:5, borderSkipped:false}]},
+  if (!AS.length) sinDatos('em-ch-arq'); else mkc('em-ch-arq', {type:'bar', data:{labels:AS.map(a => S(a[0])), datasets:[{data:AS.map(a => N(a[1])), backgroundColor:AS.map(a => N(a[1]) >= 75 ? '#22c55ecc' : N(a[1]) >= 50 ? '#eab308aa' : N(a[1]) >= 30 ? '#f97316aa' : '#ef4444aa'), borderRadius:5, borderSkipped:false}]},
     options:{...CD, indexAxis:'y', scales:{x:{...CD.scales.x, min:0, max:100}, y:{...CD.scales.y, ticks:{...CD.scales.y.ticks, color:'#334155', autoSkip:false}}}}});
   const MI = A(D.miedos), DE = A(D.deseos);
-  if (MI.length || DE.length) mkc('em-ch-mdn', {type:'bar', data:{labels:[...MI.map((m, i) => 'M' + (i + 1) + ' · ' + S(A(m)[0])), ...DE.map((m, i) => 'D' + (i + 1) + ' · ' + S(A(m)[0]))], datasets:[{label:'Intensidad simbólica', data:[...MI.map(m => N(A(m)[3])), ...DE.map(m => N(A(m)[3]))], backgroundColor:[...MI.map(() => '#ef4444aa'), ...DE.map(() => '#22c55eaa')], borderRadius:4, borderSkipped:false}]},
+  if (!MI.length && !DE.length) sinDatos('em-ch-mdn'); else mkc('em-ch-mdn', {type:'bar', data:{labels:[...MI.map((m, i) => 'M' + (i + 1) + ' · ' + S(A(m)[0])), ...DE.map((m, i) => 'D' + (i + 1) + ' · ' + S(A(m)[0]))], datasets:[{label:'Intensidad simbólica', data:[...MI.map(m => N(A(m)[3])), ...DE.map(m => N(A(m)[3]))], backgroundColor:[...MI.map(() => '#ef4444aa'), ...DE.map(() => '#22c55eaa')], borderRadius:4, borderSkipped:false}]},
     options:{...CD, indexAxis:'y', plugins:{...CD.plugins, legend:{display:false}}, scales:{x:{...CD.scales.x, min:0, max:100}, y:{...CD.scales.y, ticks:{...CD.scales.y.ticks, color:'#334155', font:{size:10}, autoSkip:false}}}}});
+  });
 }
 init();
 })();
