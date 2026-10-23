@@ -214,8 +214,8 @@ function init(){
   });
   seccion('segmentos', () => {
   /* ---------- segmentos ---------- */
-  put('em-seg-intro', `<div class="cbox-label">SEGMENTA v2.1 · Eje N × E × I</div><div class="cbox-name">${SEGS.length || 4} Buyer Personas electorales de ${terrCorto}</div><div class="cbox-text">${S(D.segIntro)}</div>`);
-  const prio = (t0) => { const t = S(t0).split('·').pop(); return /PERSUAD/i.test(t) ? [1,'●●●●●'] : /ACTIV/i.test(t) ? [2,'●●●●○'] : /MOVILIZ/i.test(t) ? [3,'●●●○○'] : /CONTEN/i.test(t) ? [4,'●●○○○'] : /IGNOR|NO INVERT/i.test(t) ? [5,'○○○○○'] : [4,'●●○○○']; };
+  put('em-seg-intro', `<div class="cbox-label">SEGMENTA v2.1 · Eje N × E × I</div><div class="cbox-name">${SEGS.length || 4} ${D.modo === 'tema' ? 'perfiles de afectación del tema' : 'Buyer Personas electorales de ' + terrCorto}</div><div class="cbox-text">${S(D.segIntro)}</div>`);
+  const prio = (t0) => { const t = S(t0).split('·').pop(); return /ATENDER/i.test(t) ? [1,'●●●●●'] : /DIALOG/i.test(t) ? [2,'●●●●○'] : /INFORM/i.test(t) ? [3,'●●●○○'] : /PERSUAD/i.test(t) ? [1,'●●●●●'] : /ACTIV/i.test(t) ? [2,'●●●●○'] : /MOVILIZ/i.test(t) ? [3,'●●●○○'] : /CONTEN/i.test(t) ? [4,'●●○○○'] : /IGNOR|NO INVERT/i.test(t) ? [5,'○○○○○'] : [4,'●●○○○']; };
   let JER = A(D.segJer).filter(j => A(j)[0]);
   if (!JER.length) JER = SEGS.map(s => ({s, p: prio(s.pers + ' · ' + s.tipo)})).sort((a, b) => a.p[0] - b.p[0]).map(x => [S(x.s.tipo).split('·').slice(0, 2).join('·').trim(), S(x.s.pers).split('·').pop().trim(), x.p[1], x.s.color]);
   put('em-seg-jer', JER.map(j => { j = A(j); return `<div class="sem"><div class="semd" style="background:${S(j[3])}"></div><div class="seml"><b style="color:var(--tx1)">${S(j[0])}</b><br><span style="font-size:11px">${S(j[1])}</span></div><div class="semv" style="color:${S(j[3]) === '#374151' ? '#94a3b8' : S(j[3])};letter-spacing:.1em">${S(j[2])}</div></div>`; }).join('') + (JER.length ? `<div style="font-size:10.5px;color:var(--tx3);margin-top:.5rem">Orden de inversión SEGMENTA: ${JER.map(j => S(A(j)[0]).split('·')[0].trim()).join(' → ')}.</div>` : '') || vacio());
