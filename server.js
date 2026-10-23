@@ -85,7 +85,11 @@ app.post('/api/analizar', (req, res) => {
     anio = '2026',
     cliente = '',
     actoresReferencia = '',
+    modo: modoIn = '',
   } = params;
+  // Modo "tema": Emociones analiza un problema o conflicto puntual (ej. un
+  // bloqueo carretero) en vez de un territorio o una candidatura.
+  const modo = (skill === 'emociones' && String(modoIn).toLowerCase() === 'tema') ? 'tema' : '';
 
   const SKILLS_VALIDAS = ['radar', 'emociones', 'tensiones', 'opositor', 'comparativo', 'sesgo'];
   if (!SKILLS_VALIDAS.includes(skill)) {
@@ -139,7 +143,7 @@ app.post('/api/analizar', (req, res) => {
   // Se procesa en segundo plano; NO se espera (no "await") para
   // poder responder al cliente de inmediato.
   GASTO_IA.run({ modelo: modeloIA(), llamadas: 0, entrada: 0, salida: 0, costo: 0 },
-    () => procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, periodo, clienteName, actoresRef, APIFY_TOKEN, OPENROUTER_KEY }));
+    () => procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, periodo, clienteName, actoresRef, modo, APIFY_TOKEN, OPENROUTER_KEY }));
 
   return res.status(202).json({ jobId });
 });
@@ -153,7 +157,7 @@ app.get('/api/estado/:jobId', (req, res) => {
   return res.status(200).json(job);
 });
 
-async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, periodo, clienteName = '', actoresRef = [], APIFY_TOKEN, OPENROUTER_KEY }) {
+async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNombres, mes, anio, periodo, clienteName = '', actoresRef = [], modo = '', APIFY_TOKEN, OPENROUTER_KEY }) {
   periodo = periodo || construirPeriodo({ mes, anio });
   try {
     const listaActores = skill === 'comparativo' && actoresNombres?.length ? actoresNombres : [actorName, actor2Name].filter(Boolean);
@@ -173,7 +177,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       // 1. Scraping masivo (6 fuentes en paralelo) -- flujo original para
       //    radar/emociones/tensiones/opositor, sin tocar.
       [datosActor1, datosActor2] = await Promise.all([
-        scrapeActor(actorName, APIFY_TOKEN, periodo, { contextoActores: ['emociones', 'tensiones', 'sesgo', 'radar'].includes(skill) }),
+        scrapeActor(actorName, APIFY_TOKEN, periodo, { contextoActores: ['emociones', 'tensiones', 'sesgo', 'radar'].includes(skill) && modo !== 'tema' }),
         actor2Name ? scrapeActor(actor2Name, APIFY_TOKEN, periodo) : Promise.resolve(null),
       ]);
     }
@@ -187,7 +191,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       // Opositor (2 adversarios + cliente) genera un JSON muy grande: se pide
       // en DOS llamadas en paralelo (parte 1 y parte 2) para que el tope de
       // tokens de salida del modelo no corte las últimas pestañas.
-      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
+      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, modo, datosActor1, datosActor2 };
       const [p1, p2] = await Promise.all([
         callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor, parteOpositor: 1 }), OPENROUTER_KEY, 2, { maxTokens: 28000 }),
         callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.opositor2, parteOpositor: 2 }), OPENROUTER_KEY, 2, { maxTokens: 28000 }),
@@ -199,7 +203,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       // (riesgos, territorial, módulos, conclusión) van en paralelo después,
       // con los nombres de grupos, temas y nivel de alerta de la parte A para
       // que todas las pestañas usen los mismos segmentos.
-      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
+      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, modo, datosActor1, datosActor2 };
       basePartes = base;
       const pA = await callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, null, 'A'), parteEmociones: 'A' }), OPENROUTER_KEY)
         .catch(e => { console.warn('[!] radar parte A falló:', e.message); return {}; });
@@ -218,7 +222,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       // Emociones genera MUCHOS campos; gpt-4o-mini se salta algunos cuando la
       // respuesta es larga (díadas, pregunta política...). Se divide en dos
       // llamadas en paralelo y después se piden solo los campos que faltaron.
-      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
+      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, modo, datosActor1, datosActor2 };
       basePartes = base;
       const [pA, pB, pC] = await Promise.all([
         callOpenRouter(buildPrompt({ ...base, schema: subEsquema(skill, null, 'A'), parteEmociones: 'A' }), OPENROUTER_KEY)
@@ -234,7 +238,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
       JOBS.set(jobId, { status: 'processing', progreso: 'Verificando que todas las pestañas tengan datos...' });
       structured = await completarFaltantes(skill, structured, base, OPENROUTER_KEY);
     } else if (skill === 'tensiones') {
-      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, datosActor1, datosActor2 };
+      const base = { skill, actorName, actor2Name, actoresNombres: listaActores, datosPorActor, mes, anio, periodo, clienteName, actoresRef, modo, datosActor1, datosActor2 };
       basePartes = base;
       const p1 = await callOpenRouter(buildPrompt({ ...base, schema: SCHEMAS.tensiones, parteTensiones: 1 }), OPENROUTER_KEY);
       JOBS.set(jobId, { status: 'processing', progreso: 'Generando dolores, enemigos, fracturas, segmentación y las 9 preguntas...' });
@@ -270,7 +274,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
     }
 
     // 3. Normalizar respuesta para asegurar que todos los arrays existan
-    const ctxNorm = { actorName, actor2Name, actoresNombres: listaActores, clienteName, periodo };
+    const ctxNorm = { actorName, actor2Name, actoresNombres: listaActores, clienteName, periodo, modo };
     const copia = (o) => JSON.parse(JSON.stringify(o || {}));
     let normalized = normalizeResponse(copia(structured), skill, ctxNorm);
     // Emociones: si después de limpiar algo quedó vacío o en ceros, se pide de nuevo.
@@ -307,6 +311,7 @@ async function procesarAnalisis({ jobId, skill, actorName, actor2Name, actoresNo
         periodo: periodo.label,
         periodoInfo: periodo,
         cliente: clienteName || null,
+        modo: modo || null,
         fuentesEncontradas,
         ia: (g => g ? { modelo: g.modelo, llamadas: g.llamadas, tokensEntrada: g.entrada, tokensSalida: g.salida, costoUSD: Math.round(g.costo * 10000) / 10000 } : undefined)(GASTO_IA.getStore()),
         data: normalized,
@@ -1074,6 +1079,17 @@ function normalizeResponse(data, skill, ctx = {}) {
   // EMOCIONES
   if (skill === 'emociones') {
     if (!data.territory) data.territory = 'Sin datos';
+    // Sin cliente: nunca se atribuye el estudio a un partido o gobierno.
+    if (!ctx.clienteName) {
+      data.cliente = '';
+      if (typeof data.subtitle === 'string') data.subtitle = data.subtitle.replace(/Cliente\s*:\s*[^·]*/i, 'Cliente: no especificado ').replace(/\s+$/, '');
+    }
+    // Modo tema: sin referencias a la elección.
+    if (ctx.modo === 'tema') {
+      data.modo = 'tema';
+      data.anioEleccion = '';
+      if (typeof data.subtitle === 'string') data.subtitle = data.subtitle.split('·').map(x => x.trim()).filter(x => x && !/elecci[oó]n|rumbo a/i.test(x)).join(' · ');
+    }
     if (!data.subtitle) data.subtitle = '';
     if (!data.date) data.date = '';
     if (!data.riskLevel) data.riskLevel = 'MEDIO';
@@ -2326,7 +2342,7 @@ const SCHEMAS = {
 // PROMPTS
 // =========================================================
 
-function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, periodo, clienteName = '', parteOpositor = 1, parteTensiones = 1, parteEmociones = '', contextoTensiones = '', actoresRef = [], datosActor1, datosActor2, schema }) {
+function buildPrompt({ skill, actorName, actor2Name, actoresNombres, datosPorActor, mes, anio, periodo, clienteName = '', modo = '', parteOpositor = 1, parteTensiones = 1, parteEmociones = '', contextoTensiones = '', actoresRef = [], datosActor1, datosActor2, schema }) {
   periodo = periodo || construirPeriodo({ mes, anio });
   let contexto;
 
@@ -2493,7 +2509,26 @@ ${contexto}
 
 Genera el JSON completo con el esquema indicado, cumpliendo las cantidades mínimas por sección y la extensión de párrafo indicadas arriba. No omitas ninguna propiedad. Si no hay datos suficientes para una sección, genera datos representativos y bien razonados del contexto político mexicano actual — pero con la misma profundidad y cantidad exigidas, nunca recortando el contenido por falta de fuentes.`;
 
-  return { system, user };
+  // Cliente vacío: la IA no debe suponer para quién es el estudio.
+  const reglaCliente = (['emociones', 'opositor'].includes(skill) && !clienteName)
+    ? `\n\nCLIENTE NO ESPECIFICADO (OBLIGATORIO): el analista no indicó cliente. NUNCA supongas ni escribas que el estudio es para un partido, gobierno o candidatura. Donde el esquema pida el cliente, escribe "no especificado" (ej. en "subtitle": "Cliente: no especificado"); "cliente" = "". Las recomendaciones se redactan para un lector neutral, no para un partido.`
+    : '';
+  // Modo TEMA: un problema o conflicto puntual, no un territorio ni una candidatura.
+  const reglaTema = (modo === 'tema' && skill === 'emociones')
+    ? `\n\nMODO TEMA (OBLIGATORIO, tiene prioridad sobre cualquier regla anterior que hable de elección, aspirantes, candidatura cliente o intención de voto):
+El objeto de estudio "${actorName}" es un TEMA o CONFLICTO puntual (ej. un bloqueo, una obra, una crisis de servicio), NO un territorio en campaña ni un personaje político. Todo el análisis es el humor social alrededor de ESE tema.
+- Solo usa hechos, frases y reacciones sobre "${actorName}". Descarta las fuentes que hablen de otros conflictos, aunque sean de la misma zona o del mismo periodo; no los metas en temas, semáforos ni citas.
+- "territory" = el lugar donde ocurre el tema (municipio, corredor o zona). "subtitle" = "Estado · Tema: <descripción breve del conflicto> · Ventana: <periodo> · Cliente: ...", SIN mencionar elecciones. "anioEleccion" = "" y "periodoGobierno" = "".
+- "concept", "conceptDesc", "preguntaPolitica" y "preguntaDesc" se refieren al conflicto (qué está en juego y quién debe responder), no a una elección.
+- "govSemaforo": 6 indicadores DEL CONFLICTO (duración, afectados, acuerdos o mesas, incidentes, respuesta institucional, riesgo de repetición), cada uno con fuente y fecha.
+- "partidos": las 4-6 POSTURAS o BLOQUES en disputa (ej. quienes protestan, la autoridad responsable, los afectados, quienes acusan politización). Solo incluye partidos políticos si participan abiertamente en el conflicto. "capital" = legitimidad o simpatía pública de esa postura.
+- "actores": los involucrados reales (autoridades, colectivos, gremios, voceros, sectores afectados). "role" debe describir con precisión a CADA actor: tipo de organización y ámbito (federal, estatal, municipal, sociedad civil, privado) y su papel en el conflicto. NUNCA copies el "role" de un actor a otro. La sexta fila sigue siendo "Rol narrativo".
+- "segmentos": 4 perfiles de AFECTACIÓN, no electorales. "tipo": "S1 · AFECTADO DIRECTO", "S2 · MOVILIZADO", "S3 · ESPECTADOR CERCANO" y "S4 · DETRACTOR"; "pers" con su prioridad de atención: "ALTA · ATENDER", "ALTA · DIALOGAR", "MEDIA · INFORMAR", "BAJA · CONTENER". En "c1" la fila "Historia electoral" se sustituye por "Relación con el tema". "segJer" usa esos mismos 4 perfiles en orden de prioridad de atención. "segIntro" explica cómo se definieron los perfiles de afectación.
+- "segTabla": ejes Género, Generación, Zona (zonas reales afectadas) y Sector (ej. transportistas, comercio, usuarios); la "implicación" es para quien deba gestionar el conflicto.
+- "arqIdeal", "arqActores" y "codigo": el liderazgo que la gente espera para resolver el tema; "arqActores" evalúa a los actores involucrados.
+- "encuestas" y "tendencia": solo si hay sondeos sobre el tema en las fuentes; si no, vacíos.`
+    : '';
+  return { system: system + reglaCliente + reglaTema, user };
 }
 
 // Cantidades mínimas por skill, calibradas para igualar la densidad que

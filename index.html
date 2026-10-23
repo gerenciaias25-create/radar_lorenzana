@@ -240,6 +240,10 @@
 
       <input type="text" id="targetProfile" class="filter-input" placeholder="Nombre del personaje político...">
 
+      <label id="modoTemaBox" style="display:none;align-items:center;gap:6px;font-size:12px;color:#334155;white-space:nowrap;cursor:pointer" title="Para analizar un problema puntual (bloqueo, obra, crisis) en vez de un territorio o candidatura">
+        <input type="checkbox" id="modoTema" onchange="onSkillChange()"> Analizar un tema o conflicto
+      </label>
+
       <input type="text" id="targetProfile2" class="filter-input hidden" placeholder="Nombre del segundo personaje (comparativo)...">
 
       <input type="text" id="targetProfileExtra" class="filter-input hidden" placeholder="Actores adicionales (opcional, separados por coma) — hasta 4 más">
@@ -501,6 +505,16 @@ function onSkillChange() {
   if (!usaCliente) document.getElementById('targetCliente').value = '';
   if (!esComparativo) document.getElementById('targetProfileExtra').value = '';
 
+  // Modo tema (solo Emociones): un problema puntual en lugar de un territorio o candidatura.
+  const boxTema = document.getElementById('modoTemaBox');
+  boxTema.classList.toggle('hidden', skill !== 'emociones');
+  boxTema.style.display = skill === 'emociones' ? 'flex' : 'none';
+  if (skill !== 'emociones') document.getElementById('modoTema').checked = false;
+  const esTema = skill === 'emociones' && document.getElementById('modoTema').checked;
+  document.getElementById('targetActoresRef').placeholder = esTema
+    ? 'Involucrados en el tema (opcional, separados por coma) — autoridades, colectivos, gremios...'
+    : 'Actores de referencia (opcional, separados por coma) — ej. aspirantes 2027 del municipio';
+
   document.getElementById('hintOpositor').style.display = (skill === 'opositor') ? 'block' : 'none';
   document.getElementById('hintComparativo').style.display = esComparativo ? 'block' : 'none';
 
@@ -510,6 +524,8 @@ function onSkillChange() {
   } else if (esComparativo) {
     document.getElementById('targetProfile').placeholder = 'Primer personaje a comparar...';
     document.getElementById('targetProfile2').placeholder = 'Segundo personaje a comparar...';
+  } else if (esTema) {
+    document.getElementById('targetProfile').placeholder = 'Tema o conflicto como lo nombra la prensa (ej. "Bloqueo México-Toluca")...';
   } else if (SKILLS_TERRITORIO.includes(skill)) {
     document.getElementById('targetProfile').placeholder = 'Territorio o entidad a evaluar (ej. "Sinaloa", "Culiacán")...';
   } else {
@@ -535,6 +551,7 @@ async function loadSelectedSkill() {
   const actor2 = document.getElementById('targetProfile2').value.trim();
   const cliente = ['opositor', 'emociones'].includes(skill) ? document.getElementById('targetCliente').value.trim() : '';
   const actoresReferencia = SKILLS_ACTORES_REF.includes(skill) ? document.getElementById('targetActoresRef').value.trim() : '';
+  const modo = (skill === 'emociones' && document.getElementById('modoTema').checked) ? 'tema' : '';
   const periodoSel = leerPeriodo();
   const periodoDesc = describirPeriodo(periodoSel);
   let { mes, anio } = periodoSel;
@@ -610,7 +627,7 @@ async function loadSelectedSkill() {
     const { resp: startResp, json: startJson } = await fetchJsonConReintentos('/api/analizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ skill, actor, actor2, actor3, actor4, actor5, actor6, cliente, actoresReferencia, ...periodoSel }),
+      body: JSON.stringify({ skill, actor, actor2, actor3, actor4, actor5, actor6, cliente, actoresReferencia, modo, ...periodoSel }),
     }, 3);
     if (!startResp.ok) {
       throw new Error(startJson.error || startJson.detail || 'Error al iniciar el análisis en el servidor.');
@@ -682,6 +699,7 @@ async function loadSelectedSkill() {
       periodoTipo: periodoSel.periodoTipo,
       periodoInfo: apiJson.periodoInfo || null,
       cliente: cliente || null,
+      modo: modo || null,
       actor,
       actor2: actor2 || null,
       actor3: actor3 || null,
