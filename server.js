@@ -89,7 +89,7 @@ app.post('/api/analizar', (req, res) => {
   } = params;
   // Modo "tema": Emociones analiza un problema o conflicto puntual (ej. un
   // bloqueo carretero) en vez de un territorio o una candidatura.
-  const modo = (skill === 'emociones' && String(modoIn).toLowerCase() === 'tema') ? 'tema' : '';
+  const modo = (['emociones', 'radar', 'tensiones'].includes(skill) && String(modoIn).toLowerCase() === 'tema') ? 'tema' : '';
 
   const SKILLS_VALIDAS = ['radar', 'emociones', 'tensiones', 'opositor', 'comparativo', 'sesgo'];
   if (!SKILLS_VALIDAS.includes(skill)) {
@@ -107,7 +107,19 @@ app.post('/api/analizar', (req, res) => {
   // Actores de referencia que el analista conoce (ej. aspirantes 2027 de un
   // municipio). Son la fuente más confiable de nombres: el modelo no conoce a
   // los aspirantes locales recientes y Apify no siempre los trae.
-  const actoresRef = (Array.isArray(actoresReferencia) ? actoresReferencia : String(actoresReferencia || '').split(/[,;\n]/))
+  // Se separa por comas, punto y coma o saltos de línea, pero NO por las comas
+  // que van dentro de paréntesis: "Manolo Jiménez (gobernador, PRI)" es un solo actor.
+  const separarActores = (txt) => {
+    const out = []; let cur = '', nivel = 0;
+    for (const ch of String(txt || '')) {
+      if (ch === '(' || ch === '[') nivel++;
+      if ((ch === ')' || ch === ']') && nivel > 0) nivel--;
+      if (nivel === 0 && /[,;\n]/.test(ch)) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  };
+  const actoresRef = (Array.isArray(actoresReferencia) ? actoresReferencia : separarActores(actoresReferencia))
     .map(a => String(a).trim()).filter(Boolean).slice(0, 8);
 
   const actorName = String(actor).trim();
@@ -1053,7 +1065,9 @@ function normalizeResponse(data, skill, ctx = {}) {
       bloques: objs(terIn.bloques).map((b, i) => ({ tipo: TIPOS.find(t => txt(b.tipo).toLowerCase().startsWith(t.slice(0, 4))) || TIPOS[i % 3], titulo: txt(b.titulo).replace(/^ZONA (FUERTE|EN DISPUTA|ADVERSA)\s*[—-]\s*/i, ''), zonas: txt(b.zonas), estado: txt(b.estado), texto: txt(b.texto), clave: txt(b.clave), valor: txt(b.valor) })),
     };
 
+    if (ctx.modo === 'tema') { if (!meta.nombre) meta.nombre = ctx.actorName || ''; }
     const out = {
+      modo: ctx.modo === 'tema' ? 'tema' : '',
       meta,
       npsPartido: { sub: txt(npsP.sub), datos: ord(pares(npsP.datos)) },
       npsDemo: { sub: txt(npsD.sub), datos: pares(npsD.datos) },
@@ -1545,7 +1559,9 @@ function normalizeResponse(data, skill, ctx = {}) {
     const preguntas = objs(de('preguntas')).map(p => ({ pregunta: s_(p.pregunta, p.q, p.titulo), respuesta: s_(p.respuesta, p.r, p.texto), evidencia: s_(p.evidencia, p.e, p.fuente) })).filter(p => p.pregunta || p.respuesta);
 
     const txt = (k, ...alt) => { const v = de(k, ...alt); return isObj(v) ? s_(v.texto, v.descripcion) : Array.isArray(v) ? v.map(x => isObj(x) ? s_(x.texto) : s_(x)).filter(Boolean).join(' ') : s_(v); };
+    if (ctx.modo === 'tema') { meta.tema = ctx.actorName || ''; meta.periodoGobierno = ''; }
     const out = {
+      modo: ctx.modo === 'tema' ? 'tema' : '',
       meta,
       lecturaRadar: txt('lecturaRadar', 'resumenEjecutivo', 'narrativaMadreSintesis'),
       ranking, emociones,
@@ -2528,7 +2544,29 @@ El objeto de estudio "${actorName}" es un TEMA o CONFLICTO puntual (ej. un bloqu
 - "arqIdeal", "arqActores" y "codigo": el liderazgo que la gente espera para resolver el tema; "arqActores" evalúa a los actores involucrados.
 - "encuestas" y "tendencia": solo si hay sondeos sobre el tema en las fuentes; si no, vacíos.`
     : '';
-  return { system: system + reglaCliente + reglaTema, user };
+  const encabezadoTema = `\n\nMODO TEMA (OBLIGATORIO, tiene prioridad sobre cualquier regla anterior que hable de elección, aspirantes, candidatura, gobierno en turno o intención de voto):
+El objeto de estudio "${actorName}" es un TEMA o CONFLICTO puntual (ej. un bloqueo, una obra, una crisis de servicio), NO un personaje político ni un territorio en campaña.
+- Solo usa hechos, frases y reacciones sobre "${actorName}". Descarta las fuentes que hablen de otros conflictos, aunque sean de la misma zona o del mismo periodo.
+- No menciones elecciones, candidaturas ni aspirantes salvo que formen parte explícita del conflicto en las fuentes.`;
+  const reglaTemaRadar = (modo === 'tema' && skill === 'radar')
+    ? encabezadoTema + `
+- "meta.nombre" = el tema tal como se nombra (ej. "Bloqueo México-Toluca"); "resaltado" = la palabra clave del tema; "nombreCorto" y "corto" = forma breve del tema; "territorio" y "territorioLargo" = el lugar donde ocurre; "subtitulo" = "Tema · lugar · actores principales · Periodo <ventana> · Corte dd/mm/aaaa".
+- NPS-P = saldo neto de opinión sobre el TEMA (a favor de la causa o de su solución menos en contra), por segmento. "npsPartido" puede usar segmentos partidistas si la conversación se politizó; si no, usa segmentos de postura (ej. afectados, simpatizantes de la protesta, críticos, autoridades).
+- "sentimiento", "tom", "picos", "cronologia", "plataformas", "nube", "hashtags" y "narrativas" describen la conversación SOBRE EL TEMA. "narrativas.favorables" = narrativas que respaldan la causa o la solución; "criticas" = las que la atacan; "neutras" = contexto.
+- "cruces.interna": compara cómo se reparte el respaldo entre las POSTURAS del conflicto por segmento ("titulo" ej. "Respaldo por postura × Segmento"); "series" = una por postura + "NS/Otro".
+- "riesgos" y "oportunidades": riesgos de escalamiento y oportunidades de solución del conflicto. "alertaSube" y "alertaBaja": señales que escalarían o desactivarían el conflicto.
+- "territorial.zonas": las zonas, colonias o tramos afectados o donde más se comenta el tema.
+- "modulosVariante" = "VARIANTE C — TEMA O CONFLICTO"; los módulos se refieren al tema (cuentas que más lo difunden, amplificadores, detonantes, actores involucrados, comparativo con casos similares, brechas de atención).`
+    : '';
+  const reglaTemaTens = (modo === 'tema' && skill === 'tensiones')
+    ? encabezadoTema + `
+- "meta.municipio" = el lugar donde ocurre el tema (municipio o corredor) y "meta.estado" su estado; "meta.actor" = la autoridad principal responsable de atender el conflicto y "meta.cargo" su cargo o institución; "meta.partido" solo si es relevante para el conflicto (si no, ""); "meta.periodoGobierno" = "".
+- "ranking": las TENSIONES INTERNAS del tema (las distintas líneas de conflicto que contiene, ej. en un bloqueo: exigencia de justicia, afectación vial, choque entre ciudadanos, respuesta institucional, seguridad en la vía), no los problemas generales del municipio.
+- "trayectoria": los cortes anteriores al periodo pueden ser bajos o cero si el tema no existía; en ese caso "tipo" = "Nueva".
+- "territorios": tramos, colonias o puntos afectados. "riesgos" y "alertas": escalamiento del conflicto.
+- Socioafectiva: "dolores", "enemigos", "fracturas" y "segmentos" se refieren a las personas afectadas o movilizadas por el tema; las "preguntas" se responden sobre el conflicto.`
+    : '';
+  return { system: system + reglaCliente + reglaTema + reglaTemaRadar + reglaTemaTens, user };
 }
 
 // Cantidades mínimas por skill, calibradas para igualar la densidad que
